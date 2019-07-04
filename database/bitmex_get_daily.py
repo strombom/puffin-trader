@@ -49,14 +49,6 @@ download_file(date_last)
 quit()
 """
 
-import pickle
-with open('trade_data.pickle', 'rb') as f:
-    trade_data = pickle.load(f)
-
-for row in trade_data:
-    print(row)
-quit()
-
 
 class TickTable(tables.IsDescription):
     timestamp   = tables.UInt64Col()
@@ -70,9 +62,10 @@ class TradeTable(tables.IsDescription):
     volume      = tables.Float32Col()
 
 class SymbolTable(tables.IsDescription):
-    name        = tables.UInt64Col()
+    name        = tables.StringCol(16)
     ts_start    = tables.Float32Col()
     ts_stop     = tables.Float32Col()
+
 
 
 h5file = tables.open_file("bitmex.h5", mode="a", title="Bitmex")
@@ -88,7 +81,26 @@ try:
 except:
     symbols_group = h5file._get_node('/symbols')
 
+
+
 symbols = []
+
+import pickle
+with open('trade_data.pickle', 'rb') as f:
+    trade_data = pickle.load(f)
+
+for row in trade_data[1:]:
+    if not row:
+        break
+    symbol = row[1]
+    if symbol not in symbols:
+        print(row)
+        print("s", symbol)
+        quit()
+quit()
+
+
+
 
 for symbol in symbols_group:
     print("symbol", symbol)
