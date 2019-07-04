@@ -33,11 +33,30 @@ def download_file(date):
     data_gzip = url_connect.read(10**10)
     data_raw = gzip.GzipFile(fileobj=io.BytesIO(data_gzip)).read().decode("utf-8") 
     reader = csv.reader(data_raw.split('\n'), delimiter=',')
+
+    rows = []
     for row in reader:
         print('\t'.join(row))
+        rows.append(row)
+
+    import pickle
+    with open('trade_data.pickle', 'wb') as f:
+        pickle.dump(rows, f, pickle.HIGHEST_PROTOCOL)
+
 
 download_file(date_last)
+
+quit()
 """
+
+import pickle
+with open('trade_data.pickle', 'rb') as f:
+    trade_data = pickle.load(f)
+
+for row in trade_data:
+    print(row)
+quit()
+
 
 class TickTable(tables.IsDescription):
     timestamp   = tables.UInt64Col()
