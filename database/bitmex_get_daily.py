@@ -3,9 +3,9 @@ import io
 import csv
 import glob
 import gzip
-import datetime
 import urllib.request
 import tables
+from datetime import datetime
 
 """
 csv_files = []
@@ -20,13 +20,13 @@ print(csv_files)
 url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.csv.gz"
 
 
-date_first = datetime.datetime.strptime("20141122", '%Y%m%d')
-date_last  = datetime.datetime.strptime("20151124", '%Y%m%d')
+date_first = datetime.strptime("20141122", '%Y%m%d')
+date_last  = datetime.strptime("20150703", '%Y%m%d')
 
 
 
 def download_file(date):
-    date_string = datetime.datetime.strftime(date, '%Y%m%d')
+    date_string = datetime.strftime(date, '%Y%m%d')
     date_url = url.replace("xxxxxxxx", date_string)
     url_request = urllib.request.Request(date_url)
     url_connect = urllib.request.urlopen(url_request)
@@ -63,8 +63,8 @@ class TradeTable(tables.IsDescription):
 
 class SymbolTable(tables.IsDescription):
     name        = tables.StringCol(16)
-    ts_start    = tables.Float32Col()
-    ts_stop     = tables.Float32Col()
+    ts_start    = tables.UInt64Col()
+    ts_stop     = tables.UInt64Col()
 
 
 
@@ -77,13 +77,34 @@ except:
     ticks_group = h5file._get_node('/ticks')
 
 try:
-    symbols_group = h5file.create_group("/", 'symbols', 'Symbol data')
+    symbols_table = h5file.create_table('/', 'symbols', TickTable)
 except:
-    symbols_group = h5file._get_node('/symbols')
+    symbols_table = h5file._get_node('/symbols')
 
 
+def add_symbol(name, timestamp):
+    symbols_table.row['name'] = name
+    symbols_table.row['ts_start'] = timestamp
+    symbols_table.row['ts_stop'] = 0
+    symbols_table.row.append()
 
-symbols = []
+    try:
+        symbol_table = h5file.create_table('/symbols', name, SymbolTable)
+    except:
+        symbol_table = h5file._get_node('/symbols/' + name)
+
+    print("Add symbol ", name, timestamp)
+    return symbol_table
+
+
+symbol_tables = {}
+
+for row in symbols_table.iterrows():
+    symbol_name  = row['name'].decode('utf-8')
+    symbol_table = h5file._get_node('/symbols/' + name)
+    symbols[symbol_name] = symbol_table
+
+
 
 import pickle
 with open('trade_data.pickle', 'rb') as f:
@@ -93,10 +114,27 @@ for row in trade_data[1:]:
     if not row:
         break
     symbol = row[1]
+    # Timestamp in microseconds
+    timestring = row[0][:-3]
+    timestamp  = datetime.strptime(timestring, '%Y-%m-%dD%H:%M:%S.%f')
+    timestamp  = int(datetime.timestamp(timestamp) * 1000000)
+    price      = row[4]
+    volume     = row[8]
+
+    print(row)
+
+    print("timestamp", timestamp)
+    print("price", price)
+    print("volume", volume)
+    quit()
+
     if symbol not in symbols:
-        print(row)
-        print("s", symbol)
-        quit()
+        symbol_table = add_symbol(symbol, timestamp)
+        symbol_tables['symbol'] = symbol_table
+    
+    #append_trade(symbol, )
+
+h5file.flush()
 quit()
 
 
