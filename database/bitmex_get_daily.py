@@ -77,7 +77,7 @@ except:
     ticks_group = h5file._get_node('/ticks')
 
 try:
-    symbols_table = h5file.create_table('/', 'symbols', TickTable)
+    symbols_table = h5file.create_table('/', 'symbols', SymbolTable)
 except:
     symbols_table = h5file._get_node('/symbols')
 
@@ -87,23 +87,25 @@ def add_symbol(name, timestamp):
     symbols_table.row['ts_start'] = timestamp
     symbols_table.row['ts_stop'] = 0
     symbols_table.row.append()
+    symbol_row = symbols_table[-1]
 
     try:
-        symbol_table = h5file.create_table('/symbols', name, SymbolTable)
+        tick_table = h5file.create_table('/ticks', name, TickTable)
     except:
-        symbol_table = h5file._get_node('/symbols/' + name)
+        tick_table = h5file._get_node('/ticks/' + name)
 
     print("Add symbol ", name, timestamp)
-    return symbol_table
+    return symbol_row, tick_table
 
 
-symbol_tables = {}
+tick_tables = {}
+symbols = {}
 
 for row in symbols_table.iterrows():
     symbol_name  = row['name'].decode('utf-8')
-    symbol_table = h5file._get_node('/symbols/' + name)
-    symbols[symbol_name] = symbol_table
-
+    tick_table = h5file._get_node('/ticks/' + symbol_name)
+    tick_tables[symbol_name] = tick_table
+    symbols[symbol_name] = row
 
 
 import pickle
@@ -113,28 +115,49 @@ with open('trade_data.pickle', 'rb') as f:
 for row in trade_data[1:]:
     if not row:
         break
-    symbol = row[1]
-    # Timestamp in microseconds
-    timestring = row[0][:-3]
-    timestamp  = datetime.strptime(timestring, '%Y-%m-%dD%H:%M:%S.%f')
-    timestamp  = int(datetime.timestamp(timestamp) * 1000000)
-    price      = row[4]
-    volume     = row[8]
+    symbol_name = row[1]
+    timestamp   = datetime.strptime(row[0][:-3], '%Y-%m-%dD%H:%M:%S.%f')
+    timestamp   = int(datetime.timestamp(timestamp) * 1000000) # Timestamp in microseconds
+    price       = row[4]
+    volume      = row[8]
 
     print(row)
 
+    print("symbol_name", symbol_name)
     print("timestamp", timestamp)
     print("price", price)
     print("volume", volume)
-    quit()
 
-    if symbol not in symbols:
-        symbol_table = add_symbol(symbol, timestamp)
-        symbol_tables['symbol'] = symbol_table
-    
+    if symbol_name not in symbols:
+        symbol_row, tick_table = add_symbol(symbol_name, timestamp)
+        symbols[symbol_name] = symbol_row
+        tick_tables[symbol_name] = tick_table
+        print("added", symbol_name)
+
+    symbol = symbols[symbol_name]
+
+    if timestamp > symbol['ts_stop']:
+        tick_table = tick_tables[symbol_name]
+        tick_table.row['timestamp'] = timestamp
+        tick_table.row['price'] = price
+        tick_table.row['volume'] = volume
+        tick_table.row.append()
+        print("update ts_stop", symbol['ts_stop'])
+        symbol['ts_stop'] = timestamp
+        print("update ts_stop", symbol['ts_stop'])
+        print("add tick", symbol_name, timestamp)
+
+    #print("abc")
+    #print("symbol", symbol['name'], symbol['ts_start'])
+    #print(tick_table[0])
+    #break
+
+
+
     #append_trade(symbol, )
 
-h5file.flush()
+symbols_table.flush()
+h5file.close()
 quit()
 
 
