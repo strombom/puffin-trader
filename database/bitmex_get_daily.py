@@ -75,12 +75,15 @@ def append_trade_data(trade_data):
         symbol = symbols_table[symbol_row_idx]
 
         if timestamp > symbol['ts_stop']:
-            tick_table = tick_tables[symbol_name]
-            tick_table.row['timestamp'] = timestamp
-            tick_table.row['price'] = price
-            tick_table.row['volume'] = volume
-            tick_table.row.append()
-            symbols_table.cols.ts_stop[symbol_row_idx] = timestamp
+            try:
+                tick_table = tick_tables[symbol_name]
+                tick_table.row['timestamp'] = timestamp
+                tick_table.row['price'] = price
+                tick_table.row['volume'] = volume
+                tick_table.row.append()
+                symbols_table.cols.ts_stop[symbol_row_idx] = timestamp
+            except:
+                pass
 
     symbols_table.flush()
 
@@ -110,7 +113,7 @@ except:
     date_string = "20141121"
 
 date = datetime.strptime(date_string, '%Y%m%d')
-date_last  = datetime.strptime("20150706", '%Y%m%d')
+date_last  = datetime.strptime("20190706", '%Y%m%d')
 
 
 url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.csv.gz"
@@ -118,6 +121,7 @@ url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.
 def download_file(date):
     date_string = datetime.strftime(date, '%Y%m%d')
     date_url = url.replace("xxxxxxxx", date_string)
+    print("Download", date_url)
     url_request = urllib.request.Request(date_url)
     url_connect = urllib.request.urlopen(url_request)
     data_gzip = url_connect.read(10**10)
