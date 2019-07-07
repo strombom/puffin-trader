@@ -6,48 +6,8 @@ import gzip
 import urllib.request
 import tables
 from datetime import datetime
+from datetime import timedelta
 
-"""
-csv_files = []
-for file in glob.glob("bitmex_daily/*.csv"):
-    csv_files.append(file)
-
-print(csv_files)
-
-#date_first = "20141122"
-#date_first = "20141124"
-#date_last = "20190626"
-url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.csv.gz"
-
-
-date_first = datetime.strptime("20141122", '%Y%m%d')
-date_last  = datetime.strptime("20150703", '%Y%m%d')
-
-
-
-def download_file(date):
-    date_string = datetime.strftime(date, '%Y%m%d')
-    date_url = url.replace("xxxxxxxx", date_string)
-    url_request = urllib.request.Request(date_url)
-    url_connect = urllib.request.urlopen(url_request)
-    data_gzip = url_connect.read(10**10)
-    data_raw = gzip.GzipFile(fileobj=io.BytesIO(data_gzip)).read().decode("utf-8") 
-    reader = csv.reader(data_raw.split('\n'), delimiter=',')
-
-    rows = []
-    for row in reader:
-        print('\t'.join(row))
-        rows.append(row)
-
-    import pickle
-    with open('trade_data.pickle', 'wb') as f:
-        pickle.dump(rows, f, pickle.HIGHEST_PROTOCOL)
-
-
-download_file(date_last)
-
-quit()
-"""
 
 class TickTable(tables.IsDescription):
     timestamp   = tables.UInt64Col(pos = 0)
@@ -98,7 +58,7 @@ def add_symbol(symbol_name, timestamp):
     tick_tables[symbol_name] = h5file.create_table('/ticks', symbol_name, TickTable)
     update_symbols()
 
-def append_file(trade_data):
+def append_trade_data(trade_data):
     for row in trade_data[1:]:
         if not row:
             break
@@ -124,20 +84,60 @@ def append_file(trade_data):
 
     symbols_table.flush()
 
-
-
+"""
 import pickle
 with open('trade_data.pickle', 'rb') as f:
     trade_data = pickle.load(f)
 
+import pickle
+with open('trade_data.pickle', 'wb') as f:
+    pickle.dump(rows, f, pickle.HIGHEST_PROTOCOL)
+"""
 
+"""
+csv_files = []
+for file in glob.glob("bitmex_daily/*.csv"):
+    csv_files.append(file)
+print(csv_files)
+"""
+
+# https://public.bitmex.com/?prefix=data/trade/
+
+print("attr")
+try:
+    date_string = str(symbols_table.attrs.LAST_BITMEX_FILE_DATE)
+except:
+    date_string = "20141121"
+
+date = datetime.strptime(date_string, '%Y%m%d')
+date_last  = datetime.strptime("20150706", '%Y%m%d')
+
+
+url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.csv.gz"
+
+def download_file(date):
+    date_string = datetime.strftime(date, '%Y%m%d')
+    date_url = url.replace("xxxxxxxx", date_string)
+    url_request = urllib.request.Request(date_url)
+    url_connect = urllib.request.urlopen(url_request)
+    data_gzip = url_connect.read(10**10)
+    data_raw = gzip.GzipFile(fileobj=io.BytesIO(data_gzip)).read().decode("utf-8") 
+    reader = csv.reader(data_raw.split('\n'), delimiter=',')
+    rows = []
+    for row in reader:
+        print('\t'.join(row))
+        rows.append(row)
+    return rows
+
+while date < date_last:
+    date = date + timedelta(days = 1)
+    trade_data = download_file(date)
+    append_trade_data(trade_data)
+    date_string = int(date.strftime("%Y%m%d"))
+    symbols_table.attrs.LAST_BITMEX_FILE_DATE = date_string
 
 h5file.close()
 quit()
-
-
-
-
 
 
 """
@@ -147,5 +147,3 @@ quit()
 2015-11-24D06:03:43.821449000   XBUZ15  Sell    10      323.47  PlusTick        e188e3b9-2972-281c-6808-4475db2fc668   309147680                                                                                                                3.091477 1000
 2015-11-24D06:05:30.425073000   XBUZ15  Sell    7       323.13  MinusTick       27eaea77-2611-1ae3-3000-4e09b6331a31   216631079                                                                                                                2.166311 700
 """
-
-
