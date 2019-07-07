@@ -59,6 +59,8 @@ def add_symbol(symbol_name, timestamp):
     update_symbols()
 
 def append_trade_data(trade_data):
+    updated_tables = {}
+
     for row in trade_data[1:]:
         if not row:
             break
@@ -82,10 +84,15 @@ def append_trade_data(trade_data):
                 tick_table.row['volume'] = volume
                 tick_table.row.append()
                 symbols_table.cols.ts_stop[symbol_row_idx] = timestamp
+                updated_tables[symbol_name] = tick_table
             except:
                 pass
 
+
     symbols_table.flush()
+    for tablename in updated_tables:
+        tick_tables[tablename].flush()
+
 
 """
 import pickle
