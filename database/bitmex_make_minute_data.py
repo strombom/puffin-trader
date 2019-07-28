@@ -1,4 +1,6 @@
 
+import sys
+import signal
 import tables
 from datetime import datetime
 from datetime import timedelta
@@ -12,9 +14,9 @@ def sec15_datetime(dt):
 
 
 class IntervalTable(tables.IsDescription):
-    timestamp = tables.UInt64Col (pos =  0)
-    price     = tables.Float32Col(pos =  1)
-    vol_buy   = tables.Float32Col(pos =  2)
+    timestamp = tables.UInt64Col (pos =  0) # Microseconds
+    price     = tables.Float32Col(pos =  1) # USD
+    vol_buy   = tables.Float32Col(pos =  2) # BTC
     vol_sell  = tables.Float32Col(pos =  3)
     buy_01    = tables.Float32Col(pos =  4)
     buy_02    = tables.Float32Col(pos =  5)
@@ -32,6 +34,7 @@ class IntervalTable(tables.IsDescription):
 
 class BitmexRaw:
     def __init__(self, bitmex_intervals):
+        self.bitmex_intervals = bitmex_intervals
         self.h5file = tables.open_file("bitmex_raw.h5", mode="r", title="Bitmex")
 
         try:
@@ -39,27 +42,29 @@ class BitmexRaw:
         except:
             raise RuntimeError('bitmex_raw.h5 does not contain /ticks/XBTUSD')
 
-        if start_timeperiod == 0:
+        if bitmex_intervals.raw_start_timeperiod == 0:
             self.current_timeperiod = sec15_datetime(self.get_first_timestamp())
             self.current_row_idx = 0
         else:
-            self.current_timeperiod = start_timeperiod
-            self.current_row_idx = start_row_idx
+            timeperiod = self.bitmex_intervals.raw_start_timeperiod
+            timeperiod = datetime.fromtimestamp(timeperiod / 1e6)
+            self.current_timeperiod = sec15_datetime(timeperiod)
+            self.current_row_idx = self.bitmex_intervals.raw_start_row_idx
 
         #self.row_idx = 1747
         #self.current_timeperiod = datetime.strptime("2015-10-07 12:45:45", "%Y-%m-%d %H:%M:%S")
 
     def get_first_timestamp(self):
-        return datetime.fromtimestamp(self.xbtusd_ticks_table[0][0] / 1000000)
+        return datetime.fromtimestamp(self.xbtusd_ticks_table[0][0] / 1e6)
 
     def get_last_timestamp(self):
         last_idx = self.xbtusd_ticks_table.nrows - 1
-        return datetime.fromtimestamp(self.xbtusd_ticks_table[last_idx][0] / 1000000)
+        return datetime.fromtimestamp(self.xbtusd_ticks_table[last_idx][0] / 1e6)
 
     def get_interval_data(self):
         start_idx = self.current_row_idx
-        timeperiod_start = datetime.timestamp(self.current_timeperiod) * 1000000
-        timeperiod_end   = datetime.timestamp(self.current_timeperiod + interval_length) * 1000000
+        timeperiod_start = datetime.timestamp(self.current_timeperiod) * 1e6
+        timeperiod_end   = datetime.timestamp(self.current_timeperiod + interval_length) * 1e6
 
         count = 0
         while True:
@@ -108,16 +113,20 @@ class BitmexRaw:
 
         prices = {}
 
-        last_price = self.xbtusd_ticks_table.cols.price[self.row_idx]
+        self.bitmex_intervals.raw_start_timeperiod = datetime.timestamp(self.current_timeperiod) * 1e6
+        self.bitmex_intervals.raw_start_row_idx    = self.current_row_idx
 
+        last_price = self.xbtusd_ticks_table.cols.price[self.current_row_idx - 1]
         return timeperiod_start, last_price, vol_sell, vol_buy, prices_buy, prices_sell
 
-    def get_start_timeperiod_and_start_row_idx(self):
-        return start_timeperiod, start_row_idx
-
+    #def get_start_timeperiod_and_start_row_idx(self):
+    #    return start_timeperiod, start_row_idx
 
 
 class BitmexIntervals:
+    raw_start_row_idx = 0
+    raw_start_timeperiod = 0
+
     def __init__(self):
         self.h5file = tables.open_file("bitmex_intervals.h5", mode="a", title="Bitmex")
 
@@ -131,25 +140,37 @@ class BitmexIntervals:
         except:
             self.xbtusd_15sec_table = self.h5file._get_node('/sec15/XBTUSD')
 
+        self.load_start_timeperiod_and_row_idx()
+    
+    def load_start_timeperiod_and_row_idx(self):
         try:
-            self.start_timeperiod = self.xbtusd_15sec_table.attrs.START_TIMEPERIOD
+            self.raw_start_timeperiod = self.xbtusd_15sec_table.attrs.START_TIMEPERIOD
         except:
-            self.start_timeperiod = 0
+            self.raw_start_timeperiod = 0
+        self.last_saved_timeperiod = self.raw_start_timeperiod
 
         try:
-            self.start_row_idx = self.xbtusd_15sec_table.attrs.START_ROW_IDX
+            self.raw_start_row_idx = self.xbtusd_15sec_table.attrs.START_ROW_IDX
         except:
-            self.start_row_idx = 0
+            self.raw_start_row_idx = 0
+        
+        print("load", self.raw_start_row_idx, self.raw_start_timeperiod)
+    
+    def get_start_timeperiod_and_start_row_idx(self):
+        return self.raw_start_timeperiod, self.raw_start_row_idx
 
-    def save_start_timeperiod_and_row_idx(self, start_timeperiod, start_row_idx):
-        self.xbtusd_15sec_table.attrs.START_TIMEPERIOD = start_timeperiod
-        self.xbtusd_15sec_table.attrs.START_ROW_IDX    = start_row_idx
+    def save_start_timeperiod_and_row_idx(self, force = False):
+        delta_seconds = self.raw_start_timeperiod - self.last_saved_timeperiod
+        if force or delta_seconds > 100:
+            print("saving")
+            self.xbtusd_15sec_table.attrs.START_TIMEPERIOD = (int) (self.raw_start_timeperiod)
+            self.xbtusd_15sec_table.attrs.START_ROW_IDX    = self.raw_start_row_idx
 
 
 
 
 bitmex_intervals = BitmexIntervals()
-bitmex_raw       = BitmexRaw(bitmex_intervals.start_timeperiod, bitmex_intervals.start_row_idx)
+bitmex_raw       = BitmexRaw(bitmex_intervals)
 
 """
 start_timeperiod = sec15_datetime(bitmex_raw.get_first_timestamp())
@@ -159,35 +180,36 @@ print(start_timeperiod)
 print(end_timeperiod)
 """
 
+def signal_handler(sig, frame):
+        print('Exiting, saving.')
+        bitmex_intervals.save_start_timeperiod_and_row_idx(force = True)
+        sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
 while True:
-    for idx in range(200000):
-        interval_data = bitmex_raw.get_interval_data()
+    for idx in range(20):
+        timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell = bitmex_raw.get_interval_data()
+        print(timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell)
 
-        timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell = interval_data
-
-        start_timeperiod, start_row_idx = bitmex_raw.get_start_timeperiod_and_start_row_idx()
-        bitmex_intervals.save_start_timeperiod_and_row_idx(start_timeperiod, start_row_idx)
-
-        print("interval", timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell)
-        quit()
-
-        print("row_idx", start_idx - count)
-        print("last_price, volume", last_price, vol_buy + vol_sell, vol_buy, vol_sell)
-        print("current_timeperiod", self.current_timeperiod - interval_length)
-        print("==========")
-
-
-    print("interval")
-    print(interval_data)
-
-
-
+        print("start", bitmex_intervals.raw_start_timeperiod, bitmex_intervals.raw_start_row_idx)
+        print("===")
+        
+        #bitmex_intervals.save_start_timeperiod_and_row_idx()
+        #print("interval", timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell)
+        #print("row_idx", start_idx - count)
+        #print("last_price, volume", last_price, vol_buy + vol_sell, vol_buy, vol_sell)
+        #print("current_timeperiod", self.current_timeperiod - interval_length)
+        #print("==========")
+    print("...")
+    bitmex_intervals.save_start_timeperiod_and_row_idx(force = True)
     quit()
 
 
 quit()
 
-
+"""
 print("first   timestamp ", datetime.fromtimestamp(xbtusd_ticks_table[0][0] / 1000000))
 print("start   timeperiod", start_timeperiod)
 print("current timestamp ", datetime.now())
@@ -223,3 +245,4 @@ while timestamp < end_timestamp:
     raw_idx += 1
     #if raw_idx == 1:
     #    quit()
+"""
