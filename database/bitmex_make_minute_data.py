@@ -165,9 +165,15 @@ class BitmexIntervals:
             self.xbtusd_15sec_table.attrs.START_ROW_IDX    = self.raw_start_row_idx
     
     def append(self, timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell):
-        #timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell
-        pass
-    
+        self.xbtusd_15sec_table.row['timestamp']  = (int) (timestamp)
+        self.xbtusd_15sec_table.row['price'] = last_price
+        self.xbtusd_15sec_table.row['vol_sell']   = vol_sell
+        self.xbtusd_15sec_table.row['vol_buy']    = vol_buy
+        for idx, key in enumerate(['01', '02', '05', '1', '2', '5']):
+            self.xbtusd_15sec_table.row['buy_'  + key] = prices_buy[idx]
+            self.xbtusd_15sec_table.row['sell_' + key] = prices_sell[idx]
+        self.xbtusd_15sec_table.row.append()
+
     def flush(self):
         self.save_start_timeperiod_and_row_idx(force = True)
         self.xbtusd_15sec_table.flush()
@@ -187,6 +193,7 @@ def save_on_exit():
 signal.signal(signal.SIGINT, signal_handler)
 atexit.register(save_on_exit)
 
+count = 0
 while True:
     try:
         timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell = bitmex_raw.get_interval_data()
@@ -195,6 +202,7 @@ while True:
         count += 1
         if count == 1000:
             count = 0
+            bitmex_intervals.flush()
             print(timestamp, last_price, vol_sell, vol_buy, prices_buy, prices_sell)
             print("start", bitmex_intervals.raw_start_timeperiod, bitmex_intervals.raw_start_row_idx)
             print("===")
