@@ -1,24 +1,24 @@
 
+# Download compressed daily archives from bitmex
+
+
 import io
 import csv
 import glob
 import gzip
-import urllib.request
 import tables
+import urllib.request
 from datetime import datetime
 from datetime import timedelta
+from queue import Queue
+from threading import Thread
 
 
 class TickTable(tables.IsDescription):
-    timestamp   = tables.UInt64Col(pos = 0)
+    timestamp   = tables.UInt64Col (pos = 0)
     price       = tables.Float32Col(pos = 1)
     volume      = tables.Float32Col(pos = 2)
-
-class TradeTable(tables.IsDescription):
-    timestamp   = tables.UInt64Col(pos = 0)
-    price_high  = tables.Float32Col(pos = 1)
-    price_low   = tables.Float32Col(pos = 2)
-    volume      = tables.Float32Col(pos = 3)
+    buy         = tables.BoolCol   (pos = 3)
 
 class SymbolTable(tables.IsDescription):
     name        = tables.StringCol(16, pos = 0)
@@ -69,6 +69,7 @@ def append_trade_data(trade_data):
         timestamp   = int(datetime.timestamp(timestamp) * 1000000) # Timestamp in microseconds
         price       = row[4]
         volume      = row[8]
+        buy         = True if row[2] == "Buy" else False
 
         if symbol_name not in symbol_row_idxs:
             add_symbol(symbol_name, timestamp)
@@ -82,6 +83,7 @@ def append_trade_data(trade_data):
                 tick_table.row['timestamp'] = timestamp
                 tick_table.row['price'] = price
                 tick_table.row['volume'] = volume
+                tick_table.row['buy'] = buy
                 tick_table.row.append()
                 symbols_table.cols.ts_stop[symbol_row_idx] = timestamp
                 updated_tables[symbol_name] = tick_table
@@ -113,14 +115,11 @@ print(csv_files)
 
 # https://public.bitmex.com/?prefix=data/trade/
 
-print("attr")
 try:
     date_string = str(symbols_table.attrs.LAST_BITMEX_FILE_DATE)
 except:
     date_string = "20141121"
 
-date = datetime.strptime(date_string, '%Y%m%d')
-date_last  = datetime.strptime("20190706", '%Y%m%d')
 
 
 url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.csv.gz"
@@ -128,7 +127,6 @@ url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.
 def download_file(date):
     date_string = datetime.strftime(date, '%Y%m%d')
     date_url = url.replace("xxxxxxxx", date_string)
-    print("Download", date_url)
     url_request = urllib.request.Request(date_url)
     url_connect = urllib.request.urlopen(url_request)
     data_gzip = url_connect.read(10**10)
@@ -136,16 +134,36 @@ def download_file(date):
     reader = csv.reader(data_raw.split('\n'), delimiter=',')
     rows = []
     for row in reader:
-        print('\t'.join(row))
+        #print('\t'.join(row))
         rows.append(row)
+    print("Downloaded", date_url)
     return rows
 
-while date < date_last:
-    date = date + timedelta(days = 1)
-    trade_data = download_file(date)
+
+def downloader(q):
+    date = datetime.strptime(date_string, '%Y%m%d')
+    date_last  = datetime.strptime("20191009", '%Y%m%d')
+    while date < date_last:
+        date = date + timedelta(days = 1)
+        trade_data = download_file(date)
+        q.put((date, trade_data))
+    q.put(None)
+
+q = Queue(maxsize=4)
+worker = Thread(target = downloader, args = (q,))
+worker.setDaemon(True)
+worker.start()
+
+while True:
+    trade_data = q.get()
+    if not trade_data:
+        break
+    date, trade_data = trade_data
     append_trade_data(trade_data)
     date_string = int(date.strftime("%Y%m%d"))
+    print("Appended", date)
     symbols_table.attrs.LAST_BITMEX_FILE_DATE = date_string
+
 
 h5file.close()
 quit()
