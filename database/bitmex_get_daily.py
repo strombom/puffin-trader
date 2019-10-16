@@ -150,7 +150,7 @@ def download_file(date):
 
 def downloader(q):
     date = datetime.strptime(date_string, '%Y%m%d')
-    date_last  = datetime.strptime("20191009", '%Y%m%d')
+    date_last  = datetime.strptime("20191015", '%Y%m%d')
     while date < date_last:
         date = date + timedelta(days = 1)
         trade_data = download_file(date)
