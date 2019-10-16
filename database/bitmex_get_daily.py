@@ -126,17 +126,25 @@ url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/xxxxxxxx.
 
 def download_file(date):
     date_string = datetime.strftime(date, '%Y%m%d')
+    print("Downloading 1", date_string)
     date_url = url.replace("xxxxxxxx", date_string)
-    url_request = urllib.request.Request(date_url)
-    url_connect = urllib.request.urlopen(url_request)
-    data_gzip = url_connect.read(10**10)
-    data_raw = gzip.GzipFile(fileobj=io.BytesIO(data_gzip)).read().decode("utf-8") 
-    reader = csv.reader(data_raw.split('\n'), delimiter=',')
-    rows = []
-    for row in reader:
-        #print('\t'.join(row))
-        rows.append(row)
-    print("Downloaded", date_url)
+    for retry in range(3):
+        try:
+            url_request = urllib.request.Request(date_url)
+            url_connect = urllib.request.urlopen(url_request, timeout = 3)
+            data_gzip = url_connect.read(10**10)
+            data_raw = gzip.GzipFile(fileobj=io.BytesIO(data_gzip)).read().decode("utf-8") 
+            print("Downloading 2", date_string)
+            reader = csv.reader(data_raw.split('\n'), delimiter=',')
+            rows = []
+            for row in reader:
+                #print('\t'.join(row))
+                rows.append(row)
+            print("Downloading 3", date_url)
+            break
+        except:
+            print("Downloading retry", retry)
+
     return rows
 
 
@@ -151,7 +159,7 @@ def downloader(q):
 
 q = Queue(maxsize=4)
 worker = Thread(target = downloader, args = (q,))
-worker.setDaemon(True)
+#worker.setDaemon(True)
 worker.start()
 
 while True:
