@@ -7,47 +7,36 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <queue>
 
 #include "curl/curl.h"
 #include "boost/bind.hpp"
 #include "boost/thread.hpp"
+#include "boost/signals2.hpp"
 #include "boost/lockfree/queue.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 
-//using namespace boost;
+size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg);
 
-size_t download_file_callback(void* ptr, size_t size, size_t count, void* stream)
-{
-	static void* stream_id = 0;
-	static int download_count = 0;
-	static int download_count_tot = 0;
-
-	if (stream_id != stream) {
-		download_count = 0;
-		stream_id = stream;
-	}
-
-	download_count += (int)count;
-	download_count_tot += (int)count;
-	if (download_count >= (int)10e5) {
-		download_count -= (int)10e5;
-		// Display progress
-		printf("\rDownloading %0.1f MB", download_count_tot / 10e6);
-		fflush(stdout);
-	}
-
-	// Add data to download data stream
-	((std::stringstream*) stream)->write((const char*)ptr, (std::streamsize) count);
-	return count;
-}
 
 class DownloadManagerThread {
 public:
 
-	void download(const std::string& url)
+	void attach_signals(boost::function<void(int)>  _signal_download_done,
+						boost::function<void(void)> _signal_download_progress,
+						int _thread_idx)
+	{
+		thread_idx = _thread_idx;
+		signal_download_done.connect(_signal_download_done);
+		signal_download_progress.connect(_signal_download_progress);
+	}
+
+	void start_download(const std::string &url)
 	{
 		running = true;
 		thread = new boost::thread(&DownloadManagerThread::download_file, this, url);
+		download_count = 0;
+		download_count_progress = 0;
 	}
 
 	bool is_running(void)
@@ -62,33 +51,53 @@ public:
 		}
 	}
 
+	void append_data(const char* data, std::streamsize size)
+	{
+		download_count += (int)size;
+		download_count_progress += (int)size;
+		if (download_count_progress >= (int)10e5) {
+			download_count_progress -= (int)10e5;
+			signal_download_progress();
+		}
+	}
+
+	float get_progress(void)
+	{
+		return (float) (download_count / 10e6);
+	}
+
+
 private:
+	int thread_idx = -1;
 	bool running = false;
+	int download_count = 0;
+	int download_count_progress = 0;
+	static const int download_progress_size = (int) 10e5;
+	std::stringstream download_data;
+
 	boost::thread* thread;
+
+	boost::signals2::signal<void(int)>  signal_download_done;
+	boost::signals2::signal<void(void)> signal_download_progress;
 
 	void download_file(const std::string& url)
 	{
-		std::stringstream download_data;
-
 		CURL* curl = curl_easy_init();
 		if (curl) {
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &download_data);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_file_callback);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-
-			printf("Downloading 0 MB");
-			fflush(stdout);
 
 			CURLcode res = curl_easy_perform(curl);
 
 			if (res != CURLE_OK) {
-				printf(", failed.\n");
-				printf("CURL error: %s\n", curl_easy_strerror(res));
+				//printf(", failed.\n");
+				//printf("CURL error: %s\n", curl_easy_strerror(res));
 				download_data.clear();
 			}
 			else {
-				printf(", OK.\n");
+				//printf(", OK.\n");
 			}
 
 			curl_easy_cleanup(curl);
@@ -96,18 +105,18 @@ private:
 
 		download_data.seekg(0, std::stringstream::end);
 		unsigned int length = (int)download_data.tellg();
-		printf("file size %d\n", length);
-
-		printf("pos1 %d\n", (int)thread);
-		delete thread;
-		printf("pos2 %d\n", (int)thread);
-		thread = NULL;
-		printf("pos3 %d\n", (int)thread);
-
-
+		
+		running = false;
+		signal_download_done(thread_idx);
 	}
-
 };
+
+size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
+{
+	DownloadManagerThread* download_manager_thread = (DownloadManagerThread*)arg;
+	download_manager_thread->append_data((const char*)ptr, (std::streamsize) count);
+	return count;
+}
 
 class DownloadManager {
 public:
@@ -115,7 +124,12 @@ public:
 	{
 		curl_global_init(CURL_GLOBAL_ALL);
 
-		//manager_thread = new boost::thread(&DownloadManager::manager, this);
+		for (int thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
+
+			threads[thread_idx].attach_signals(boost::bind(&DownloadManager::download_done_callback, this, _1), 
+											   boost::bind(&DownloadManager::download_progress_callback, this), 
+											   thread_idx);
+		}
 	}
 
 	~DownloadManager(void)
@@ -123,7 +137,14 @@ public:
 		curl_global_cleanup();
 	}
 
-	bool download(const boost::gregorian::date &date)
+	void download(const boost::gregorian::date& date)
+	{
+		if (!start_download(date)) {
+			download_queue.push(date);
+		}
+	}
+
+	bool start_download(const boost::gregorian::date &date)
 	{
 		int thread_idx;
 		for (thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
@@ -138,11 +159,8 @@ public:
 		}
 
 		std::string url = make_url(date);
-		printf("Downloading URL: %s\n", make_url(date).c_str());
-
+		threads[thread_idx].start_download(url);
 		active_thread_count++;
-		threads[thread_idx].download(url);
-
 		return true;
 	}
 
@@ -152,22 +170,45 @@ public:
 			boost::posix_time::seconds seconds(1);
 			boost::this_thread::sleep(seconds);
 		}
-		//for (int thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
-		//	threads[thread_idx].join();
-		//}
 	}
+
+	void download_done_callback(int thread_idx)
+	{
+		printf("\nDownload done %d\n", thread_idx);
+		active_thread_count--;
+		if (download_queue.size() > 0) {
+			if (start_download(download_queue.front())) {
+				download_queue.pop();
+			}
+		}
+	}
+
+	void download_progress_callback(void)
+	{
+		bool first = true;
+		printf("\33[2K\r");
+		for (int thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
+			if (threads[thread_idx].is_running()) {
+				if (!first) {
+					printf("  ");
+				} else {
+					first = false;
+				}
+
+				printf("Progress(%d) % 3.1f MB", thread_idx, threads[thread_idx].get_progress());
+			}
+		}
+		fflush(stdout);
+	}
+
 
 private:
-	static const int thread_max_count = 5;
+	static const int thread_max_count = 2;
 	DownloadManagerThread threads[thread_max_count];
 
-	boost::thread* manager_thread;
 	int active_thread_count = 0;
 
-	void manager(void)
-	{
-
-	}
+	std::queue<boost::gregorian::date> download_queue;
 
 	std::string make_url(boost::gregorian::date date)
 	{
@@ -176,41 +217,16 @@ private:
 		url << "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/" << date << ".csv.gz";
 		return url.str();
 	}
-
-	/*
-		for (int thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
-			curl[thread_idx] = NULL;
-			thread_running[thread_idx] = false;
-		}
-
-	CURL* curl[thread_max_count];
-	bool thread_running[thread_max_count];
-	*/
-
-	/*
-	printf("Starting thread 1\n");
-	boost::thread downloader_thread1(downloader, boost::gregorian::date(2017, 11, 21));
-	printf("Starting thread 2\n");
-	boost::thread downloader_thread2(downloader, boost::gregorian::date(2017, 11, 22));
-	printf("Starting thread 3\n");
-	boost::thread downloader_thread3(downloader, boost::gregorian::date(2017, 11, 23));
-
-	printf("Waiting for thread 1\n");
-	downloader_thread1.join();
-	downloader_thread2.join();
-	downloader_thread3.join();
-
-	printf("Done threads\n");
-	*/
 };
 
 int main()
 {
 	DownloadManager download_manager;
 
-	download_manager.download(boost::gregorian::date(2017, 11, 21));
-	//download_manager.download(boost::gregorian::date(2017, 11, 22));
-	//download_manager.download(boost::gregorian::date(2017, 11, 23));
+	download_manager.download(boost::gregorian::date(2017, 05, 21));
+	download_manager.download(boost::gregorian::date(2017, 05, 22));
+	download_manager.download(boost::gregorian::date(2017, 05, 23));
+	download_manager.download(boost::gregorian::date(2017, 05, 25));
 
 	download_manager.join();
 
