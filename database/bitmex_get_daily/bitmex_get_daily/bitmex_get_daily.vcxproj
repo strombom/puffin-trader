@@ -152,6 +152,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="bitmex_get_daily.cpp" />
+    <ClCompile Include="DownloadManager.cpp" />
+    <ClCompile Include="DownloadManagerThread.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DownloadManager.h" />
+    <ClInclude Include="DownloadManagerThread.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
