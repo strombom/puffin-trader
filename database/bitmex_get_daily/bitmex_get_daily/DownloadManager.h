@@ -1,16 +1,15 @@
 #pragma once
 
 #include <queue>
-#include "boost/date_time/gregorian/gregorian.hpp"
 
 #include "DownloadManagerThread.h"
 
 class DownloadManager {
 public:
-    DownloadManager(void);
+    DownloadManager(std::string _url_front, std::string _url_back);
     ~DownloadManager(void);
 
-    void download(const boost::gregorian::date& date);
+    void download(std::string _url_middle);
 
     void join(void);
     void download_done_callback(int thread_idx);
@@ -20,8 +19,8 @@ private:
     static const int thread_max_count = 2;
     DownloadManagerThread threads[thread_max_count];
     int active_thread_count = 0;
-    std::queue<boost::gregorian::date> download_queue;
+    std::queue<std::string> download_url_queue;
+    std::string url_front, url_back;
 
-    bool start_download(const boost::gregorian::date& date);
-    std::string make_url(boost::gregorian::date date);
+    bool start_download(std::string url);
 };
