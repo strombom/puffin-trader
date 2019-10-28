@@ -21,6 +21,8 @@ private:
     int active_thread_count = 0;
     std::queue<std::string> download_url_queue;
     std::string url_front, url_back;
+    
+    int current_download_id = 0;
 
     bool start_download(std::string url);
 };
