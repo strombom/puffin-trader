@@ -2,7 +2,6 @@
 
 #include "curl/curl.h"
 
-#pragma warning (disable : 26444)
 
 DownloadManager::DownloadManager(std::string _url_front, std::string _url_back)
 {
@@ -52,7 +51,7 @@ void DownloadManager::download_done_callback()
 {
     while (threads.size() > 0 && threads[0]->get_state() == DownloadState::success)
     {
-        printf("\nDone (%s)\n", threads[0]->get_url().c_str());
+        printf("\nDownloaded (%s)\n", threads[0]->get_url().c_str());
         threads.pop_front();
 
         if (download_url_queue.size() > 0) {

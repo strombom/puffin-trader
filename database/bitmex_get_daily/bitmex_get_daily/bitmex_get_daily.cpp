@@ -1,9 +1,11 @@
 // bitmex_get_daily.cpp
 //
 
-#include "DownloadManager.h"
+#pragma warning (disable : 26444)
 
-#include "H5Cpp.h"
+#include "DownloadManager.h"
+#include "BitmexDaily.h"
+
 #include "boost/date_time/gregorian/gregorian.hpp"
 
 
@@ -17,6 +19,9 @@ std::string date_to_string(boost::gregorian::date date)
 
 int main()
 {
+    BitmexDaily bitmex_daily("BTCUSD");
+
+    /*
     DownloadManager download_manager("https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/", ".csv.gz");
 
     download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 21)));
@@ -29,6 +34,7 @@ int main()
     download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 28)));
 
     download_manager.join();
+    */
 
     return 0;
 }
