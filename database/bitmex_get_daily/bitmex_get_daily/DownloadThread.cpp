@@ -5,39 +5,31 @@
 #pragma warning (disable : 26812)
 #pragma warning (disable : 26444)
 
-void DownloadThread::attach_signals(boost::function<void(int, int)> _signal_download_done,
-                                           boost::function<void(void)>     _signal_download_progress,
-                                           int _thread_idx)
+void DownloadThread::attach_signals(boost::function<void(void)> _signal_download_done,
+                                    boost::function<void(void)> _signal_download_progress)
 {
-    thread_idx = _thread_idx;
     signal_download_done.connect(_signal_download_done);
     signal_download_progress.connect(_signal_download_progress);
 }
 
-std::stringstream* DownloadThread::get_data(void)
+void DownloadThread::start_download(const std::string& _url)
 {
-    return &download_data;
-}
-
-void DownloadThread::start_download(const std::string& _url, int _download_id)
-{
-    download_id = _download_id;
     url = _url;
     restart_download();
 }
 
 void DownloadThread::restart_download(void)
 {
-    running = true;
     thread = new boost::thread(&DownloadThread::download_file, this);
     download_data.clear();
     download_count = 0;
     download_count_progress = 0;
+    state = DownloadState::downloading;
 }
 
-bool DownloadThread::is_running(void)
+std::string DownloadThread::get_url(void)
 {
-    return running;
+    return url;
 }
 
 void DownloadThread::join(void)
@@ -70,13 +62,14 @@ DownloadState DownloadThread::get_state(void)
     return state;
 }
 
-int DownloadThread::get_download_id(void)
+std::stringstream* DownloadThread::get_data(void)
 {
-    return download_id;
+    return &download_data;
 }
 
 void DownloadThread::download_file(void)
 {
+
     CURL* curl = curl_easy_init();
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -84,13 +77,18 @@ void DownloadThread::download_file(void)
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_file_callback);
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         CURLcode res = curl_easy_perform(curl);
-        if (res != CURLE_OK) {
+        if (res == CURLE_OK) {
+            state = DownloadState::success;
+        } else {
             download_data.clear();
         }
         curl_easy_cleanup(curl);
-    }    
-    running = false;
-    signal_download_done(thread_idx, download_id);
+    }
+
+    if (state != DownloadState::success) {
+        state = DownloadState::failed;
+    }
+    signal_download_done();
 }
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)

@@ -10,13 +10,6 @@ DownloadManager::DownloadManager(std::string _url_front, std::string _url_back)
     url_back = _url_back;
 
     curl_global_init(CURL_GLOBAL_ALL);
-
-    for (int thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
-
-        threads[thread_idx].attach_signals(boost::bind(&DownloadManager::download_done_callback, this, _1, _2),
-                                           boost::bind(&DownloadManager::download_progress_callback, this),
-                                           thread_idx);
-    }
 }
 
 DownloadManager::~DownloadManager(void)
@@ -34,70 +27,61 @@ void DownloadManager::download(std::string _url_middle)
 
 bool DownloadManager::start_download(std::string url)
 {
-    int thread_idx;
-    for (thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
-        if (!threads[thread_idx].is_running()) {
-            break;
-        }
-    }
-
-    if (thread_idx == thread_max_count) {
-        // No free thread
+    if (threads.size() == thread_max_count) {
         return false;
     }
 
-    threads[thread_idx].start_download(url, next_download_id);
-    active_thread_count++;
-    next_download_id++;
+    std::unique_ptr<DownloadThread> download_thread(new DownloadThread);
+    download_thread->attach_signals(boost::bind(&DownloadManager::download_done_callback, this),
+                                    boost::bind(&DownloadManager::download_progress_callback, this));
+    download_thread->start_download(url);
+
+    threads.push_back(std::move(download_thread));
     return true;
 }
 
 void DownloadManager::join(void)
 {
-    while (active_thread_count > 0) {
+    while (threads.size() > 0) {
         boost::posix_time::seconds seconds(1);
         boost::this_thread::sleep(seconds);
     }
 }
 
-void DownloadManager::download_done_callback(int thread_idx, int download_id)
+void DownloadManager::download_done_callback()
 {
+    while (threads.size() > 0 && threads[0]->get_state() == DownloadState::success)
+    {
+        printf("\nDone (%s)\n", threads[0]->get_url().c_str());
+        threads.pop_front();
 
-
-
-    std::stringstream* data = threads[thread_idx].get_data();
-    data->seekg(0, std::stringstream::end);
-    unsigned int length = (int) data->tellg();
-
-    printf("\nDownload done thread(%d), id(%d), length %d\n", thread_idx, download_id, length);
-
-    if (length == 0) {
-        threads[thread_idx].restart_download();
-        return;
+        if (download_url_queue.size() > 0) {
+            if (start_download(download_url_queue.front())) {
+                download_url_queue.pop();
+            }
+        }
     }
 
-    active_thread_count--;
-    if (download_url_queue.size() > 0) {
-        if (start_download(download_url_queue.front())) {
-            download_url_queue.pop();
+    for (int idx = 0; idx < threads.size(); idx++) {
+        if (threads[idx]->get_state() == DownloadState::failed) {
+            threads[idx]->restart_download();
         }
     }
 }
 
 void DownloadManager::download_progress_callback(void)
 {
-    bool first = true;
     printf("\33[2K\r");
-    for (int thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
-        if (threads[thread_idx].is_running()) {
-            if (!first) {
-                printf("  ");
-            }
-            else {
-                first = false;
-            }
+    for (int idx = 0; idx < threads.size(); idx++) {
 
-            printf("Progress(%d) % 3.1f MB", thread_idx, threads[thread_idx].get_progress());
+        if (threads[idx]->get_state() == DownloadState::downloading) {
+            printf("Progress % 3.1f MB ", threads[idx]->get_progress());
+
+        } else if (threads[idx]->get_state() == DownloadState::success) {
+            printf("Progress done ");
+
+        } else if (threads[idx]->get_state() == DownloadState::failed) {
+            printf("Progress failed ");
         }
     }
     fflush(stdout);
