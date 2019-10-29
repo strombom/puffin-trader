@@ -71,17 +71,17 @@ void DownloadManager::download_done_callback()
 
 void DownloadManager::download_progress_callback(void)
 {
-    printf("\33[2K\r");
+    printf("\33[2K\r Progress");
     for (int idx = 0; idx < threads.size(); idx++) {
 
         if (threads[idx]->get_state() == DownloadState::downloading) {
-            printf("Progress % 3.1f MB ", threads[idx]->get_progress());
+            printf("  % 5.1f MB ", threads[idx]->get_progress());
 
         } else if (threads[idx]->get_state() == DownloadState::success) {
-            printf("Progress done ");
+            printf("  done ");
 
         } else if (threads[idx]->get_state() == DownloadState::failed) {
-            printf("Progress failed ");
+            printf("  failed ");
         }
     }
     fflush(stdout);

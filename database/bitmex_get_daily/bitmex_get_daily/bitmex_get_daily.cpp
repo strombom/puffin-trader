@@ -23,6 +23,10 @@ int main()
     download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 22)));
     download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 23)));
     download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 24)));
+    download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 25)));
+    download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 26)));
+    download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 27)));
+    download_manager.download(date_to_string(boost::gregorian::date(2017, 05, 28)));
 
     download_manager.join();
 

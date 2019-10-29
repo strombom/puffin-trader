@@ -17,7 +17,7 @@ public:
 
 private:
     std::queue<std::string> download_url_queue;
-    static const int thread_max_count = 2;
+    static const int thread_max_count = 4;
     std::deque<std::unique_ptr<DownloadThread>> threads;
     std::string url_front, url_back;
     
