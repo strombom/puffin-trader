@@ -13,7 +13,7 @@ DownloadManager::DownloadManager(std::string _url_front, std::string _url_back)
 
     for (int thread_idx = 0; thread_idx < thread_max_count; thread_idx++) {
 
-        threads[thread_idx].attach_signals(boost::bind(&DownloadManager::download_done_callback, this, _1),
+        threads[thread_idx].attach_signals(boost::bind(&DownloadManager::download_done_callback, this, _1, _2),
                                            boost::bind(&DownloadManager::download_progress_callback, this),
                                            thread_idx);
     }
@@ -46,8 +46,9 @@ bool DownloadManager::start_download(std::string url)
         return false;
     }
 
-    threads[thread_idx].start_download(url);
+    threads[thread_idx].start_download(url, next_download_id);
     active_thread_count++;
+    next_download_id++;
     return true;
 }
 
@@ -59,13 +60,16 @@ void DownloadManager::join(void)
     }
 }
 
-void DownloadManager::download_done_callback(int thread_idx)
+void DownloadManager::download_done_callback(int thread_idx, int download_id)
 {
+
+
+
     std::stringstream* data = threads[thread_idx].get_data();
     data->seekg(0, std::stringstream::end);
     unsigned int length = (int) data->tellg();
 
-    printf("\nDownload done %d, length %d\n", thread_idx, length);
+    printf("\nDownload done thread(%d), id(%d), length %d\n", thread_idx, download_id, length);
 
     if (length == 0) {
         threads[thread_idx].restart_download();
