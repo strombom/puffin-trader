@@ -3,13 +3,16 @@
 
 #include <iostream>
 
+#include "Logger.h"
 #include "Bitmex.h"
 #include "Database.h"
+#include "DownloadManager.h"
 
 
 int main()
 {
+    DownloadManager download_manager;
     Database database("C:\\development\\github\\puffin-trader\\database");
+    Bitmex bitmex(database, download_manager);
 
-    std::cout << "Hello World!\n";
 }

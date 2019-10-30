@@ -154,11 +154,17 @@
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="Bitmex.cpp" />
     <ClCompile Include="Database.cpp" />
+    <ClCompile Include="DownloadManager.cpp" />
+    <ClCompile Include="DownloadThread.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmex.h" />
     <ClInclude Include="Database.h" />
+    <ClInclude Include="DownloadManager.h" />
+    <ClInclude Include="DownloadThread.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="Server.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,13 +1,11 @@
 #include "DownloadManager.h"
+#include "Logger.h"
 
 #include "curl/curl.h"
 
 
-DownloadManager::DownloadManager(std::string _url_front, std::string _url_back)
+DownloadManager::DownloadManager(void)
 {
-    url_front = _url_front;
-    url_back = _url_back;
-
     curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -16,9 +14,8 @@ DownloadManager::~DownloadManager(void)
     curl_global_cleanup();
 }
 
-void DownloadManager::download(std::string _url_middle)
+void DownloadManager::download(std::string url)
 {
-    std::string url = url_front + _url_middle + url_back;
     if (!start_download(url)) {
         download_url_queue.push(url);
     }
