@@ -1,6 +1,6 @@
 #include "Bitmex.h"
 #include "Logger.h"
-
+#include "DateTime.h"
 
 
 Bitmex::Bitmex(Database& _database, DownloadManager& _download_manager)
@@ -21,6 +21,11 @@ void Bitmex::shutdown(void)
 void Bitmex::main_loop(void)
 {
     while (running) {
+
+        DateTime last_daily = database->get_attribute_date("bitmex", "last_daily");
+
+
+
         boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
     }
 }
