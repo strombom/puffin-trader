@@ -7,6 +7,7 @@
 enum class DownloadState {
     idle,
     downloading,
+    aborting,
     failed,
     success
 };
@@ -22,6 +23,7 @@ public:
     DownloadState get_state(void);
     std::stringstream* get_data(void);
     void join(void);
+    void shutdown(void);
     std::string get_url(void);
 
 private:
@@ -34,7 +36,7 @@ private:
 
     DownloadState state = DownloadState::idle;
 
-    boost::thread* thread;
+    boost::thread* download_thread;
 
     boost::signals2::signal<void(void)> signal_download_done;
     boost::signals2::signal<void(void)> signal_download_progress;
@@ -43,3 +45,4 @@ private:
 };
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg);
+size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow);

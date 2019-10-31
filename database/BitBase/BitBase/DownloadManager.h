@@ -11,6 +11,7 @@ public:
 
     void download(std::string url);
 
+    void shutdown(void);
     void join(void);
     void download_done_callback(void);
     void download_progress_callback(void);

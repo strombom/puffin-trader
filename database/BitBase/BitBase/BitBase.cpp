@@ -15,4 +15,7 @@ int main()
     Database database("C:\\development\\github\\puffin-trader\\database");
     Bitmex bitmex(database, download_manager);
 
+    system("pause");
+    download_manager.shutdown();
+    bitmex.shutdown();
 }

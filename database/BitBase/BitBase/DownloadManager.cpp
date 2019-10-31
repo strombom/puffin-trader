@@ -36,6 +36,11 @@ bool DownloadManager::start_download(std::string url)
     return true;
 }
 
+void DownloadManager::shutdown(void)
+{
+
+}
+
 void DownloadManager::join(void)
 {
     while (threads.size() > 0) {

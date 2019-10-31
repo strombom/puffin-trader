@@ -13,7 +13,6 @@ public:
     void error(const char* format, ...);
 
 private:
-    boost::posix_time::time_facet *time_facet;
 
     std::string get_timestamp(void);
 

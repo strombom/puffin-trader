@@ -6,13 +6,15 @@ Logger logger;
 
 Logger::Logger(void)
 {
-    time_facet = new boost::posix_time::time_facet("%Y-%m-%d %H:%M:%s");
+
 }
 
 std::string Logger::get_timestamp(void)
 {
     std::ostringstream ss;
-    ss.imbue(std::locale(std::locale::classic(), time_facet));
+    boost::posix_time::time_facet* time_facet;
+    ss.imbue(std::locale(std::locale::classic(), 
+             new boost::posix_time::time_facet("%Y-%m-%d %H:%M:%s")));
     ss << boost::posix_time::microsec_clock::local_time();
     return ss.str();
 }
