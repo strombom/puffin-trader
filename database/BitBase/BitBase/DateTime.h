@@ -8,7 +8,7 @@
 class DateTime
 {
 public:
-    DateTime(void);
+    DateTime(void); // Initialized with current date/time
     DateTime(int year, int month, int day, int hour, int minute, double second);
 
     std::string get_string(void) const;
