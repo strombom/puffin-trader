@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Database.h"
-#include "DownloadManager.h"
-
+#include <stdio.h>
 #include "boost/signals2.hpp"
 #include "boost/thread.hpp"
+
+#include "Database.h"
+#include "DownloadManager.h"
 
 
 class Bitmex

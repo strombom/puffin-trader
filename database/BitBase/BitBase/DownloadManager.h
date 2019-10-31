@@ -1,8 +1,10 @@
 #pragma once
 
+#include <stdio.h>
 #include <queue>
 
 #include "DownloadThread.h"
+
 
 class DownloadManager {
 public:

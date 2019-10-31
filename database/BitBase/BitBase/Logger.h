@@ -1,8 +1,5 @@
 #pragma once
 
-#include "boost/date_time.hpp"
-
-
 class Logger
 {
 public:
@@ -13,8 +10,6 @@ public:
     void error(const char* format, ...);
 
 private:
-
-    std::string get_timestamp(void);
 
 };
 
