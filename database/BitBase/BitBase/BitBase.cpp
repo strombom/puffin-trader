@@ -13,11 +13,13 @@
 
 int main()
 {
-    //DownloadManager download_manager;
+    DownloadManager download_manager;
     Database database("C:\\development\\github\\puffin-trader\\database\\data");
-    //Bitmex bitmex(database, download_manager);
+    Bitmex bitmex(database, download_manager);
+
+    logger.info("hello g");
 
     //system("pause");
-    //download_manager.shutdown();
-    //bitmex.shutdown();
+    download_manager.shutdown();
+    bitmex.shutdown();
 }

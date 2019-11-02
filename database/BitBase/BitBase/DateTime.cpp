@@ -16,12 +16,12 @@ DateTime::DateTime(int year, int month, int day, int hour, int minute, double se
                                     boost::posix_time::microseconds(microsecond));
 }
 
-std::string DateTime::get_string(void) const
+std::string DateTime::to_string(void) const
 {
-    return get_string("%Y-%m-%d %H:%M:%s");
+    return to_string("%Y-%m-%d %H:%M:%s");
 }
 
-std::string DateTime::get_string(const char* format) const
+std::string DateTime::to_string(const char* format) const
 {
     std::ostringstream ss;
     ss.imbue(std::locale(std::locale::classic(),

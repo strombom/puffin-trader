@@ -32,14 +32,13 @@ DateTime Database::get_attribute_date(const std::string& key_a, const std::strin
     SQLite::Statement query(*attributes_db, "SELECT COUNT(1) FROM attributes WHERE key = ?");
     query.bind(1, (key_a + "_" + key_b).c_str());
     query.executeStep();
-
     return DateTime();
 }
 
 void Database::set_attribute_date(const std::string& key_a, const std::string& key_b, const DateTime& date_time)
 {
     SQLite::Statement query(*attributes_db, "INSERT OR REPLACE INTO attributes(\"key\", \"value\") VALUES(?, ?)");
-    query.bind(1, (key_a + "_" + key_b).c_str());
-    query.bind(2, date_time.get_string().c_str());
+    query.bind(1, (key_a + "_"  + key_b).c_str());
+    query.bind(2, date_time.to_string().c_str());
     query.exec();
 }

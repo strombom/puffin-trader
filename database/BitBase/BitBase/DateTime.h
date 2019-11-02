@@ -11,8 +11,8 @@ public:
     DateTime(void); // Initialized with current date/time
     DateTime(int year, int month, int day, int hour, int minute, double second);
 
-    std::string get_string(void) const;
-    std::string get_string(const char* format) const;
+    std::string to_string(void) const;
+    std::string to_string(const char* format) const;
 
 private:
     boost::posix_time::ptime time;
