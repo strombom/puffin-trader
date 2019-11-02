@@ -53,12 +53,12 @@ TimeDelta::TimeDelta(const Duration& _duration, const TDurations&... _durations)
 }
 
 template <class ... TDurations>
+inline
 void TimeDelta::add_delta(const Duration& _duration, const TDurations&... _durations)
 {
     add_delta(_duration);
     add_delta(_durations...);
 }
-
 
 class DateTime
 {

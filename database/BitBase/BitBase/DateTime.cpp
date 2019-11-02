@@ -75,7 +75,6 @@ DateTime DateTime::operator-(const TimeDelta& time_delta)
     return DateTime(time - time_delta.get_date_duration() - time_delta.get_time_duration());
 }
 
-inline
 TimeDelta::TimeDelta(const Duration& _duration)
 {
     duration = _duration;

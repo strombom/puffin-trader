@@ -29,11 +29,8 @@ void Bitmex::main_loop(void)
 
         DateTime yesterday = DateTime(); 
         logger.info("now %s", yesterday.to_string().c_str());
-        yesterday = yesterday - TimeDelta(Duration::days(1), Duration::hours(1));
+        yesterday = yesterday - TimeDelta(Duration::days(1));
         logger.info("yesterday %s", yesterday.to_string().c_str());
-        /*now.set_hour(0);
-        now.set_minute(0);
-        now.set_second(0);*/
 
 
         boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
