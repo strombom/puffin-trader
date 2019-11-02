@@ -14,8 +14,6 @@ public:
 
 private:
     boost::mutex mutex;
-
-    void print(const char* prefix, const char* format, ...);
 };
 
 extern Logger logger;

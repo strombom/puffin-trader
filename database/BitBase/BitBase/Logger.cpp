@@ -10,10 +10,11 @@ Logger::Logger(void)
 
 }
 
-void Logger::print(const char* prefix, const char* format, ...)
+
+void Logger::info(const char* format, ...)
 {
     boost::mutex::scoped_lock lock(mutex);
-    printf("%s %s: ", DateTime().to_string().c_str(), prefix);
+    printf("%s INFO: ", DateTime().to_string().c_str());
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -21,26 +22,24 @@ void Logger::print(const char* prefix, const char* format, ...)
     printf("\n");
 }
 
-void Logger::info(const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    print("INFO", format, args);
-    va_end(args);
-}
-
 void Logger::warn(const char* format, ...)
 {
+    boost::mutex::scoped_lock lock(mutex);
+    printf("%s WARN: ", DateTime().to_string().c_str());
     va_list args;
     va_start(args, format);
-    print("WARN", format, args);
+    vprintf(format, args);
     va_end(args);
+    printf("\n");
 }
 
 void Logger::error(const char* format, ...)
 {
+    boost::mutex::scoped_lock lock(mutex);
+    printf("%s ERR!: ", DateTime().to_string().c_str());
     va_list args;
     va_start(args, format);
-    print("ERR!", format, args);
+    vprintf(format, args);
     va_end(args);
+    printf("\n");
 }

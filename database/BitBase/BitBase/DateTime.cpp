@@ -6,6 +6,14 @@ DateTime::DateTime(void)
     time = boost::posix_time::microsec_clock::local_time();
 }
 
+DateTime::DateTime(const std::string& string)
+{
+    boost::posix_time::time_input_facet* tif = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%s");
+    std::istringstream iss(string);
+    iss.imbue(std::locale(std::locale::classic(), tif));
+    iss >> time;
+}
+
 DateTime::DateTime(int year, int month, int day, int hour, int minute, double second)
 {
     int microsecond = (int)(100000 * (second - (int)second));
@@ -24,8 +32,7 @@ std::string DateTime::to_string(void) const
 std::string DateTime::to_string(const char* format) const
 {
     std::ostringstream ss;
-    ss.imbue(std::locale(std::locale::classic(),
-        new boost::posix_time::time_facet(format)));
+    ss.imbue(std::locale(std::locale::classic(), new boost::posix_time::time_facet(format)));
     ss << time;
     return ss.str();
 }
