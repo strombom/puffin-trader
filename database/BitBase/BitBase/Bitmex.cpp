@@ -27,7 +27,13 @@ void Bitmex::main_loop(void)
         DateTime tick_data_last_timestamp = database->get_attribute("BITMEX", "BTCUSD" ,"tick_data_last_timestamp", dataset_first_timestamp);
         logger.info("tick_data_last_timestamp %s", tick_data_last_timestamp.to_string().c_str());
 
-        DateTime now;
+        DateTime yesterday = DateTime(); 
+        logger.info("now %s", yesterday.to_string().c_str());
+        yesterday = yesterday - TimeDelta(Duration::days(1), Duration::hours(1));
+        logger.info("yesterday %s", yesterday.to_string().c_str());
+        /*now.set_hour(0);
+        now.set_minute(0);
+        now.set_second(0);*/
 
 
         boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
