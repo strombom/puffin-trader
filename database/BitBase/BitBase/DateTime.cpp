@@ -4,7 +4,7 @@
 
 DateTime::DateTime(void)
 {
-    time = boost::posix_time::microsec_clock::local_time();
+    time = boost::posix_time::microsec_clock::universal_time();
 }
 
 DateTime::DateTime(const boost::posix_time::ptime& _time)
