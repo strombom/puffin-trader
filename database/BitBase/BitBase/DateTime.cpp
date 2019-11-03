@@ -2,11 +2,6 @@
 #include "Logger.h"
 
 
-DateTime::DateTime(void)
-{
-    time = boost::posix_time::microsec_clock::universal_time();
-}
-
 DateTime::DateTime(const boost::posix_time::ptime& _time)
 {
     time = boost::posix_time::ptime(_time);
@@ -28,6 +23,11 @@ DateTime::DateTime(int year, int month, int day, int hour, int minute, double se
                                     boost::posix_time::minutes(minute) +
                                     boost::posix_time::seconds((int)second) +
                                     boost::posix_time::microseconds(microsecond));
+}
+
+DateTime DateTime::now(void)
+{
+    return DateTime(boost::posix_time::microsec_clock::universal_time());
 }
 
 std::string DateTime::to_string(void) const
@@ -74,4 +74,14 @@ void DateTime::set_second(double second)
 DateTime DateTime::operator-(const TimeDelta& time_delta)
 {
     return DateTime(time - time_delta.get_date_duration() - time_delta.get_time_duration());
+}
+
+bool DateTime::operator<(const DateTime& date_time)
+{
+    return time < date_time.time;
+}
+
+bool DateTime::operator>(const DateTime& date_time)
+{
+    return time > date_time.time;
 }

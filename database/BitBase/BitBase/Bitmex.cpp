@@ -25,12 +25,17 @@ void Bitmex::main_loop(void)
     while (running) {
 
         DateTime tick_data_last_timestamp = database->get_attribute("BITMEX", "BTCUSD" ,"tick_data_last_timestamp", dataset_first_timestamp);
-        logger.info("tick_data_last_timestamp %s", tick_data_last_timestamp.to_string().c_str());
 
-        DateTime yesterday = DateTime() - TimeDelta::days(1);
+        if (tick_data_last_timestamp < DateTime::now() - TimeDelta::days(1) - TimeDelta::hours(1)) {
+            // Last tick timestamp is more than 25 hours old, there should be a compressed daily archive available
 
-        logger.info("yesterday %s", yesterday.to_string().c_str());
 
+
+            logger.info("very older");
+            continue;
+        }
+
+        //logger.info("tick_data_last_timestamp %s", tick_data_last_timestamp.to_string().c_str());
 
         boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
     }

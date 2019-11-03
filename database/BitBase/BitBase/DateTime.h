@@ -9,10 +9,11 @@
 class DateTime
 {
 public:
-    DateTime(void); // Initialized with current UTC date/time
     DateTime(const std::string& string);
     DateTime(const boost::posix_time::ptime& _time);
     DateTime(int year, int month, int day, int hour, int minute, double second);
+
+    static DateTime now(void);
 
     std::string to_string(void) const;
     std::string to_string(const char* format) const;
@@ -22,6 +23,8 @@ public:
     void set_second(double second);
 
     DateTime operator-(const TimeDelta& time_delta);
+    bool operator<(const DateTime& date_time);
+    bool operator>(const DateTime& date_time);
 
 private:
     boost::posix_time::ptime time;

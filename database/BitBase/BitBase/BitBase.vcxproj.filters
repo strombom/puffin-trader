@@ -19,6 +19,18 @@
     <Filter Include="Header Files\DateTime">
       <UniqueIdentifier>{f92df73a-805b-4a49-bedd-64addd3935df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\DownloadManager">
+      <UniqueIdentifier>{42a65f3c-d396-40a0-85b1-9bc167530c33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Bitmex">
+      <UniqueIdentifier>{9d9f7eae-7a72-45b9-ad1f-3cb3597985b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Database">
+      <UniqueIdentifier>{484dea19-f135-421a-92bf-9e3d7f0c1417}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Server">
+      <UniqueIdentifier>{1d7a9b7b-4814-4193-9deb-f1b30245b101}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -53,21 +65,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Database.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Bitmex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DownloadManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DownloadThread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -79,6 +76,21 @@
     </ClInclude>
     <ClInclude Include="Duration.h">
       <Filter>Header Files\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="DownloadManager.h">
+      <Filter>Header Files\DownloadManager</Filter>
+    </ClInclude>
+    <ClInclude Include="DownloadThread.h">
+      <Filter>Header Files\DownloadManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Bitmex.h">
+      <Filter>Header Files\Bitmex</Filter>
+    </ClInclude>
+    <ClInclude Include="Database.h">
+      <Filter>Header Files\Database</Filter>
+    </ClInclude>
+    <ClInclude Include="Server.h">
+      <Filter>Header Files\Server</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
