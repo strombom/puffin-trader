@@ -7,6 +7,10 @@
 #include "Database.h"
 #include "DownloadManager.h"
 
+enum class BitmexState { 
+    Idle, 
+    DownloadingDaily
+};
 
 class Bitmex
 {
@@ -20,7 +24,8 @@ private:
     Database* database;
     DownloadManager* download_manager;
 
-    bool running = true;
+    bool thread_running = true;
+    BitmexState state;
 
     boost::thread* main_loop_thread;
 };
