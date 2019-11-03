@@ -156,6 +156,8 @@
     <ClCompile Include="Bitmex.cpp" />
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="DateTime.cpp" />
+    <ClCompile Include="Duration.cpp" />
+    <ClCompile Include="TimeDelta.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
     <ClCompile Include="DownloadThread.cpp" />
     <ClCompile Include="Logger.cpp" />
@@ -167,8 +169,10 @@
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="DownloadManager.h" />
     <ClInclude Include="DownloadThread.h" />
+    <ClInclude Include="Duration.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="TimeDelta.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

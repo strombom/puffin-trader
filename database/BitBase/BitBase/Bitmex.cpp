@@ -27,9 +27,8 @@ void Bitmex::main_loop(void)
         DateTime tick_data_last_timestamp = database->get_attribute("BITMEX", "BTCUSD" ,"tick_data_last_timestamp", dataset_first_timestamp);
         logger.info("tick_data_last_timestamp %s", tick_data_last_timestamp.to_string().c_str());
 
-        DateTime yesterday = DateTime(); 
-        logger.info("now %s", yesterday.to_string().c_str());
-        yesterday = yesterday - TimeDelta(Duration::days(1));
+        DateTime yesterday = DateTime() - TimeDelta::days(1);
+
         logger.info("yesterday %s", yesterday.to_string().c_str());
 
 
