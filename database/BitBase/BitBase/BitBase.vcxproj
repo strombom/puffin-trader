@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="Bitmex.cpp" />
+    <ClCompile Include="BitmexDaily.cpp" />
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="Duration.cpp" />
@@ -165,6 +166,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmex.h" />
+    <ClInclude Include="BitmexConstants.h" />
+    <ClInclude Include="BitmexDaily.h" />
     <ClInclude Include="Database.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="DownloadManager.h" />

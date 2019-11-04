@@ -2,7 +2,6 @@
 #include "Logger.h"
 #include "DateTime.h"
 
-static const DateTime dataset_first_timestamp(2017, 01, 01, 00, 00, 00.0);
 
 
 Bitmex::Bitmex(Database& _database, DownloadManager& _download_manager)
@@ -25,15 +24,18 @@ void Bitmex::main_loop(void)
     while (thread_running) {
 
         if (state == BitmexState::Idle) {
-            DateTime tick_data_last_timestamp = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", dataset_first_timestamp);
-            if (tick_data_last_timestamp < DateTime::now() - TimeDelta::hours(48 + 1)) {
-                // Last tick timestamp is more than 48 hours old, there should be a compressed daily archive available
+            DateTime tick_data_last_timestamp = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
+            if (tick_data_last_timestamp < DateTime::now() - TimeDelta::hours(24 + 1)) {
+                // Last tick timestamp is more than 25 hours old, there should be a compressed daily archive available
                 state = BitmexState::DownloadingDaily;
-                //logger.info("tick_data_last_timestamp %s", tick_data_last_timestamp.to_string().c_str());
+                bitmex_daily.start_download();
             }
         
         } else if (state == BitmexState::DownloadingDaily) {
-
+            // Check if daily data is downloaded
+            if (bitmex_daily.get_state() == BitmexDailyState::Idle) {
+                state = BitmexState::Idle;
+            }
 
         }
 

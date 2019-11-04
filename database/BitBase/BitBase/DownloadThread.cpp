@@ -42,11 +42,8 @@ void DownloadThread::join(void)
 void DownloadThread::shutdown(void)
 {
     if (download_thread != NULL) {
-        printf("shutdown 1\n");
         state = DownloadState::aborting;
-        printf("shutdown 2\n");
         download_thread->join();
-        printf("shutdown 3\n");
     }
 }
 

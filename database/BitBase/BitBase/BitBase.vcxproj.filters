@@ -31,24 +31,21 @@
     <Filter Include="Header Files\Server">
       <UniqueIdentifier>{1d7a9b7b-4814-4193-9deb-f1b30245b101}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Bitmex">
+      <UniqueIdentifier>{36f62c75-226e-4342-8d10-32a2d9949f44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DownloadManager">
+      <UniqueIdentifier>{b22f72b8-ba1f-4579-8432-562ae8347c62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Database">
+      <UniqueIdentifier>{5da34aeb-36b3-4bcd-ba64-32a750f19102}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Server">
+      <UniqueIdentifier>{a09e8bd8-a329-492b-ae02-ca03c8b87cde}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Server.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Database.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Bitmex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DownloadManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DownloadThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
@@ -62,6 +59,24 @@
     </ClCompile>
     <ClCompile Include="TimeDelta.cpp">
       <Filter>Source Files\DateTime</Filter>
+    </ClCompile>
+    <ClCompile Include="Bitmex.cpp">
+      <Filter>Source Files\Bitmex</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmexDaily.cpp">
+      <Filter>Source Files\Bitmex</Filter>
+    </ClCompile>
+    <ClCompile Include="DownloadThread.cpp">
+      <Filter>Source Files\DownloadManager</Filter>
+    </ClCompile>
+    <ClCompile Include="DownloadManager.cpp">
+      <Filter>Source Files\DownloadManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Database.cpp">
+      <Filter>Source Files\Database</Filter>
+    </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>Source Files\Server</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -91,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="Server.h">
       <Filter>Header Files\Server</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexDaily.h">
+      <Filter>Header Files\Bitmex</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexConstants.h">
+      <Filter>Header Files\Bitmex</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
