@@ -5,13 +5,20 @@
 
 #include "DownloadThread.h"
 
+using client_callback_done_t = boost::function<void(std::shared_ptr<std::vector<std::byte>>, std::string)>;
+
+class DownloadHandle {
+public:
+    //DownloadHandle(void);
+
+};
 
 class DownloadManager {
 public:
     DownloadManager(void);
     ~DownloadManager(void);
 
-    void download(std::string url);
+    void download(std::string url, std::string callback_arg, client_callback_done_t _client_callback_done);
 
     void shutdown(void);
     void join(void);
@@ -19,9 +26,9 @@ public:
     void download_progress_callback(void);
 
 private:
-    std::queue<std::string> download_url_queue;
-    static const int thread_max_count = 4;
+    //std::queue<std::string> threads;
+    static const int max_active_thread_count = 4;
     std::deque<std::unique_ptr<DownloadThread>> threads;
-    
-    bool start_download(std::string url);
+
+    void tick(void);
 };

@@ -12,7 +12,8 @@
 
 enum class BitmexState { 
     Idle, 
-    DownloadingDaily
+    DownloadingDaily,
+    Shutdown
 };
 
 class Bitmex
@@ -26,8 +27,9 @@ public:
 private:
     Database* database;
     DownloadManager* download_manager;
-    BitmexDaily bitmex_daily;
+    BitmexDaily* bitmex_daily;
 
+    boost::mutex state_mutex;
     bool thread_running = true;
     BitmexState state = BitmexState::Idle;
 

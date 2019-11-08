@@ -14,11 +14,10 @@ enum class DownloadState {
 
 class DownloadThread {
 public:
-    void attach_signals(boost::function<void(void)> _signal_download_done,
-                        boost::function<void(void)> _signal_download_progress);
-    void start_download(const std::string& url);
-    void restart_download(void);
-    void append_data(const char* data, std::streamsize size);
+    DownloadThread(const std::string& _url,
+        boost::function<void(void)> _signal_download_done,
+        boost::function<void(void)> _signal_download_progress);
+
     float get_progress(void);
     DownloadState get_state(void);
     std::stringstream* get_data(void);
@@ -32,7 +31,7 @@ private:
     static const int download_progress_size = (int)10e5;
 
     std::string url;
-    std::stringstream download_data;
+    std::shared_ptr<std::vector<std::byte>> download_data;
 
     DownloadState state = DownloadState::idle;
 
@@ -42,6 +41,8 @@ private:
     boost::signals2::signal<void(void)> signal_download_progress;
 
     void download_file(void);
+    void restart_download(void);
+    void append_data(const char* data, std::streamsize size);
 };
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg);

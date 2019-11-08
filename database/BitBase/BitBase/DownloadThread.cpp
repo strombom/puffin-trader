@@ -5,16 +5,13 @@
 #pragma warning (disable : 26812)
 #pragma warning (disable : 26444)
 
-void DownloadThread::attach_signals(boost::function<void(void)> _signal_download_done,
-                                    boost::function<void(void)> _signal_download_progress)
-{
-    signal_download_done.connect(_signal_download_done);
-    signal_download_progress.connect(_signal_download_progress);
-}
-
-void DownloadThread::start_download(const std::string& _url)
+DownloadThread::DownloadThread(const std::string& _url,
+                               boost::function<void(void)> _signal_download_done,
+                               boost::function<void(void)> _signal_download_progress)
 {
     url = _url;
+    signal_download_done.connect(_signal_download_done);
+    signal_download_progress.connect(_signal_download_progress);
     restart_download();
 }
 

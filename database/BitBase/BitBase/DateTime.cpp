@@ -2,6 +2,11 @@
 #include "Logger.h"
 
 
+DateTime::DateTime(void)
+{
+
+}
+
 DateTime::DateTime(const boost::posix_time::ptime& _time)
 {
     time = boost::posix_time::ptime(_time);
@@ -43,6 +48,13 @@ std::string DateTime::to_string(const char* format) const
     return ss.str();
 }
 
+void DateTime::set_time(int hour, int minute, double second)
+{
+    set_hour(hour);
+    set_minute(minute);
+    set_second(second);
+}
+
 void DateTime::set_hour(int hour)
 {
     time = boost::posix_time::ptime(time.date(),
@@ -71,9 +83,31 @@ void DateTime::set_second(double second)
         boost::posix_time::microseconds(microsecond));
 }
 
+DateTime DateTime::operator=(const TimeDelta& time_delta)
+{
+    return DateTime(time);
+}
+
 DateTime DateTime::operator-(const TimeDelta& time_delta)
 {
     return DateTime(time - time_delta.get_date_duration() - time_delta.get_time_duration());
+}
+
+DateTime DateTime::operator+(const TimeDelta& time_delta)
+{
+    return DateTime(time + time_delta.get_date_duration() + time_delta.get_time_duration());
+}
+
+DateTime& DateTime::operator-=(const TimeDelta& time_delta)
+{
+    time = time - time_delta.get_date_duration() - time_delta.get_time_duration();
+    return *this;
+}
+
+DateTime& DateTime::operator+=(const TimeDelta& time_delta)
+{
+    time = time + time_delta.get_date_duration() + time_delta.get_time_duration();
+    return *this;
 }
 
 bool DateTime::operator<(const DateTime& date_time)
@@ -84,4 +118,14 @@ bool DateTime::operator<(const DateTime& date_time)
 bool DateTime::operator>(const DateTime& date_time)
 {
     return time > date_time.time;
+}
+
+bool DateTime::operator<=(const DateTime& date_time)
+{
+    return time <= date_time.time;
+}
+
+bool DateTime::operator>=(const DateTime& date_time)
+{
+    return time >= date_time.time;
 }
