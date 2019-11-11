@@ -14,11 +14,12 @@ DownloadManager::~DownloadManager(void)
     curl_global_cleanup();
 }
 
-void DownloadManager::download(std::string url, std::string callback_arg, client_callback_done_t _client_callback_done)
+void DownloadManager::download(std::string url, std::string callback_arg, client_callback_done_t client_callback_done)
 {
-    std::unique_ptr<DownloadThread> download_thread(new DownloadThread(url, 
-                                                                       boost::bind(&DownloadManager::download_done_callback, this),
-                                                                       boost::bind(&DownloadManager::download_progress_callback, this)));
+    std::unique_ptr<DownloadThread> download_thread(new DownloadThread(url, callback_arg, client_callback_done,
+                                                    boost::bind(&DownloadManager::download_done_callback, this)));
+//                                                                       boost::bind(&DownloadManager::download_done_callback, this),
+//                                                                       boost::bind(&DownloadManager::download_progress_callback, this)));
 
     threads.push_back(std::move(download_thread));
 
@@ -65,8 +66,8 @@ void DownloadManager::join(void)
     }
 }
 
-void DownloadManager::download_done_callback()
-{
+//void DownloadManager::download_done_callback()
+//{
     /*
     while (threads.size() > 0 && threads[0]->get_state() == DownloadState::success)
     {
@@ -86,8 +87,9 @@ void DownloadManager::download_done_callback()
         }
     }
     */
-}
+//}
 
+/*
 void DownloadManager::download_progress_callback(void)
 {
     printf("\33[2K\r Progress");
@@ -105,3 +107,4 @@ void DownloadManager::download_progress_callback(void)
     }
     fflush(stdout);
 }
+*/

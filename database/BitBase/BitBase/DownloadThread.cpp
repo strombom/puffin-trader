@@ -5,13 +5,17 @@
 #pragma warning (disable : 26812)
 #pragma warning (disable : 26444)
 
-DownloadThread::DownloadThread(const std::string& _url,
-                               boost::function<void(void)> _signal_download_done,
-                               boost::function<void(void)> _signal_download_progress)
+
+DownloadThread::DownloadThread(const std::string& _url, std::string callback_arg, client_callback_done_t _client_callback_done)
 {
+    
+//    const std::string& _url,
+//                               boost::function<void(void)> _signal_download_done,
+//                               boost::function<void(void)> _signal_download_progress)
+//{
     url = _url;
-    signal_download_done.connect(_signal_download_done);
-    signal_download_progress.connect(_signal_download_progress);
+    //signal_download_done.connect(_signal_download_done);
+    //signal_download_progress.connect(_signal_download_progress);
     restart_download();
 }
 
@@ -19,8 +23,7 @@ void DownloadThread::restart_download(void)
 {
     state = DownloadState::downloading;
     download_thread = new boost::thread(&DownloadThread::download_file, this);
-    download_data.clear();
-    download_count = 0;
+    download_data->clear();
     download_count_progress = 0;
 }
 
@@ -44,12 +47,11 @@ void DownloadThread::shutdown(void)
     }
 }
 
-void DownloadThread::append_data(const char* data, std::streamsize size)
+void DownloadThread::append_data(const std::byte* data, std::streamsize size)
 {
     // Add data to download data stream
-    download_data.write((const char*)data, (std::streamsize) size);
+    download_data->insert(download_data->end(), (const std::byte*)data, (const std::byte*) (data + size));
 
-    download_count += (int)size;
     download_count_progress += (int)size;
     if (download_count_progress >= (int)10e5) {
         download_count_progress -= (int)10e5;
@@ -59,7 +61,7 @@ void DownloadThread::append_data(const char* data, std::streamsize size)
 
 float DownloadThread::get_progress(void)
 {
-    return (float)(download_count / 10e6);
+    return (float)(download_data->size() / 10e6);
 }
 
 DownloadState DownloadThread::get_state(void)
@@ -67,10 +69,12 @@ DownloadState DownloadThread::get_state(void)
     return state;
 }
 
+/*
 std::stringstream* DownloadThread::get_data(void)
 {
     return &download_data;
 }
+*/
 
 void DownloadThread::download_file(void)
 {
@@ -87,7 +91,7 @@ void DownloadThread::download_file(void)
         if (res == CURLE_OK) {
             state = DownloadState::success;
         } else {
-            download_data.clear();
+            download_data->clear();
         }
         curl_easy_cleanup(curl);
     }
@@ -100,8 +104,9 @@ void DownloadThread::download_file(void)
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
 {
-    DownloadThread* download_manager_thread = (DownloadThread*)arg;
-    download_manager_thread->append_data((const char*)ptr, (std::streamsize) count);
+
+    //dataVec.insert(dataVec.end(), &dataArray[0], &dataArray[dataArraySize]);
+    //download_manager_thread->append_data((const char*)ptr, (std::streamsize) count);
     return count;
 }
 
