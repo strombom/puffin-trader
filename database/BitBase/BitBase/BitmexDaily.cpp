@@ -55,15 +55,15 @@ bool BitmexDaily::start_next(void)
     url += downloading_last.to_string("%Y%m%d");
     url += ".csv.gz";
 
-    download_manager->download(url, downloading_last.to_string(), boost::bind(&BitmexDaily::download_done_callback, this, _1, _2));
+    download_manager->download(url, "bitmex_daily", downloading_last.to_string(), boost::bind(&BitmexDaily::download_done_callback, this, _1, _2));
 
     downloading_last += TimeDelta::days(1);
     active_downloads_count += 1;
 
     return true;
-} 
+}
 
-void BitmexDaily::download_done_callback(std::shared_ptr<std::vector<std::byte>> payload, std::string datestring)
+void BitmexDaily::download_done_callback(std::string datestring, std::shared_ptr<std::vector<std::byte>> payload)
 {
     logger.info("BitmexDaily download done (%s).", datestring.c_str());
 }

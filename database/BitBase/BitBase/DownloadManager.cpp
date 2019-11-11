@@ -14,27 +14,27 @@ DownloadManager::~DownloadManager(void)
     curl_global_cleanup();
 }
 
-void DownloadManager::download(std::string url, std::string callback_arg, client_callback_done_t client_callback_done)
+void DownloadManager::download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
 {
-    std::unique_ptr<DownloadThread> download_thread(new DownloadThread(url, callback_arg, client_callback_done,
-                                                    boost::bind(&DownloadManager::download_done_callback, this)));
-//                                                                       boost::bind(&DownloadManager::download_done_callback, this),
-//                                                                       boost::bind(&DownloadManager::download_progress_callback, this)));
-
-    threads.push_back(std::move(download_thread));
-
-    tick();
-
-    /*
-    if (!start_download(url)) {
-        download_url_queue.push(url);
-    }
-    */
+    std::unique_ptr<DownloadThread> download_thread(new DownloadThread(url, client_id, callback_arg, boost::bind(&DownloadManager::download_done_callback, this, _1, _2, _3)));
+    threads.push_back(std::make_tuple(client_id, std::move(download_thread)));
+    start_next();
 }
 
-void DownloadManager::tick(void)
+void DownloadManager::start_next(void)
 {
 
+    for (auto thread = threads.cbegin(); thread != threads.cend(); ++thread) {
+        std::string client_id = std::get<0>(*thread);
+
+
+        //auto [client_id, thread] = it;
+        //it->second
+
+        //it->first
+        
+        //std::map<std::string, std::deque<std::unique_ptr<DownloadThread>>> threads;
+    }
 }
 
 /*
@@ -66,7 +66,11 @@ void DownloadManager::join(void)
     }
 }
 
-//void DownloadManager::download_done_callback()
+void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg, std::shared_ptr<std::vector<std::byte>> payload)
+{
+
+}
+
 //{
     /*
     while (threads.size() > 0 && threads[0]->get_state() == DownloadState::success)

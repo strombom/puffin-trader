@@ -6,7 +6,7 @@
 #pragma warning (disable : 26444)
 
 
-DownloadThread::DownloadThread(const std::string& _url, std::string callback_arg, client_callback_done_t _client_callback_done)
+DownloadThread::DownloadThread(const std::string& _url, std::string _client_id, std::string callback_arg, manager_callback_done_t _manager_callback_done)
 {
     
 //    const std::string& _url,
@@ -14,6 +14,8 @@ DownloadThread::DownloadThread(const std::string& _url, std::string callback_arg
 //                               boost::function<void(void)> _signal_download_progress)
 //{
     url = _url;
+    client_id = _client_id;
+    manager_callback_done = _manager_callback_done;
     //signal_download_done.connect(_signal_download_done);
     //signal_download_progress.connect(_signal_download_progress);
     restart_download();
@@ -27,16 +29,9 @@ void DownloadThread::restart_download(void)
     download_count_progress = 0;
 }
 
-std::string DownloadThread::get_url(void)
+void DownloadThread::start(void)
 {
-    return url;
-}
 
-void DownloadThread::join(void)
-{
-    if (download_thread != NULL) {
-        download_thread->join();
-    }
 }
 
 void DownloadThread::shutdown(void)
@@ -47,34 +42,35 @@ void DownloadThread::shutdown(void)
     }
 }
 
+void DownloadThread::join(void)
+{
+    if (download_thread != NULL) {
+        download_thread->join();
+    }
+}
+
 void DownloadThread::append_data(const std::byte* data, std::streamsize size)
 {
     // Add data to download data stream
     download_data->insert(download_data->end(), (const std::byte*)data, (const std::byte*) (data + size));
 
     download_count_progress += (int)size;
-    if (download_count_progress >= (int)10e5) {
-        download_count_progress -= (int)10e5;
+    if (download_count_progress >= download_progress_size) {
+        download_count_progress -= download_progress_size;
         signal_download_progress();
     }
 }
-
+/*
 float DownloadThread::get_progress(void)
 {
     return (float)(download_data->size() / 10e6);
 }
+*/ 
 
 DownloadState DownloadThread::get_state(void)
 {
     return state;
 }
-
-/*
-std::stringstream* DownloadThread::get_data(void)
-{
-    return &download_data;
-}
-*/
 
 void DownloadThread::download_file(void)
 {

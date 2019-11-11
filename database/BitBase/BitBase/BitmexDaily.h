@@ -36,6 +36,6 @@ private:
     boost::thread* download_thread;
     void download(void);
     bool start_next(void);
-    void download_done_callback(std::shared_ptr<std::vector<std::byte>>, std::string datestring);
+    void download_done_callback(std::string datestring, std::shared_ptr<std::vector<std::byte>>);
 
 };
