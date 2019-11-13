@@ -1,58 +1,46 @@
 #pragma once
 
-#include "boost/signals2.hpp"
-#include "boost/thread.hpp"
+#include <thread>
+#include <functional>
 
+using namespace std::placeholders;  // for _1, _2, _3...
+using manager_callback_done_t = std::function<void(std::string, std::string, std::shared_ptr<std::vector<std::byte>>)>;
 
-using manager_callback_done_t = boost::function<void(std::string, std::string, std::shared_ptr<std::vector<std::byte>>)>;
 
 enum class DownloadState {
     idle,
+    waiting_for_start,
     downloading,
     aborting,
-    failed,
     success
 };
 
 class DownloadThread {
 public:
-    DownloadThread(const std::string& _url, std::string client_id, std::string callback_arg, manager_callback_done_t _manager_callback_done);
-    //DownloadThread(const std::string& _url,
-    //    boost::function<void(void)> _signal_download_done,
-    //    boost::function<void(void)> _signal_download_progress);
-
-    //void DownloadManager::download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
-    //{
-    //    std::unique_ptr<DownloadThread> download_thread(new DownloadThread(url, client_id, callback_arg, client_callback_done,
-    //        boost::bind(&DownloadManager::download_done_callback, this)));
-    //    //                                                                       boost::bind(&DownloadManager::download_done_callback, this),
-    //    //                                                                       boost::bind(&DownloadManager::download_progress_callback, this)));
-
-    //float get_progress(void);
-    DownloadState get_state(void);
+    DownloadThread(const std::string& url, std::string client_id, std::string callback_arg, manager_callback_done_t manager_callback_done);
 
     void start(void);
     void shutdown(void);
-    void join(void);
+
+    DownloadState get_state(void) const;
+    bool test_id(std::string _client_id, std::string _callback_arg) const;
+    void join(void) const;
+
+    friend size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg);
 
 private:
+    DownloadState state = DownloadState::idle;
+    std::thread* download_thread_handle = NULL;
+    const manager_callback_done_t manager_callback_done;
     int download_count_progress = 0;
     static const int download_progress_size = (int)10e5;
 
-    std::string url;
-    std::string client_id;
+    const std::string url;
+    const std::string client_id;
+    const std::string callback_arg;
     std::shared_ptr<std::vector<std::byte>> download_data;
-
-    DownloadState state = DownloadState::idle;
-
-    boost::thread* download_thread;
-    manager_callback_done_t manager_callback_done;
-
-    boost::signals2::signal<void(void)> signal_download_done;
-    boost::signals2::signal<void(void)> signal_download_progress;
-
-    void download_file(void);
-    void restart_download(void);
+    
+    void download_thread(void);
     void append_data(const std::byte* data, std::streamsize size);
 };
 

@@ -10,10 +10,9 @@ Logger::Logger(void)
 
 }
 
-
 void Logger::info(const char* format, ...)
 {
-    boost::mutex::scoped_lock lock(mutex);
+    std::scoped_lock lock(mutex);
     printf("%s INFO: ", DateTime::now().to_string().c_str());
     va_list args;
     va_start(args, format);
@@ -24,7 +23,7 @@ void Logger::info(const char* format, ...)
 
 void Logger::warn(const char* format, ...)
 {
-    boost::mutex::scoped_lock lock(mutex);
+    std::scoped_lock lock(mutex);
     printf("%s WARN: ", DateTime::now().to_string().c_str());
     va_list args;
     va_start(args, format);
@@ -35,7 +34,7 @@ void Logger::warn(const char* format, ...)
 
 void Logger::error(const char* format, ...)
 {
-    boost::mutex::scoped_lock lock(mutex);
+    std::scoped_lock lock(mutex);
     printf("%s ERR!: ", DateTime::now().to_string().c_str());
     va_list args;
     va_start(args, format);

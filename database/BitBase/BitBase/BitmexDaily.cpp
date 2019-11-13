@@ -3,7 +3,8 @@
 #include "Logger.h"
 
 #include <cstddef>
-#include "boost/bind.hpp"
+//#include <stdio.h>
+//#include "boost/bind.hpp"
 
 BitmexDaily::BitmexDaily(Database& _database, DownloadManager& _download_manager)
 {
@@ -13,7 +14,7 @@ BitmexDaily::BitmexDaily(Database& _database, DownloadManager& _download_manager
 
 BitmexDailyState BitmexDaily::get_state(void)
 {
-    boost::mutex::scoped_lock lock(state_mutex);
+    std::scoped_lock lock(state_mutex);
     return state;
 }
 
@@ -24,7 +25,7 @@ void BitmexDaily::shutdown(void)
 
 void BitmexDaily::start_download(void)
 {
-    boost::mutex::scoped_lock lock(state_mutex);
+    std::scoped_lock lock(state_mutex);
 
     active_downloads_count = 0;
     downloading_first = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
@@ -55,7 +56,7 @@ bool BitmexDaily::start_next(void)
     url += downloading_last.to_string("%Y%m%d");
     url += ".csv.gz";
 
-    download_manager->download(url, "bitmex_daily", downloading_last.to_string(), boost::bind(&BitmexDaily::download_done_callback, this, _1, _2));
+    download_manager->download(url, "bitmex_daily", downloading_last.to_string(), std::bind(&BitmexDaily::download_done_callback, this, _1, _2));
 
     downloading_last += TimeDelta::days(1);
     active_downloads_count += 1;

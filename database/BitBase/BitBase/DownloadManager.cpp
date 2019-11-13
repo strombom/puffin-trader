@@ -16,59 +16,47 @@ DownloadManager::~DownloadManager(void)
 
 void DownloadManager::download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
 {
-    std::unique_ptr<DownloadThread> download_thread(new DownloadThread(url, client_id, callback_arg, boost::bind(&DownloadManager::download_done_callback, this, _1, _2, _3)));
-    threads.push_back(std::make_tuple(client_id, std::move(download_thread)));
+    threads.push_back(uptrDownloadThread(new DownloadThread(url, client_id, callback_arg, std::bind(&DownloadManager::download_done_callback, this, _1, _2, _3))));
     start_next();
 }
 
 void DownloadManager::start_next(void)
 {
+    if (active_threads_count == max_active_threads_count) {
+        return;
+    }
 
-    for (auto thread = threads.cbegin(); thread != threads.cend(); ++thread) {
-        std::string client_id = std::get<0>(*thread);
-
-
-        //auto [client_id, thread] = it;
-        //it->second
-
-        //it->first
-        
-        //std::map<std::string, std::deque<std::unique_ptr<DownloadThread>>> threads;
+    for (auto&& thread : threads) {
+        if (thread->get_state() == DownloadState::waiting_for_start) {
+            thread->start();
+            return;
+        }
     }
 }
 
-/*
-bool DownloadManager::start_download(std::string url)
-{
-    if (threads.size() == thread_max_count) {
-        return false;
-    }
-
-    std::unique_ptr<DownloadThread> download_thread(new DownloadThread);
-    download_thread->attach_signals(boost::bind(&DownloadManager::download_done_callback, this),
-                                    boost::bind(&DownloadManager::download_progress_callback, this));
-    download_thread->start_download(url);
-
-    threads.push_back(std::move(download_thread));
-    return true;
-}
-*/
 void DownloadManager::shutdown(void)
 {
-
+    for (auto&& thread : threads) {
+        thread->shutdown();
+    }
 }
 
 void DownloadManager::join(void)
 {
-    while (threads.size() > 0) {
-        boost::posix_time::seconds seconds(1);
-        boost::this_thread::sleep(seconds);
+    for (auto&& thread : threads) {
+        thread->join();
     }
 }
 
 void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg, std::shared_ptr<std::vector<std::byte>> payload)
 {
+    active_threads_count--;
 
+    for (auto&& thread : threads) {
+        if (thread->test_id(client_id, callback_arg)) {
+
+        }
+    }
 }
 
 //{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "boost/thread.hpp"
+#include <mutex>
 
 #include "DateTime.h"
 #include "Database.h"
@@ -24,7 +24,7 @@ public:
 
 private:
     BitmexDailyState state = BitmexDailyState::Idle;
-    boost::mutex state_mutex;
+    std::mutex state_mutex;
 
     Database* database;
     DownloadManager* download_manager;
@@ -33,7 +33,7 @@ private:
 
     static const int active_downloads_max = 5;
     int active_downloads_count = 0;
-    boost::thread* download_thread;
+    std::thread* download_thread;
     void download(void);
     bool start_next(void);
     void download_done_callback(std::string datestring, std::shared_ptr<std::vector<std::byte>>);

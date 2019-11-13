@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 class Logger
 {
@@ -13,7 +13,7 @@ public:
     void error(const char* format, ...);
 
 private:
-    boost::mutex mutex;
+    std::mutex mutex;
 };
 
 extern Logger logger;

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdio.h>
-#include "boost/signals2.hpp"
-#include "boost/thread.hpp"
+#include <mutex>
+#include <thread>
 
 #include "Database.h"
 #include "BitmexDaily.h"
@@ -29,10 +29,10 @@ private:
     DownloadManager* download_manager;
     BitmexDaily* bitmex_daily;
 
-    boost::mutex state_mutex;
+    std::mutex state_mutex;
     bool thread_running = true;
     BitmexState state = BitmexState::Idle;
 
-    boost::thread* main_loop_thread;
+    std::thread* main_loop_thread;
 };
 

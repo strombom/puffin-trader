@@ -1,3 +1,4 @@
+
 #include "Bitmex.h"
 #include "Logger.h"
 #include "DateTime.h"
@@ -10,7 +11,7 @@ Bitmex::Bitmex(Database& _database, DownloadManager& _download_manager)
     download_manager = &_download_manager;
     bitmex_daily = new BitmexDaily(_database, _download_manager);
 
-    main_loop_thread = new boost::thread(&Bitmex::main_loop, this);
+    main_loop_thread = new std::thread(&Bitmex::main_loop, this);
 }
 
 void Bitmex::shutdown(void)
@@ -46,6 +47,6 @@ void Bitmex::main_loop(void)
 
         state_mutex.unlock();
 
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }

@@ -6,103 +6,93 @@
 #pragma warning (disable : 26444)
 
 
-DownloadThread::DownloadThread(const std::string& _url, std::string _client_id, std::string callback_arg, manager_callback_done_t _manager_callback_done)
+DownloadThread::DownloadThread(const std::string& url, std::string client_id, std::string callback_arg, manager_callback_done_t manager_callback_done) :
+    url(url), client_id(client_id), callback_arg(callback_arg), manager_callback_done(manager_callback_done)
 {
-    
-//    const std::string& _url,
-//                               boost::function<void(void)> _signal_download_done,
-//                               boost::function<void(void)> _signal_download_progress)
-//{
-    url = _url;
-    client_id = _client_id;
-    manager_callback_done = _manager_callback_done;
-    //signal_download_done.connect(_signal_download_done);
-    //signal_download_progress.connect(_signal_download_progress);
-    restart_download();
-}
-
-void DownloadThread::restart_download(void)
-{
-    state = DownloadState::downloading;
-    download_thread = new boost::thread(&DownloadThread::download_file, this);
+    state = DownloadState::waiting_for_start;
     download_data->clear();
     download_count_progress = 0;
 }
 
 void DownloadThread::start(void)
 {
-
+    state = DownloadState::downloading;
+    download_thread_handle = new std::thread(&DownloadThread::download_thread, this);
 }
 
 void DownloadThread::shutdown(void)
 {
-    if (download_thread != NULL) {
+    if (download_thread_handle != NULL) {
         state = DownloadState::aborting;
-        download_thread->join();
+        download_thread_handle->join();
     }
 }
 
-void DownloadThread::join(void)
+void DownloadThread::join(void) const
 {
-    if (download_thread != NULL) {
-        download_thread->join();
+    if (download_thread_handle != NULL) {
+        download_thread_handle->join();
     }
 }
 
 void DownloadThread::append_data(const std::byte* data, std::streamsize size)
 {
-    // Add data to download data stream
     download_data->insert(download_data->end(), (const std::byte*)data, (const std::byte*) (data + size));
 
     download_count_progress += (int)size;
     if (download_count_progress >= download_progress_size) {
         download_count_progress -= download_progress_size;
-        signal_download_progress();
     }
 }
-/*
-float DownloadThread::get_progress(void)
-{
-    return (float)(download_data->size() / 10e6);
-}
-*/ 
 
-DownloadState DownloadThread::get_state(void)
+DownloadState DownloadThread::get_state(void) const
 {
     return state;
 }
 
-void DownloadThread::download_file(void)
+bool DownloadThread::test_id(std::string _client_id, std::string _callback_arg) const
 {
-    CURL* curl = curl_easy_init();
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_file_callback);
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
-        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, download_progress_callback);
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        CURLcode res = curl_easy_perform(curl);
-        if (res == CURLE_OK) {
-            state = DownloadState::success;
-        } else {
-            download_data->clear();
+    return client_id == _client_id && callback_arg == _callback_arg;
+}
+
+void DownloadThread::download_thread(void)
+{
+    while (state != DownloadState::success) {
+        CURL* curl = curl_easy_init();
+        if (curl) {
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_file_callback);
+            curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+            curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
+            curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, download_progress_callback);
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            CURLcode res = curl_easy_perform(curl);
+            if (res == CURLE_OK) {
+                state = DownloadState::success;
+            }
+            else {
+                download_data->clear();
+            }
+            curl_easy_cleanup(curl);
         }
-        curl_easy_cleanup(curl);
+
+        if (state == DownloadState::aborting) {
+            break;
+
+        } else if (state != DownloadState::success) {
+            state = DownloadState::downloading;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
     }
 
-    if (state != DownloadState::success) {
-        state = DownloadState::failed;
-    }
-    signal_download_done();
+    manager_callback_done(client_id, callback_arg, download_data);
 }
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
 {
-
-    //dataVec.insert(dataVec.end(), &dataArray[0], &dataArray[dataArraySize]);
-    //download_manager_thread->append_data((const char*)ptr, (std::streamsize) count);
+    DownloadThread* download_manager_thread = (DownloadThread*)arg;
+    download_manager_thread->append_data((const std::byte*)ptr, (std::streamsize) count);
     return count;
 }
 
