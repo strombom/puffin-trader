@@ -2,14 +2,12 @@
 #include "BitmexDaily.h"
 #include "Logger.h"
 
-#include <cstddef>
-//#include <stdio.h>
-//#include "boost/bind.hpp"
 
-BitmexDaily::BitmexDaily(Database& _database, DownloadManager& _download_manager)
+BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager) :
+    database(database), download_manager(download_manager), 
+    state(BitmexDailyState::idle), active_downloads_count(0)
 {
-    database = &_database;
-    download_manager = &_download_manager;
+
 }
 
 BitmexDailyState BitmexDaily::get_state(void)
@@ -20,7 +18,7 @@ BitmexDailyState BitmexDaily::get_state(void)
 
 void BitmexDaily::shutdown(void)
 {
-
+    download_manager->abort(client_id);
 }
 
 void BitmexDaily::start_download(void)
@@ -31,14 +29,10 @@ void BitmexDaily::start_download(void)
     downloading_first = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
     downloading_first.set_time(0, 0, 0);
     downloading_last = downloading_first;
-    state = BitmexDailyState::Downloading;
+    state = BitmexDailyState::downloading;
 
-    while (start_next()) {
-        // Starting as many downloads as possible.
-    }
-
-    //download_thread = new boost::thread(&BitmexDaily::download, this);
-}
+    while (start_next()); // Starting as many downloads as possible.
+ }
 
 bool BitmexDaily::start_next(void)
 {
@@ -49,6 +43,7 @@ bool BitmexDaily::start_next(void)
     DateTime last_timestamp = DateTime::now() - TimeDelta::days(1);
     last_timestamp.set_time(0, 0, 0);
     if (downloading_last > last_timestamp) {
+        state = BitmexDailyState::idle;
         return false;
     }
     
@@ -56,7 +51,7 @@ bool BitmexDaily::start_next(void)
     url += downloading_last.to_string("%Y%m%d");
     url += ".csv.gz";
 
-    download_manager->download(url, "bitmex_daily", downloading_last.to_string(), std::bind(&BitmexDaily::download_done_callback, this, _1, _2));
+    download_manager->download(url, client_id, downloading_last.to_string(), std::bind(&BitmexDaily::download_done_callback, this, _1, _2));
 
     downloading_last += TimeDelta::days(1);
     active_downloads_count += 1;
@@ -64,17 +59,13 @@ bool BitmexDaily::start_next(void)
     return true;
 }
 
-void BitmexDaily::download_done_callback(std::string datestring, std::shared_ptr<std::vector<std::byte>> payload)
+void BitmexDaily::download_done_callback(std::string datestring, payload_t payload)
 {
     logger.info("BitmexDaily download done (%s).", datestring.c_str());
-}
-/*
-void BitmexDaily::download(void)
-{
-    boost::mutex::scoped_lock lock(state_mutex);
+    active_downloads_count--;
+    if (active_downloads_count == 0) {
 
-    //logger.info("tick_data_last_timestamp %s", tick_data_last_timestamp.to_string().c_str());
-    
-    state = BitmexDailyState::Idle;
+    } else {
+        start_next();
+    }
 }
-*/

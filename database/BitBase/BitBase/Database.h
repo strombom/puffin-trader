@@ -12,6 +12,8 @@ class Database
 public:
     Database(const std::string& root_path);
 
+    static std::shared_ptr<Database> create(const std::string& root_path);
+
     //bool has_attribute(const std::string& key_a, const std::string& key_b);
 
     DateTime get_attribute(const std::string& key,   const DateTime& default_date_time);
@@ -26,3 +28,5 @@ private:
     SQLite::Database *attributes_db;
 
 };
+
+using sptrDatabase = std::shared_ptr<Database>;

@@ -1,3 +1,4 @@
+
 #include "DownloadManager.h"
 #include "Logger.h"
 
@@ -14,10 +15,34 @@ DownloadManager::~DownloadManager(void)
     curl_global_cleanup();
 }
 
+std::shared_ptr<DownloadManager> DownloadManager::create(void)
+{
+    return std::make_shared<DownloadManager>();
+}
+
 void DownloadManager::download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
 {
     threads.push_back(uptrDownloadThread(new DownloadThread(url, client_id, callback_arg, std::bind(&DownloadManager::download_done_callback, this, _1, _2, _3))));
     start_next();
+}
+
+void DownloadManager::abort(std::string client_id)
+{
+    for (auto&& thread : threads) {
+        if (thread->test_id(client_id)) {
+            thread->shutdown();
+        }
+    }
+
+    for (auto&& thread = threads.begin(); thread != threads.end();) {
+        if ((*thread)->test_id(client_id)) {
+            (*thread)->join();
+            thread = threads.erase(thread);
+        }
+        else {
+            ++thread;
+        }
+    }
 }
 
 void DownloadManager::start_next(void)
@@ -48,7 +73,7 @@ void DownloadManager::join(void)
     }
 }
 
-void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg, std::shared_ptr<std::vector<std::byte>> payload)
+void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg, payload_t payload)
 {
     active_threads_count--;
 
@@ -57,6 +82,8 @@ void DownloadManager::download_done_callback(std::string client_id, std::string 
 
         }
     }
+
+    start_next();
 }
 
 //{

@@ -1,41 +1,43 @@
 #pragma once
 
-#include <mutex>
-
 #include "DateTime.h"
 #include "Database.h"
 #include "DownloadManager.h"
 #include "BitmexConstants.h"
 
+#include <mutex>
+
 
 enum class BitmexDailyState {
-    Idle,
-    Downloading
+    idle,
+    downloading
 };
 
 class BitmexDaily
 {
 public:
-    BitmexDaily(Database& _database, DownloadManager& _download_manager);
+    BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager);
 
     BitmexDailyState get_state(void);
     void start_download(void);
     void shutdown(void);
 
 private:
-    BitmexDailyState state = BitmexDailyState::Idle;
+    inline static const std::string client_id = "bitmex_daily";
+    static const int active_downloads_max = 5;
+
+    BitmexDailyState state;
     std::mutex state_mutex;
 
-    Database* database;
-    DownloadManager* download_manager;
+    sptrDatabase database;
+    sptrDownloadManager download_manager;
     DateTime downloading_first;
     DateTime downloading_last;
+    int active_downloads_count;
 
-    static const int active_downloads_max = 5;
-    int active_downloads_count = 0;
-    std::thread* download_thread;
-    void download(void);
     bool start_next(void);
     void download_done_callback(std::string datestring, std::shared_ptr<std::vector<std::byte>>);
 
 };
+
+using sptrBitmexDaily = std::shared_ptr<BitmexDaily>;

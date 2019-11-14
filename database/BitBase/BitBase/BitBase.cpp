@@ -9,11 +9,11 @@
 
 int main()
 {
-    DownloadManager download_manager;
-    Database database("C:\\development\\github\\puffin-trader\\database\\data");
+    sptrDownloadManager download_manager = DownloadManager::create();
+    sptrDatabase database = Database::create("C:\\development\\github\\puffin-trader\\database\\data");
+
     Bitmex bitmex(database, download_manager);
 
-    //system("pause");
-    download_manager.shutdown();
+    download_manager->shutdown();
     bitmex.shutdown();
 }

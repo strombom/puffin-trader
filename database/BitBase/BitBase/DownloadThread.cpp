@@ -1,37 +1,33 @@
+
 #include "DownloadThread.h"
 
 #include "curl/curl.h"
 
-#pragma warning (disable : 26812)
-#pragma warning (disable : 26444)
-
 
 DownloadThread::DownloadThread(const std::string& url, std::string client_id, std::string callback_arg, manager_callback_done_t manager_callback_done) :
-    url(url), client_id(client_id), callback_arg(callback_arg), manager_callback_done(manager_callback_done)
+    url(url), client_id(client_id), callback_arg(callback_arg), manager_callback_done(manager_callback_done),
+    download_count_progress(0), state(DownloadState::waiting_for_start)
 {
-    state = DownloadState::waiting_for_start;
-    download_data->clear();
-    download_count_progress = 0;
+
 }
 
 void DownloadThread::start(void)
 {
     state = DownloadState::downloading;
-    download_thread_handle = new std::thread(&DownloadThread::download_thread, this);
+    download_task = std::async(&DownloadThread::download, this);
 }
 
 void DownloadThread::shutdown(void)
 {
-    if (download_thread_handle != NULL) {
+    if (!download_task.valid()) {
         state = DownloadState::aborting;
-        download_thread_handle->join();
     }
 }
 
 void DownloadThread::join(void) const
 {
-    if (download_thread_handle != NULL) {
-        download_thread_handle->join();
+    if (!download_task.valid()) {
+        download_task.wait();
     }
 }
 
@@ -55,7 +51,12 @@ bool DownloadThread::test_id(std::string _client_id, std::string _callback_arg) 
     return client_id == _client_id && callback_arg == _callback_arg;
 }
 
-void DownloadThread::download_thread(void)
+bool DownloadThread::test_id(std::string _client_id) const
+{
+    return client_id == _client_id;
+}
+
+void DownloadThread::download(void)
 {
     while (state != DownloadState::success) {
         CURL* curl = curl_easy_init();
@@ -78,7 +79,7 @@ void DownloadThread::download_thread(void)
         }
 
         if (state == DownloadState::aborting) {
-            break;
+            return;
 
         } else if (state != DownloadState::success) {
             state = DownloadState::downloading;
@@ -91,16 +92,15 @@ void DownloadThread::download_thread(void)
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
 {
-    DownloadThread* download_manager_thread = (DownloadThread*)arg;
-    download_manager_thread->append_data((const std::byte*)ptr, (std::streamsize) count);
+    ((DownloadThread*)arg)->append_data((const std::byte*)ptr, (std::streamsize) count);
     return count;
 }
 
 size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow)
 {
-    DownloadThread* download_manager_thread = (DownloadThread*)arg;
-    if (download_manager_thread->get_state() == DownloadState::aborting) {
+    if (((DownloadThread*)arg)->get_state() == DownloadState::aborting) {
         return CURLE_ABORTED_BY_CALLBACK;
+    } else {
+        return CURLE_OK;
     }
-    return CURLE_OK;
 }

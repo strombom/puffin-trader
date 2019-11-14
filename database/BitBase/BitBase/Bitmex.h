@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <mutex>
 #include <thread>
+#include <future>
 
 #include "Database.h"
 #include "BitmexDaily.h"
@@ -11,28 +12,27 @@
 
 
 enum class BitmexState { 
-    Idle, 
-    DownloadingDaily,
-    Shutdown
+    idle, 
+    downloading_daily,
+    shutdown
 };
 
 class Bitmex
 {
 public:
-    Bitmex(Database& _database, DownloadManager& _download_manager);
+    Bitmex(sptrDatabase database, sptrDownloadManager download_manager);
 
     void shutdown(void);
     void main_loop(void);
 
 private:
-    Database* database;
-    DownloadManager* download_manager;
-    BitmexDaily* bitmex_daily;
+    sptrDatabase database;
+    sptrDownloadManager download_manager;
+    sptrBitmexDaily bitmex_daily;
 
     std::mutex state_mutex;
-    bool thread_running = true;
-    BitmexState state = BitmexState::Idle;
+    bool thread_running;
+    BitmexState state;
 
-    std::thread* main_loop_thread;
+    std::future<void> main_loop_task;
 };
-

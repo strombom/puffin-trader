@@ -16,6 +16,11 @@ Database::Database(const std::string &root_path)
     */
 }
 
+std::shared_ptr<Database> Database::create(const std::string& root_path)
+{
+    return std::make_shared<Database>(root_path);
+}
+
 /*
 bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
 {

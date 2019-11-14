@@ -1,51 +1,51 @@
 
+
 #include "Bitmex.h"
 #include "Logger.h"
 #include "DateTime.h"
 
 
-
-Bitmex::Bitmex(Database& _database, DownloadManager& _download_manager)
+Bitmex::Bitmex(sptrDatabase database, sptrDownloadManager download_manager) :
+    database(database), download_manager(download_manager), state(BitmexState::idle), thread_running(true)
 {
-    database = &_database;
-    download_manager = &_download_manager;
-    bitmex_daily = new BitmexDaily(_database, _download_manager);
-
-    main_loop_thread = new std::thread(&Bitmex::main_loop, this);
+    bitmex_daily = std::make_shared<BitmexDaily>(database, download_manager);
+    main_loop_task = std::async(&Bitmex::main_loop, this);
 }
 
 void Bitmex::shutdown(void)
 {
     logger.info("Shutting down Bitmex client.");
     bitmex_daily->shutdown();
-    state_mutex.lock();
-    state = BitmexState::Shutdown;
-    state_mutex.unlock();
-    main_loop_thread->join();
+    {
+        std::scoped_lock lock(state_mutex);
+        state = BitmexState::shutdown;
+    }
+    main_loop_task.wait();
 }
  
 void Bitmex::main_loop(void)
 {
-    while (state != BitmexState::Shutdown) {
-        state_mutex.lock();
+    while (state != BitmexState::shutdown) {
 
-        if (state == BitmexState::Idle) {
-            DateTime tick_data_last_timestamp = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
-            if (tick_data_last_timestamp < DateTime::now() - TimeDelta::hours(24 + 1)) {
-                // Last tick timestamp is more than 25 hours old, there should be a compressed daily archive available
-                state = BitmexState::DownloadingDaily;
-                bitmex_daily->start_download();
-            }
-        
-        } else if (state == BitmexState::DownloadingDaily) {
-            // Check if daily data is downloaded
-            if (bitmex_daily->get_state() == BitmexDailyState::Idle) {
-                state = BitmexState::Idle;
-            }
+        {
+            std::scoped_lock lock(state_mutex);
 
+            if (state == BitmexState::idle) {
+                DateTime tick_data_last_timestamp = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
+                if (tick_data_last_timestamp < DateTime::now() - TimeDelta::hours(24 + 1)) {
+                    // Last tick timestamp is more than 25 hours old, there should be a compressed daily archive available
+                    state = BitmexState::downloading_daily;
+                    bitmex_daily->start_download();
+                }
+
+            } else if (state == BitmexState::downloading_daily) {
+                // Check if daily data is downloaded
+                if (bitmex_daily->get_state() == BitmexDailyState::idle) {
+                    state = BitmexState::idle;
+                }
+
+            }
         }
-
-        state_mutex.unlock();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
