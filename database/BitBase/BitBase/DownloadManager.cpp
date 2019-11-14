@@ -22,12 +22,16 @@ std::shared_ptr<DownloadManager> DownloadManager::create(void)
 
 void DownloadManager::download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
 {
+    std::scoped_lock lock(threads_mutex);
+
     threads.push_back(uptrDownloadThread(new DownloadThread(url, client_id, callback_arg, std::bind(&DownloadManager::download_done_callback, this, _1, _2, _3))));
     start_next();
 }
 
 void DownloadManager::abort(std::string client_id)
 {
+    std::scoped_lock lock(threads_mutex);
+
     for (auto&& thread : threads) {
         if (thread->test_id(client_id)) {
             thread->shutdown();
@@ -45,6 +49,41 @@ void DownloadManager::abort(std::string client_id)
     }
 }
 
+void DownloadManager::shutdown(void)
+{
+    std::scoped_lock lock(threads_mutex);
+
+    for (auto&& thread : threads) {
+        thread->shutdown();
+    }
+}
+
+void DownloadManager::join(void)
+{
+    std::scoped_lock lock(threads_mutex);
+
+    for (auto&& thread : threads) {
+        thread->join();
+    }
+}
+
+void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg, sptr_payload_t payload)
+{
+    std::scoped_lock lock(threads_mutex);
+
+    active_threads_count--;
+
+    for (auto&& thread = threads.begin(); thread != threads.end();) {
+        if ((*thread)->test_id(client_id, callback_arg)) {
+            logger.info("Download done (%s) (%s)", client_id.c_str(), callback_arg.c_str());
+            threads.erase(thread);
+            break;
+        }
+    }
+
+    start_next();
+}
+
 void DownloadManager::start_next(void)
 {
     if (active_threads_count == max_active_threads_count) {
@@ -54,36 +93,10 @@ void DownloadManager::start_next(void)
     for (auto&& thread : threads) {
         if (thread->get_state() == DownloadState::waiting_for_start) {
             thread->start();
+            active_threads_count++;
             return;
         }
     }
-}
-
-void DownloadManager::shutdown(void)
-{
-    for (auto&& thread : threads) {
-        thread->shutdown();
-    }
-}
-
-void DownloadManager::join(void)
-{
-    for (auto&& thread : threads) {
-        thread->join();
-    }
-}
-
-void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg, payload_t payload)
-{
-    active_threads_count--;
-
-    for (auto&& thread : threads) {
-        if (thread->test_id(client_id, callback_arg)) {
-
-        }
-    }
-
-    start_next();
 }
 
 //{

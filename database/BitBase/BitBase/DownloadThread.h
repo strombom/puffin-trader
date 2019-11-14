@@ -3,17 +3,19 @@
 #include <future>
 
 using namespace std::placeholders;  // for _1, _2, _3...
-using payload_t = std::shared_ptr<std::vector<std::byte>>;
-using manager_callback_done_t = std::function<void(std::string, std::string, payload_t)>;
+using payload_t = std::vector<std::byte>;
+using sptr_payload_t = std::shared_ptr<payload_t>;
+using manager_callback_done_t = std::function<void(std::string, std::string, sptr_payload_t)>;
 
 
 enum class DownloadState {
-    idle,
     waiting_for_start,
     downloading,
     aborting,
     success
 };
+
+using DownloadStateAtomic = std::atomic<DownloadState>;
 
 class DownloadThread {
 public:
@@ -32,15 +34,16 @@ public:
 private:
     static const int download_progress_size = (int)10e5;
 
-    DownloadState state = DownloadState::idle;
+    DownloadStateAtomic state;
     const manager_callback_done_t manager_callback_done;
     int download_count_progress;
+    std::mutex state_mutex;
 
     const std::string url;
     const std::string client_id;
     const std::string callback_arg;
     std::future<void> download_task;
-    payload_t download_data;
+    sptr_payload_t download_data;
     
     void download(void);
     void append_data(const std::byte* data, std::streamsize size);

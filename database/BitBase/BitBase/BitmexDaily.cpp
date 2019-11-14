@@ -18,7 +18,10 @@ BitmexDailyState BitmexDaily::get_state(void)
 
 void BitmexDaily::shutdown(void)
 {
+    std::scoped_lock lock(state_mutex);
+
     download_manager->abort(client_id);
+    state = BitmexDailyState::idle;
 }
 
 void BitmexDaily::start_download(void)
@@ -33,6 +36,19 @@ void BitmexDaily::start_download(void)
 
     while (start_next()); // Starting as many downloads as possible.
  }
+
+void BitmexDaily::download_done_callback(std::string datestring, sptr_payload_t payload)
+{
+    std::scoped_lock lock(state_mutex);
+
+    logger.info("BitmexDaily download done (%s) (ad %d).", datestring.c_str(), active_downloads_count);
+    active_downloads_count--;
+    if (active_downloads_count == 0) {
+        state = BitmexDailyState::idle;
+    } else {
+        start_next();
+    }
+}
 
 bool BitmexDaily::start_next(void)
 {
@@ -57,15 +73,4 @@ bool BitmexDaily::start_next(void)
     active_downloads_count += 1;
 
     return true;
-}
-
-void BitmexDaily::download_done_callback(std::string datestring, payload_t payload)
-{
-    logger.info("BitmexDaily download done (%s).", datestring.c_str());
-    active_downloads_count--;
-    if (active_downloads_count == 0) {
-
-    } else {
-        start_next();
-    }
 }

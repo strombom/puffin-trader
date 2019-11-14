@@ -20,11 +20,12 @@ public:
     void shutdown(void);
     void join(void);
     
-    void download_done_callback(std::string client_id, std::string callback_arg, payload_t payload);
+    void download_done_callback(std::string client_id, std::string callback_arg, sptr_payload_t payload);
 
 private:
     int active_threads_count = 0;
     static const int max_active_threads_count = 4;
+    std::mutex threads_mutex;
 
     std::deque<uptrDownloadThread> threads;
 

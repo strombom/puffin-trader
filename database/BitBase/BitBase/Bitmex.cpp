@@ -15,9 +15,9 @@ Bitmex::Bitmex(sptrDatabase database, sptrDownloadManager download_manager) :
 void Bitmex::shutdown(void)
 {
     logger.info("Shutting down Bitmex client.");
-    bitmex_daily->shutdown();
     {
         std::scoped_lock lock(state_mutex);
+        bitmex_daily->shutdown();
         state = BitmexState::shutdown;
     }
     main_loop_task.wait();
