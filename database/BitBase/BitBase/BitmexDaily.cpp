@@ -67,7 +67,7 @@ bool BitmexDaily::start_next(void)
     url += downloading_last.to_string("%Y%m%d");
     url += ".csv.gz";
 
-    download_manager->download(url, client_id, downloading_last.to_string(), std::bind(&BitmexDaily::download_done_callback, this, _1, _2));
+    download_manager->download(url, client_id, downloading_last.to_string_date(), std::bind(&BitmexDaily::download_done_callback, this, _1, _2));
 
     downloading_last += TimeDelta::days(1);
     active_downloads_count += 1;

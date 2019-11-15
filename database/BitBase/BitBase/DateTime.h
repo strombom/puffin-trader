@@ -17,6 +17,8 @@ public:
     static DateTime now(void);
 
     std::string to_string(void) const;
+    std::string to_string_date(void) const;
+    std::string to_string_time(void) const;
     std::string to_string(const char* format) const;
 
     void set_time(int hour, int minute, double second);

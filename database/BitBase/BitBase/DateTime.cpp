@@ -40,6 +40,16 @@ std::string DateTime::to_string(void) const
     return to_string("%Y-%m-%d %H:%M:%s");
 }
 
+std::string DateTime::to_string_date(void) const
+{
+    return to_string("%Y-%m-%d");
+}
+
+std::string DateTime::to_string_time(void) const
+{
+    return to_string("%H:%M:%s");
+}
+
 std::string DateTime::to_string(const char* format) const
 {
     std::ostringstream ss;

@@ -5,21 +5,24 @@
 using namespace std::placeholders;  // for _1, _2, _3...
 using payload_t = std::vector<std::byte>;
 using sptr_payload_t = std::shared_ptr<payload_t>;
-using manager_callback_done_t = std::function<void(std::string, std::string, sptr_payload_t)>;
+using client_callback_done_t = std::function<void(std::string, sptr_payload_t)>;
+using manager_callback_done_t = std::function<void(std::string, std::string)>;
 
 
 enum class DownloadState {
     waiting_for_start,
     downloading,
     aborting,
-    success
+    success,
+    finished
 };
 
 using DownloadStateAtomic = std::atomic<DownloadState>;
 
 class DownloadThread {
 public:
-    DownloadThread(const std::string& url, std::string client_id, std::string callback_arg, manager_callback_done_t manager_callback_done);
+    DownloadThread(const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done, manager_callback_done_t manager_callback_done);
+    ~DownloadThread(void);
 
     void start(void);
     void shutdown(void);
@@ -35,6 +38,7 @@ private:
     static const int download_progress_size = (int)10e5;
 
     DownloadStateAtomic state;
+    const client_callback_done_t client_callback_done;
     const manager_callback_done_t manager_callback_done;
     int download_count_progress;
     std::mutex state_mutex;

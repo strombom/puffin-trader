@@ -5,7 +5,6 @@
 #include <queue>
 
 
-using client_callback_done_t = std::function<void(std::string, std::shared_ptr<std::vector<std::byte>>)>;
 
 class DownloadManager {
 public:
@@ -19,8 +18,8 @@ public:
 
     void shutdown(void);
     void join(void);
-    
-    void download_done_callback(std::string client_id, std::string callback_arg, sptr_payload_t payload);
+
+    void download_done_callback(std::string client_id, std::string callback_arg);
 
 private:
     int active_threads_count = 0;
