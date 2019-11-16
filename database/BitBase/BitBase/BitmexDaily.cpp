@@ -13,6 +13,7 @@ BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_man
 BitmexDailyState BitmexDaily::get_state(void)
 {
     std::scoped_lock lock(state_mutex);
+
     return state;
 }
 
@@ -37,7 +38,7 @@ void BitmexDaily::start_download(void)
     while (start_next()); // Starting as many downloads as possible.
  }
 
-void BitmexDaily::download_done_callback(std::string datestring, sptr_payload_t payload)
+void BitmexDaily::download_done_callback(std::string datestring, sptr_download_data_t payload)
 {
     std::scoped_lock lock(state_mutex);
 

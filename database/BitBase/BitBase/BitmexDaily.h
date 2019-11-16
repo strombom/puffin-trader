@@ -36,7 +36,7 @@ private:
     int active_downloads_count;
 
     bool start_next(void);
-    void download_done_callback(std::string datestring, sptr_payload_t payload);
+    void download_done_callback(std::string datestring, sptr_download_data_t payload);
 
 };
 

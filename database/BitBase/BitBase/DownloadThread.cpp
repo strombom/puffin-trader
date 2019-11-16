@@ -4,47 +4,72 @@
 
 #include "curl/curl.h"
 
+#pragma warning(disable: 26812) // Disable enum warning for CURLcode
 
-DownloadThread::DownloadThread(const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done, manager_callback_done_t manager_callback_done) :
-    url(url), client_id(client_id), callback_arg(callback_arg), 
-    client_callback_done(client_callback_done), manager_callback_done(manager_callback_done),
-    download_count_progress(0), state(DownloadState::waiting_for_start)
+
+std::mutex download_tasks_mutex;
+std::vector<std::shared_ptr<std::future<void>>> download_tasks;
+
+
+DownloadThread::DownloadThread(void)
+//const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done, manager_callback_done_t manager_callback_done) :
+//    url(url), client_id(client_id), callback_arg(callback_arg), client_callback_done(client_callback_done), manager_callback_done(manager_callback_done),
+//    download_count_progress(0), state(DownloadState::ready_to_start), download_task(NULL) //, download_thread(NULL)
 {
+    /*
     download_data = std::make_shared<payload_t>();
+
+    // Housekeeping
+    for (auto&& download_task = download_tasks.begin(); download_task != download_tasks.end();) {
+        if (!(*download_task)->valid()) {
+            download_task = download_tasks.erase(download_task);
+        }
+        else {
+            ++download_task;
+        }
+    }
+    */
 }
 
 DownloadThread::~DownloadThread(void)
 {
-    if (download_task.valid()) {
-        //logger.info("DownloadThread destructor task wait start");
-        download_task.wait();
-        //logger.info("DownloadThread destructor task wait done");
-    } else {
-        //logger.info("DownloadThread destructor task FALSE");
-    }
+    //logger.info("DownloadThread::~DownloadThread (%s) (%s)", client_id.c_str(), callback_arg.c_str());
+
+    //shutdown();
+    //join();
 }
 
+/*
 void DownloadThread::start(void)
 {
-    logger.info("Thread start (%s) (%s)", client_id.c_str(), callback_arg.c_str());
+    std::scoped_lock lock(state_mutex);
 
     state = DownloadState::downloading;
-    download_task = std::async(std::launch::async, &DownloadThread::download, this);
+
+    auto task = std::make_shared<std::future<void>>(std::async(std::launch::async, &DownloadThread::download, this));
+    download_tasks.push_back(std::move(task));
+
+    //download_thread = new std::thread(std::bind(&DownloadThread::download, this));
+    //download_task = new std::async<void>(std::launch::async, &DownloadThread::download, this);
 }
 
 void DownloadThread::shutdown(void)
 {
     std::scoped_lock lock(state_mutex);
 
-    if (download_task.valid()) {
+    //if (download_thread != NULL) {
+    if (download_task->valid()) {
         state = DownloadState::aborting;
     }
 }
 
 void DownloadThread::join(void) const
 {
-    if (download_task.valid()) {
-        download_task.wait();
+    //if (download_thread != NULL) {
+    //    download_thread->join();
+    //}
+    if (download_task->valid()) {
+        download_task->wait();
     }
 }
 
@@ -58,11 +83,6 @@ void DownloadThread::append_data(const std::byte* data, std::streamsize size)
     }
 }
 
-DownloadState DownloadThread::get_state(void) const
-{
-    return state;
-}
-
 bool DownloadThread::test_id(std::string _client_id, std::string _callback_arg) const
 {
     return client_id == _client_id && callback_arg == _callback_arg;
@@ -73,13 +93,54 @@ bool DownloadThread::test_id(std::string _client_id) const
     return client_id == _client_id;
 }
 
+bool DownloadThread::is_ready_to_start(void)
+{
+    std::scoped_lock lock(state_mutex);
+    return state == DownloadState::ready_to_start;
+}
+
+bool DownloadThread::is_aborting(void)
+{
+    std::scoped_lock lock(state_mutex);
+    return state == DownloadState::aborting;
+}
+
+    */
+
+/*
+bool DownloadThread::is_finished(void)
+{
+    std::scoped_lock lock(state_mutex);
+    return state == DownloadState::finished;
+}
+*/
+
+/*
+bool DownloadThread::has_data(void)
+{
+    std::scoped_lock lock(state_mutex);
+
+    auto status = download_task->wait_for(std::chrono::seconds(0));
+    return state == DownloadState::has_data; //&& status == std::future_status::ready;
+}
+
+void DownloadThread::pass_data_to_client(void)
+{
+    std::scoped_lock lock(state_mutex);
+
+    logger.info("DownloadThread::pass_data_to_client (%s) (%s)", client_id.c_str(), callback_arg.c_str());
+
+    client_callback_done(callback_arg, download_data);
+
+    //download_thread->detach();
+    //download_thread = NULL;
+    //state = DownloadState::finished;
+}
+
 void DownloadThread::download(void)
 {
-    //logger.info("Thread start download (%s) (%s)", client_id.c_str(), callback_arg.c_str());
-
     while (true) {
         CURL* curl = curl_easy_init();
-        //logger.info("Thread start curl (%d)", ((int*) curl));
         if (curl) {
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_easy_setopt(curl, CURLOPT_NOSIGNAL, TRUE);
@@ -89,17 +150,13 @@ void DownloadThread::download(void)
             curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
             curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, download_progress_callback);
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            //logger.info("Thread start easy start (%d)", ((int*)curl));
             CURLcode res = curl_easy_perform(curl);
-            //logger.info("Thread start easy done (%d) (%d)", ((int*)curl), (int)res);
             {
                 std::scoped_lock lock(state_mutex);
                 if (res == CURLE_OK && state != DownloadState::aborting) {
-                    state = DownloadState::success;
-                    //logger.info("Thread start easy done (%d) OK", ((int*)curl));
+                    state = DownloadState::has_data;
                 } else {
                     download_data->clear();
-                    //logger.info("Thread start easy done (%d) FAIL", ((int*)curl));
                 }
             }
             curl_easy_cleanup(curl);
@@ -107,18 +164,11 @@ void DownloadThread::download(void)
 
         {
             std::scoped_lock lock(state_mutex);
-            if (state == DownloadState::success) {
-                //logger.info("Thread start easy done (%d) callback start", ((int*)curl));
-                //std::thread t(manager_callback_done, client_id, callback_arg, download_data);
-                //auto task = std::async(std::launch::async, manager_callback_done, client_id, callback_arg, download_data);
+            if (state == DownloadState::has_data) {
                 manager_callback_done(client_id, callback_arg);
-                client_callback_done(callback_arg, download_data);
-                state = DownloadState::finished;
-                //logger.info("Thread start easy done (%d) callback end", ((int*)curl));
                 return;
 
             } else if (state == DownloadState::aborting) {
-                //logger.info("Thread start easy done (%d) abort", ((int*)curl));
                 return;
             }
         }
@@ -128,7 +178,6 @@ void DownloadThread::download(void)
         {
             std::scoped_lock lock(state_mutex); 
             if (state == DownloadState::aborting) {
-                //logger.info("Thread start easy done (%d) aborting", ((int*)curl));
                 return;
             }
         }
@@ -143,9 +192,12 @@ size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
 
 size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow)
 {
-    if (((DownloadThread*)arg)->get_state() == DownloadState::aborting) {
+    if (((DownloadThread*)arg)->is_aborting()) {
         return CURLE_ABORTED_BY_CALLBACK;
     } else {
         return CURLE_OK;
     }
 }
+
+*/
+

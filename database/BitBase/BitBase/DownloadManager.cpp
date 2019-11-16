@@ -9,10 +9,24 @@
 DownloadManager::DownloadManager(void)
 {
     curl_global_init(CURL_GLOBAL_ALL);
+
+    threads.reserve(threads_count);
+    for (int i = 0; i < threads_count; ++i) {
+        threads.emplace_back();
+    }
 }
 
 DownloadManager::~DownloadManager(void)
 {
+    /*
+    for (auto&& client : threads) {
+        for (auto&& thread : client.second) {
+            thread->shutdown();
+        }
+    }
+
+    threads.clear();
+    */
     curl_global_cleanup();
 }
 
@@ -23,170 +37,109 @@ std::shared_ptr<DownloadManager> DownloadManager::create(void)
 
 void DownloadManager::download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
 {
-    std::scoped_lock lock(threads_mutex);
+    /*
+    {
+        std::scoped_lock lock(threads_mutex);
+        threads[client_id].push_back(uptrDownloadThread(new DownloadThread(url, client_id, callback_arg, client_callback_done, std::bind(&DownloadManager::download_done_callback, this, _1, _2))));
+    }
 
-    threads.push_back(uptrDownloadThread(new DownloadThread(url, client_id, callback_arg, client_callback_done, std::bind(&DownloadManager::download_done_callback, this, _1, _2))));
-    //logger.info("DownloadManager download %d", threads.size());
-    start_next();
+    manage_threads();*/
 }
 
 void DownloadManager::abort(std::string client_id)
 {
-    //logger.info("DownloadManager ABORT %s", client_id.c_str());
-    std::scoped_lock lock(threads_mutex);
-
-    for (auto&& thread : threads) {
-        if (thread->test_id(client_id)) {
-            thread->shutdown();
-        }
-    }
-
-    for (auto&& thread = threads.begin(); thread != threads.end();) {
-        if ((*thread)->test_id(client_id)) {
-            (*thread)->join();
-            thread = threads.erase(thread);
-        }
-        else {
-            ++thread;
-        }
-    }
-}
-
-void DownloadManager::shutdown(void)
-{
-    std::scoped_lock lock(threads_mutex);
-
-    for (auto&& thread : threads) {
-        thread->shutdown();
-    }
-}
-
-void DownloadManager::join(void)
-{
-    std::scoped_lock lock(threads_mutex);
-
-    for (auto&& thread : threads) {
-        thread->join();
-    }
-}
-
-void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg)
-{
-    std::scoped_lock lock(threads_mutex);
-
-    active_threads_count--;
-
-    //logger.info("DownloadManager callback count %d", threads.size());
-
-    for (auto&& thread = threads.begin(); thread != threads.end(); ++thread) {
-        //logger.info("DownloadManager compare id %s, %s", client_id.c_str(), callback_arg.c_str());
-
-        if ((*thread)->test_id(client_id, callback_arg)) {
-            //logger.info("Download done (%s) (%s)", client_id.c_str(), callback_arg.c_str());
-
-           // (*thread)->join();
-            //threads.erase(thread);
-            break;
-        }
-    }
-    //logger.info("DownloadManager callback done %s, %s", client_id.c_str(), callback_arg.c_str());
-
-    start_next();
     /*
-    logger.info("DownloadManager callback a %s, %s", client_id.c_str(), callback_arg.c_str());
-    auto task = std::async(std::launch::async, &DownloadManager::download_done_callback_task, this, client_id, callback_arg, payload);
-    logger.info("DownloadManager callback b %s, %s", client_id.c_str(), callback_arg.c_str());
-    */
-}
-
-/*
-void DownloadManager::download_done_callback_task(std::string client_id, std::string callback_arg, sptr_payload_t payload)
-{
-    std::scoped_lock lock(threads_mutex);
-
-    active_threads_count--;
-
-    logger.info("DownloadManager callback count %d", threads.size());
-
-    for (auto&& thread = threads.begin(); thread != threads.end(); ++thread) {
-        logger.info("DownloadManager compare id %s, %s", client_id.c_str(), callback_arg.c_str());
-
-        if ((*thread)->test_id(client_id, callback_arg)) {
-            logger.info("Download done (%s) (%s)", client_id.c_str(), callback_arg.c_str());
-            (*thread)->join();
-            threads.erase(thread);
-            break;
-        }
-    }
-    logger.info("DownloadManager callback done %s, %s", client_id.c_str(), callback_arg.c_str());
-
-    start_next();
-}
-    */
-
-void DownloadManager::start_next(void)
-{
-    if (active_threads_count == max_active_threads_count) {
-        return;
-    }
-
-    for (auto&& thread = threads.begin(); thread != threads.end();) {
-        if ((*thread)->get_state() == DownloadState::finished) {
-            //(*thread)->join();
-            thread = threads.erase(thread);
-        }
-        else {
-            ++thread;
-        }
-    }
-
-    for (auto&& thread : threads) {
-        if (thread->get_state() == DownloadState::waiting_for_start) {
-            thread->start();
-            active_threads_count++;
-            return;
-        }
-    }
-}
-
-//{
-    /*
-    while (threads.size() > 0 && threads[0]->get_state() == DownloadState::success)
-    {
-        printf("\nDownloaded (%s)\n", threads[0]->get_url().c_str());
-        threads.pop_front();
-
-        if (download_url_queue.size() > 0) {
-            if (start_download(download_url_queue.front())) {
-                download_url_queue.pop();
+    for (auto&& client : threads) {
+        for (auto&& thread : client.second) {
+            if (thread->test_id(client_id)) {
+                thread->shutdown();
             }
         }
     }
 
-    for (int idx = 0; idx < threads.size(); idx++) {
-        if (threads[idx]->get_state() == DownloadState::failed) {
-            threads[idx]->restart_download();
+    {
+        std::scoped_lock lock(threads_mutex);
+        for (auto&& client : threads) {
+            for (auto&& thread = client.second.begin(); thread != client.second.end();) {
+                if ((*thread)->test_id(client_id)) {
+                    thread = client.second.erase(thread);
+                }
+                else {
+                    ++thread;
+                }
+            }
+        }
+    }*/
+}
+
+void DownloadManager::shutdown(void)
+{
+    /*
+    for (auto&& client : threads) {
+        for (auto&& thread : client.second) {
+            thread->shutdown();
         }
     }
     */
-//}
+}
 
-/*
-void DownloadManager::download_progress_callback(void)
+void DownloadManager::join(void)
 {
-    printf("\33[2K\r Progress");
-    for (int idx = 0; idx < threads.size(); idx++) {
-
-        if (threads[idx]->get_state() == DownloadState::downloading) {
-            printf("  % 5.1f MB ", threads[idx]->get_progress());
-
-        } else if (threads[idx]->get_state() == DownloadState::success) {
-            printf("  done ");
-
-        } else if (threads[idx]->get_state() == DownloadState::failed) {
-            printf("  failed ");
+    /*
+    for (auto&& client : threads) {
+        for (auto&& thread : client.second) {
+            thread->join();
         }
     }
-    fflush(stdout);
+    */
+}
+
+/*
+void DownloadManager::download_done_callback(std::string client_id, std::string callback_arg)
+{
+    logger.info("DownloadManager::download_done_callback (%s, %s) count %d", client_id.c_str(), callback_arg.c_str(), threads.size());
+
+    manage_threads();
 }
 */
+
+/*
+void DownloadManager::manage_threads(void)
+{
+    logger.info("DownloadManager::start_next");
+
+    {
+        std::scoped_lock lock(threads_mutex);
+
+        for (auto&& client : threads) {
+            for (auto&& thread = client.second.begin(); thread != client.second.end();) {
+                if ((*thread)->has_data()) {
+                    (*thread)->pass_data_to_client();
+                    thread = client.second.erase(thread);
+                } else {
+                    break;
+                }
+            }
+
+        }
+    }
+    
+    for (auto&& client : threads) {
+        for (auto&& thread : client.second) {
+
+        }
+    }
+}
+*/
+
+    /*
+    for (auto&& thread : threads) {
+        if (active_threads_count == max_active_threads_count) {
+            return;
+        }
+        if (thread->is_ready_to_start()) {
+            thread->start();
+            active_threads_count++;
+        }
+    }
+    */
