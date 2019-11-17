@@ -7,9 +7,6 @@
 #pragma warning(disable: 26812) // Disable enum warning for CURLcode
 
 
-std::mutex download_tasks_mutex;
-std::vector<std::shared_ptr<std::future<void>>> download_tasks;
-
 DownloadThread::DownloadThread(manager_callback_done_t manager_callback_done) :
     state(DownloadState::idle), manager_callback_done(manager_callback_done)
 {
