@@ -12,3 +12,9 @@ DownloadTask::~DownloadTask(void)
 {
 
 }
+
+std::unique_ptr<DownloadTask> DownloadTask::create(const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
+{
+    return std::make_unique<DownloadTask>(url, client_id, callback_arg, client_callback_done);
+}
+

@@ -27,11 +27,12 @@ private:
     static const int threads_count = 3;
     //std::mutex threads_mutex;
 
-    std::deque<uptrDownloadTask> pending_tasks;
+    std::queue<uptrDownloadTask> pending_tasks;
     std::unordered_map<std::string, std::deque<uptrDownloadTask>> running_tasks;
 
-    std::vector<uptrDownloadThread> threads;
+    std::vector<sptrDownloadThread> threads;
     
+    void work(void);
     //void manage_threads(void);
 };
 

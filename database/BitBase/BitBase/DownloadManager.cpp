@@ -12,7 +12,7 @@ DownloadManager::DownloadManager(void)
 
     threads.reserve(threads_count);
     for (int i = 0; i < threads_count; ++i) {
-        threads.emplace_back();
+        threads.push_back(sptrDownloadThread(new DownloadThread()));
     }
 }
 
@@ -37,6 +37,11 @@ std::shared_ptr<DownloadManager> DownloadManager::create(void)
 
 void DownloadManager::download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done)
 {
+    uptrDownloadTask task = DownloadTask::create(url, client_id, callback_arg, client_callback_done);
+    pending_tasks.push(std::move(task));
+
+    work();
+
     /*
     {
         std::scoped_lock lock(threads_mutex);
@@ -44,6 +49,31 @@ void DownloadManager::download(std::string url, std::string client_id, std::stri
     }
 
     manage_threads();*/
+}
+
+void DownloadManager::work(void)
+{
+
+
+
+    // Assign pending tasks to idle threads
+    while (!pending_tasks.empty()) {
+        std::shared_ptr<DownloadThread> idle_thread;
+
+        for (auto&& thread : threads) {
+            if (thread->is_idle()) {
+                idle_thread = thread;
+                break;
+            }
+        }
+        
+        if (idle_thread) {
+            idle_thread->assign_task(std::move(pending_tasks.front()));
+            pending_tasks.pop();
+        } else {
+            break;
+        }
+    }
 }
 
 void DownloadManager::abort(std::string client_id)

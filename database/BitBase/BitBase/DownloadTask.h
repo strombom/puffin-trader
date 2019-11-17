@@ -12,6 +12,8 @@ public:
     DownloadTask(const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done);
     ~DownloadTask(void);
 
+    static std::unique_ptr<DownloadTask> create(const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done);
+
 private:
     const std::string url;
     const std::string client_id;

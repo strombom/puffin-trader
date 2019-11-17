@@ -11,11 +11,15 @@ std::mutex download_tasks_mutex;
 std::vector<std::shared_ptr<std::future<void>>> download_tasks;
 
 
-DownloadThread::DownloadThread(void)
+DownloadThread::DownloadThread(void) :
+    state(DownloadState::idle)
 //const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done, manager_callback_done_t manager_callback_done) :
 //    url(url), client_id(client_id), callback_arg(callback_arg), client_callback_done(client_callback_done), manager_callback_done(manager_callback_done),
 //    download_count_progress(0), state(DownloadState::ready_to_start), download_task(NULL) //, download_thread(NULL)
 {
+    worker = std::make_unique<std::thread>(std::bind(&DownloadThread::worker_thread, this));
+    
+
     /*
     download_data = std::make_shared<payload_t>();
 
@@ -37,6 +41,29 @@ DownloadThread::~DownloadThread(void)
 
     //shutdown();
     //join();
+}
+
+bool DownloadThread::is_idle(void)
+{
+    return state == DownloadState::idle;
+}
+
+void DownloadThread::assign_task(uptrDownloadTask new_task)
+{
+    task = std::move(new_task);
+    download_start_condition.notify_one();
+}
+
+void DownloadThread::worker_thread(void)
+{
+    while (true) {
+        std::unique_lock<std::mutex> lock(state_mutex);
+        download_start_condition.wait(lock);
+        logger.info("Running once");
+
+
+
+    }
 }
 
 /*

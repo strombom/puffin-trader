@@ -9,11 +9,7 @@ using manager_callback_done_t = std::function<void(std::string, std::string)>;
 
 
 enum class DownloadState {
-    ready_to_start,
-    downloading,
-    has_data,
-    aborting
-    //finished
+    idle
 };
 
 using DownloadStateAtomic = std::atomic<DownloadState>;
@@ -22,6 +18,10 @@ class DownloadThread {
 public:
     DownloadThread(void); // const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done, manager_callback_done_t manager_callback_done);
     ~DownloadThread(void);
+
+    bool is_idle(void);
+
+    void assign_task(uptrDownloadTask new_task);
 
     /*
     void start(void);
@@ -42,10 +42,20 @@ public:
 
     */
 private:
+    DownloadState state;
+
+    uptrDownloadTask task;
+
+    std::mutex state_mutex;
+    std::condition_variable download_start_condition;
+    std::unique_ptr<std::thread> worker;
+
+    void worker_thread(void);
+
+
     /*
     static const int download_progress_size = (int)10e5;
 
-    DownloadStateAtomic state;
     const client_callback_done_t client_callback_done;
     const manager_callback_done_t manager_callback_done;
     int download_count_progress;
@@ -66,4 +76,4 @@ private:
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg);
 size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow);
 
-using uptrDownloadThread = std::unique_ptr<DownloadThread>;
+using sptrDownloadThread = std::shared_ptr<DownloadThread>;
