@@ -23,7 +23,7 @@ public:
     void shutdown(void);
 
 private:
-    inline static const std::string client_id = "bitmex_daily";
+    inline static const std::string downloader_client_id = "bitmex_daily";
     static const int active_downloads_max = 5;
 
     BitmexDailyState state;

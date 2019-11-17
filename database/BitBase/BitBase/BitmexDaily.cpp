@@ -21,7 +21,7 @@ void BitmexDaily::shutdown(void)
 {
     std::scoped_lock lock(state_mutex);
 
-    download_manager->abort(client_id);
+    download_manager->abort_client(downloader_client_id);
     state = BitmexDailyState::idle;
 }
 
@@ -42,7 +42,7 @@ void BitmexDaily::download_done_callback(std::string datestring, sptr_download_d
 {
     std::scoped_lock lock(state_mutex);
 
-    logger.info("BitmexDaily download done (%s) (ad %d).", datestring.c_str(), active_downloads_count);
+    logger.info("BitmexDaily download done (%s)", datestring.c_str());
     active_downloads_count--;
     if (active_downloads_count == 0) {
         state = BitmexDailyState::idle;
@@ -68,7 +68,7 @@ bool BitmexDaily::start_next(void)
     url += downloading_last.to_string("%Y%m%d");
     url += ".csv.gz";
 
-    download_manager->download(url, client_id, downloading_last.to_string_date(), std::bind(&BitmexDaily::download_done_callback, this, _1, _2));
+    download_manager->download(url, downloader_client_id, downloading_last.to_string_date(), std::bind(&BitmexDaily::download_done_callback, this, _1, _2));
 
     downloading_last += TimeDelta::days(1);
     active_downloads_count += 1;

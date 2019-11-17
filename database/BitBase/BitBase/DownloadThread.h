@@ -5,72 +5,48 @@
 #include <future>
 
 using namespace std::placeholders;  // for _1, _2, _3...
-using manager_callback_done_t = std::function<void(std::string, std::string)>;
+using manager_callback_done_t = std::function<void(uptrDownloadTask)>;
 
 
 enum class DownloadState {
-    idle
+    idle,
+    downloading,
+    aborting,
+    shutting_down
 };
 
 using DownloadStateAtomic = std::atomic<DownloadState>;
 
 class DownloadThread {
 public:
-    DownloadThread(void); // const std::string& url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done, manager_callback_done_t manager_callback_done);
+    DownloadThread(manager_callback_done_t manager_callback_done);
     ~DownloadThread(void);
 
-    bool is_idle(void);
+    void abort(void);       // Abort download
+    void shutdown(void);    // Abort download and exit thread
+    void join(void) const;  // Join thread
+
+    bool is_idle(void) const;
+    bool test_client_id(std::string client_id) const;
 
     void assign_task(uptrDownloadTask new_task);
 
-    /*
-    void start(void);
-    void shutdown(void);
-    void join(void) const;
-
-    bool is_aborting(void);
-    //bool is_finished(void);
-    bool is_ready_to_start(void);
-
-    bool has_data(void);
-    void pass_data_to_client(void);
-
-    bool test_id(std::string _client_id) const;
-    bool test_id(std::string _client_id, std::string _callback_arg) const;
-
     friend size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg);
+    friend size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow);
 
-    */
 private:
     DownloadState state;
 
     uptrDownloadTask task;
 
     std::mutex state_mutex;
+    std::mutex download_start_mutex;
     std::condition_variable download_start_condition;
     std::unique_ptr<std::thread> worker;
 
     void worker_thread(void);
 
-
-    /*
-    static const int download_progress_size = (int)10e5;
-
-    const client_callback_done_t client_callback_done;
     const manager_callback_done_t manager_callback_done;
-    int download_count_progress;
-    std::mutex state_mutex;
-
-    const std::string url;
-    const std::string client_id;
-    const std::string callback_arg;
-    //std::future<void> *download_task;
-    //std::thread *download_thread;
-    std::shared_ptr<std::future<void>> download_task;
-    
-    void download(void);
-    void append_data(const std::byte* data, std::streamsize size);
-    */
 };
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg);

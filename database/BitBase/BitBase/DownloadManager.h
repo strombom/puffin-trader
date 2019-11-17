@@ -4,9 +4,6 @@
 
 #include <queue>
 
-class DownloadTasks {
-
-};
 
 class DownloadManager {
 public:
@@ -16,24 +13,25 @@ public:
     static std::shared_ptr<DownloadManager> create(void);
 
     void download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done);
-    void abort(std::string client_id);
+    void download_done_callback(uptrDownloadTask task);
 
+    void abort_client(std::string client_id);
     void shutdown(void);
     void join(void);
 
-    //void download_done_callback(std::string client_id, std::string callback_arg);
-
 private:
-    static const int threads_count = 3;
-    //std::mutex threads_mutex;
+    static const int threads_count = 5;
+    std::mutex threads_mutex;
+    std::mutex download_done_mutex;
+    std::mutex client_args_mutex;
 
-    std::queue<uptrDownloadTask> pending_tasks;
-    std::unordered_map<std::string, std::deque<uptrDownloadTask>> running_tasks;
+    std::deque<uptrDownloadTask> pending_tasks;
+    std::unordered_map<std::string, std::deque<uptrDownloadTask>> finished_tasks;
+    std::unordered_map<std::string, std::queue<std::string>> client_args;
 
     std::vector<sptrDownloadThread> threads;
     
     void work(void);
-    //void manage_threads(void);
 };
 
 using sptrDownloadManager  = std::shared_ptr<DownloadManager>;
