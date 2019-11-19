@@ -109,6 +109,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>C:\development\github\puffin-trader\database\BitBase\BitBase;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,6 +160,7 @@
     <ClCompile Include="BitmexDaily.cpp" />
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="DateTime.cpp" />
+    <ClCompile Include="DownloadTask.cpp" />
     <ClCompile Include="Duration.cpp" />
     <ClCompile Include="TimeDelta.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
@@ -173,6 +175,7 @@
     <ClInclude Include="Database.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="DownloadManager.h" />
+    <ClInclude Include="DownloadTask.h" />
     <ClInclude Include="DownloadThread.h" />
     <ClInclude Include="Duration.h" />
     <ClInclude Include="Logger.h" />

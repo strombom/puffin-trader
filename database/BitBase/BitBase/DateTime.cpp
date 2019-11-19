@@ -1,10 +1,17 @@
 #include "DateTime.h"
 #include "Logger.h"
 
+#pragma warning(disable: 26444)
+
 
 DateTime::DateTime(void)
 {
 
+}
+
+DateTime::DateTime(std::uint64_t timestamp)
+{
+    time = boost::posix_time::from_time_t(timestamp);
 }
 
 DateTime::DateTime(const boost::posix_time::ptime& _time)
@@ -56,6 +63,12 @@ std::string DateTime::to_string(const char* format) const
     ss.imbue(std::locale(std::locale::classic(), new boost::posix_time::time_facet(format)));
     ss << time;
     return ss.str();
+}
+
+std::uint64_t DateTime::to_timestamp(void) const
+{
+    const boost::posix_time::ptime origin(boost::gregorian::date(1970, 1, 1), boost::posix_time::seconds(0));
+    return (origin - time).total_seconds();
 }
 
 void DateTime::set_time(int hour, int minute, double second)

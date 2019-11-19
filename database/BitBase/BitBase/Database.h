@@ -6,6 +6,12 @@
 
 #include "DateTime.h"
 
+/*
+struct DatabaseRow
+{
+    DateTime 
+};
+*/
 
 class Database
 {
@@ -23,6 +29,8 @@ public:
     void set_attribute(const std::string& key,   const DateTime& date_time);
     void set_attribute(const std::string& key_a, const std::string& key_b, const DateTime& date_time);
     void set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const DateTime& date_time);
+
+    //void append_10s(const std::string& symbol, )
 
 private:
     SQLite::Database *attributes_db;

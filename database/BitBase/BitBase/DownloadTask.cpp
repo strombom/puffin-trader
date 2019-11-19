@@ -39,7 +39,7 @@ void DownloadTask::clear_data(void)
     download_data->clear();
 }
 
-void DownloadTask::append_data(const std::byte* data, std::streamsize size)
+void DownloadTask::append_data(const char* data, std::streamsize size)
 {
     download_data->insert(download_data->end(), data, data + size);
 }

@@ -12,7 +12,7 @@ DownloadManager::DownloadManager(void)
 
     threads.reserve(threads_count);
     for (int i = 0; i < threads_count; ++i) {
-        threads.push_back(sptrDownloadThread(new DownloadThread(std::bind(&DownloadManager::download_done_callback, this, _1))));
+        threads.push_back(sptrDownloadThread(new DownloadThread(std::bind(&DownloadManager::download_done_callback, this, std::placeholders::_1))));
     }
 }
 

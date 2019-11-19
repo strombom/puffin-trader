@@ -92,7 +92,7 @@ void DownloadThread::worker_thread(void)
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
 {
-    ((DownloadThread*)arg)->task->append_data((const std::byte*)ptr, (std::streamsize) count);
+    ((DownloadThread*)arg)->task->append_data((const char*)ptr, (std::streamsize) count);
     return count;
 }
 

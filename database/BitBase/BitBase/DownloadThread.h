@@ -4,7 +4,6 @@
 
 #include <future>
 
-using namespace std::placeholders;  // for _1, _2, _3...
 using manager_callback_done_t = std::function<void(uptrDownloadTask)>;
 
 
@@ -35,7 +34,7 @@ public:
     friend size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow);
 
 private:
-    DownloadState state;
+    std::atomic<DownloadState> state;
 
     uptrDownloadTask task;
 

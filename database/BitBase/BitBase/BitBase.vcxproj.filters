@@ -78,6 +78,9 @@
     <ClCompile Include="Server.cpp">
       <Filter>Source Files\Server</Filter>
     </ClCompile>
+    <ClCompile Include="DownloadTask.cpp">
+      <Filter>Source Files\DownloadManager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -112,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="BitmexConstants.h">
       <Filter>Header Files\Bitmex</Filter>
+    </ClInclude>
+    <ClInclude Include="DownloadTask.h">
+      <Filter>Header Files\DownloadManager</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

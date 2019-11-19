@@ -2,7 +2,7 @@
 
 #include <functional>
 
-using download_data_t = std::vector<std::byte>;
+using download_data_t = std::vector<char>;
 using sptr_download_data_t = std::shared_ptr<download_data_t>;
 using client_callback_done_t = std::function<void(std::string, sptr_download_data_t)>;
 
@@ -18,7 +18,7 @@ public:
     const std::string& get_client_id(void) const;
     const std::string& get_client_arg(void) const;
     void clear_data(void);
-    void append_data(const std::byte* data, std::streamsize size);
+    void append_data(const char* data, std::streamsize size);
     void run_client_callback(void);
 
 
