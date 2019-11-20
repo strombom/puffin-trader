@@ -15,7 +15,7 @@ public:
     DateTime(const std::string& string, const std::string& format);
     DateTime(const boost::posix_time::ptime& _time);
     DateTime(int year, int month, int day, int hour, int minute, double second);
-
+    
     static DateTime now(void);
 
     std::string to_string(void) const;
@@ -41,6 +41,10 @@ public:
     bool operator<=(const DateTime& date_time);
     bool operator>=(const DateTime& date_time);
 
+    static std::uint64_t string_to_timestamp(const std::string& string);
+    static std::uint64_t string_to_timestamp(const std::string& string, const std::string& format);
+
 private:
     boost::posix_time::ptime time;
+
 };

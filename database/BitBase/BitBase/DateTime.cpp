@@ -160,3 +160,22 @@ bool DateTime::operator>=(const DateTime& date_time)
 {
     return time >= date_time.time;
 }
+
+std::uint64_t DateTime::string_to_timestamp(const std::string& string)
+{
+    return string_to_timestamp(string, "%Y-%b-%d %H:%M:%S");
+}
+
+std::uint64_t DateTime::string_to_timestamp(const std::string& string, const std::string& format)
+{
+    std::tm t = {};
+    std::istringstream ss(string);
+    ss.imbue(std::locale::classic());
+    ss >> std::get_time(&t, format.c_str());
+    if (ss.fail()) {
+        return 0;
+    }
+    else {
+        return std::mktime(&t);
+    }
+}

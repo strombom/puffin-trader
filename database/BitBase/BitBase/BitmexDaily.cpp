@@ -54,7 +54,7 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data)
     std::string indata = raw_data.str();
     boost::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
     boost::sregex_token_iterator row_end;
-
+    
     ++row_it; // Skip table headers
     while (row_it != row_end) {
         std::string row = row_it->str();
@@ -64,7 +64,7 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data)
         boost::sregex_token_iterator col_it(row.begin(), row.end(), fieldsregx, -1);
         boost::sregex_token_iterator col_end;
 
-        DateTime timestamp;
+        std::uint64_t timestamp;
         std::string symbol;
         float price;
         float volume;
@@ -76,7 +76,7 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data)
             std::string token = col_it->str();
             ++col_it;
             if (idx == 0) {
-                timestamp = DateTime(token, "%Y-%m-%dD%H:%M:%s");
+                timestamp = DateTime::string_to_timestamp(token);
             }
             else if (idx == 1) {
                 symbol = token;
