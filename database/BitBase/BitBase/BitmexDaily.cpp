@@ -77,20 +77,41 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data)
             ++col_it;
             if (idx == 0) {
                 timestamp = DateTime::string_to_timestamp(token);
+                if (timestamp == 0) {
+                    break;
+                }
             }
             else if (idx == 1) {
                 symbol = token;
             }
             else if (idx == 2) {
-                buy = (token == "Buy");
+                if (token == "Buy") {
+                    buy = true;
+                }
+                else if (token == "Sell") {
+                    buy = false;
+                }
+                else {
+                    break;
+                }
             }
             else if (idx == 3) {
-                volume = std::stof(token);
+                try {
+                    volume = std::stof(token);
+                }
+                catch (...) {
+                    break; // Invalid volume format
+                }
             }
             else if (idx == 4) {
-                price = std::stof(token);
-                valid = true;
-                break;
+                try {
+                    price = std::stof(token);
+                    valid = true;
+                    break;
+                }
+                catch (...) {
+                    break; // Invalid price format
+                }
             }
             ++idx;
         }
