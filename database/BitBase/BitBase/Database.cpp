@@ -77,3 +77,11 @@ void Database::set_attribute(const std::string& key_a, const std::string& key_b,
 {
     set_attribute(key_a + "_" + key_b + "_" + key_c, date_time);
 }
+
+void DatabaseTicks::append(const DateTime& timestamp, float price, float volume, bool buy)
+{
+    timestamps.push_back(timestamp);
+    prices.push_back(price);
+    volumes.push_back(volume);
+    buys.push_back(buy);
+}

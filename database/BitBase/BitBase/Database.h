@@ -6,12 +6,19 @@
 
 #include "DateTime.h"
 
-/*
-struct DatabaseRow
+
+class DatabaseTicks
 {
-    DateTime 
+public:
+    void append(const DateTime& timestamp, float price, float volume, bool buy);
+
+private:
+    std::vector<DateTime> timestamps;
+    std::vector<float> prices;
+    std::vector<float> volumes;
+    std::vector<bool> buys;
 };
-*/
+
 
 class Database
 {

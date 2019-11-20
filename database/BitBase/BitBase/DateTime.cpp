@@ -27,6 +27,14 @@ DateTime::DateTime(const std::string& string)
     iss >> time;
 }
 
+DateTime::DateTime(const std::string& string, const std::string& format)
+{
+    boost::posix_time::time_input_facet* tif = new boost::posix_time::time_input_facet(format);
+    std::istringstream iss(string);
+    iss.imbue(std::locale(std::locale::classic(), tif));
+    iss >> time;
+}
+
 DateTime::DateTime(int year, int month, int day, int hour, int minute, double second)
 {
     int microsecond = (int)(100000 * (second - (int)second));

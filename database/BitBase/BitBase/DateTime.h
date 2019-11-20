@@ -12,6 +12,7 @@ public:
     DateTime(void);
     DateTime(std::uint64_t timestamp);
     DateTime(const std::string& string);
+    DateTime(const std::string& string, const std::string& format);
     DateTime(const boost::posix_time::ptime& _time);
     DateTime(int year, int month, int day, int hour, int minute, double second);
 

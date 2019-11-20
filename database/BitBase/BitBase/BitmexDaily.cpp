@@ -47,78 +47,61 @@ void BitmexDaily::start_download(void)
  }
 
 void BitmexDaily::parse_raw(const std::stringstream& raw_data)
-{
-    typedef std::vector<std::string> Row;
-
-    std::vector<Row> result;
-
+{    
+    std::map<std::string, DatabaseTicks> tables;
     
-    // iterator splits data to lines
-    //std::string data = raw_data.str();
-
     const boost::regex linesregx("\\n");
-    const boost::regex fieldsregx(",");
-
-
     std::string indata = raw_data.str();
-    //const char* data = raw_data.str().c_str();
-    //const unsigned int length = (unsigned int) raw_data.str().length();
+    boost::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
+    boost::sregex_token_iterator row_end;
 
-    boost::sregex_token_iterator li(indata.begin(), indata.end(), linesregx, -1);
-    boost::sregex_token_iterator end;
+    ++row_it; // Skip table headers
+    while (row_it != row_end) {
+        std::string row = row_it->str();
+        ++row_it;
 
-    while (li != end) {
-        std::string line = li->str();
-        ++li;
+        const boost::regex fieldsregx(",");
+        boost::sregex_token_iterator col_it(row.begin(), row.end(), fieldsregx, -1);
+        boost::sregex_token_iterator col_end;
 
-        // Split line to tokens
-        boost::sregex_token_iterator ti(line.begin(), line.end(), fieldsregx, -1);
-        boost::sregex_token_iterator end2;
+        DateTime timestamp;
+        std::string symbol;
+        float price;
+        float volume;
+        bool buy;
+        bool valid = false;
 
-        std::vector<std::string> row;
-        while (ti != end2) {
-            std::string token = ti->str();
-            ++ti;
-            row.push_back(token);
+        int idx = 0;
+        while (col_it != col_end) {
+            std::string token = col_it->str();
+            ++col_it;
+            if (idx == 0) {
+                timestamp = DateTime(token, "%Y-%m-%dD%H:%M:%s");
+            }
+            else if (idx == 1) {
+                symbol = token;
+            }
+            else if (idx == 2) {
+                buy = (token == "Buy");
+            }
+            else if (idx == 3) {
+                volume = std::stof(token);
+            }
+            else if (idx == 4) {
+                price = std::stof(token);
+                valid = true;
+                break;
+            }
+            ++idx;
         }
-        if (line.back() == ',') {
-            // last character was a separator
-            row.push_back("");
+
+        if (!valid) {
+            return;
         }
-        result.push_back(row);
+        tables[symbol].append(timestamp, price, volume, buy);
     }
 
-
-
-
-    std::string s;
-    s = raw_data.str();
-    logger.info("payload %s", s.c_str());
-
-
-    //std::vector<DateTime>>
-
-    /*
-
-
-    xt::xarray<double> arr1
-    { {1.0, 2.0, 3.0},
-     {2.0, 5.0, 7.0},
-     {2.0, 5.0, 7.0} };
-
-    xt::xarray<double> arr2
-    { 5.0, 6.0, 7.0 };
-
-    xt::xarray<double> res = xt::view(arr1, 1) + arr2;
-
-    std::stringstream ss;
-    std::string s2;
-    ss << res;
-
-    logger.info("res %s", ss.str().c_str());
-    */
 }
-
 
 void BitmexDaily::download_done_callback(std::string datestring, sptr_download_data_t payload)
 {
