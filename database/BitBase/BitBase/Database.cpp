@@ -1,10 +1,13 @@
 #include "Logger.h"
 #include "Database.h"
 
+#include <filesystem>
+#include <fstream>
 
-Database::Database(const std::string &root_path)
+
+Database::Database(const std::string& _root_path) : root_path(_root_path)
 {
-    std::string attributes_file_path = root_path + "\\attributes.sqlite";
+    std::string attributes_file_path = _root_path + "\\attributes.sqlite";
     attributes_db = new SQLite::Database(attributes_file_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
 
     attributes_db->exec("CREATE TABLE IF NOT EXISTS attributes (key TEXT PRIMARY KEY, value TEXT)");
@@ -47,11 +50,6 @@ bool Database::has_attribute(const std::string& key)
     return true;
 }
 
-bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
-{
-    return has_attribute(key_a + "_" + key_b);
-}
-
 bool Database::has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c)
 {
     return has_attribute(key_a + "_" + key_b + "_" + key_c);
@@ -59,11 +57,9 @@ bool Database::has_attribute(const std::string& key_a, const std::string& key_b,
 
 time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
 {
-    //date::format("%F %T", std::chrono::system_clock::now()).c_str()
-
     SQLite::Statement query_insert(*attributes_db, "INSERT OR IGNORE INTO attributes(\"key\", \"value\") VALUES(:key, :value)");
     query_insert.bind(":key", key.c_str());
-    query_insert.bind(":value", date::format("%F %T", default_date_time).c_str()); //default_date_time.to_string().c_str());
+    query_insert.bind(":value", date::format("%F %T", default_date_time).c_str());
     query_insert.executeStep();
 
     SQLite::Statement query_select(*attributes_db, "SELECT value FROM attributes WHERE key = ?");
@@ -74,12 +70,6 @@ time_point_us Database::get_attribute(const std::string& key, const time_point_u
     time_point_us tp;
     in >> date::parse("%F %T", tp);
     return tp;
-    //return DateTime(query_select.getColumn(0).getString());
-}
-
-time_point_us Database::get_attribute(const std::string& key_a, const std::string& key_b, const time_point_us& default_date_time)
-{
-    return get_attribute(key_a + "_" + key_b, default_date_time);
 }
 
 time_point_us Database::get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& default_date_time)
@@ -95,21 +85,42 @@ void Database::set_attribute(const std::string& key, const time_point_us& date_t
     query.exec();
 }
 
-void Database::set_attribute(const std::string& key_a, const std::string& key_b, const time_point_us& date_time)
-{
-    set_attribute(key_a + "_" + key_b, date_time);
-}
-
 void Database::set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& date_time)
 {
     set_attribute(key_a + "_" + key_b + "_" + key_c, date_time);
 }
 
-void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, std::shared_ptr<DatabaseTicks> ticks)
+void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, std::shared_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
 {
-    time_point_us first_timestamp = ticks->get_first_timestamp();
+    time_point_us last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
 
-    //bool has = has_attribute(exchange, "");
+    std::filesystem::create_directories(root_path + "/" + exchange);
+    std::ofstream file(root_path + "/" + exchange + "/" + symbol + ".dat", std::ofstream::app);
+    
+    bool in_range = false;
+    for (auto&& row : ticks->rows) {
+
+        if (!in_range && (row.timestamp > last_timestamp)) {
+            in_range = true;
+        }
+        if (in_range) {
+            file << date::format("%FD%T", row.timestamp).c_str();
+            file << "," << row.price << "," << row.volume << ",";
+            if (row.buy) {
+                file << "BUY";
+            }
+            else {
+                file << "SELL";
+            }
+            file << "\n";
+
+            last_timestamp = row.timestamp;
+        }
+    }
+
+    file.close();
+
+    set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
 DatabaseTickRow::DatabaseTickRow(time_point_us timestamp, float price, float volume, bool buy) :
@@ -120,10 +131,10 @@ DatabaseTickRow::DatabaseTickRow(time_point_us timestamp, float price, float vol
 
 void DatabaseTicks::append(time_point_us timestamp, float price, float volume, bool buy)
 {
-    ticks.push_back(DatabaseTickRow(timestamp, price, volume, buy));
+    rows.push_back(DatabaseTickRow(timestamp, price, volume, buy));
 }
 
 time_point_us DatabaseTicks::get_first_timestamp(void)
 {
-    return ticks[0].timestamp;
+    return rows[0].timestamp;
 }

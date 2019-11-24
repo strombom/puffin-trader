@@ -38,7 +38,9 @@ void BitmexDaily::start_download(void)
     std::scoped_lock lock(state_mutex);
 
     active_downloads_count = 0;
-    downloading_first = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
+
+    // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
+    downloading_first = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
     downloading_first = date::floor<date::days>(downloading_first);
     downloading_last = downloading_first;
     state = BitmexDailyState::downloading;
@@ -46,7 +48,7 @@ void BitmexDaily::start_download(void)
     while (start_next()); // Starting as many downloads as possible.
  }
 
-void BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick_data)
+bool BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick_data)
 {
     const boost::regex linesregx("\\n");
     std::string indata = raw_data.str();
@@ -119,11 +121,12 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick
         }
 
         if (!valid) {
-            return;
+            return false;
         }
         (*tick_data)[symbol].append(timestamp, price, volume, buy);
     }
 
+    return true;
 }
 
 void BitmexDaily::download_done_callback(std::string datestring, sptr_download_data_t payload)
@@ -138,12 +141,17 @@ void BitmexDaily::download_done_callback(std::string datestring, sptr_download_d
     std::stringstream decompressed;
     boost::iostreams::copy(out, decompressed);
     auto tick_data = std::make_shared<TickData>();
-    parse_raw(decompressed, tick_data);
+    bool valid = parse_raw(decompressed, tick_data);
+
+    if (!valid) {
+        shutdown();
+        return;
+    }
 
     for (auto&& symbol_keyval = tick_data->begin(); symbol_keyval != tick_data->end(); ++symbol_keyval) {
         auto symbol = symbol_keyval->first;
         auto data = std::make_shared<DatabaseTicks>(symbol_keyval->second);
-        database->tick_data_extend(exchange_name, symbol, data);
+        database->tick_data_extend(exchange_name, symbol, data, bitmex_first_timestamp);
     }
 
     logger.info("BitmexDaily download done (%s)", datestring.c_str());
@@ -169,7 +177,7 @@ bool BitmexDaily::start_next(void)
     }
     
     std::string url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
-    url += date::format("%Y%m%d", downloading_last); // downloading_last.to_string("%Y%m%d");
+    url += date::format("%Y%m%d", downloading_last);
     url += ".csv.gz";
 
     download_manager->download(url, downloader_client_id, date::format("%Y-%m-%d", downloading_last), std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1, std::placeholders::_2));

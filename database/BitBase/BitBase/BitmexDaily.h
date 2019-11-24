@@ -42,7 +42,7 @@ private:
     bool start_next(void);
     void download_done_callback(std::string datestring, sptr_download_data_t payload);
 
-    void parse_raw(const std::stringstream& raw_data, sptrTickData tick_data);
+    bool parse_raw(const std::stringstream& raw_data, sptrTickData tick_data);
 };
 
 using sptrBitmexDaily = std::shared_ptr<BitmexDaily>;
