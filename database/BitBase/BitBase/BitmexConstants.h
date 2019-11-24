@@ -3,5 +3,4 @@
 #include "DateTime.h"
 
 
-static const DateTime bitmex_first_timestamp(2017, 01, 01, 00, 00, 00.0);
-
+static const time_point_us bitmex_first_timestamp{ date::sys_days(date::year{2017}/01/01) };

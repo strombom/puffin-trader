@@ -36,55 +36,94 @@ bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
 }
 */
 
-DateTime Database::get_attribute(const std::string& key, const DateTime& default_date_time)
+bool Database::has_attribute(const std::string& key)
 {
+    SQLite::Statement query_select(*attributes_db, "SELECT EXISTS(SELECT * FROM attributes WHERE key = ?)");
+    query_select.bind(1, key.c_str());
+    query_select.executeStep();
+
+    auto a = query_select.getColumn(0);
+
+    return true;
+}
+
+bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
+{
+    return has_attribute(key_a + "_" + key_b);
+}
+
+bool Database::has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c)
+{
+    return has_attribute(key_a + "_" + key_b + "_" + key_c);
+}
+
+time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
+{
+    //date::format("%F %T", std::chrono::system_clock::now()).c_str()
+
     SQLite::Statement query_insert(*attributes_db, "INSERT OR IGNORE INTO attributes(\"key\", \"value\") VALUES(:key, :value)");
     query_insert.bind(":key", key.c_str());
-    query_insert.bind(":value", default_date_time.to_string().c_str());
+    query_insert.bind(":value", date::format("%F %T", default_date_time).c_str()); //default_date_time.to_string().c_str());
     query_insert.executeStep();
 
     SQLite::Statement query_select(*attributes_db, "SELECT value FROM attributes WHERE key = ?");
     query_select.bind(1, key.c_str());
     query_select.executeStep();
 
-    return DateTime(query_select.getColumn(0).getString());
+    std::istringstream in(query_select.getColumn(0).getString());
+    time_point_us tp;
+    in >> date::parse("%F %T", tp);
+    return tp;
+    //return DateTime(query_select.getColumn(0).getString());
 }
 
-DateTime Database::get_attribute(const std::string& key_a, const std::string& key_b, const DateTime& default_date_time)
+time_point_us Database::get_attribute(const std::string& key_a, const std::string& key_b, const time_point_us& default_date_time)
 {
     return get_attribute(key_a + "_" + key_b, default_date_time);
 }
 
-DateTime Database::get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const DateTime& default_date_time)
+time_point_us Database::get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& default_date_time)
 {
     return get_attribute(key_a + "_" + key_b + "_" + key_c, default_date_time);
 }
 
-void Database::set_attribute(const std::string& key, const DateTime& date_time)
+void Database::set_attribute(const std::string& key, const time_point_us& date_time)
 {
     SQLite::Statement query(*attributes_db, "INSERT OR REPLACE INTO attributes(\"key\", \"value\") VALUES(:key, :value)");
     query.bind(":key",   key.c_str());
-    query.bind(":value", date_time.to_string().c_str());
+    query.bind(":value", date::format("%F %T", date_time).c_str());
     query.exec();
 }
 
-void Database::set_attribute(const std::string& key_a, const std::string& key_b, const DateTime& date_time)
+void Database::set_attribute(const std::string& key_a, const std::string& key_b, const time_point_us& date_time)
 {
     set_attribute(key_a + "_" + key_b, date_time);
 }
 
-void Database::set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const DateTime& date_time)
+void Database::set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& date_time)
 {
     set_attribute(key_a + "_" + key_b + "_" + key_c, date_time);
 }
 
-DatabaseTickRow::DatabaseTickRow(std::uint64_t timestamp, float price, float volume, bool buy) :
+void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, std::shared_ptr<DatabaseTicks> ticks)
+{
+    time_point_us first_timestamp = ticks->get_first_timestamp();
+
+    //bool has = has_attribute(exchange, "");
+}
+
+DatabaseTickRow::DatabaseTickRow(time_point_us timestamp, float price, float volume, bool buy) :
     timestamp(timestamp), price(price), volume(volume), buy(buy)
 {
 
 }
 
-void DatabaseTicks::append(std::uint64_t timestamp, float price, float volume, bool buy)
+void DatabaseTicks::append(time_point_us timestamp, float price, float volume, bool buy)
 {
     ticks.push_back(DatabaseTickRow(timestamp, price, volume, buy));
+}
+
+time_point_us DatabaseTicks::get_first_timestamp(void)
+{
+    return ticks[0].timestamp;
 }

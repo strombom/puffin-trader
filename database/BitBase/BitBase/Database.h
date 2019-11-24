@@ -2,15 +2,17 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 #include "SQLiteCpp/SQLiteCpp.h"
 
 #include "DateTime.h"
 
+
 struct DatabaseTickRow
 {
-    DatabaseTickRow(std::uint64_t timestamp, float price, float volume, bool buy);
+    DatabaseTickRow(time_point_us timestamp, float price, float volume, bool buy);
 
-    std::uint64_t timestamp;
+    time_point_us timestamp;
     float price;
     float volume;
     bool buy;
@@ -19,7 +21,9 @@ struct DatabaseTickRow
 class DatabaseTicks
 {
 public:
-    void append(std::uint64_t timestamp, float price, float volume, bool buy);
+    void append(time_point_us timestamp, float price, float volume, bool buy);
+
+    time_point_us get_first_timestamp(void);
 
 private:
     std::vector<DatabaseTickRow> ticks;
@@ -34,14 +38,19 @@ public:
 
     //bool has_attribute(const std::string& key_a, const std::string& key_b);
 
-    DateTime get_attribute(const std::string& key,   const DateTime& default_date_time);
-    DateTime get_attribute(const std::string& key_a, const std::string& key_b, const DateTime& default_date_time);
-    DateTime get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const DateTime& default_date_time);
+    bool has_attribute(const std::string& key);
+    bool has_attribute(const std::string& key_a, const std::string& key_b);
+    bool has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c);
 
-    void set_attribute(const std::string& key,   const DateTime& date_time);
-    void set_attribute(const std::string& key_a, const std::string& key_b, const DateTime& date_time);
-    void set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const DateTime& date_time);
+    time_point_us get_attribute(const std::string& key,   const time_point_us& default_date_time);
+    time_point_us get_attribute(const std::string& key_a, const std::string& key_b, const time_point_us& default_date_time);
+    time_point_us get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& default_date_time);
 
+    void set_attribute(const std::string& key,   const time_point_us& date_time);
+    void set_attribute(const std::string& key_a, const std::string& key_b, const time_point_us& date_time);
+    void set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& date_time);
+
+    void tick_data_extend(const std::string& exchange, const std::string& symbol, std::shared_ptr<DatabaseTicks> ticks);
     //void append_10s(const std::string& symbol, )
 
 private:

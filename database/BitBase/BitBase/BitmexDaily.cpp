@@ -39,17 +39,15 @@ void BitmexDaily::start_download(void)
 
     active_downloads_count = 0;
     downloading_first = database->get_attribute("BITMEX", "BTCUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
-    downloading_first.set_time(0, 0, 0);
+    downloading_first = date::floor<date::days>(downloading_first);
     downloading_last = downloading_first;
     state = BitmexDailyState::downloading;
 
     while (start_next()); // Starting as many downloads as possible.
  }
 
-void BitmexDaily::parse_raw(const std::stringstream& raw_data)
-{    
-    std::map<std::string, DatabaseTicks> tables;
-    
+void BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick_data)
+{
     const boost::regex linesregx("\\n");
     std::string indata = raw_data.str();
     boost::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
@@ -64,7 +62,7 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data)
         boost::sregex_token_iterator col_it(row.begin(), row.end(), fieldsregx, -1);
         boost::sregex_token_iterator col_end;
 
-        std::uint64_t timestamp;
+        time_point_us timestamp;
         std::string symbol;
         float price;
         float volume;
@@ -76,8 +74,9 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data)
             std::string token = col_it->str();
             ++col_it;
             if (idx == 0) {
-                timestamp = DateTime::string_to_timestamp(token);
-                if (timestamp == 0) {
+                std::istringstream ss{ token };
+                ss >> date::parse("%FD%T", timestamp);
+                if (ss.fail()) {
                     break;
                 }
             }
@@ -119,13 +118,15 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data)
         if (!valid) {
             return;
         }
-        tables[symbol].append(timestamp, price, volume, buy);
+        (*tick_data)[symbol].append(timestamp, price, volume, buy);
     }
 
 }
 
 void BitmexDaily::download_done_callback(std::string datestring, sptr_download_data_t payload)
 {
+    std::scoped_lock lock(state_mutex);
+
     boost::iostreams::array_source compressed(payload->data(), payload->size());
     boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
     out.push(boost::iostreams::gzip_decompressor());
@@ -133,9 +134,15 @@ void BitmexDaily::download_done_callback(std::string datestring, sptr_download_d
 
     std::stringstream decompressed;
     boost::iostreams::copy(out, decompressed);
-    parse_raw(decompressed);
-    
-    std::scoped_lock lock(state_mutex);
+    auto tick_data = std::make_shared<TickData>();
+    parse_raw(decompressed, tick_data);
+
+    for (auto&& symbol_keyval = tick_data->begin(); symbol_keyval != tick_data->end();) {
+        auto symbol = symbol_keyval->first;
+        auto data = std::make_shared<DatabaseTicks>(symbol_keyval->second);
+        database->tick_data_extend(exchange_name, symbol, data);
+    }
+
     logger.info("BitmexDaily download done (%s)", datestring.c_str());
     active_downloads_count--;
     if (active_downloads_count == 0) {
@@ -151,20 +158,20 @@ bool BitmexDaily::start_next(void)
         return false;
     }
 
-    DateTime last_timestamp = DateTime::now() - TimeDelta::days(1);
-    last_timestamp.set_time(0, 0, 0);
+    time_point_us last_timestamp = system_clock_now - date::days{ 1 };
+    last_timestamp = date::floor<date::days>(last_timestamp);
     if (downloading_last > last_timestamp) {
         state = BitmexDailyState::idle;
         return false;
     }
     
     std::string url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
-    url += downloading_last.to_string("%Y%m%d");
+    url += date::format("%Y%m%d", downloading_last); // downloading_last.to_string("%Y%m%d");
     url += ".csv.gz";
 
-    download_manager->download(url, downloader_client_id, downloading_last.to_string_date(), std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1, std::placeholders::_2));
+    download_manager->download(url, downloader_client_id, date::format("%Y-%m-%d", downloading_last), std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1, std::placeholders::_2));
 
-    downloading_last += TimeDelta::days(1);
+    downloading_last += date::days{ 1 };
     active_downloads_count += 1;
 
     return true;

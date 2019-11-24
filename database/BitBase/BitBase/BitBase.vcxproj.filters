@@ -40,9 +40,6 @@
     <Filter Include="Source Files\Server">
       <UniqueIdentifier>{a09e8bd8-a329-492b-ae02-ca03c8b87cde}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\DateTime">
-      <UniqueIdentifier>{e74af761-b876-457e-ba22-46e3d49138a9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -50,15 +47,6 @@
     </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DateTime.cpp">
-      <Filter>Source Files\DateTime</Filter>
-    </ClCompile>
-    <ClCompile Include="Duration.cpp">
-      <Filter>Source Files\DateTime</Filter>
-    </ClCompile>
-    <ClCompile Include="TimeDelta.cpp">
-      <Filter>Source Files\DateTime</Filter>
     </ClCompile>
     <ClCompile Include="Bitmex.cpp">
       <Filter>Source Files\Bitmex</Filter>
@@ -89,12 +77,6 @@
     <ClInclude Include="DateTime.h">
       <Filter>Header Files\DateTime</Filter>
     </ClInclude>
-    <ClInclude Include="TimeDelta.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
-    <ClInclude Include="Duration.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
     <ClInclude Include="DownloadManager.h">
       <Filter>Header Files\DownloadManager</Filter>
     </ClInclude>
@@ -118,6 +100,9 @@
     </ClInclude>
     <ClInclude Include="DownloadTask.h">
       <Filter>Header Files\DownloadManager</Filter>
+    </ClInclude>
+    <ClInclude Include="date.h">
+      <Filter>Header Files\DateTime</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

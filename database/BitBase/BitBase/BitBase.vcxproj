@@ -104,7 +104,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;DHAVE_SNPRINTF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -161,10 +161,7 @@
     <ClCompile Include="Bitmex.cpp" />
     <ClCompile Include="BitmexDaily.cpp" />
     <ClCompile Include="Database.cpp" />
-    <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DownloadTask.cpp" />
-    <ClCompile Include="Duration.cpp" />
-    <ClCompile Include="TimeDelta.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
     <ClCompile Include="DownloadThread.cpp" />
     <ClCompile Include="Logger.cpp" />
@@ -175,14 +172,13 @@
     <ClInclude Include="BitmexConstants.h" />
     <ClInclude Include="BitmexDaily.h" />
     <ClInclude Include="Database.h" />
+    <ClInclude Include="date.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="DownloadManager.h" />
     <ClInclude Include="DownloadTask.h" />
     <ClInclude Include="DownloadThread.h" />
-    <ClInclude Include="Duration.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Server.h" />
-    <ClInclude Include="TimeDelta.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
