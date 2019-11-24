@@ -158,7 +158,7 @@ bool BitmexDaily::start_next(void)
         return false;
     }
 
-    time_point_us last_timestamp = system_clock_now - date::days{ 1 };
+    time_point_us last_timestamp = system_clock_us_now() - date::days{ 1 };
     last_timestamp = date::floor<date::days>(last_timestamp);
     if (downloading_last > last_timestamp) {
         state = BitmexDailyState::idle;
