@@ -90,6 +90,9 @@ void BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick
                 else if (token == "Sell") {
                     buy = false;
                 }
+                else if (token == "") {
+                    buy = true;
+                }
                 else {
                     break;
                 }
@@ -137,7 +140,7 @@ void BitmexDaily::download_done_callback(std::string datestring, sptr_download_d
     auto tick_data = std::make_shared<TickData>();
     parse_raw(decompressed, tick_data);
 
-    for (auto&& symbol_keyval = tick_data->begin(); symbol_keyval != tick_data->end();) {
+    for (auto&& symbol_keyval = tick_data->begin(); symbol_keyval != tick_data->end(); ++symbol_keyval) {
         auto symbol = symbol_keyval->first;
         auto data = std::make_shared<DatabaseTicks>(symbol_keyval->second);
         database->tick_data_extend(exchange_name, symbol, data);
