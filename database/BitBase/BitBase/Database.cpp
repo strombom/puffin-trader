@@ -94,8 +94,8 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
 {
     time_point_us last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
 
-    std::filesystem::create_directories(root_path + "/" + exchange);
-    std::ofstream file(root_path + "/" + exchange + "/" + symbol + ".dat", std::ofstream::app);
+    std::filesystem::create_directories(root_path + "/tick/" + exchange);
+    std::ofstream file(root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app);
     
     bool in_range = false;
     for (auto&& row : ticks->rows) {
