@@ -21,9 +21,9 @@ public:
     DownloadThread(manager_callback_done_t manager_callback_done);
     ~DownloadThread(void);
 
-    void abort(void);       // Abort download
-    void shutdown(void);    // Abort download and exit thread
-    void join(void) const;  // Join thread
+    void shutdown(void);
+    void join(void) const;
+    void abort_download(void);
 
     bool is_idle(void) const;
     bool test_client_id(std::string client_id) const;

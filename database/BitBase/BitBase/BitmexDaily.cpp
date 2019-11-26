@@ -129,7 +129,7 @@ bool BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick
     return true;
 }
 
-void BitmexDaily::download_done_callback(std::string datestring, sptr_download_data_t payload)
+void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 {
     std::scoped_lock lock(state_mutex);
 
@@ -154,12 +154,14 @@ void BitmexDaily::download_done_callback(std::string datestring, sptr_download_d
         database->tick_data_extend(exchange_name, symbol, data, bitmex_first_timestamp);
     }
 
-    logger.info("BitmexDaily download done (%s)", datestring.c_str());
+    logger.info("BitmexDaily download done");
     active_downloads_count--;
     if (active_downloads_count == 0) {
         state = BitmexDailyState::idle;
     } else {
-        start_next();
+        if (state == BitmexDailyState::downloading) {
+            start_next();
+        }
     }
 }
 
@@ -180,7 +182,7 @@ bool BitmexDaily::start_next(void)
     url += date::format("%Y%m%d", downloading_last);
     url += ".csv.gz";
 
-    download_manager->download(url, downloader_client_id, date::format("%Y-%m-%d", downloading_last), std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1, std::placeholders::_2));
+    download_manager->download(url, downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
 
     downloading_last += date::days{ 1 };
     active_downloads_count += 1;

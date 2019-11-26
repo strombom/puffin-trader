@@ -22,6 +22,7 @@ DownloadThread::~DownloadThread(void)
 void DownloadThread::shutdown(void)
 {
     std::scoped_lock lock(state_mutex);
+    logger.info("shutdown thread");
     state = DownloadState::shutting_down;
 }
 
@@ -32,7 +33,7 @@ void DownloadThread::join(void) const
     }
 }
 
-void DownloadThread::abort(void)
+void DownloadThread::abort_download(void)
 {
     std::scoped_lock lock(state_mutex);
     state = DownloadState::aborting;
@@ -99,6 +100,7 @@ size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
 size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow)
 {
     if (((DownloadThread*)arg)->state == DownloadState::aborting || ((DownloadThread*)arg)->state == DownloadState::shutting_down) {
+        logger.info("aborting thread");
         return CURLE_ABORTED_BY_CALLBACK;
     }
     else {

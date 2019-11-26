@@ -12,7 +12,7 @@ public:
 
     static std::shared_ptr<DownloadManager> create(void);
 
-    void download(std::string url, std::string client_id, std::string callback_arg, client_callback_done_t client_callback_done);
+    void download(std::string url, std::string client_id, client_callback_done_t client_callback_done);
     void download_done_callback(uptrDownloadTask task);
 
     void abort_client(std::string client_id);
@@ -27,11 +27,12 @@ private:
 
     std::deque<uptrDownloadTask> pending_tasks;
     std::unordered_map<std::string, std::deque<uptrDownloadTask>> finished_tasks;
-    std::unordered_map<std::string, std::queue<std::string>> client_args;
+    std::unordered_map<std::string, int> next_download_id;
+    std::unordered_map<std::string, int> expected_download_id;
 
     std::vector<sptrDownloadThread> threads;
     
-    void work(void);
+    bool start_pending_downloads(void);
 };
 
 using sptrDownloadManager  = std::shared_ptr<DownloadManager>;

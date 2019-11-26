@@ -30,7 +30,7 @@ private:
     inline static const std::string downloader_client_id = "bitmex_daily";
     static const int active_downloads_max = 5;
 
-    BitmexDailyState state;
+    std::atomic<BitmexDailyState> state;
     std::mutex state_mutex;
 
     sptrDatabase database;
@@ -40,7 +40,7 @@ private:
     int active_downloads_count;
 
     bool start_next(void);
-    void download_done_callback(std::string datestring, sptr_download_data_t payload);
+    void download_done_callback(sptr_download_data_t payload);
 
     bool parse_raw(const std::stringstream& raw_data, sptrTickData tick_data);
 };

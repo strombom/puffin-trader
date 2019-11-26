@@ -79,6 +79,8 @@ int main()
     }
     logger.info("Shutting down");
 
-    download_manager->shutdown();
     bitmex.shutdown();
+    download_manager->shutdown();
+
+    download_manager->join();
 }
