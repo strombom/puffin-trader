@@ -90,7 +90,7 @@ void Database::set_attribute(const std::string& key_a, const std::string& key_b,
     set_attribute(key_a + "_" + key_b + "_" + key_c, date_time);
 }
 
-void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, std::shared_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
+void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
 {
     time_point_us last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
 

@@ -44,9 +44,6 @@ void Bitmex::main_loop(void)
                 if (bitmex_daily->get_state() == BitmexDailyState::idle) {
                     state = BitmexState::idle;
                 }
-                else {
-                    //bitmex_daily->work();
-                }
 
             }
         }

@@ -13,48 +13,48 @@
 
 BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager) :
     database(database), download_manager(download_manager), 
-    state(BitmexDailyState::idle), active_downloads_count(0)
+    state(BitmexDailyState::idle), tick_data_thread_running(true)
 {
-
+    tick_data_worker_thread = std::make_unique<std::thread>(&BitmexDaily::tick_data_worker, this);
 }
 
 BitmexDailyState BitmexDaily::get_state(void)
 {
-    logger.info("BitmexDaily::get_state");
+    //logger.info("BitmexDaily::get_state");
     return state;
 }
 
 void BitmexDaily::shutdown(void)
 {
     logger.info("BitmexDaily::shutdown");
+    tick_data_thread_running = false;
     download_manager->abort_client(downloader_client_id);
+    state = BitmexDailyState::idle;
 
-    {
-        std::scoped_lock lock(state_mutex);
-        state = BitmexDailyState::idle;
+    if (tick_data_worker_thread->joinable()) {
+        tick_data_worker_thread->join();
     }
 }
 
 void BitmexDaily::start_download(void)
 {
+    assert(state == BitmexDailyState::idle);
     logger.info("BitmexDaily::start_download");
-    std::scoped_lock lock(state_mutex);
-
-    active_downloads_count = 0;
-
+    
     // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
-    downloading_first = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
-    downloading_first = date::floor<date::days>(downloading_first);
-    downloading_last = downloading_first;
+    const auto timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
+    timestamp_next = date::floor<date::days>(timestamp);
+
     state = BitmexDailyState::downloading;
 
-    while (start_next()); // Starting as many downloads as possible.
+    for (int i = 0; i < active_downloads_max; ++i) {
+        start_next();
+    }
 }
 
 void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 {
     logger.info("BitmexDaily::download_done_callback start");
-    std::scoped_lock lock(state_mutex);
 
     boost::iostreams::array_source compressed(payload->data(), payload->size());
     boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
@@ -63,76 +63,93 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 
     std::stringstream decompressed;
     boost::iostreams::copy(out, decompressed);
-    auto tick_data = std::make_shared<TickData>();
-    bool valid = parse_raw(decompressed, tick_data);
+    auto tick_data = parse_raw(decompressed);
 
-    if (!valid) {
+    logger.info("BitmexDaily::download_done_callback parsing done");
+
+    if (!tick_data) {
+        logger.error("BitmexDaily::download_done_callback parsing error!");
         shutdown();
         return;
     }
+    
+    {
+        std::scoped_lock slock(tick_data_mutex);
+        tick_data_queue.push_back(std::move(tick_data));
+    }
+    tick_data_condition.notify_one();
 
-    for (auto&& symbol_keyval = tick_data->begin(); symbol_keyval != tick_data->end(); ++symbol_keyval) {
-        auto symbol = symbol_keyval->first;
-        auto data = std::make_shared<DatabaseTicks>(symbol_keyval->second);
-        database->tick_data_extend(exchange_name, symbol, data, bitmex_first_timestamp);
-    }
+    logger.info("BitmexDaily::download_done_callback start next");
 
-    logger.info("BitmexDaily download done");
-    active_downloads_count--;
-    if (active_downloads_count == 0) {
-        state = BitmexDailyState::idle;
-    }
-    else {
-        start_next();
-    }
+    start_next();
+
     logger.info("BitmexDaily::download_done_callback end");
 }
 
-void BitmexDaily::work(void)
-{
-    /*
-    logger.info("BitmexDaily::work start");
-    std::scoped_lock lock(state_mutex);
-
-    if (state == BitmexDailyState::downloading) {
-        start_next();
-    }
-    logger.info("BitmexDaily::work end");
-    */
-}
-
-bool BitmexDaily::start_next(void)
+void BitmexDaily::start_next(void)
 {
     logger.info("BitmexDaily::start_next start");
-    if (active_downloads_count == active_downloads_max) {
-        logger.info("BitmexDaily::start_next end 1");
-        return false;
-    }
 
     time_point_us last_timestamp = system_clock_us_now() - date::days{ 1 };
     last_timestamp = date::floor<date::days>(last_timestamp);
-    if (downloading_last > last_timestamp) {
+    if (timestamp_next > last_timestamp) {
         state = BitmexDailyState::idle;
-        logger.info("BitmexDaily::start_next end 2");
-        return false;
+        logger.info("BitmexDaily::start_next last index");
+        return;
     }
     
     std::string url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
-    url += date::format("%Y%m%d", downloading_last);
+    url += date::format("%Y%m%d", timestamp_next);
     url += ".csv.gz";
-
     download_manager->download(url, downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
+    timestamp_next += date::days{ 1 };
 
-    downloading_last += date::days{ 1 };
-    active_downloads_count += 1;
-
-    logger.info("BitmexDaily::start_next end 3");
-    return true;
+    logger.info("BitmexDaily::start_next end");
 }
 
-
-bool BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick_data)
+void BitmexDaily::tick_data_worker(void)
 {
+    while (tick_data_thread_running) {
+        {
+            std::unique_lock<std::mutex> tick_data_lock(tick_data_mutex);
+            tick_data_condition.wait(tick_data_lock);
+        }
+        logger.info("BitmexDaily::tick_data_worker start");
+
+        while (tick_data_thread_running) {
+            uptrTickData tick_data;
+            {
+                std::scoped_lock slock(tick_data_mutex);
+                if (!tick_data_queue.empty()) {
+                    tick_data = std::move(tick_data_queue.front());
+                    tick_data_queue.pop_front();
+                }
+                else {
+                    break;
+                }
+            }
+
+            const auto start = std::chrono::steady_clock::now();
+
+            for (auto&& symbol_tick_data = tick_data->begin(); symbol_tick_data != tick_data->end(); ++symbol_tick_data) {
+                const auto symbol = symbol_tick_data->first;
+                auto data = std::move(symbol_tick_data->second);
+                database->tick_data_extend(exchange_name, symbol, std::move(data), bitmex_first_timestamp);
+            }
+
+            const auto end = std::chrono::steady_clock::now();
+            const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+            logger.info("BitmexDaily::tick_data_worker tick_data appended to database (%d ms)", elapsed);
+        }
+        logger.info("BitmexDaily::tick_data_worker end");
+    }
+}
+
+BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_data)
+{
+    auto tick_data = std::make_unique<TickData>();
+
     logger.info("BitmexDaily::parse_raw");
     const boost::regex linesregx("\\n");
     std::string indata = raw_data.str();
@@ -205,10 +222,13 @@ bool BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick
         }
 
         if (!valid) {
-            return false;
+            return nullptr;
         }
-        (*tick_data)[symbol].append(timestamp, price, volume, buy);
+        if ((*tick_data)[symbol] == nullptr) {
+            (*tick_data)[symbol] = std::make_unique<DatabaseTicks>();
+        }
+        (*tick_data)[symbol]->append(timestamp, price, volume, buy);
     }
 
-    return true;
+    return tick_data;
 }

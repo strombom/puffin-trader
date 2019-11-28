@@ -77,8 +77,10 @@ void DownloadThread::worker_thread(void)
 {
     while (state != DownloadState::shutting_down) {
 
-        std::unique_lock<std::mutex> download_start_lock(download_start_mutex);
-        download_start_condition.wait(download_start_lock);
+        {
+            std::unique_lock<std::mutex> download_start_lock(download_start_mutex);
+            download_start_condition.wait(download_start_lock);
+        }
 
         {
             std::scoped_lock slock(state_mutex, pending_task_mutex);
@@ -105,9 +107,9 @@ void DownloadThread::worker_thread(void)
                     if (res == CURLE_OK && state != DownloadState::aborting && state != DownloadState::shutting_down) {
                         manager_callback_done(std::move(task));
                         state = DownloadState::idle;
-                        logger.info("thread done");
+                        logger.info("DownloadThread::worker_thread done");
                     } else {
-                        logger.info("thread failed");
+                        logger.info("DownloadThread::worker_thread failed");
                         task->clear_data();
                     }
                 }
