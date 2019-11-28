@@ -21,18 +21,25 @@ public:
 
 private:
     static const int threads_count = 5;
+    std::vector<sptrDownloadThread> threads;
     std::mutex threads_mutex;
-    std::mutex download_done_mutex;
-    std::mutex client_args_mutex;
+
+    std::mutex pending_tasks_mutex;
+    std::mutex finished_tasks_mutex;
+    std::condition_variable pending_tasks_condition;
+    std::condition_variable finished_tasks_condition;
 
     std::deque<uptrDownloadTask> pending_tasks;
-    std::unordered_map<std::string, std::deque<uptrDownloadTask>> finished_tasks;
+    std::deque<uptrDownloadTask> finished_tasks;
     std::unordered_map<std::string, int> next_download_id;
     std::unordered_map<std::string, int> expected_download_id;
 
-    std::vector<sptrDownloadThread> threads;
-    
-    bool start_pending_downloads(void);
+    bool running;
+    void pending_tasks_thread(void);
+    void finished_tasks_thread(void);
+
+    std::unique_ptr<std::thread> pending_tasks_thread_handle;
+    std::unique_ptr<std::thread> finished_tasks_thread_handle;
 };
 
-using sptrDownloadManager  = std::shared_ptr<DownloadManager>;
+using sptrDownloadManager = std::shared_ptr<DownloadManager>;

@@ -8,18 +8,19 @@
 Bitmex::Bitmex(sptrDatabase database, sptrDownloadManager download_manager) :
     database(database), download_manager(download_manager), state(BitmexState::idle), thread_running(true)
 {
-    bitmex_daily = std::make_shared<BitmexDaily>(database, download_manager);
+    bitmex_daily = std::make_unique<BitmexDaily>(database, download_manager);
     main_loop_task = std::async(&Bitmex::main_loop, this);
 }
 
 void Bitmex::shutdown(void)
 {
-    logger.info("Shutting down Bitmex client.");
+    logger.info("Bitmex::shutdown");
     {
         std::scoped_lock lock(state_mutex);
-        bitmex_daily->shutdown();
         state = BitmexState::shutdown;
     }
+    logger.info("Bitmex::shutdown state = shutdown");
+    bitmex_daily->shutdown();
     main_loop_task.wait();
 }
  
@@ -42,6 +43,9 @@ void Bitmex::main_loop(void)
                 // Check if daily data is downloaded
                 if (bitmex_daily->get_state() == BitmexDailyState::idle) {
                     state = BitmexState::idle;
+                }
+                else {
+                    //bitmex_daily->work();
                 }
 
             }

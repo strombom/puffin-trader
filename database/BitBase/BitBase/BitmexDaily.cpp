@@ -20,21 +20,24 @@ BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_man
 
 BitmexDailyState BitmexDaily::get_state(void)
 {
-    std::scoped_lock lock(state_mutex);
-
+    logger.info("BitmexDaily::get_state");
     return state;
 }
 
 void BitmexDaily::shutdown(void)
 {
-    std::scoped_lock lock(state_mutex);
-
+    logger.info("BitmexDaily::shutdown");
     download_manager->abort_client(downloader_client_id);
-    state = BitmexDailyState::idle;
+
+    {
+        std::scoped_lock lock(state_mutex);
+        state = BitmexDailyState::idle;
+    }
 }
 
 void BitmexDaily::start_download(void)
 {
+    logger.info("BitmexDaily::start_download");
     std::scoped_lock lock(state_mutex);
 
     active_downloads_count = 0;
@@ -46,15 +49,96 @@ void BitmexDaily::start_download(void)
     state = BitmexDailyState::downloading;
 
     while (start_next()); // Starting as many downloads as possible.
- }
+}
+
+void BitmexDaily::download_done_callback(sptr_download_data_t payload)
+{
+    logger.info("BitmexDaily::download_done_callback start");
+    std::scoped_lock lock(state_mutex);
+
+    boost::iostreams::array_source compressed(payload->data(), payload->size());
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
+    out.push(boost::iostreams::gzip_decompressor());
+    out.push(compressed);
+
+    std::stringstream decompressed;
+    boost::iostreams::copy(out, decompressed);
+    auto tick_data = std::make_shared<TickData>();
+    bool valid = parse_raw(decompressed, tick_data);
+
+    if (!valid) {
+        shutdown();
+        return;
+    }
+
+    for (auto&& symbol_keyval = tick_data->begin(); symbol_keyval != tick_data->end(); ++symbol_keyval) {
+        auto symbol = symbol_keyval->first;
+        auto data = std::make_shared<DatabaseTicks>(symbol_keyval->second);
+        database->tick_data_extend(exchange_name, symbol, data, bitmex_first_timestamp);
+    }
+
+    logger.info("BitmexDaily download done");
+    active_downloads_count--;
+    if (active_downloads_count == 0) {
+        state = BitmexDailyState::idle;
+    }
+    else {
+        start_next();
+    }
+    logger.info("BitmexDaily::download_done_callback end");
+}
+
+void BitmexDaily::work(void)
+{
+    /*
+    logger.info("BitmexDaily::work start");
+    std::scoped_lock lock(state_mutex);
+
+    if (state == BitmexDailyState::downloading) {
+        start_next();
+    }
+    logger.info("BitmexDaily::work end");
+    */
+}
+
+bool BitmexDaily::start_next(void)
+{
+    logger.info("BitmexDaily::start_next start");
+    if (active_downloads_count == active_downloads_max) {
+        logger.info("BitmexDaily::start_next end 1");
+        return false;
+    }
+
+    time_point_us last_timestamp = system_clock_us_now() - date::days{ 1 };
+    last_timestamp = date::floor<date::days>(last_timestamp);
+    if (downloading_last > last_timestamp) {
+        state = BitmexDailyState::idle;
+        logger.info("BitmexDaily::start_next end 2");
+        return false;
+    }
+    
+    std::string url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
+    url += date::format("%Y%m%d", downloading_last);
+    url += ".csv.gz";
+
+    download_manager->download(url, downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
+
+    downloading_last += date::days{ 1 };
+    active_downloads_count += 1;
+
+    logger.info("BitmexDaily::start_next end 3");
+    return true;
+}
+
 
 bool BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick_data)
 {
+    logger.info("BitmexDaily::parse_raw");
     const boost::regex linesregx("\\n");
     std::string indata = raw_data.str();
     boost::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
     boost::sregex_token_iterator row_end;
-    
+
     ++row_it; // Skip table headers
     while (row_it != row_end) {
         std::string row = row_it->str();
@@ -125,67 +209,6 @@ bool BitmexDaily::parse_raw(const std::stringstream& raw_data, sptrTickData tick
         }
         (*tick_data)[symbol].append(timestamp, price, volume, buy);
     }
-
-    return true;
-}
-
-void BitmexDaily::download_done_callback(sptr_download_data_t payload)
-{
-    std::scoped_lock lock(state_mutex);
-
-    boost::iostreams::array_source compressed(payload->data(), payload->size());
-    boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
-    out.push(boost::iostreams::gzip_decompressor());
-    out.push(compressed);
-
-    std::stringstream decompressed;
-    boost::iostreams::copy(out, decompressed);
-    auto tick_data = std::make_shared<TickData>();
-    bool valid = parse_raw(decompressed, tick_data);
-
-    if (!valid) {
-        shutdown();
-        return;
-    }
-
-    for (auto&& symbol_keyval = tick_data->begin(); symbol_keyval != tick_data->end(); ++symbol_keyval) {
-        auto symbol = symbol_keyval->first;
-        auto data = std::make_shared<DatabaseTicks>(symbol_keyval->second);
-        database->tick_data_extend(exchange_name, symbol, data, bitmex_first_timestamp);
-    }
-
-    logger.info("BitmexDaily download done");
-    active_downloads_count--;
-    if (active_downloads_count == 0) {
-        state = BitmexDailyState::idle;
-    } else {
-        if (state == BitmexDailyState::downloading) {
-            start_next();
-        }
-    }
-}
-
-bool BitmexDaily::start_next(void)
-{
-    if (active_downloads_count == active_downloads_max) {
-        return false;
-    }
-
-    time_point_us last_timestamp = system_clock_us_now() - date::days{ 1 };
-    last_timestamp = date::floor<date::days>(last_timestamp);
-    if (downloading_last > last_timestamp) {
-        state = BitmexDailyState::idle;
-        return false;
-    }
-    
-    std::string url = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
-    url += date::format("%Y%m%d", downloading_last);
-    url += ".csv.gz";
-
-    download_manager->download(url, downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
-
-    downloading_last += date::days{ 1 };
-    active_downloads_count += 1;
 
     return true;
 }

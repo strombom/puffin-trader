@@ -28,7 +28,7 @@ public:
 private:
     sptrDatabase database;
     sptrDownloadManager download_manager;
-    sptrBitmexDaily bitmex_daily;
+    uptrBitmexDaily bitmex_daily;
 
     std::mutex state_mutex;
     bool thread_running;

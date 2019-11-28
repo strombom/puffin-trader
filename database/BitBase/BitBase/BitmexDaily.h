@@ -22,6 +22,8 @@ public:
     void start_download(void);
     void shutdown(void);
 
+    void work(void);
+
 private:
     using TickData = std::map<std::string, DatabaseTicks>;
     using sptrTickData = std::shared_ptr<TickData>;
@@ -45,4 +47,4 @@ private:
     bool parse_raw(const std::stringstream& raw_data, sptrTickData tick_data);
 };
 
-using sptrBitmexDaily = std::shared_ptr<BitmexDaily>;
+using uptrBitmexDaily = std::unique_ptr<BitmexDaily>;

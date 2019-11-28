@@ -44,7 +44,7 @@ void DownloadTask::append_data(const char* data, std::streamsize size)
     download_data->insert(download_data->end(), data, data + size);
 }
 
-void DownloadTask::run_client_callback(void)
+void DownloadTask::call_client_callback(void)
 {
     client_callback_done(download_data);
 }

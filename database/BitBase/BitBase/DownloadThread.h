@@ -36,9 +36,11 @@ public:
 private:
     std::atomic<DownloadState> state;
 
+    uptrDownloadTask pending_task;
     uptrDownloadTask task;
 
     std::mutex state_mutex;
+    std::mutex pending_task_mutex;
     std::mutex download_start_mutex;
     std::condition_variable download_start_condition;
     std::unique_ptr<std::thread> worker;

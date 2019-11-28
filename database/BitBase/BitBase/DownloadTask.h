@@ -19,7 +19,7 @@ public:
     const int get_download_id(void) const;
     void clear_data(void);
     void append_data(const char* data, std::streamsize size);
-    void run_client_callback(void);
+    void call_client_callback(void);
 
 
 private:

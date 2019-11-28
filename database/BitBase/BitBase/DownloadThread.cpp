@@ -21,21 +21,36 @@ DownloadThread::~DownloadThread(void)
 
 void DownloadThread::shutdown(void)
 {
+    logger.info("shutdown thread start");
     std::scoped_lock lock(state_mutex);
-    logger.info("shutdown thread");
     state = DownloadState::shutting_down;
+    logger.info("shutdown thread end");
 }
 
 void DownloadThread::join(void) const
 {
+    logger.info("DownloadThread.join start");
     if (worker->joinable()) {
+        if (state == DownloadState::idle) {
+            logger.info("DownloadThread.join (idle)");
+        } 
+        else if (state == DownloadState::downloading) {
+            logger.info("DownloadThread.join (downloading)");
+        }
+        else if (state == DownloadState::aborting) {
+            logger.info("DownloadThread.join (aborting)");
+        }
+        else if (state == DownloadState::shutting_down) {
+            logger.info("DownloadThread.join (shutting_down)");
+        }
         worker->join();
     }
+    logger.info("DownloadThread.join end");
 }
 
 void DownloadThread::abort_download(void)
 {
-    std::scoped_lock lock(state_mutex);
+    std::scoped_lock slock(state_mutex);
     state = DownloadState::aborting;
 }
 
@@ -51,9 +66,10 @@ bool DownloadThread::test_client_id(std::string client_id) const
 
 void DownloadThread::assign_task(uptrDownloadTask new_task)
 {
-    std::scoped_lock slock(state_mutex);
-    state = DownloadState::downloading;
-    task = std::move(new_task);
+    {
+        std::scoped_lock slock(pending_task_mutex);
+        pending_task = std::move(new_task);
+    }
     download_start_condition.notify_one();
 }
 
@@ -63,6 +79,14 @@ void DownloadThread::worker_thread(void)
 
         std::unique_lock<std::mutex> download_start_lock(download_start_mutex);
         download_start_condition.wait(download_start_lock);
+
+        {
+            std::scoped_lock slock(state_mutex, pending_task_mutex);
+            if (pending_task) {
+                state = DownloadState::downloading;
+                task = std::move(pending_task);
+            }
+        }
 
         while (state == DownloadState::downloading) {
             CURL* curl = curl_easy_init();
@@ -81,7 +105,9 @@ void DownloadThread::worker_thread(void)
                     if (res == CURLE_OK && state != DownloadState::aborting && state != DownloadState::shutting_down) {
                         manager_callback_done(std::move(task));
                         state = DownloadState::idle;
+                        logger.info("thread done");
                     } else {
+                        logger.info("thread failed");
                         task->clear_data();
                     }
                 }
