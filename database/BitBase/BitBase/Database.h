@@ -10,18 +10,21 @@
 
 struct DatabaseTickRow
 {
-    DatabaseTickRow(time_point_us timestamp, float price, float volume, bool buy);
+    DatabaseTickRow(const time_point_us timestamp, const float price, const float volume, const bool buy) :
+        timestamp(timestamp), price(price), volume(volume), buy(buy) {}
 
-    time_point_us timestamp;
-    float price;
-    float volume;
-    bool buy;
+    const time_point_us timestamp;
+    const float price;
+    const float volume;
+    const bool buy;
 };
 
 class DatabaseTicks
 {
 public:
-    void append(time_point_us timestamp, float price, float volume, bool buy);
+    DatabaseTicks(void);
+
+    void append(const time_point_us timestamp, const float price, const float volume, const bool buy);
 
     time_point_us get_first_timestamp(void);
 

@@ -123,13 +123,12 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
-DatabaseTickRow::DatabaseTickRow(time_point_us timestamp, float price, float volume, bool buy) :
-    timestamp(timestamp), price(price), volume(volume), buy(buy)
+DatabaseTicks::DatabaseTicks(void)
 {
 
 }
 
-void DatabaseTicks::append(time_point_us timestamp, float price, float volume, bool buy)
+void DatabaseTicks::append(const time_point_us timestamp, const float price, const float volume, const bool buy)
 {
     rows.push_back(DatabaseTickRow(timestamp, price, volume, buy));
 }

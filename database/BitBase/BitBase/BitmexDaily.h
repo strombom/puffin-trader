@@ -42,11 +42,10 @@ private:
     std::condition_variable tick_data_condition;
     std::atomic<bool> tick_data_thread_running;
 
-    void start_next(void);
+    void start_next_download(void);
     void download_done_callback(sptr_download_data_t payload);
-
-    uptrTickData parse_raw(const std::stringstream& raw_data);
     void tick_data_worker(void);
+    uptrTickData parse_raw(const std::stringstream& raw_data);
 };
 
 using uptrBitmexDaily = std::unique_ptr<BitmexDaily>;

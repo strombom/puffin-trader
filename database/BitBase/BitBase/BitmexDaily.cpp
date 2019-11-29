@@ -3,11 +3,9 @@
 #include "Logger.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/copy.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include <string>
 
 
@@ -20,7 +18,6 @@ BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_man
 
 BitmexDailyState BitmexDaily::get_state(void)
 {
-    //logger.info("BitmexDaily::get_state");
     return state;
 }
 
@@ -48,7 +45,7 @@ void BitmexDaily::start_download(void)
     state = BitmexDailyState::downloading;
 
     for (int i = 0; i < active_downloads_max; ++i) {
-        start_next();
+        start_next_download();
     }
 }
 
@@ -81,12 +78,12 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 
     logger.info("BitmexDaily::download_done_callback start next");
 
-    start_next();
+    start_next_download();
 
     logger.info("BitmexDaily::download_done_callback end");
 }
 
-void BitmexDaily::start_next(void)
+void BitmexDaily::start_next_download(void)
 {
     logger.info("BitmexDaily::start_next start");
 
@@ -146,24 +143,125 @@ void BitmexDaily::tick_data_worker(void)
     }
 }
 
+class Timer {
+public:
+    void start(void) {
+        start_time_point = std::chrono::steady_clock::now();
+    }
+
+    long stop(void) {
+        const auto end = std::chrono::steady_clock::now();
+        return (long) std::chrono::duration_cast<std::chrono::microseconds>(end - start_time_point).count();
+    }
+
+private:
+    std::chrono::steady_clock::time_point start_time_point;
+};
+
 BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_data)
 {
-    auto tick_data = std::make_unique<TickData>();
+    logger.info("BitmexDaily::parse_raw start");
+    Timer timer;
+    timer.start();
 
-    logger.info("BitmexDaily::parse_raw");
-    const boost::regex linesregx("\\n");
+    auto tick_data = std::make_unique<TickData>();    
+
+    const std::regex linesregx("\\n");
     std::string indata = raw_data.str();
-    boost::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
-    boost::sregex_token_iterator row_end;
+    std::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
+    std::sregex_token_iterator row_end;
 
     ++row_it; // Skip table headers
     while (row_it != row_end) {
-        std::string row = row_it->str();
+        const std::string row = row_it->str();
         ++row_it;
 
-        const boost::regex fieldsregx(",");
-        boost::sregex_token_iterator col_it(row.begin(), row.end(), fieldsregx, -1);
-        boost::sregex_token_iterator col_end;
+        if (row.length() < 40) {
+            tick_data->clear();
+            break;
+        }
+
+        time_point_us timestamp;
+        std::istringstream ss{ row.substr(0, 29) };
+        ss >> date::parse("%FD%T", timestamp);
+        if (ss.fail()) {
+            tick_data->clear();
+            break;
+        }
+
+        int commas[5] = { 0, 0, 0, 0, 0 };
+        int cidx = 0;
+        int p = 29;
+
+        while (cidx < 5 && p < row.length()) {
+            const char c = row.at(p);
+            if (c == '\n') {
+                break;
+            }
+            else if (c == ',') {
+                commas[cidx] = p + 1;
+                ++cidx;
+            }
+            ++p;
+        }
+
+        if (commas[0] != 30 || cidx != 5) {
+            tick_data->clear();
+            break;
+        }
+
+        const std::string symbol = row.substr(commas[0], commas[1] - commas[0] - 1);
+
+        bool buy = false;
+        if (row.substr(commas[1], commas[2] - commas[1] - 1) == "Buy") {
+            buy = true;
+        }
+
+        float volume;
+        try {
+            const std::string token = row.substr(commas[2], commas[3] - commas[2] - 1);
+            volume = std::stof(token);
+        }
+        catch (...) {
+            tick_data->clear();
+            break; // Invalid volume format
+        }
+
+        float price;
+        try {
+            const std::string token = row.substr(commas[3], commas[4] - commas[3] - 1);
+            price = std::stof(token);
+        }
+        catch (...) {
+            tick_data->clear();
+            break; // Invalid price format
+        }
+
+        if ((*tick_data)[symbol] == nullptr) {
+            (*tick_data)[symbol] = std::make_unique<DatabaseTicks>();
+        }
+        (*tick_data)[symbol]->append(timestamp, price, volume, buy);
+    }
+
+    logger.info("BitmexDaily::parse_raw end (%d)", timer.stop()/1000);
+
+    return tick_data;
+
+    /*
+    const std::regex fieldsregx(",");
+    const std::regex linesregx("\\n");
+
+    std::string indata = raw_data.str();
+    std::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
+    std::sregex_token_iterator row_end;
+
+    ++row_it; // Skip table headers
+    while (row_it != row_end) {
+        const std::string row = row_it->str();
+        ++row_it;
+        
+        std::sregex_token_iterator col_it(row.begin(), row.end(), fieldsregx, -1);
+        std::sregex_token_iterator col_end;
 
         time_point_us timestamp;
         std::string symbol;
@@ -172,6 +270,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         bool buy;
         bool valid = false;
 
+        timer.start();
         int idx = 0;
         while (col_it != col_end) {
             std::string token = col_it->str();
@@ -229,6 +328,5 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         }
         (*tick_data)[symbol]->append(timestamp, price, volume, buy);
     }
-
-    return tick_data;
+    */
 }
