@@ -38,8 +38,6 @@ public:
 
     static std::shared_ptr<Database> create(const std::string& root_path);
 
-    //bool has_attribute(const std::string& key_a, const std::string& key_b);
-
     bool has_attribute(const std::string& key);
     bool has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c);
 

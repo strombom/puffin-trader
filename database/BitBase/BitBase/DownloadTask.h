@@ -21,7 +21,6 @@ public:
     void append_data(const char* data, std::streamsize size);
     void call_client_callback(void);
 
-
 private:
     const std::string url;
     const std::string client_id;
@@ -29,7 +28,6 @@ private:
     const client_callback_done_t client_callback_done;
 
     sptr_download_data_t download_data;
-
 };
 
 using uptrDownloadTask = std::unique_ptr<DownloadTask>;

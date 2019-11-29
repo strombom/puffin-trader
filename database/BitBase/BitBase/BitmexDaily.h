@@ -6,6 +6,7 @@
 #include "BitmexConstants.h"
 
 #include <mutex>
+#include <string>
 
 
 enum class BitmexDailyState {
@@ -26,9 +27,12 @@ private:
     using TickData = std::map<std::string, std::unique_ptr<DatabaseTicks>>;
     using uptrTickData = std::unique_ptr<TickData>;
 
-    inline static const std::string exchange_name = "BITMEX";
-    inline static const std::string downloader_client_id = "bitmex_daily";
-    static const int active_downloads_max = 5;
+    static constexpr auto exchange_name = "BITMEX";
+    static constexpr auto downloader_client_id = "bitmex_daily";
+    static constexpr auto base_url_start = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
+    static constexpr auto base_url_end = ".csv.gz";
+    static constexpr auto url_date_format = "%Y%m%d";
+    static constexpr auto active_downloads_max = 5;
 
     std::atomic<BitmexDailyState> state;
 

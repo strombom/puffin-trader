@@ -20,7 +20,7 @@ public:
     void join(void);
 
 private:
-    static const int threads_count = 5;
+    static constexpr auto threads_count = 5;
     std::vector<sptrDownloadThread> threads;
     std::mutex threads_mutex;
 

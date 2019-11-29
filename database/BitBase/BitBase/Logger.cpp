@@ -12,7 +12,7 @@ Logger::Logger(void)
 
 void Logger::info(const char* format, ...)
 {
-    std::scoped_lock lock(mutex);
+    auto lock = std::scoped_lock{ mutex };
     printf("%s INFO: ", date::format("%F %T", std::chrono::system_clock::now()).c_str());
     va_list args;
     va_start(args, format);
@@ -23,7 +23,7 @@ void Logger::info(const char* format, ...)
 
 void Logger::warn(const char* format, ...)
 {
-    std::scoped_lock lock(mutex);
+    auto lock = std::scoped_lock{ mutex };
     printf("%s WARN: ", date::format("%F %T", std::chrono::system_clock::now()).c_str());
     va_list args;
     va_start(args, format);
@@ -34,7 +34,7 @@ void Logger::warn(const char* format, ...)
 
 void Logger::error(const char* format, ...)
 {
-    std::scoped_lock lock(mutex);
+    auto lock = std::scoped_lock{ mutex };
     printf("%s ERR!: ", date::format("%F %T", std::chrono::system_clock::now()).c_str());
     va_list args;
     va_start(args, format);

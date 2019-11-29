@@ -5,10 +5,11 @@
 #include <fstream>
 
 
-Database::Database(const std::string& _root_path) : root_path(_root_path)
+Database::Database(const std::string& _root_path) : 
+    root_path(_root_path)
 {
     const auto attributes_file_path = _root_path + "\\attributes.sqlite";
-    attributes_db = new SQLite::Database(attributes_file_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+    attributes_db = new SQLite::Database{ attributes_file_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE };
 
     attributes_db->exec("CREATE TABLE IF NOT EXISTS attributes (key TEXT PRIMARY KEY, value TEXT)");
 
@@ -41,7 +42,7 @@ bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
 
 bool Database::has_attribute(const std::string& key)
 {
-    auto query_select = SQLite::Statement(*attributes_db, "SELECT EXISTS(SELECT * FROM attributes WHERE key = ?)");
+    auto query_select = SQLite::Statement{ *attributes_db, "SELECT EXISTS(SELECT * FROM attributes WHERE key = ?)" };
     query_select.bind(1, key.c_str());
     query_select.executeStep();
 
@@ -57,16 +58,16 @@ bool Database::has_attribute(const std::string& key_a, const std::string& key_b,
 
 time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
 {
-    auto query_insert = SQLite::Statement(*attributes_db, "INSERT OR IGNORE INTO attributes(\"key\", \"value\") VALUES(:key, :value)");
+    auto query_insert = SQLite::Statement{ *attributes_db, "INSERT OR IGNORE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
     query_insert.bind(":key", key.c_str());
     query_insert.bind(":value", date::format("%F %T", default_date_time).c_str());
     query_insert.executeStep();
 
-    auto query_select = SQLite::Statement(*attributes_db, "SELECT value FROM attributes WHERE key = ?");
+    auto query_select = SQLite::Statement{ *attributes_db, "SELECT value FROM attributes WHERE key = ?" };
     query_select.bind(1, key.c_str());
     query_select.executeStep();
 
-    auto in = std::istringstream(query_select.getColumn(0).getString());
+    auto in = std::istringstream{ query_select.getColumn(0).getString() };
     auto tp = time_point_us{};
     in >> date::parse("%F %T", tp);
     return tp;
@@ -79,7 +80,7 @@ time_point_us Database::get_attribute(const std::string& key_a, const std::strin
 
 void Database::set_attribute(const std::string& key, const time_point_us& date_time)
 {
-    auto query = SQLite::Statement(*attributes_db, "INSERT OR REPLACE INTO attributes(\"key\", \"value\") VALUES(:key, :value)");
+    auto query = SQLite::Statement{ *attributes_db, "INSERT OR REPLACE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
     query.bind(":key",   key.c_str());
     query.bind(":value", date::format("%F %T", date_time).c_str());
     query.exec();
@@ -95,7 +96,7 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
     auto last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
 
     std::filesystem::create_directories(root_path + "/tick/" + exchange);
-    auto file = std::ofstream(root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app);
+    auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app };
     
     auto in_range = false;
     for (auto&& row : ticks->rows) {

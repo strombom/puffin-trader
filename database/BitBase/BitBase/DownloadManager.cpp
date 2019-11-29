@@ -11,7 +11,7 @@ DownloadManager::DownloadManager(void)
     curl_global_init(CURL_GLOBAL_ALL);
 
     threads.reserve(threads_count);
-    for (int i = 0; i < threads_count; ++i) {
+    for (auto i = 0; i < threads_count; ++i) {
         auto thread = std::make_shared<DownloadThread>(std::bind(&DownloadManager::download_done_callback, this, std::placeholders::_1));
         threads.push_back(thread);
     }
@@ -34,7 +34,7 @@ std::shared_ptr<DownloadManager> DownloadManager::create(void)
 
 void DownloadManager::shutdown(void)
 {
-    std::scoped_lock thread_lock(threads_mutex);
+    auto slock = std::scoped_lock{ threads_mutex };
 
     running = false;
 
@@ -45,7 +45,7 @@ void DownloadManager::shutdown(void)
 
 void DownloadManager::join(void)
 {
-    std::scoped_lock thread_lock(threads_mutex);
+    auto slock = std::scoped_lock{ threads_mutex };
 
     for (auto&& thread : threads) {
         thread->join();
@@ -61,7 +61,7 @@ void DownloadManager::abort_client(std::string client_id)
 {
     logger.info("DownloadManager::abort_client pending tasks");
     {
-        std::scoped_lock lock(pending_tasks_mutex);
+        auto slock = std::scoped_lock{ pending_tasks_mutex };
 
         for (auto&& task = pending_tasks.begin(); task != pending_tasks.end();) {
             if ((*task)->get_client_id() == client_id) {
@@ -76,7 +76,7 @@ void DownloadManager::abort_client(std::string client_id)
     logger.info("DownloadManager::abort_client threads");
 
     {
-        std::scoped_lock lock(threads_mutex);
+        auto slock = std::scoped_lock{ threads_mutex };
 
         for (auto&& thread : threads) {
             if (thread->test_client_id(client_id)) {
@@ -88,7 +88,7 @@ void DownloadManager::abort_client(std::string client_id)
     logger.info("DownloadManager::abort_client finished tasks");
 
     {
-        std::scoped_lock lock(finished_tasks_mutex);
+        auto slock = std::scoped_lock{ finished_tasks_mutex };
 
         for (auto&& task = finished_tasks.begin(); task != finished_tasks.end();) {
             if ((*task)->get_client_id() == client_id) {
@@ -105,7 +105,7 @@ void DownloadManager::abort_client(std::string client_id)
 void DownloadManager::download(std::string url, std::string client_id, client_callback_done_t client_callback_done)
 {
     {
-        std::scoped_lock lock(pending_tasks_mutex);
+        auto slock = std::scoped_lock{ pending_tasks_mutex };
 
         if (next_download_id.find(client_id) == next_download_id.end()) {
             next_download_id[client_id] = 0;
@@ -115,7 +115,7 @@ void DownloadManager::download(std::string url, std::string client_id, client_ca
             ++next_download_id[client_id];
         }
 
-        uptrDownloadTask task = DownloadTask::create(url, client_id, next_download_id[client_id], client_callback_done);
+        auto task = DownloadTask::create(url, client_id, next_download_id[client_id], client_callback_done);
         pending_tasks.push_back(std::move(task));
 
     }
@@ -126,8 +126,7 @@ void DownloadManager::download(std::string url, std::string client_id, client_ca
 void DownloadManager::download_done_callback(uptrDownloadTask task)
 {
     {
-        std::scoped_lock lock(finished_tasks_mutex);
-
+        auto slock = std::scoped_lock{ finished_tasks_mutex };
         finished_tasks.push_back(std::move(task));
     }
 
@@ -137,13 +136,13 @@ void DownloadManager::download_done_callback(uptrDownloadTask task)
 void DownloadManager::pending_tasks_thread(void)
 {
     while (running) {
-        std::unique_lock<std::mutex> worker_lock(pending_tasks_mutex);
+        auto worker_lock = std::unique_lock{ pending_tasks_mutex };
         pending_tasks_condition.wait(worker_lock);
 
         while (!pending_tasks.empty() && running) {
-            std::scoped_lock thread_lock(threads_mutex);
+            auto slock = std::scoped_lock{ threads_mutex };
 
-            std::shared_ptr<DownloadThread> idle_thread;
+            auto idle_thread = std::shared_ptr<DownloadThread>{};
             for (auto&& thread : threads) {
                 if (thread->is_idle()) {
                     idle_thread = thread;
@@ -160,14 +159,14 @@ void DownloadManager::pending_tasks_thread(void)
         }
     }
 
-    std::scoped_lock<std::mutex> lock(pending_tasks_mutex);
+    auto slock = std::scoped_lock{ pending_tasks_mutex };
     pending_tasks.clear();
 }
 
 void DownloadManager::finished_tasks_thread(void)
 {
     while (running) {
-        std::unique_lock<std::mutex> worker_lock(finished_tasks_mutex);
+        auto worker_lock = std::unique_lock{ finished_tasks_mutex };
         finished_tasks_condition.wait(worker_lock);
 
         for (auto&& task = finished_tasks.begin(); task != finished_tasks.end() && running;) {
@@ -186,6 +185,6 @@ void DownloadManager::finished_tasks_thread(void)
         }
     }
 
-    std::scoped_lock<std::mutex> lock(finished_tasks_mutex);
+    auto slock = std::scoped_lock{ finished_tasks_mutex };
     finished_tasks.clear();
 }
