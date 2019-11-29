@@ -177,16 +177,14 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         ++row_it;
 
         if (row.length() < 40) {
-            tick_data->clear();
-            break;
+            return nullptr;
         }
 
         time_point_us timestamp;
         std::istringstream ss{ row.substr(0, 29) };
         ss >> date::parse("%FD%T", timestamp);
         if (ss.fail()) {
-            tick_data->clear();
-            break;
+            return nullptr;
         }
 
         int commas[5] = { 0, 0, 0, 0, 0 };
@@ -206,8 +204,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         }
 
         if (commas[0] != 30 || cidx != 5) {
-            tick_data->clear();
-            break;
+            return nullptr;
         }
 
         const std::string symbol = row.substr(commas[0], commas[1] - commas[0] - 1);
@@ -223,8 +220,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
             volume = std::stof(token);
         }
         catch (...) {
-            tick_data->clear();
-            break; // Invalid volume format
+            return nullptr; // Invalid volume format
         }
 
         float price;
@@ -233,8 +229,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
             price = std::stof(token);
         }
         catch (...) {
-            tick_data->clear();
-            break; // Invalid price format
+            return nullptr; // Invalid price format
         }
 
         if ((*tick_data)[symbol] == nullptr) {
