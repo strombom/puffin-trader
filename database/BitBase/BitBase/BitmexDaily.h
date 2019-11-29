@@ -37,7 +37,7 @@ private:
     time_point_us timestamp_next;
 
     std::unique_ptr<std::thread> tick_data_worker_thread;
-    std::deque<std::unique_ptr<TickData>> tick_data_queue;
+    std::deque<uptrTickData> tick_data_queue;
     std::mutex tick_data_mutex;
     std::condition_variable tick_data_condition;
     std::atomic<bool> tick_data_thread_running;
