@@ -4,8 +4,6 @@
 
 #include "curl/curl.h"
 
-#pragma warning(disable: 26812) // Disable enum warning for CURLcode
-
 
 DownloadThread::DownloadThread(manager_callback_done_t manager_callback_done) :
     state(DownloadState::idle), manager_callback_done(manager_callback_done)
@@ -26,6 +24,7 @@ void DownloadThread::shutdown(void)
         auto slock = std::scoped_lock{ state_mutex };
         state = DownloadState::shutting_down;
     }
+    download_start_condition.notify_all();
     logger.info("shutdown thread end");
 }
 
@@ -45,7 +44,14 @@ void DownloadThread::join(void) const
         else if (state == DownloadState::shutting_down) {
             logger.info("DownloadThread.join (shutting_down)");
         }
-        worker->join();
+
+        try {
+            worker->join();
+            logger.info("DownloadThread.join done");
+        }
+        catch (...) {
+            logger.info("DownloadThread.join fail");
+        }
     }
     logger.info("DownloadThread.join end");
 }
@@ -61,9 +67,10 @@ bool DownloadThread::is_idle(void) const
     return state == DownloadState::idle;
 }
 
-bool DownloadThread::test_client_id(std::string client_id) const
+bool DownloadThread::test_client_id(const std::string& client_id)
 {
-    return state == DownloadState::downloading && task && task->get_client_id() == client_id;
+    auto slock = std::scoped_lock{ working_task_mutex };
+    return state == DownloadState::downloading && working_task && working_task->get_client_id() == client_id;
 }
 
 void DownloadThread::assign_task(uptrDownloadTask new_task)
@@ -78,17 +85,22 @@ void DownloadThread::assign_task(uptrDownloadTask new_task)
 void DownloadThread::worker_thread(void)
 {
     while (state != DownloadState::shutting_down) {
-
         {
             auto download_start_lock = std::unique_lock{ download_start_mutex };
             download_start_condition.wait(download_start_lock);
         }
 
         {
-            auto slock = std::scoped_lock{ state_mutex, pending_task_mutex };
-            if (pending_task) {
+            auto slock = std::scoped_lock{ state_mutex, pending_task_mutex, working_task_mutex };
+            if (state == DownloadState::shutting_down) {
+                break;
+            }
+            else if (pending_task && state != DownloadState::aborting) {
                 state = DownloadState::downloading;
-                task = std::move(pending_task);
+                working_task = std::move(pending_task);
+            }
+            else {
+                continue;
             }
         }
 
@@ -102,17 +114,22 @@ void DownloadThread::worker_thread(void)
                 curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
                 curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
                 curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, download_progress_callback);
-                curl_easy_setopt(curl, CURLOPT_URL, task->get_url().c_str());
+                curl_easy_setopt(curl, CURLOPT_URL, working_task->get_url().c_str());
                 CURLcode res = curl_easy_perform(curl);
                 {
-                    auto slock = std::scoped_lock{ state_mutex };
+                    auto state_lock = std::scoped_lock{ state_mutex };
                     if (res == CURLE_OK && state != DownloadState::aborting && state != DownloadState::shutting_down) {
+                        auto task = uptrDownloadTask{};
+                        {
+                            auto task_lock = std::scoped_lock{ working_task_mutex };
+                            task = std::move(working_task);
+                        }
                         manager_callback_done(std::move(task));
                         state = DownloadState::idle;
                         logger.info("DownloadThread::worker_thread done");
                     } else {
                         logger.info("DownloadThread::worker_thread failed");
-                        task->clear_data();
+                        working_task->clear_data();
                     }
                 }
                 curl_easy_cleanup(curl);
@@ -123,14 +140,14 @@ void DownloadThread::worker_thread(void)
 
 size_t download_file_callback(void* ptr, size_t size, size_t count, void* arg)
 {
-    ((DownloadThread*)arg)->task->append_data((const char*)ptr, (std::streamsize) count);
+    ((DownloadThread*)arg)->working_task->append_data((const char*)ptr, (std::streamsize) count);
     return count;
 }
 
 size_t download_progress_callback(void* arg, double dltotal, double dlnow, double ultotal, double ulnow)
 {
     if (((DownloadThread*)arg)->state == DownloadState::aborting || ((DownloadThread*)arg)->state == DownloadState::shutting_down) {
-        logger.info("aborting thread");
+        logger.info("DownloadThread download_progress_callback aborting thread");
         return CURLE_ABORTED_BY_CALLBACK;
     }
     else {

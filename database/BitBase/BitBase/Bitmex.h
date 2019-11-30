@@ -34,5 +34,6 @@ private:
     bool thread_running;
     BitmexState state;
 
-    std::future<void> main_loop_task;
+    std::unique_ptr<std::thread> main_loop_thread;
+    //std::future<void> main_loop_task;
 };

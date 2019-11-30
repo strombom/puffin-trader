@@ -41,6 +41,10 @@ void DownloadManager::shutdown(void)
     for (auto&& thread : threads) {
         thread->shutdown();
     }
+
+    pending_tasks_condition.notify_all();
+
+    finished_tasks_condition.notify_all();
 }
 
 void DownloadManager::join(void)
@@ -51,10 +55,17 @@ void DownloadManager::join(void)
         thread->join();
     }
 
-    threads.clear();
+    try {
+        pending_tasks_thread_handle->join();
+    }
+    catch (...) {}
 
-    pending_tasks_thread_handle->join();
-    finished_tasks_thread_handle->join();
+    try {
+        finished_tasks_thread_handle->join();
+    }
+    catch (...) {}
+
+    threads.clear();
 }
 
 void DownloadManager::abort_client(std::string client_id)
@@ -117,7 +128,6 @@ void DownloadManager::download(std::string url, std::string client_id, client_ca
 
         auto task = DownloadTask::create(url, client_id, next_download_id[client_id], client_callback_done);
         pending_tasks.push_back(std::move(task));
-
     }
 
     pending_tasks_condition.notify_one();

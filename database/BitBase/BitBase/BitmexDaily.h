@@ -34,15 +34,16 @@ private:
     static constexpr auto url_date_format = "%Y%m%d";
     static constexpr auto active_downloads_max = 5;
 
+    std::mutex start_download_mutex;
     std::atomic<BitmexDailyState> state;
 
     sptrDatabase database;
     sptrDownloadManager download_manager;
     time_point_us timestamp_next;
 
+    std::mutex tick_data_mutex;
     std::unique_ptr<std::thread> tick_data_worker_thread;
     std::deque<uptrTickData> tick_data_queue;
-    std::mutex tick_data_mutex;
     std::condition_variable tick_data_condition;
     std::atomic<bool> tick_data_thread_running;
 

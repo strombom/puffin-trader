@@ -26,7 +26,7 @@ public:
     void abort_download(void);
 
     bool is_idle(void) const;
-    bool test_client_id(std::string client_id) const;
+    bool test_client_id(const std::string& client_id);
 
     void assign_task(uptrDownloadTask new_task);
 
@@ -37,10 +37,11 @@ private:
     std::atomic<DownloadState> state;
 
     uptrDownloadTask pending_task;
-    uptrDownloadTask task;
+    uptrDownloadTask working_task;
 
     std::mutex state_mutex;
     std::mutex pending_task_mutex;
+    std::mutex working_task_mutex;
     std::mutex download_start_mutex;
     std::condition_variable download_start_condition;
     std::unique_ptr<std::thread> worker;

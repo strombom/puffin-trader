@@ -25,13 +25,23 @@ BitmexDailyState BitmexDaily::get_state(void)
 void BitmexDaily::shutdown(void)
 {
     logger.info("BitmexDaily::shutdown");
-    tick_data_thread_running = false;
-    download_manager->abort_client(downloader_client_id);
-    state = BitmexDailyState::idle;
 
-    if (tick_data_worker_thread->joinable()) {
+    {
+        // Will not start new downloads after this section
+        auto slock = std::scoped_lock{ start_download_mutex };
+        state = BitmexDailyState::idle;
+    }
+    logger.info("BitmexDaily::shutdown state = idle");
+
+    tick_data_thread_running = false;
+    tick_data_condition.notify_all();
+
+    download_manager->abort_client(downloader_client_id);
+
+    try {
         tick_data_worker_thread->join();
     }
+    catch (...) {}
 }
 
 void BitmexDaily::start_download(void)
@@ -87,11 +97,17 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 void BitmexDaily::start_next_download(void)
 {
     logger.info("BitmexDaily::start_next start");
+    auto slock = std::scoped_lock{ start_download_mutex };
+
+    if (state == BitmexDailyState::idle) {
+        logger.info("BitmexDaily::start_next end (idle)");
+        return;
+    }
 
     auto last_timestamp = date::floor<date::days>(system_clock_us_now() - date::days{ 1 });
     if (timestamp_next > last_timestamp) {
         state = BitmexDailyState::idle;
-        logger.info("BitmexDaily::start_next last index");
+        logger.info("BitmexDaily::start_next end (last index)");
         return;
     }
     
@@ -139,6 +155,7 @@ void BitmexDaily::tick_data_worker(void)
         }
         logger.info("BitmexDaily::tick_data_worker end");
     }
+    logger.info("BitmexDaily::tick_data_worker exit");
 }
 
 class Timer {
