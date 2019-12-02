@@ -27,7 +27,6 @@ private:
     using TickData = std::map<std::string, std::unique_ptr<DatabaseTicks>>;
     using uptrTickData = std::unique_ptr<TickData>;
 
-    static constexpr auto exchange_name = "BITMEX";
     static constexpr auto downloader_client_id = "bitmex_daily";
     static constexpr auto base_url_start = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
     static constexpr auto base_url_end = ".csv.gz";

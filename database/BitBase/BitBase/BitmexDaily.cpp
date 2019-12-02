@@ -50,7 +50,7 @@ void BitmexDaily::start_download(void)
     logger.info("BitmexDaily::start_download");
     
     // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
-    const auto timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", bitmex_first_timestamp);
+    const auto timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", BitmexConstants::bitmex_first_timestamp);
     timestamp_next = date::floor<date::days>(timestamp);
 
     state = BitmexDailyState::downloading;
@@ -145,7 +145,7 @@ void BitmexDaily::tick_data_worker(void)
             for (auto&& symbol_tick_data = tick_data->begin(); symbol_tick_data != tick_data->end(); ++symbol_tick_data) {
                 const auto symbol = symbol_tick_data->first;
                 auto data = std::move(symbol_tick_data->second);
-                database->tick_data_extend(exchange_name, symbol, std::move(data), bitmex_first_timestamp);
+                database->tick_data_extend(BitmexConstants::exchange_name, symbol, std::move(data), BitmexConstants::bitmex_first_timestamp);
             }
 
             const auto end = std::chrono::steady_clock::now();

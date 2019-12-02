@@ -69,6 +69,9 @@
     <ClCompile Include="DownloadTask.cpp">
       <Filter>Source Files\DownloadManager</Filter>
     </ClCompile>
+    <ClCompile Include="BitmexInterval.cpp">
+      <Filter>Source Files\Bitmex</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -103,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="date.h">
       <Filter>Header Files\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexInterval.h">
+      <Filter>Header Files\Bitmex</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
