@@ -97,24 +97,14 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
 
     std::filesystem::create_directories(root_path + "/tick/" + exchange);
     auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app };
-    
+
     auto in_range = false;
     for (auto&& row : ticks->rows) {
-
         if (!in_range && (row.timestamp > last_timestamp)) {
             in_range = true;
         }
         if (in_range) {
-            file << date::format("%FD%T", row.timestamp).c_str();
-            file << "," << row.price << "," << row.volume << ",";
-            if (row.buy) {
-                file << "BUY";
-            }
-            else {
-                file << "SELL";
-            }
-            file << "\n";
-
+            file << row;
             last_timestamp = row.timestamp;
         }
     }
@@ -124,9 +114,58 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
+std::ostream& operator<<(std::ostream& stream, const DatabaseTickRow& row)
+{
+    const auto timestamp = row.timestamp.time_since_epoch().count();
+    const auto price = row.price;
+    const auto volume = row.volume;
+    const auto buy = row.buy;
+
+    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
+    stream.write(reinterpret_cast<const char*>(&price), sizeof(price));
+    stream.write(reinterpret_cast<const char*>(&volume), sizeof(volume));
+    stream.write(reinterpret_cast<const char*>(&buy), sizeof(buy));
+
+    return stream;
+}
+
+std::istream& operator>>(std::istream& stream, DatabaseTickRow& row)
+{
+    /*
+    const auto timestamp = row.timestamp.time_since_epoch().count();
+    const auto price = row.price;
+    const auto volume = row.volume;
+    const auto buy = row.buy;
+
+    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
+    stream.write(reinterpret_cast<const char*>(&price), sizeof(price));
+    stream.write(reinterpret_cast<const char*>(&volume), sizeof(volume));
+    stream.write(reinterpret_cast<const char*>(&buy), sizeof(buy));
+
+    return stream;
+    */
+}
+
 DatabaseTicks::DatabaseTicks(void)
 {
 
+}
+
+std::istream& operator>>(std::istream& stream, DatabaseTicks& row)
+{
+    /*
+    const auto timestamp = row.timestamp.time_since_epoch().count();
+    const auto price = row.price;
+    const auto volume = row.volume;
+    const auto buy = row.buy;
+
+    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
+    stream.write(reinterpret_cast<const char*>(&price), sizeof(price));
+    stream.write(reinterpret_cast<const char*>(&volume), sizeof(volume));
+    stream.write(reinterpret_cast<const char*>(&buy), sizeof(buy));
+
+    return stream;
+    */
 }
 
 void DatabaseTicks::append(const time_point_us timestamp, const float price, const float volume, const bool buy)
