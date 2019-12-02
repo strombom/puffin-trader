@@ -7,6 +7,7 @@
 
 #include "Database.h"
 #include "BitmexDaily.h"
+#include "BitmexInterval.h"
 #include "BitmexConstants.h"
 #include "DownloadManager.h"
 
@@ -24,11 +25,13 @@ public:
 
     void shutdown(void);
     void main_loop(void);
+    void tick_data_updated_callback(void);
 
 private:
     sptrDatabase database;
     sptrDownloadManager download_manager;
     uptrBitmexDaily bitmex_daily;
+    uptrBitmexInterval bitmex_interval;
 
     std::mutex state_mutex;
     bool thread_running;

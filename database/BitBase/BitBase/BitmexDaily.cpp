@@ -10,8 +10,8 @@
 #include <array>
 
 
-BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager) :
-    database(database), download_manager(download_manager), 
+BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager, tick_data_updated_callback_t tick_data_updated_callback) :
+    database(database), download_manager(download_manager), tick_data_updated_callback(tick_data_updated_callback),
     state(BitmexDailyState::idle), tick_data_thread_running(true)
 {
     tick_data_worker_thread = std::make_unique<std::thread>(&BitmexDaily::tick_data_worker, this);
@@ -146,6 +146,7 @@ void BitmexDaily::tick_data_worker(void)
                 const auto symbol = symbol_tick_data->first;
                 auto data = std::move(symbol_tick_data->second);
                 database->tick_data_extend(BitmexConstants::exchange_name, symbol, std::move(data), BitmexConstants::bitmex_first_timestamp);
+                tick_data_updated_callback();
             }
 
             const auto end = std::chrono::steady_clock::now();

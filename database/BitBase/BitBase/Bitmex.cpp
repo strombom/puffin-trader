@@ -8,8 +8,8 @@
 Bitmex::Bitmex(sptrDatabase database, sptrDownloadManager download_manager) :
     database(database), download_manager(download_manager), state(BitmexState::idle), thread_running(true)
 {
-    bitmex_daily = std::make_unique<BitmexDaily>(database, download_manager);
-    //main_loop_task = std::async(&Bitmex::main_loop, this);
+    bitmex_daily = std::make_unique<BitmexDaily>(database, download_manager, std::bind(&Bitmex::tick_data_updated_callback, this));
+    bitmex_interval = std::make_unique<BitmexInterval>(database);
 
     main_loop_thread = std::make_unique<std::thread>(&Bitmex::main_loop, this);
 }
@@ -23,13 +23,19 @@ void Bitmex::shutdown(void)
     }
     logger.info("Bitmex::shutdown state = shutdown");
     bitmex_daily->shutdown();
+    bitmex_interval->shutdown();
 
     try {
         main_loop_thread->join();
     }
     catch (...) {}
 }
- 
+
+void Bitmex::tick_data_updated_callback(void)
+{
+    bitmex_interval->update();
+}
+
 void Bitmex::main_loop(void)
 {
     while (state != BitmexState::shutdown) {

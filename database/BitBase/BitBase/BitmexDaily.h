@@ -8,6 +8,7 @@
 #include <mutex>
 #include <string>
 
+using tick_data_updated_callback_t = std::function<void(void)>;
 
 enum class BitmexDailyState {
     idle,
@@ -17,7 +18,7 @@ enum class BitmexDailyState {
 class BitmexDaily
 {
 public:
-    BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager);
+    BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager, tick_data_updated_callback_t tick_data_updated_callback);
 
     BitmexDailyState get_state(void);
     void start_download(void);
@@ -44,7 +45,8 @@ private:
     std::unique_ptr<std::thread> tick_data_worker_thread;
     std::deque<uptrTickData> tick_data_queue;
     std::condition_variable tick_data_condition;
-    std::atomic<bool> tick_data_thread_running;
+    std::atomic_bool tick_data_thread_running;
+    tick_data_updated_callback_t tick_data_updated_callback;
 
     void start_next_download(void);
     void download_done_callback(sptr_download_data_t payload);

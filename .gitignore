@@ -2,3 +2,7 @@
 *.ipch
 *.obj
 *.tlog
+*.dat
+*.sqlite
+*.log
+*.idb
