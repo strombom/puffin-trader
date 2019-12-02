@@ -22,6 +22,7 @@ void BitmexInterval::shutdown(void)
 void BitmexInterval::update(void)
 {
 
+    //const auto timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", BitmexConstants::bitmex_first_timestamp);
 }
 
 void BitmexInterval::interval_data_worker(void)

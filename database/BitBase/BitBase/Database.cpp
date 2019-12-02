@@ -51,6 +51,11 @@ bool Database::has_attribute(const std::string& key)
     return true;
 }
 
+bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
+{
+    return has_attribute(key_a + "_" + key_b);
+}
+
 bool Database::has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c)
 {
     return has_attribute(key_a + "_" + key_b + "_" + key_c);
@@ -73,7 +78,14 @@ time_point_us Database::get_attribute(const std::string& key, const time_point_u
     return tp;
 }
 
-time_point_us Database::get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& default_date_time)
+template<class T>
+T Database::get_attribute(const std::string& key_a, const std::string& key_b, const T& default_date_time)
+{
+    return get_attribute(key_a + "_" + key_b, default_date_time);
+}
+
+template<class T>
+T Database::get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& default_date_time)
 {
     return get_attribute(key_a + "_" + key_b + "_" + key_c, default_date_time);
 }
@@ -86,9 +98,16 @@ void Database::set_attribute(const std::string& key, const time_point_us& date_t
     query.exec();
 }
 
-void Database::set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& date_time)
+template<class T>
+void Database::set_attribute(const std::string& key_a, const std::string& key_b, const T& default_value)
 {
-    set_attribute(key_a + "_" + key_b + "_" + key_c, date_time);
+    set_attribute(key_a + "_" + key_b, default_value);
+}
+
+template<class T>
+void Database::set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& default_value)
+{
+    set_attribute(key_a + "_" + key_b + "_" + key_c, default_value);
 }
 
 void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
@@ -112,6 +131,9 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
     file.close();
 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
+
+    //auto symbols = get_attribute(exchange, "symbols", "", std::vector<std::string>());
+
 }
 
 std::ostream& operator<<(std::ostream& stream, const DatabaseTickRow& row)

@@ -44,13 +44,21 @@ public:
     static std::shared_ptr<Database> create(const std::string& root_path);
 
     bool has_attribute(const std::string& key);
+    bool has_attribute(const std::string& key_a, const std::string& key_b);
     bool has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c);
 
     time_point_us get_attribute(const std::string& key, const time_point_us& default_date_time);
-    time_point_us get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& default_date_time);
+
+    template<class T> T get_attribute(const std::string& key_a, const std::string& key_b, const T& default_date_time);
+    template<class T> T get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& default_date_time);
+
+    //std::vector<std::string> get_attribute(const std::string& key, const time_point_us& default_date_time);
+    //std::vector<std::string> get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& default_date_time);
 
     void set_attribute(const std::string& key,   const time_point_us& date_time);
-    void set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const time_point_us& date_time);
+
+    template<class T> void set_attribute(const std::string& key_a, const std::string& key_b, const T& date_time);
+    template<class T> void set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& date_time);
 
     void tick_data_extend(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp);
     //void append_10s(const std::string& symbol, )
