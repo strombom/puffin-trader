@@ -50,6 +50,7 @@ private:
 
     void start_next_download(void);
     void download_done_callback(sptr_download_data_t payload);
+    void update_symbol_names(const std::string& symbol_name);
     void tick_data_worker(void);
     uptrTickData parse_raw(const std::stringstream& raw_data);
 };

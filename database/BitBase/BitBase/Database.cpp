@@ -43,7 +43,7 @@ bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
 bool Database::has_attribute(const std::string& key)
 {
     auto query_select = SQLite::Statement{ *attributes_db, "SELECT EXISTS(SELECT * FROM attributes WHERE key = ?)" };
-    query_select.bind(1, key.c_str());
+    query_select.bind(1, key);
     query_select.executeStep();
 
     auto a = query_select.getColumn(0);
@@ -61,53 +61,74 @@ bool Database::has_attribute(const std::string& key_a, const std::string& key_b,
     return has_attribute(key_a + "_" + key_b + "_" + key_c);
 }
 
-time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
+const std::string Database::get_attribute(const std::string& key, const std::string& default_string)
 {
     auto query_insert = SQLite::Statement{ *attributes_db, "INSERT OR IGNORE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
-    query_insert.bind(":key", key.c_str());
-    query_insert.bind(":value", date::format("%F %T", default_date_time).c_str());
+    query_insert.bind(":key", key);
+    query_insert.bind(":value", default_string);
     query_insert.executeStep();
 
-    auto query_select = SQLite::Statement{ *attributes_db, "SELECT value FROM attributes WHERE key = ?" };
-    query_select.bind(1, key.c_str());
+    auto query_select = SQLite::Statement{ *attributes_db, "SELECT value FROM attributes WHERE key = :key" };
+    query_select.bind(":key", key);
     query_select.executeStep();
 
-    auto in = std::istringstream{ query_select.getColumn(0).getString() };
-    auto tp = time_point_us{};
-    in >> date::parse("%F %T", tp);
-    return tp;
+    return query_select.getColumn(0).getString();
 }
 
-template<class T>
-T Database::get_attribute(const std::string& key_a, const std::string& key_b, const T& default_date_time)
+time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
 {
-    return get_attribute(key_a + "_" + key_b, default_date_time);
+    const auto attribute = get_attribute(key, date::format("%F %T", default_date_time));
+    auto value = std::istringstream{ attribute };
+    auto time_point = time_point_us{};
+    value >> date::parse("%F %T", time_point);
+    return time_point;
 }
 
-template<class T>
-T Database::get_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& default_date_time)
+std::vector<std::string> Database::get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector)
 {
-    return get_attribute(key_a + "_" + key_b + "_" + key_c, default_date_time);
+    auto space_separated_string = std::ostringstream{};
+    std::copy(default_string_vector.begin(), default_string_vector.end(), std::ostream_iterator<std::string>(space_separated_string, ","));
+    auto value_stream = std::istringstream{ get_attribute(key, space_separated_string.str()) };
+    auto string_vector = std::vector<std::string>(std::istream_iterator<std::string>{value_stream}, std::istream_iterator<std::string>{});
+    return string_vector;
+}
+
+std::unordered_set<std::string> Database::get_attribute(const std::string& key, const std::unordered_set<std::string>& default_string_set)
+{
+    auto space_separated_string = std::ostringstream{};
+    std::copy(default_string_set.begin(), default_string_set.end(), std::ostream_iterator<std::string>(space_separated_string, ","));
+    auto value_stream = std::istringstream{ get_attribute(key, space_separated_string.str()) };
+    auto string_set = std::unordered_set<std::string>(std::istream_iterator<std::string>{value_stream}, std::istream_iterator<std::string>{});
+    return string_set;
+}
+
+void Database::set_attribute(const std::string& key, const std::string& string)
+{
+    auto query = SQLite::Statement{ *attributes_db, "INSERT OR REPLACE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
+    query.bind(":key", key);
+    query.bind(":value", string);
+    query.exec();
 }
 
 void Database::set_attribute(const std::string& key, const time_point_us& date_time)
 {
-    auto query = SQLite::Statement{ *attributes_db, "INSERT OR REPLACE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
-    query.bind(":key",   key.c_str());
-    query.bind(":value", date::format("%F %T", date_time).c_str());
-    query.exec();
+    set_attribute(key, date::format("%F %T", date_time));
 }
 
-template<class T>
-void Database::set_attribute(const std::string& key_a, const std::string& key_b, const T& default_value)
+void Database::set_attribute(const std::string& key, const std::vector<std::string>& string_vector)
 {
-    set_attribute(key_a + "_" + key_b, default_value);
+    std::ostringstream space_separated_list;
+    std::copy(string_vector.begin(), string_vector.end(), std::ostream_iterator<std::string>(space_separated_list, " "));
+
+    set_attribute(key, space_separated_list.str());
 }
 
-template<class T>
-void Database::set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& default_value)
+void Database::set_attribute(const std::string& key, const std::unordered_set<std::string>& string_vector)
 {
-    set_attribute(key_a + "_" + key_b + "_" + key_c, default_value);
+    std::ostringstream space_separated_list;
+    std::copy(string_vector.begin(), string_vector.end(), std::ostream_iterator<std::string>(space_separated_list, " "));
+
+    set_attribute(key, space_separated_list.str());
 }
 
 void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
@@ -116,7 +137,7 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
 
     std::filesystem::create_directories(root_path + "/tick/" + exchange);
     auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app };
-
+    
     auto in_range = false;
     for (auto&& row : ticks->rows) {
         if (!in_range && (row.timestamp > last_timestamp)) {
@@ -131,9 +152,6 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
     file.close();
 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
-
-    //auto symbols = get_attribute(exchange, "symbols", "", std::vector<std::string>());
-
 }
 
 std::ostream& operator<<(std::ostream& stream, const DatabaseTickRow& row)
@@ -166,6 +184,8 @@ std::istream& operator>>(std::istream& stream, DatabaseTickRow& row)
 
     return stream;
     */
+
+    return stream;
 }
 
 DatabaseTicks::DatabaseTicks(void)
@@ -188,6 +208,8 @@ std::istream& operator>>(std::istream& stream, DatabaseTicks& row)
 
     return stream;
     */
+
+    return stream;
 }
 
 void DatabaseTicks::append(const time_point_us timestamp, const float price, const float volume, const bool buy)

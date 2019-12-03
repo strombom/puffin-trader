@@ -1,4 +1,5 @@
 #include "BitmexInterval.h"
+#include "BitmexConstants.h"
 
 
 BitmexInterval::BitmexInterval(sptrDatabase database) :
@@ -21,8 +22,11 @@ void BitmexInterval::shutdown(void)
 
 void BitmexInterval::update(void)
 {
+    const auto symbols = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::vector<std::string>{});
 
-    //const auto timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", BitmexConstants::bitmex_first_timestamp);
+    for (auto&& symbol : symbols) {
+
+    }
 }
 
 void BitmexInterval::interval_data_worker(void)
