@@ -30,6 +30,11 @@ void Bitmex::shutdown(void)
         main_loop_thread->join();
     }
     catch (...) {}
+
+    try {
+        interval_update_thread->join();
+    }
+    catch (...) {}
 }
 
 void Bitmex::tick_data_updated_callback(void)
