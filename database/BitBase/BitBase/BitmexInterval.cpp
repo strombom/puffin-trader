@@ -22,7 +22,7 @@ void BitmexInterval::shutdown(void)
 
 void BitmexInterval::update(void)
 {
-    const auto symbols = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::vector<std::string>{});
+    const auto symbols = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::unordered_set<std::string>{});
 
     for (auto&& symbol : symbols) {
 

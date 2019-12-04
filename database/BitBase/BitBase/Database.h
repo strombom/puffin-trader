@@ -70,7 +70,7 @@ private:
     SQLite::Database *attributes_db;
     const std::string root_path;
 
-    static constexpr auto time_format = std::string_view("%F %T");
+    static constexpr auto time_format = "%F %T";
 
 };
 

@@ -118,14 +118,14 @@ void BitmexDaily::start_next_download(void)
     logger.info("BitmexDaily::start_next end");
 }
 
-void BitmexDaily::update_symbol_names(const std::string& symbol_name)
+void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
 {
-    auto symbol_names = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::vector<std::string>{});
+    auto symbol_names = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::unordered_set<std::string>{});
 
-    if (std::find(symbol_names.begin(), symbol_names.end(), symbol_name) == symbol_names.end()) {
-        symbol_names.push_back(symbol_name);
-        database->set_attribute(BitmexConstants::exchange_name, "symbols", symbol_names);
+    for (auto&& symbol_name : new_symbol_names) {
+        symbol_names.insert(symbol_name);
     }
+    database->set_attribute(BitmexConstants::exchange_name, "symbols", symbol_names);
 }
 
 void BitmexDaily::tick_data_worker(void)
@@ -152,13 +152,15 @@ void BitmexDaily::tick_data_worker(void)
 
             const auto start = std::chrono::steady_clock::now();
 
+            auto symbol_names = std::unordered_set<std::string>{};
             for (auto&& symbol_tick_data = tick_data->begin(); symbol_tick_data != tick_data->end(); ++symbol_tick_data) {
-                const auto symbol = symbol_tick_data->first;
+                const auto symbol_name = symbol_tick_data->first;
+                symbol_names.insert(symbol_name);
                 auto data = std::move(symbol_tick_data->second);
-                database->tick_data_extend(BitmexConstants::exchange_name, symbol, std::move(data), BitmexConstants::bitmex_first_timestamp);
-                update_symbol_names(symbol);
-                tick_data_updated_callback();
+                database->tick_data_extend(BitmexConstants::exchange_name, symbol_name, std::move(data), BitmexConstants::bitmex_first_timestamp);
             }
+            update_symbol_names(symbol_names);
+            tick_data_updated_callback();
 
             const auto end = std::chrono::steady_clock::now();
             const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
