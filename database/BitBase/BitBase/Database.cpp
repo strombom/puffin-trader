@@ -21,6 +21,8 @@ std::shared_ptr<Database> Database::create(const std::string& root_path)
 
 const std::string Database::get_attribute(const std::string& key, const std::string& default_string)
 {
+    auto slock = std::scoped_lock{ sqlite_mutex };
+
     auto query_insert = SQLite::Statement{ *attributes_db, "INSERT OR IGNORE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
     query_insert.bind(":key", key);
     query_insert.bind(":value", default_string);
@@ -71,6 +73,8 @@ const std::unordered_set<std::string> Database::get_attribute(const std::string&
 
 void Database::set_attribute(const std::string& key, const std::string& string)
 {
+    auto slock = std::scoped_lock{ sqlite_mutex };
+
     auto query = SQLite::Statement{ *attributes_db, "INSERT OR REPLACE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
     query.bind(":key", key);
     query.bind(":value", string);
@@ -105,10 +109,12 @@ void Database::set_attribute(const std::string& key, const std::unordered_set<st
 
 void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
 {
+    auto slock = std::scoped_lock{ filedb_mutex };
+
     auto last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
 
     std::filesystem::create_directories(root_path + "/tick/" + exchange);
-    auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app };
+    auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app | std::ofstream::binary };
     
     auto in_range = false;
     for (auto&& row : *ticks) {
@@ -126,8 +132,34 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
+std::unique_ptr<DatabaseTick> Database::get_tick(const std::string& exchange, const std::string& symbol, int row_idx)
+{
+    auto slock = std::scoped_lock{ filedb_mutex };
+
+    auto file = std::ifstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary };
+
+    file.seekg(DatabaseTick::struct_size * row_idx);
+    
+    /*
+    if (row_idx == 0) {
+        return nullptr;
+    }
+    else {
+        auto tp = time_point_us{ };
+        return std::make_unique<DatabaseTick>(DatabaseTick{ tp, 24.4f, 53.3f, true });
+    }
+    */
+    //return std::unique_ptr<DatabaseTick>{ nullptr };
+    //auto tick = std::make_unique<DatabaseTick>();
+    //return std::move(tick);
+}
+
+/*
 std::unique_ptr<DatabaseTicks> Database::get_tick_data(int start_row, int row_count)
 {
+    auto slock = std::scoped_lock{ filedb_mutex };
+
     auto ticks = std::make_unique<DatabaseTicks>();
     return std::move(ticks);
 }
+*/

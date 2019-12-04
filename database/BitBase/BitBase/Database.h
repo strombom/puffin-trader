@@ -1,13 +1,13 @@
 #pragma once
 
-#include <stdio.h>
+#include "DateTime.h"
+#include "DatabaseTicks.h"
+
+#include <mutex>
 #include <string>
 #include <vector>
 #include <unordered_set>
 #include "SQLiteCpp/SQLiteCpp.h"
-
-#include "DateTime.h"
-#include "DatabaseTicks.h"
 
 
 class Database
@@ -30,7 +30,8 @@ public:
     void set_attribute(const std::string& key, const std::unordered_set<std::string>& string_set);
 
     void extend_tick_data(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp);
-    std::unique_ptr<DatabaseTicks> get_tick_data(int start_row, int row_count);
+    std::unique_ptr<DatabaseTick> get_tick(const std::string& exchange, const std::string& symbol, int row_idx);
+    //std::unique_ptr<DatabaseTicks> get_tick_data(int start_row, int row_count);
     //void append_10s(const std::string& symbol, )
 
     template<class T> T get_attribute(const std::string& key_a, const std::string& key_b,                              const T& default_value) { return get_attribute(key_a + "_" + key_b, default_value); }
@@ -41,6 +42,9 @@ public:
 private:
     SQLite::Database *attributes_db;
     const std::string root_path;
+
+    std::mutex sqlite_mutex;
+    std::mutex filedb_mutex;
 
     static constexpr auto time_format = "%F %T";
 

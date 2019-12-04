@@ -46,13 +46,19 @@ void BitmexInterval::interval_data_worker(void)
                 const auto interval_name = std::to_string(interval.count());
                 const auto timeperiod = database->get_attribute(BitmexConstants::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", BitmexConstants::bitmex_first_timestamp);
                 const auto tick_idx = database->get_attribute(BitmexConstants::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
-                auto tick_count = max_ticks_per_werk;
+
+                auto count = 0;
+                while (auto tick = database->get_tick(BitmexConstants::exchange_name, symbol, tick_idx + count)) {
+
+                    ++count;
+                    break;
+                }
 
                 const auto timeperiod_start = timeperiod;
                 const auto timeperiod_end = timeperiod + interval;
 
-                auto ticks = database->get_tick_data(tick_idx, tick_count);
-                tick_count = (int) ticks->size();
+                //auto ticks = database->get_tick_data(tick_idx, max_ticks_per_werk);
+                //tick_count = (int) ticks->size();
 
 
                 

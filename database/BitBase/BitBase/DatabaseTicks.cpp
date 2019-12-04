@@ -1,6 +1,12 @@
 
 #include "DatabaseTicks.h"
 
+/*
+constexpr int DatabaseTick::get_struct_size(void)
+{
+    return sizeof(timestamp) + sizeof(price) + sizeof(volume) + sizeof(buy);
+}
+*/
 
 std::ostream& operator<<(std::ostream& stream, const DatabaseTick& row)
 {
@@ -10,9 +16,9 @@ std::ostream& operator<<(std::ostream& stream, const DatabaseTick& row)
     const auto buy = row.buy;
 
     stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
-    stream.write(reinterpret_cast<const char*>(&price), sizeof(price));
-    stream.write(reinterpret_cast<const char*>(&volume), sizeof(volume));
-    stream.write(reinterpret_cast<const char*>(&buy), sizeof(buy));
+    stream.write(reinterpret_cast<const char*>(&price),     sizeof(price));
+    stream.write(reinterpret_cast<const char*>(&volume),    sizeof(volume));
+    stream.write(reinterpret_cast<const char*>(&buy),       sizeof(buy));
 
     return stream;
 }

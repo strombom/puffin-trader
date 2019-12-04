@@ -16,6 +16,8 @@ struct DatabaseTick
     const float price;
     const float volume;
     const bool buy;
+    
+    static constexpr int struct_size = sizeof(timestamp) + sizeof(price) + sizeof(volume) + sizeof(buy);
 };
 
 using DatabaseTicks = std::vector<DatabaseTick>;
