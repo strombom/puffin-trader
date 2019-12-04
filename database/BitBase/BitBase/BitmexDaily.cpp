@@ -121,7 +121,6 @@ void BitmexDaily::start_next_download(void)
 void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
 {
     auto symbol_names = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::unordered_set<std::string>{});
-
     for (auto&& symbol_name : new_symbol_names) {
         symbol_names.insert(symbol_name);
     }

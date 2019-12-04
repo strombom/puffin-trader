@@ -44,10 +44,6 @@ public:
 
     static std::shared_ptr<Database> create(const std::string& root_path);
 
-    bool has_attribute(const std::string& key);
-    bool has_attribute(const std::string& key_a, const std::string& key_b);
-    bool has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c);
-
     const std::string get_attribute(const std::string& key, const std::string& default_string);
     time_point_us get_attribute(const std::string& key, const time_point_us& default_date_time);
     std::vector<std::string> get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector);

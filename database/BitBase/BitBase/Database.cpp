@@ -40,27 +40,6 @@ bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
 }
 */
 
-bool Database::has_attribute(const std::string& key)
-{
-    auto query_select = SQLite::Statement{ *attributes_db, "SELECT EXISTS(SELECT * FROM attributes WHERE key = ?)" };
-    query_select.bind(1, key);
-    query_select.executeStep();
-
-    auto a = query_select.getColumn(0);
-    assert(false);
-    return true;
-}
-
-bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
-{
-    return has_attribute(key_a + "_" + key_b);
-}
-
-bool Database::has_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c)
-{
-    return has_attribute(key_a + "_" + key_b + "_" + key_c);
-}
-
 const std::string Database::get_attribute(const std::string& key, const std::string& default_string)
 {
     auto query_insert = SQLite::Statement{ *attributes_db, "INSERT OR IGNORE INTO attributes(\"key\", \"value\") VALUES(:key, :value)" };
