@@ -26,6 +26,15 @@ void BitmexInterval::update(void)
 
     for (auto&& symbol : symbols) {
 
+        for (auto&& interval : intervals) {
+
+            const auto interval_name = std::to_string(interval.count());
+            const auto timeperiod = database->get_attribute(BitmexConstants::exchange_name, symbol + "_interval_current_timeperiod_" + interval_name, BitmexConstants::bitmex_first_timestamp);
+            const auto tick_idx = database->get_attribute(BitmexConstants::exchange_name, symbol + "_interval_current_tick_" + interval_name, BitmexConstants::bitmex_first_timestamp);
+
+        }
+
+
     }
 }
 

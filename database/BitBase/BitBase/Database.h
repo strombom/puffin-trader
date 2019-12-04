@@ -45,9 +45,9 @@ public:
     static std::shared_ptr<Database> create(const std::string& root_path);
 
     const std::string get_attribute(const std::string& key, const std::string& default_string);
-    time_point_us get_attribute(const std::string& key, const time_point_us& default_date_time);
-    std::vector<std::string> get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector);
-    std::unordered_set<std::string> get_attribute(const std::string& key, const std::unordered_set<std::string>& default_string_set);
+    const time_point_us get_attribute(const std::string& key, const time_point_us& default_date_time);
+    const std::vector<std::string> get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector);
+    const std::unordered_set<std::string> get_attribute(const std::string& key, const std::unordered_set<std::string>& default_string_set);
 
     void set_attribute(const std::string& key, const std::string& string);
     void set_attribute(const std::string& key, const time_point_us& date_time);

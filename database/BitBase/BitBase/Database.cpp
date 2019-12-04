@@ -33,7 +33,7 @@ const std::string Database::get_attribute(const std::string& key, const std::str
     return query_select.getColumn(0).getString();
 }
 
-time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
+const time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
 {
     const auto attribute = get_attribute(key, date::format("%F %T", default_date_time));
     auto value = std::istringstream{ attribute };
@@ -42,7 +42,7 @@ time_point_us Database::get_attribute(const std::string& key, const time_point_u
     return time_point;
 }
 
-std::vector<std::string> Database::get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector)
+const std::vector<std::string> Database::get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector)
 {
     auto space_separated_string = std::ostringstream{};
     std::copy(default_string_vector.begin(), default_string_vector.end(), std::ostream_iterator<std::string>(space_separated_string, ","));
@@ -51,7 +51,7 @@ std::vector<std::string> Database::get_attribute(const std::string& key, const s
     return string_vector;
 }
 
-std::unordered_set<std::string> Database::get_attribute(const std::string& key, const std::unordered_set<std::string>& default_string_set)
+const std::unordered_set<std::string> Database::get_attribute(const std::string& key, const std::unordered_set<std::string>& default_string_set)
 {
     auto space_separated_string = std::ostringstream{};
     std::copy(default_string_set.begin(), default_string_set.end(), std::ostream_iterator<std::string>(space_separated_string, ","));
