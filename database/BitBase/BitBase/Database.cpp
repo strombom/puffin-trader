@@ -12,33 +12,12 @@ Database::Database(const std::string& _root_path) :
     attributes_db = new SQLite::Database{ attributes_file_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE };
 
     attributes_db->exec("CREATE TABLE IF NOT EXISTS attributes (key TEXT PRIMARY KEY, value TEXT)");
-
-    /*
-    if (!has_attribute("bitmex", "BTCUSD")) {
-        set_attribute_date("bitmex", "BTCUSD", DateTime(2019, 10, 31, 20, 42, 10.532));
-    }
-    */
 }
 
 std::shared_ptr<Database> Database::create(const std::string& root_path)
 {
     return std::make_shared<Database>(root_path);
 }
-
-/*
-bool Database::has_attribute(const std::string& key_a, const std::string& key_b)
-{
-    SQLite::Statement query(*attributes_db, "SELECT COUNT(1) FROM attributes WHERE key = ?");
-    query.bind(1, (key_a + "_" + key_b).c_str());
-    query.executeStep();
-    const int count = query.getColumn(0).getInt();
-    if (count > 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
-*/
 
 const std::string Database::get_attribute(const std::string& key, const std::string& default_string)
 {
