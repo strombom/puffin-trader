@@ -72,6 +72,9 @@
     <ClCompile Include="BitmexInterval.cpp">
       <Filter>Source Files\Bitmex</Filter>
     </ClCompile>
+    <ClCompile Include="DatabaseTicks.cpp">
+      <Filter>Source Files\Database</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -109,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="BitmexInterval.h">
       <Filter>Header Files\Bitmex</Filter>
+    </ClInclude>
+    <ClInclude Include="DatabaseTicks.h">
+      <Filter>Header Files\Database</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -33,6 +33,15 @@ const std::string Database::get_attribute(const std::string& key, const std::str
     return query_select.getColumn(0).getString();
 }
 
+const int Database::get_attribute(const std::string& key, int default_value)
+{
+    const auto attribute = get_attribute(key, std::to_string(default_value));
+    auto value = std::istringstream{ attribute };
+    auto return_value = int{ 0 };
+    value >> return_value;
+    return return_value;
+}
+
 const time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
 {
     const auto attribute = get_attribute(key, date::format("%F %T", default_date_time));
@@ -68,6 +77,11 @@ void Database::set_attribute(const std::string& key, const std::string& string)
     query.exec();
 }
 
+void Database::set_attribute(const std::string& key, int value)
+{
+    set_attribute(key, std::to_string(value));
+}
+
 void Database::set_attribute(const std::string& key, const time_point_us& date_time)
 {
     set_attribute(key, date::format("%F %T", date_time));
@@ -89,7 +103,7 @@ void Database::set_attribute(const std::string& key, const std::unordered_set<st
     set_attribute(key, space_separated_list.str());
 }
 
-void Database::tick_data_extend(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
+void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
 {
     auto last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
 
@@ -97,7 +111,7 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
     auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app };
     
     auto in_range = false;
-    for (auto&& row : ticks->rows) {
+    for (auto&& row : *ticks) {
         if (!in_range && (row.timestamp > last_timestamp)) {
             in_range = true;
         }
@@ -112,70 +126,8 @@ void Database::tick_data_extend(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
-std::ostream& operator<<(std::ostream& stream, const DatabaseTickRow& row)
+std::unique_ptr<DatabaseTicks> Database::get_tick_data(int start_row, int row_count)
 {
-    const auto timestamp = row.timestamp.time_since_epoch().count();
-    const auto price = row.price;
-    const auto volume = row.volume;
-    const auto buy = row.buy;
-
-    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
-    stream.write(reinterpret_cast<const char*>(&price), sizeof(price));
-    stream.write(reinterpret_cast<const char*>(&volume), sizeof(volume));
-    stream.write(reinterpret_cast<const char*>(&buy), sizeof(buy));
-
-    return stream;
-}
-
-std::istream& operator>>(std::istream& stream, DatabaseTickRow& row)
-{
-    /*
-    const auto timestamp = row.timestamp.time_since_epoch().count();
-    const auto price = row.price;
-    const auto volume = row.volume;
-    const auto buy = row.buy;
-
-    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
-    stream.write(reinterpret_cast<const char*>(&price), sizeof(price));
-    stream.write(reinterpret_cast<const char*>(&volume), sizeof(volume));
-    stream.write(reinterpret_cast<const char*>(&buy), sizeof(buy));
-
-    return stream;
-    */
-
-    return stream;
-}
-
-DatabaseTicks::DatabaseTicks(void)
-{
-
-}
-
-std::istream& operator>>(std::istream& stream, DatabaseTicks& row)
-{
-    /*
-    const auto timestamp = row.timestamp.time_since_epoch().count();
-    const auto price = row.price;
-    const auto volume = row.volume;
-    const auto buy = row.buy;
-
-    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
-    stream.write(reinterpret_cast<const char*>(&price), sizeof(price));
-    stream.write(reinterpret_cast<const char*>(&volume), sizeof(volume));
-    stream.write(reinterpret_cast<const char*>(&buy), sizeof(buy));
-
-    return stream;
-    */
-
-    return stream;
-}
-
-void DatabaseTicks::append(const time_point_us timestamp, const float price, const float volume, const bool buy)
-{
-    rows.push_back(DatabaseTickRow(timestamp, price, volume, buy));
-}
-
-time_point_us DatabaseTicks::get_first_timestamp(void)
-{
-    return rows[0].timestamp;
+    auto ticks = std::make_unique<DatabaseTicks>();
+    return std::move(ticks);
 }
