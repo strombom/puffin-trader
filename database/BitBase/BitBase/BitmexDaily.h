@@ -25,7 +25,7 @@ public:
     void shutdown(void);
 
 private:
-    using TickData = std::map<std::string, std::unique_ptr<DatabaseTicks>>;
+    using TickData = std::map<std::string, uptrDatabaseTicks>;
     using uptrTickData = std::unique_ptr<TickData>;
     
     std::mutex start_download_mutex;

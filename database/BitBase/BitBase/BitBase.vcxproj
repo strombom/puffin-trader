@@ -166,6 +166,7 @@
     <ClCompile Include="BitmexDaily.cpp" />
     <ClCompile Include="BitmexInterval.cpp" />
     <ClCompile Include="Database.cpp" />
+    <ClCompile Include="DatabaseIntervals.cpp" />
     <ClCompile Include="DatabaseTicks.cpp" />
     <ClCompile Include="DownloadTask.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
@@ -175,10 +176,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmex.h" />
-    <ClInclude Include="BitbaseConstants.h" />
+    <ClInclude Include="BitBaseConstants.h" />
     <ClInclude Include="BitmexDaily.h" />
     <ClInclude Include="BitmexInterval.h" />
     <ClInclude Include="Database.h" />
+    <ClInclude Include="DatabaseIntervals.h" />
     <ClInclude Include="DatabaseTicks.h" />
     <ClInclude Include="date.h" />
     <ClInclude Include="DateTime.h" />

@@ -75,6 +75,9 @@
     <ClCompile Include="DatabaseTicks.cpp">
       <Filter>Source Files\Database</Filter>
     </ClCompile>
+    <ClCompile Include="DatabaseIntervals.cpp">
+      <Filter>Source Files\Database</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -113,8 +116,11 @@
     <ClInclude Include="DatabaseTicks.h">
       <Filter>Header Files\Database</Filter>
     </ClInclude>
-    <ClInclude Include="BitbaseConstants.h">
+    <ClInclude Include="BitBaseConstants.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DatabaseIntervals.h">
+      <Filter>Header Files\Database</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

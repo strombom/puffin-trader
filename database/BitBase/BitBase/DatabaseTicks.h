@@ -5,8 +5,10 @@
 
 #include <vector>
 
-struct DatabaseTick
+class DatabaseTick
 {
+public:
+
     DatabaseTick(void) {}
 
     DatabaseTick(const time_point_us timestamp, const float price, const float volume, const bool buy) :
@@ -23,18 +25,17 @@ struct DatabaseTick
     static constexpr int struct_size = sizeof(timestamp) + sizeof(price) + sizeof(volume) + sizeof(buy);
 };
 
-using DatabaseTicks = std::vector<DatabaseTick>;
-
-struct DatabaseInterval
+class DatabaseTicks
 {
+public:
 
-    float last_price;
-    float vol_buy;
-    float vol_sell;
-    std::array<float, BitBase::Interval::steps.size()> prices_buy;
-
-    //constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
+    std::vector<DatabaseTick> rows;
 };
+
+using uptrDatabaseTicks = std::unique_ptr<DatabaseTicks>;
+
+
+//using DatabaseTicks = std::vector<DatabaseTick>;
 
 
 /*

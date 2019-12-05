@@ -2,6 +2,7 @@
 
 #include "DateTime.h"
 #include "DatabaseTicks.h"
+#include "DatabaseIntervals.h"
 
 #include <mutex>
 #include <string>
@@ -34,9 +35,9 @@ public:
     template<class T> void set_attribute(const std::string& key_a, const std::string& key_b,                           const T& default_value) { set_attribute(key_a + "_" + key_b, default_value); }
     template<class T> void set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& default_value) { set_attribute(key_a + "_" + key_b + "_" + key_c, default_value); }
 
-    void extend_tick_data(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp);
+    void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp);
     std::unique_ptr<DatabaseTick> get_tick(const std::string& exchange, const std::string& symbol, int row_idx);
-    void push_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const std::unique_ptr<DatabaseInterval> interval);
+    void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data);
     //void append_10s(const std::string& symbol, )
 
 
@@ -46,9 +47,6 @@ private:
 
     std::mutex sqlite_mutex;
     std::mutex filedb_mutex;
-
-    static constexpr auto time_format = "%F %T";
-
 };
 
 using sptrDatabase = std::shared_ptr<Database>;

@@ -156,8 +156,8 @@ void BitmexDaily::tick_data_worker(void)
             for (auto&& symbol_tick_data = tick_data->begin(); symbol_tick_data != tick_data->end(); ++symbol_tick_data) {
                 const auto symbol_name = symbol_tick_data->first;
                 symbol_names.insert(symbol_name);
-                auto data = std::move(symbol_tick_data->second);
-                database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol_name, std::move(data), BitBase::Bitmex::first_timestamp);
+                auto ticks = std::move(symbol_tick_data->second);
+                database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol_name, std::move(ticks), BitBase::Bitmex::first_timestamp);
             }
             update_symbol_names(symbol_names);
             tick_data_updated_callback();
@@ -264,7 +264,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         if ((*tick_data)[symbol] == nullptr) {
             (*tick_data)[symbol] = std::make_unique<DatabaseTicks>();
         }
-        (*tick_data)[symbol]->push_back({ timestamp, price, volume, buy });
+        (*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
     }
 
     logger.info("BitmexDaily::parse_raw end (%d)", timer.stop()/1000);

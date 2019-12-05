@@ -2,6 +2,7 @@
 #include "Logger.h"
 #include "BitmexInterval.h"
 #include "BitBaseConstants.h"
+#include "DatabaseIntervals.h"
 
 #include "date.h"
 
@@ -56,8 +57,10 @@ void BitmexInterval::interval_data_worker(void)
                 auto sells = std::vector<std::pair<float, float>>{};
 
                 auto tick_count = 0;
+                auto valid_interval = false;
                 while (auto tick = database->get_tick(BitBase::Bitmex::exchange_name, symbol, tick_idx + tick_count)) {
                     if (tick->timestamp >= timeperiod_end) {
+                        valid_interval = true;
                         break;
                     }
                     if (tick->buy) {
@@ -69,12 +72,16 @@ void BitmexInterval::interval_data_worker(void)
                     ++tick_count;
                 }
 
+                if (!valid_interval) {
+                    break;
+                }
+
                 // Sort by volume
-                std::sort(buys.begin(), buys.end());
+                std::sort(buys.begin(), buys.end(), std::less<std::pair<float, float>>());
                 std::sort(sells.begin(), sells.end(), std::greater<std::pair<float, float>>());
 
-                auto prices_buy = std::array<float, 6>{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-                auto prices_sell = std::array<float, 6>{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+                auto prices_buy = BitBase::Interval::step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+                auto prices_sell = BitBase::Interval::step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
                 auto accum_vol_buy = 0.0f;
                 auto accum_vol_sell = 0.0f;
 
@@ -96,8 +103,14 @@ void BitmexInterval::interval_data_worker(void)
                     }
                 }
 
-                database->
-                //timeperiod_start, last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell
+
+                auto intervals_data = DatabaseIntervals{ timeperiod_start, interval };
+
+                intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell });
+
+                database->extend_interval_data(BitBase::Bitmex::exchange_name, symbol, interval_name, intervals_data);
+
+                
 
                 if (buys.size() > 0 || sells.size() > 0) {
                     logger.info("ok");

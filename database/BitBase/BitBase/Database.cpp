@@ -46,10 +46,10 @@ const int Database::get_attribute(const std::string& key, int default_value)
 
 const time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
 {
-    const auto attribute = get_attribute(key, date::format("%F %T", default_date_time));
+    const auto attribute = get_attribute(key, date::format(BitBase::Database::time_format, default_date_time));
     auto value = std::istringstream{ attribute };
     auto time_point = time_point_us{};
-    value >> date::parse("%F %T", time_point);
+    value >> date::parse(BitBase::Database::time_format, time_point);
     return time_point;
 }
 
@@ -88,7 +88,7 @@ void Database::set_attribute(const std::string& key, int value)
 
 void Database::set_attribute(const std::string& key, const time_point_us& date_time)
 {
-    set_attribute(key, date::format("%F %T", date_time));
+    set_attribute(key, date::format(BitBase::Database::time_format, date_time));
 }
 
 void Database::set_attribute(const std::string& key, const std::vector<std::string>& string_vector)
@@ -107,7 +107,7 @@ void Database::set_attribute(const std::string& key, const std::unordered_set<st
     set_attribute(key, space_separated_list.str());
 }
 
-void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp)
+void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp)
 {
     auto slock = std::scoped_lock{ filedb_mutex };
 
@@ -117,7 +117,7 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app | std::ofstream::binary };
     
     auto in_range = false;
-    for (auto&& row : *ticks) {
+    for (auto&& row : ticks->rows) {
         if (!in_range && (row.timestamp > last_timestamp)) {
             in_range = true;
         }
@@ -145,4 +145,19 @@ std::unique_ptr<DatabaseTick> Database::get_tick(const std::string& exchange, co
     else {
         return std::make_unique<DatabaseTick>(tick);
     }
+}
+
+void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data)
+{
+    auto slock = std::scoped_lock{ filedb_mutex };
+
+    std::filesystem::create_directories(root_path + "/interval/" + exchange);
+    auto file = std::ofstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ofstream::app | std::ofstream::binary };
+
+    file << intervals_data;
+    
+    file.close();
+
+    const auto timestamp_end = intervals_data.get_timestamp_end();
+    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", timestamp_end);
 }
