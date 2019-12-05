@@ -31,7 +31,6 @@ public:
 
     void extend_tick_data(const std::string& exchange, const std::string& symbol, const std::unique_ptr<DatabaseTicks> ticks, const time_point_us& first_timestamp);
     std::unique_ptr<DatabaseTick> get_tick(const std::string& exchange, const std::string& symbol, int row_idx);
-    //std::unique_ptr<DatabaseTicks> get_tick_data(int start_row, int row_count);
     //void append_10s(const std::string& symbol, )
 
     template<class T> T get_attribute(const std::string& key_a, const std::string& key_b,                              const T& default_value) { return get_attribute(key_a + "_" + key_b, default_value); }

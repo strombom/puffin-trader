@@ -6,16 +6,18 @@
 
 struct DatabaseTick
 {
+    DatabaseTick(void) {}
+
     DatabaseTick(const time_point_us timestamp, const float price, const float volume, const bool buy) :
         timestamp(timestamp), price(price), volume(volume), buy(buy) {}
 
     friend std::ostream& operator<<(std::ostream& stream, const DatabaseTick& row);
     friend std::istream& operator>>(std::istream& stream, DatabaseTick& row);
 
-    const time_point_us timestamp;
-    const float price;
-    const float volume;
-    const bool buy;
+    time_point_us timestamp;
+    float price;
+    float volume;
+    bool buy;
     
     static constexpr int struct_size = sizeof(timestamp) + sizeof(price) + sizeof(volume) + sizeof(buy);
 };

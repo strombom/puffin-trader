@@ -32,7 +32,7 @@ private:
     void interval_data_worker(void);
 
     static const auto max_ticks_per_werk = 100;
-    static constexpr auto intervals = std::array<std::chrono::seconds, 4>{10s, 30s, 1min, 5min};
+    static constexpr auto intervals = std::array<std::chrono::seconds, 4>{120s, 30s, 1min, 5min};
 };
 
 using uptrBitmexInterval = std::unique_ptr<BitmexInterval>;

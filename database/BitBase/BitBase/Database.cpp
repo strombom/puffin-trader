@@ -135,31 +135,14 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
 std::unique_ptr<DatabaseTick> Database::get_tick(const std::string& exchange, const std::string& symbol, int row_idx)
 {
     auto slock = std::scoped_lock{ filedb_mutex };
-
     auto file = std::ifstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary };
-
     file.seekg(DatabaseTick::struct_size * row_idx);
-    
-    /*
-    if (row_idx == 0) {
+    auto tick = DatabaseTick{};
+    file >> tick;
+    if (file.bad() || file.fail()) {
         return nullptr;
     }
     else {
-        auto tp = time_point_us{ };
-        return std::make_unique<DatabaseTick>(DatabaseTick{ tp, 24.4f, 53.3f, true });
+        return std::make_unique<DatabaseTick>(tick);
     }
-    */
-    //return std::unique_ptr<DatabaseTick>{ nullptr };
-    //auto tick = std::make_unique<DatabaseTick>();
-    //return std::move(tick);
 }
-
-/*
-std::unique_ptr<DatabaseTicks> Database::get_tick_data(int start_row, int row_count)
-{
-    auto slock = std::scoped_lock{ filedb_mutex };
-
-    auto ticks = std::make_unique<DatabaseTicks>();
-    return std::move(ticks);
-}
-*/
