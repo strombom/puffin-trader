@@ -153,11 +153,8 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
 
     std::filesystem::create_directories(root_path + "/interval/" + exchange);
     auto file = std::ofstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ofstream::app | std::ofstream::binary };
-
     file << intervals_data;
-    
     file.close();
 
-    const auto timestamp_end = intervals_data.get_timestamp_end();
-    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", timestamp_end);
+    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", intervals_data.get_timestamp_end());
 }

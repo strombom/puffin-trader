@@ -51,6 +51,9 @@ void BitmexInterval::interval_data_worker(void)
                 const auto timeperiod_start = timeperiod;
                 const auto timeperiod_end = timeperiod + interval;
 
+                auto intervals_data = DatabaseIntervals{ timeperiod_start, interval };
+
+
                 const auto last_price = database->get_tick(BitBase::Bitmex::exchange_name, symbol, std::max(0, tick_idx - 1))->price;
 
                 auto buys = std::vector<std::pair<float, float>>{};
@@ -103,8 +106,6 @@ void BitmexInterval::interval_data_worker(void)
                     }
                 }
 
-
-                auto intervals_data = DatabaseIntervals{ timeperiod_start, interval };
 
                 intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell });
 
