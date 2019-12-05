@@ -8,7 +8,6 @@
 #include "Database.h"
 #include "BitmexDaily.h"
 #include "BitmexInterval.h"
-#include "BitmexConstants.h"
 #include "DownloadManager.h"
 
 

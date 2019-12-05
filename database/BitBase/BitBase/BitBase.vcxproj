@@ -175,7 +175,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmex.h" />
-    <ClInclude Include="BitmexConstants.h" />
+    <ClInclude Include="BitbaseConstants.h" />
     <ClInclude Include="BitmexDaily.h" />
     <ClInclude Include="BitmexInterval.h" />
     <ClInclude Include="Database.h" />

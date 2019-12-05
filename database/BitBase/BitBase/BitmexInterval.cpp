@@ -1,7 +1,7 @@
 
 #include "Logger.h"
 #include "BitmexInterval.h"
-#include "BitmexConstants.h"
+#include "BitbaseConstants.h"
 
 #include "date.h"
 
@@ -40,12 +40,12 @@ void BitmexInterval::interval_data_worker(void)
             }
         }
 
-        const auto symbols = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::unordered_set<std::string>{});
+        const auto symbols = database->get_attribute(BitbaseConstants::bitmex_exchange_name, "symbols", std::unordered_set<std::string>{});
         for (auto&& symbol : symbols) {
             for (auto&& interval : intervals) {
                 const auto interval_name = std::to_string(interval.count());
-                const auto timeperiod = database->get_attribute(BitmexConstants::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", BitmexConstants::bitmex_first_timestamp);
-                const auto tick_idx = database->get_attribute(BitmexConstants::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
+                const auto timeperiod = database->get_attribute(BitbaseConstants::bitmex_exchange_name, symbol + "_interval_" + interval_name + "_timestamp", BitbaseConstants::bitmex_first_timestamp);
+                const auto tick_idx = database->get_attribute(BitbaseConstants::bitmex_exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
 
                 const auto timeperiod_start = timeperiod;
                 const auto timeperiod_end = timeperiod + interval;
@@ -56,7 +56,7 @@ void BitmexInterval::interval_data_worker(void)
                 auto vol_sell = 0.0f;
 
                 auto tick_count = 0;
-                while (auto tick = database->get_tick(BitmexConstants::exchange_name, symbol, tick_idx + tick_count)) {
+                while (auto tick = database->get_tick(BitbaseConstants::bitmex_exchange_name, symbol, tick_idx + tick_count)) {
                     if (tick->timestamp >= timeperiod_end) {
                         break;
                     }

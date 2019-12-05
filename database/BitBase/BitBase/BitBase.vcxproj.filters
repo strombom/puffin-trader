@@ -101,9 +101,6 @@
     <ClInclude Include="BitmexDaily.h">
       <Filter>Header Files\Bitmex</Filter>
     </ClInclude>
-    <ClInclude Include="BitmexConstants.h">
-      <Filter>Header Files\Bitmex</Filter>
-    </ClInclude>
     <ClInclude Include="DownloadTask.h">
       <Filter>Header Files\DownloadManager</Filter>
     </ClInclude>
@@ -115,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="DatabaseTicks.h">
       <Filter>Header Files\Database</Filter>
+    </ClInclude>
+    <ClInclude Include="BitbaseConstants.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

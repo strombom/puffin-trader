@@ -1,4 +1,5 @@
 
+#include "BitbaseConstants.h"
 #include "BitmexDaily.h"
 #include "Logger.h"
 
@@ -50,7 +51,7 @@ void BitmexDaily::start_download(void)
     logger.info("BitmexDaily::start_download");
     
     // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
-    const auto timestamp = database->get_attribute(BitmexConstants::exchange_name, "XBTUSD", "tick_data_last_timestamp", BitmexConstants::bitmex_first_timestamp);
+    const auto timestamp = database->get_attribute(BitbaseConstants::bitmex_exchange_name, "XBTUSD", "tick_data_last_timestamp", BitbaseConstants::bitmex_first_timestamp);
     timestamp_next = date::floor<date::days>(timestamp);
 
     state = BitmexDailyState::downloading;
@@ -120,11 +121,11 @@ void BitmexDaily::start_next_download(void)
 
 void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
 {
-    auto symbol_names = database->get_attribute(BitmexConstants::exchange_name, "symbols", std::unordered_set<std::string>{});
+    auto symbol_names = database->get_attribute(BitbaseConstants::bitmex_exchange_name, "symbols", std::unordered_set<std::string>{});
     for (auto&& symbol_name : new_symbol_names) {
         symbol_names.insert(symbol_name);
     }
-    database->set_attribute(BitmexConstants::exchange_name, "symbols", symbol_names);
+    database->set_attribute(BitbaseConstants::bitmex_exchange_name, "symbols", symbol_names);
 }
 
 void BitmexDaily::tick_data_worker(void)
@@ -156,7 +157,7 @@ void BitmexDaily::tick_data_worker(void)
                 const auto symbol_name = symbol_tick_data->first;
                 symbol_names.insert(symbol_name);
                 auto data = std::move(symbol_tick_data->second);
-                database->extend_tick_data(BitmexConstants::exchange_name, symbol_name, std::move(data), BitmexConstants::bitmex_first_timestamp);
+                database->extend_tick_data(BitbaseConstants::bitmex_exchange_name, symbol_name, std::move(data), BitbaseConstants::bitmex_first_timestamp);
             }
             update_symbol_names(symbol_names);
             tick_data_updated_callback();

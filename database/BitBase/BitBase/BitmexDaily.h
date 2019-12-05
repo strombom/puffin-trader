@@ -3,7 +3,7 @@
 #include "DateTime.h"
 #include "Database.h"
 #include "DownloadManager.h"
-#include "BitmexConstants.h"
+#include "BitbaseConstants.h"
 
 #include <mutex>
 #include <string>
