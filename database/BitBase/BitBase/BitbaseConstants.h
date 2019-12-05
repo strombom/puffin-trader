@@ -2,8 +2,30 @@
 
 #include "DateTime.h"
 
-namespace BitbaseConstants
+#include <array>
+
+using namespace std::chrono_literals;
+
+namespace Bitbase
 {
-    static constexpr auto bitmex_exchange_name = "BITMEX";
-    static constexpr auto bitmex_first_timestamp = time_point_us{ date::sys_days(date::year{2017} / 01 / 01) };
+    namespace Bitmex
+    {
+        static constexpr auto exchange_name = "BITMEX";
+        static constexpr auto first_timestamp = time_point_us{ date::sys_days(date::year{2017} / 01 / 01) };
+
+        namespace Daily
+        {
+            static constexpr auto downloader_client_id = "bitmex_daily";
+            static constexpr auto base_url_start = "https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/";
+            static constexpr auto base_url_end = ".csv.gz";
+            static constexpr auto url_date_format = "%Y%m%d";
+            static constexpr auto active_downloads_max = 5;
+        }
+    }
+
+    namespace Interval
+    {
+        static const auto batch_size = 100;
+        static constexpr auto intervals = std::array<std::chrono::seconds, 1>{120s};
+    }
 }
