@@ -147,7 +147,7 @@ std::unique_ptr<DatabaseTick> Database::get_tick(const std::string& exchange, co
     }
 }
 
-void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data)
+void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx)
 {
     auto slock = std::scoped_lock{ filedb_mutex };
 
@@ -156,5 +156,6 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
     file << intervals_data;
     file.close();
 
-    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", intervals_data.get_timestamp_end());
+    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", timestamp);
+    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", tick_idx);
 }

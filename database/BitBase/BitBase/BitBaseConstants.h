@@ -28,7 +28,6 @@ namespace BitBase
         constexpr auto batch_size = 100;
         constexpr auto intervals = std::array<std::chrono::seconds, 1>{ 120s };
         constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
-        using step_prices_t = std::array<float, BitBase::Interval::steps.size()>;
     }
 
     namespace Database

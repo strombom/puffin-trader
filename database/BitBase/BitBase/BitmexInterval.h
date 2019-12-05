@@ -2,11 +2,13 @@
 
 #include "Database.h"
 #include "DateTime.h"
+#include "BitBaseConstants.h"
 
 #include <mutex>
 #include <atomic>
 #include <memory>
 #include <thread>
+
 
 using uptrThread = std::unique_ptr<std::thread>;
 

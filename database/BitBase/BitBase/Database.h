@@ -37,9 +37,7 @@ public:
 
     void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp);
     std::unique_ptr<DatabaseTick> get_tick(const std::string& exchange, const std::string& symbol, int row_idx);
-    void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data);
-    //void append_10s(const std::string& symbol, )
-
+    void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx);
 
 private:
     SQLite::Database *attributes_db;
@@ -50,4 +48,3 @@ private:
 };
 
 using sptrDatabase = std::shared_ptr<Database>;
-

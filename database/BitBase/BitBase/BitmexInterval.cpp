@@ -1,7 +1,6 @@
 
 #include "Logger.h"
 #include "BitmexInterval.h"
-#include "BitBaseConstants.h"
 #include "DatabaseIntervals.h"
 
 #include "date.h"
@@ -45,86 +44,75 @@ void BitmexInterval::interval_data_worker(void)
         for (auto&& symbol : symbols) {
             for (auto&& interval : BitBase::Interval::intervals) {
                 const auto interval_name = std::to_string(interval.count());
-                const auto timeperiod = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", BitBase::Bitmex::first_timestamp);
-                const auto tick_idx = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
 
-                const auto timeperiod_start = timeperiod;
-                const auto timeperiod_end = timeperiod + interval;
+                auto timeperiod = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", BitBase::Bitmex::first_timestamp);
+                auto tick_idx = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
+                auto last_price = database->get_tick(BitBase::Bitmex::exchange_name, symbol, std::max(0, tick_idx - 1))->price;
+                auto next_last_price = last_price;
 
-                auto intervals_data = DatabaseIntervals{ timeperiod_start, interval };
+                auto intervals_data = DatabaseIntervals{ timeperiod, interval };
 
+                const auto last_timeperiod = timeperiod + interval * BitBase::Interval::batch_size;
+                while (timeperiod < last_timeperiod) {
+                    timeperiod += interval;
 
-                const auto last_price = database->get_tick(BitBase::Bitmex::exchange_name, symbol, std::max(0, tick_idx - 1))->price;
+                    auto buys = std::vector<std::pair<float, float>>{};
+                    auto sells = std::vector<std::pair<float, float>>{};
 
-                auto buys = std::vector<std::pair<float, float>>{};
-                auto sells = std::vector<std::pair<float, float>>{};
+                    auto valid_interval = false;
+                    while (auto tick = database->get_tick(BitBase::Bitmex::exchange_name, symbol, tick_idx)) {
+                        if (tick->timestamp >= timeperiod) {
+                            // No more tick data found
+                            valid_interval = true;
+                            break;
+                        }
+                        if (tick->buy) {
+                            buys.push_back({ tick->price, tick->volume });
+                        }
+                        else {
+                            sells.push_back({ tick->price, tick->volume });
+                        }
+                        next_last_price = tick->price;
+                        ++tick_idx;
+                    }
 
-                auto tick_count = 0;
-                auto valid_interval = false;
-                while (auto tick = database->get_tick(BitBase::Bitmex::exchange_name, symbol, tick_idx + tick_count)) {
-                    if (tick->timestamp >= timeperiod_end) {
-                        valid_interval = true;
+                    if (!valid_interval) {
+                        // End of tick data, do not save current (incomplete) interval
                         break;
                     }
-                    if (tick->buy) {
-                        buys.push_back({ tick->price, tick->volume });
+
+                    // Sort buys and sells by volume
+                    std::sort(buys.begin(), buys.end(), std::less<std::pair<float, float>>());
+                    std::sort(sells.begin(), sells.end(), std::greater<std::pair<float, float>>());
+
+                    auto prices_buy = step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+                    auto prices_sell = step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+                    auto accum_vol_buy = 0.0f;
+                    auto accum_vol_sell = 0.0f;
+
+                    auto step_idx = 0;
+                    for (auto&& buy : buys) {
+                        accum_vol_buy += buy.second;
+                        while (step_idx < BitBase::Interval::steps.size() && accum_vol_buy > BitBase::Interval::steps[step_idx]) {
+                            prices_buy[step_idx] = buy.first;
+                            ++step_idx;
+                        }
                     }
-                    else {
-                        sells.push_back({ tick->price, tick->volume });
+
+                    step_idx = 0;
+                    for (auto&& sell : sells) {
+                        accum_vol_sell += sell.second;
+                        while (step_idx < BitBase::Interval::steps.size() && accum_vol_sell > BitBase::Interval::steps[step_idx]) {
+                            prices_sell[step_idx] = sell.first;
+                            ++step_idx;
+                        }
                     }
-                    ++tick_count;
+
+                    intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell });
+                    last_price = next_last_price;
                 }
 
-                if (!valid_interval) {
-                    break;
-                }
-
-                // Sort by volume
-                std::sort(buys.begin(), buys.end(), std::less<std::pair<float, float>>());
-                std::sort(sells.begin(), sells.end(), std::greater<std::pair<float, float>>());
-
-                auto prices_buy = BitBase::Interval::step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-                auto prices_sell = BitBase::Interval::step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-                auto accum_vol_buy = 0.0f;
-                auto accum_vol_sell = 0.0f;
-
-                auto step_idx = 0;
-                for (auto&& buy : buys) {
-                    accum_vol_buy += buy.second;
-                    while (step_idx < BitBase::Interval::steps.size() && accum_vol_buy > BitBase::Interval::steps[step_idx]) {
-                        prices_buy[step_idx] = buy.first;
-                        ++step_idx;
-                    }
-                }
-
-                step_idx = 0;
-                for (auto&& sell : sells) {
-                    accum_vol_sell += sell.second;
-                    while (step_idx < BitBase::Interval::steps.size() && accum_vol_sell > BitBase::Interval::steps[step_idx]) {
-                        prices_sell[step_idx] = sell.first;
-                        ++step_idx;
-                    }
-                }
-
-
-                intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell });
-
-                database->extend_interval_data(BitBase::Bitmex::exchange_name, symbol, interval_name, intervals_data);
-
-                
-
-                if (buys.size() > 0 || sells.size() > 0) {
-                    logger.info("ok");
-                }
-
-
-                if (tick_count > 0) {
-                    logger.info("reading %s (%s) (%d)", symbol.c_str(), date::format("%F %T", timeperiod_start).c_str(), tick_count);
-                    logger.info("reading ok (%d)", tick_count);
-                }
-                
-                logger.info("reading end (%d)", tick_count);
-                break;
+                database->extend_interval_data(BitBase::Bitmex::exchange_name, symbol, interval_name, intervals_data, timeperiod, tick_idx);
             }
         }
     }

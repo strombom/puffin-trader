@@ -18,11 +18,6 @@ std::ostream& operator<<(std::ostream& stream, const DatabaseInterval& row)
     return stream;
 }
 
-time_point_us DatabaseIntervals::get_timestamp_end(void) const
-{
-    return timestamp_start + interval * rows.size();
-}
-
 std::ostream& operator<<(std::ostream& stream, const DatabaseIntervals& intervals_data)
 {
     for (auto&& row : intervals_data.rows) {
