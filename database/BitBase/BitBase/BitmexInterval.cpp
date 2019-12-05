@@ -40,12 +40,12 @@ void BitmexInterval::interval_data_worker(void)
             }
         }
 
-        const auto symbols = database->get_attribute(Bitbase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
+        const auto symbols = database->get_attribute(BitBase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
         for (auto&& symbol : symbols) {
-            for (auto&& interval : Bitbase::Interval::intervals) {
+            for (auto&& interval : BitBase::Interval::intervals) {
                 const auto interval_name = std::to_string(interval.count());
-                const auto timeperiod = database->get_attribute(Bitbase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", Bitbase::Bitmex::first_timestamp);
-                const auto tick_idx = database->get_attribute(Bitbase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
+                const auto timeperiod = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", BitBase::Bitmex::first_timestamp);
+                const auto tick_idx = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
 
                 const auto timeperiod_start = timeperiod;
                 const auto timeperiod_end = timeperiod + interval;
@@ -56,7 +56,7 @@ void BitmexInterval::interval_data_worker(void)
                 auto vol_sell = 0.0f;
 
                 auto tick_count = 0;
-                while (auto tick = database->get_tick(Bitbase::Bitmex::exchange_name, symbol, tick_idx + tick_count)) {
+                while (auto tick = database->get_tick(BitBase::Bitmex::exchange_name, symbol, tick_idx + tick_count)) {
                     if (tick->timestamp >= timeperiod_end) {
                         break;
                     }

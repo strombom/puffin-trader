@@ -6,7 +6,7 @@
 
 using namespace std::chrono_literals;
 
-namespace Bitbase
+namespace BitBase
 {
     namespace Bitmex
     {

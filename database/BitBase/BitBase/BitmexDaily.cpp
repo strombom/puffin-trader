@@ -37,7 +37,7 @@ void BitmexDaily::shutdown(void)
     tick_data_thread_running = false;
     tick_data_condition.notify_all();
 
-    download_manager->abort_client(Bitbase::Bitmex::Daily::downloader_client_id);
+    download_manager->abort_client(BitBase::Bitmex::Daily::downloader_client_id);
 
     try {
         tick_data_worker_thread->join();
@@ -51,12 +51,12 @@ void BitmexDaily::start_download(void)
     logger.info("BitmexDaily::start_download");
     
     // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
-    const auto timestamp = database->get_attribute(Bitbase::Bitmex::exchange_name, "XBTUSD", "tick_data_last_timestamp", Bitbase::Bitmex::first_timestamp);
+    const auto timestamp = database->get_attribute(BitBase::Bitmex::exchange_name, "XBTUSD", "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
     timestamp_next = date::floor<date::days>(timestamp);
 
     state = BitmexDailyState::downloading;
 
-    for (int i = 0; i < Bitbase::Bitmex::Daily::active_downloads_max; ++i) {
+    for (int i = 0; i < BitBase::Bitmex::Daily::active_downloads_max; ++i) {
         start_next_download();
     }
 }
@@ -112,8 +112,8 @@ void BitmexDaily::start_next_download(void)
         return;
     }
     
-    auto url = std::string{ Bitbase::Bitmex::Daily::base_url_start } + date::format(Bitbase::Bitmex::Daily::url_date_format, timestamp_next) + std::string{ Bitbase::Bitmex::Daily::base_url_end };
-    download_manager->download(url, Bitbase::Bitmex::Daily::downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
+    auto url = std::string{ BitBase::Bitmex::Daily::base_url_start } + date::format(BitBase::Bitmex::Daily::url_date_format, timestamp_next) + std::string{ BitBase::Bitmex::Daily::base_url_end };
+    download_manager->download(url, BitBase::Bitmex::Daily::downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
     timestamp_next += date::days{ 1 };
 
     logger.info("BitmexDaily::start_next end");
@@ -121,11 +121,11 @@ void BitmexDaily::start_next_download(void)
 
 void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
 {
-    auto symbol_names = database->get_attribute(Bitbase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
+    auto symbol_names = database->get_attribute(BitBase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
     for (auto&& symbol_name : new_symbol_names) {
         symbol_names.insert(symbol_name);
     }
-    database->set_attribute(Bitbase::Bitmex::exchange_name, "symbols", symbol_names);
+    database->set_attribute(BitBase::Bitmex::exchange_name, "symbols", symbol_names);
 }
 
 void BitmexDaily::tick_data_worker(void)
@@ -157,7 +157,7 @@ void BitmexDaily::tick_data_worker(void)
                 const auto symbol_name = symbol_tick_data->first;
                 symbol_names.insert(symbol_name);
                 auto data = std::move(symbol_tick_data->second);
-                database->extend_tick_data(Bitbase::Bitmex::exchange_name, symbol_name, std::move(data), Bitbase::Bitmex::first_timestamp);
+                database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol_name, std::move(data), BitBase::Bitmex::first_timestamp);
             }
             update_symbol_names(symbol_names);
             tick_data_updated_callback();

@@ -49,7 +49,7 @@ void Bitmex::main_loop(void)
             auto slock = std::scoped_lock{ state_mutex };
 
             if (state == BitmexState::idle) {
-                auto tick_data_last_timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", Bitbase::Bitmex::first_timestamp);
+                auto tick_data_last_timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
                 if (tick_data_last_timestamp < std::chrono::system_clock::now() - std::chrono::hours{ 24 + 1 }) {
                     // Last tick timestamp is more than 25 hours old, there should be a compressed daily archive available
                     state = BitmexState::downloading_daily;
