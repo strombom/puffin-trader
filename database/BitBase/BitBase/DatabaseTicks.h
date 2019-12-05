@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DateTime.h"
+#include "BitBaseConstants.h"
 
 #include <vector>
 
@@ -23,6 +24,18 @@ struct DatabaseTick
 };
 
 using DatabaseTicks = std::vector<DatabaseTick>;
+
+struct DatabaseInterval
+{
+
+    float last_price;
+    float vol_buy;
+    float vol_sell;
+    std::array<float, BitBase::Interval::steps.size()> prices_buy;
+
+    //constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
+};
+
 
 /*
 class DatabaseTicks
