@@ -40,6 +40,9 @@
     <Filter Include="Source Files\Server">
       <UniqueIdentifier>{a09e8bd8-a329-492b-ae02-ca03c8b87cde}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\DateTime">
+      <UniqueIdentifier>{93cdc729-3403-49bd-b4a7-cb876d1c34d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -77,6 +80,9 @@
     </ClCompile>
     <ClCompile Include="DatabaseIntervals.cpp">
       <Filter>Source Files\Database</Filter>
+    </ClCompile>
+    <ClCompile Include="DateTime.cpp">
+      <Filter>Source Files\DateTime</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

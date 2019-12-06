@@ -53,18 +53,18 @@ void BitmexInterval::interval_data_worker(void)
                 auto timeperiod = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", BitBase::Bitmex::first_timestamp);
                 auto tick_idx = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", 0);
 
-
                 auto tick_table = database->open_tick_table_read(BitBase::Bitmex::exchange_name, symbol);
                 auto tick = tick_table->get_tick(std::max(0, tick_idx - 1));
 
-                //auto last_price = database->get_tick(BitBase::Bitmex::exchange_name, symbol, std::max(0, tick_idx - 1))->price;
                 auto last_price = tick->price;
                 auto next_last_price = last_price;
 
                 auto intervals_data = DatabaseIntervals{ timeperiod, interval };
+                
+                auto timer = Timer{};
 
                 const auto last_timeperiod = timeperiod + interval * BitBase::Interval::batch_size;
-                while (timeperiod < last_timeperiod) {
+                do {
                     timeperiod += interval;
 
                     auto buys = std::vector<std::pair<float, float>>{};
@@ -86,24 +86,7 @@ void BitmexInterval::interval_data_worker(void)
                         ++tick_idx;
 
                     } while (tick = tick_table->get_next_tick());
-
-                    /*
-                    while (auto tick = database->get_tick(BitBase::Bitmex::exchange_name, symbol, tick_idx)) {
-                        if (tick->timestamp >= timeperiod) {
-                            valid_interval = true;
-                            break;
-                        }
-                        if (tick->buy) {
-                            buys.push_back({ tick->price, tick->volume });
-                        }
-                        else {
-                            sells.push_back({ tick->price, tick->volume });
-                        }
-                        next_last_price = tick->price;
-                        ++tick_idx;
-                    }
-                    */
-
+                    
                     if (!valid_interval) {
                         // End of tick data, do not save current (incomplete) interval
                         timeperiod -= interval;
@@ -139,7 +122,11 @@ void BitmexInterval::interval_data_worker(void)
 
                     intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell });
                     last_price = next_last_price;
-                }
+
+                    const auto timer_end = std::chrono::steady_clock::now();
+
+
+                } while (timeperiod < last_timeperiod && timer.elapsed() >= BitBase::Interval::batch_timeout);
 
                 database->extend_interval_data(BitBase::Bitmex::exchange_name, symbol, interval_name, intervals_data, timeperiod, tick_idx);
             }

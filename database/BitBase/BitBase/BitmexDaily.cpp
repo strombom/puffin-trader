@@ -156,9 +156,8 @@ void BitmexDaily::tick_data_worker(void)
             for (auto&& symbol_tick_data = tick_data->begin(); symbol_tick_data != tick_data->end(); ++symbol_tick_data) {
                 const auto symbol_name = symbol_tick_data->first;
                 symbol_names.insert(symbol_name);
-                auto ticks = std::move(symbol_tick_data->second);
                 auto tick_table = database->open_tick_table_write(BitBase::Bitmex::exchange_name, symbol_name);
-                tick_table->extend(std::move(ticks), BitBase::Bitmex::first_timestamp);
+                tick_table->extend(std::move(symbol_tick_data->second), BitBase::Bitmex::first_timestamp);
             }
             update_symbol_names(symbol_names);
             tick_data_updated_callback();
@@ -173,26 +172,10 @@ void BitmexDaily::tick_data_worker(void)
     logger.info("BitmexDaily::tick_data_worker exit");
 }
 
-class Timer {
-public:
-    void start(void) {
-        start_time_point = std::chrono::steady_clock::now();
-    }
-
-    long stop(void) {
-        const auto end = std::chrono::steady_clock::now();
-        return (long) std::chrono::duration_cast<std::chrono::microseconds>(end - start_time_point).count();
-    }
-
-private:
-    std::chrono::steady_clock::time_point start_time_point;
-};
-
 BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_data)
 {
     logger.info("BitmexDaily::parse_raw start");
     Timer timer;
-    timer.start();
 
     auto tick_data = std::make_unique<TickData>();
 
@@ -268,7 +251,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         (*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
     }
 
-    logger.info("BitmexDaily::parse_raw end (%d)", timer.stop()/1000);
+    logger.info("BitmexDaily::parse_raw end (%d)", timer.elapsed().count()/1000);
 
     return tick_data;
 

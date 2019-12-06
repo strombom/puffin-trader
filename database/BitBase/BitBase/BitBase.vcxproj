@@ -168,6 +168,7 @@
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="DatabaseIntervals.cpp" />
     <ClCompile Include="DatabaseTicks.cpp" />
+    <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DownloadTask.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
     <ClCompile Include="DownloadThread.cpp" />
