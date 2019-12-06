@@ -27,7 +27,11 @@ class DatabaseIntervals
 {
 public:
 
-    DatabaseIntervals(const time_point_us& timestamp_start, const std::chrono::seconds& interval) : timestamp_start(timestamp_start), interval(interval) {}
+    DatabaseIntervals(const time_point_us& timestamp_start, const std::chrono::seconds& interval) :
+        timestamp_start(timestamp_start), interval(interval)
+    {
+        rows.reserve(BitBase::Interval::batch_size);
+    }
 
     friend std::ostream& operator<<(std::ostream& stream, const DatabaseIntervals& intervals_data);
 

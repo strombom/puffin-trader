@@ -34,7 +34,7 @@ void BitmexInterval::interval_data_worker(void)
     while (interval_data_thread_running) {
         {
             auto interval_data_lock = std::unique_lock<std::mutex>{ interval_data_mutex };
-            interval_data_condition.wait(interval_data_lock);
+            interval_data_condition.wait_for(interval_data_lock, std::chrono::milliseconds{ 500 });
             if (!interval_data_thread_running) {
                 break;
             }
@@ -42,6 +42,10 @@ void BitmexInterval::interval_data_worker(void)
 
         const auto symbols = database->get_attribute(BitBase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
         for (auto&& symbol : symbols) {
+            if (std::find(BitBase::Interval::enabled_symbols.begin(), BitBase::Interval::enabled_symbols.end(), symbol) == BitBase::Interval::enabled_symbols.end()) {
+                // Symbol is not enabled, continue with next symbol
+                continue;
+            }
             for (auto&& interval : BitBase::Interval::intervals) {
                 const auto interval_name = std::to_string(interval.count());
 
@@ -62,7 +66,6 @@ void BitmexInterval::interval_data_worker(void)
                     auto valid_interval = false;
                     while (auto tick = database->get_tick(BitBase::Bitmex::exchange_name, symbol, tick_idx)) {
                         if (tick->timestamp >= timeperiod) {
-                            // No more tick data found
                             valid_interval = true;
                             break;
                         }
@@ -78,6 +81,7 @@ void BitmexInterval::interval_data_worker(void)
 
                     if (!valid_interval) {
                         // End of tick data, do not save current (incomplete) interval
+                        timeperiod -= interval;
                         break;
                     }
 
