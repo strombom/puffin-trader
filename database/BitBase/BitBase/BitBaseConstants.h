@@ -26,7 +26,8 @@ namespace BitBase
     namespace Interval
     {
         constexpr auto enabled_symbols = std::array<const char*, 1>{ "XBTUSD" };
-        constexpr auto batch_size = 1000;
+        constexpr auto batch_timeout = 1s;
+        constexpr auto batch_size = 2;
         constexpr auto intervals = std::array<std::chrono::seconds, 1>{ 10s };
         constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
     }

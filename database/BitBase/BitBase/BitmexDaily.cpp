@@ -157,7 +157,8 @@ void BitmexDaily::tick_data_worker(void)
                 const auto symbol_name = symbol_tick_data->first;
                 symbol_names.insert(symbol_name);
                 auto ticks = std::move(symbol_tick_data->second);
-                database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol_name, std::move(ticks), BitBase::Bitmex::first_timestamp);
+                auto tick_table = database->open_tick_table_write(BitBase::Bitmex::exchange_name, symbol_name);
+                tick_table->extend(std::move(ticks), BitBase::Bitmex::first_timestamp);
             }
             update_symbol_names(symbol_names);
             tick_data_updated_callback();

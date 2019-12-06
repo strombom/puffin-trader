@@ -2,14 +2,13 @@
 #include "Database.h"
 
 #include <filesystem>
-#include <fstream>
 
 
 Database::Database(const std::string& _root_path) : 
     root_path(_root_path)
 {
     const auto attributes_file_path = _root_path + "\\attributes.sqlite";
-    attributes_db = new SQLite::Database{ attributes_file_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE };
+    attributes_db = std::make_unique<SQLite::Database>(attributes_file_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
 
     attributes_db->exec("CREATE TABLE IF NOT EXISTS attributes (key TEXT PRIMARY KEY, value TEXT)");
 }
@@ -107,9 +106,85 @@ void Database::set_attribute(const std::string& key, const std::unordered_set<st
     set_attribute(key, space_separated_list.str());
 }
 
+std::unique_ptr<TickTableRead> Database::open_tick_table_read(const std::string& exchange, const std::string& symbol)
+{
+    auto tick_table = std::make_unique<TickTableRead>(root_path, exchange, symbol);
+
+    return std::move(tick_table);
+}
+
+std::unique_ptr<TickTableWrite> Database::open_tick_table_write(const std::string& exchange, const std::string& symbol)
+{
+    auto tick_table = std::make_unique<TickTableWrite>(root_path, exchange, symbol);
+
+    return std::move(tick_table);
+}
+
+TickTableRead::TickTableRead(const std::string& root_path, const std::string& exchange, const std::string& symbol) :
+    root_path(root_path)
+{
+    file.open(root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary);
+}
+
+TickTableRead::~TickTableRead(void)
+{
+    file.close();
+}
+
+std::unique_ptr<DatabaseTick> TickTableRead::get_next_tick(void)
+{
+    auto slock = std::scoped_lock{ file_mutex };
+    return _get_tick();
+}
+
+std::unique_ptr<DatabaseTick> TickTableRead::get_tick(int tick_idx)
+{
+    auto slock = std::scoped_lock{ file_mutex };
+    file.seekg(static_cast<int64_t>(tick_idx) * DatabaseTick::struct_size);
+    return _get_tick();
+}
+
+std::unique_ptr<DatabaseTick> TickTableRead::_get_tick(void)
+{
+    auto tick = DatabaseTick{};
+    file >> tick;
+    if (file.bad() || file.fail()) {
+        return nullptr;
+    }
+    else {
+        return std::make_unique<DatabaseTick>(tick);
+    }
+}
+
+TickTableWrite::TickTableWrite(const std::string& root_path, const std::string& exchange, const std::string& symbol) :
+    root_path(root_path)
+{
+    file.open(root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary);
+}
+
+TickTableWrite::~TickTableWrite(void)
+{
+    file.close();
+}
+
+void TickTableWrite::extend(uptrDatabaseTicks ticks, const time_point_us& first_timestamp)
+{
+    /*
+    auto tick = DatabaseTick{};
+    file >> tick;
+    if (file.bad() || file.fail()) {
+        return nullptr;
+    }
+    else {
+        return std::make_unique<DatabaseTick>(tick);
+    }
+    */
+}
+
+/*
 void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp)
 {
-    auto slock = std::scoped_lock{ filedb_mutex };
+    //auto slock = std::scoped_lock{ filedb_mutex };
 
     auto last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
 
@@ -131,25 +206,13 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
+*/
 
-std::unique_ptr<DatabaseTick> Database::get_tick(const std::string& exchange, const std::string& symbol, int row_idx)
-{
-    auto slock = std::scoped_lock{ filedb_mutex };
-    auto file = std::ifstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary };
-    file.seekg(DatabaseTick::struct_size * row_idx);
-    auto tick = DatabaseTick{};
-    file >> tick;
-    if (file.bad() || file.fail()) {
-        return nullptr;
-    }
-    else {
-        return std::make_unique<DatabaseTick>(tick);
-    }
-}
+//std::unique_ptr<IntervalTable> open_interval_table(const std::string& exchange, const std::string& symbol, const std::chrono::seconds& interval);
 
 void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx)
 {
-    auto slock = std::scoped_lock{ filedb_mutex };
+    //auto slock = std::scoped_lock{ filedb_mutex };
 
     std::filesystem::create_directories(root_path + "/interval/" + exchange);
     auto file = std::ofstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ofstream::app | std::ofstream::binary };

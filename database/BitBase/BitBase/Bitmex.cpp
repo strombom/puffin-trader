@@ -32,6 +32,7 @@ void Bitmex::shutdown(void)
     catch (...) {}
 
     try {
+        interval_update_condition.notify_all();
         interval_update_thread->join();
     }
     catch (...) {}
