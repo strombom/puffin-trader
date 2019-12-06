@@ -113,13 +113,6 @@ std::unique_ptr<TickTableRead> Database::open_tick_table_read(const std::string&
     return std::move(tick_table);
 }
 
-std::unique_ptr<TickTableWrite> Database::open_tick_table_write(const std::string& exchange, const std::string& symbol)
-{
-    auto tick_table = std::make_unique<TickTableWrite>(root_path, exchange, symbol);
-
-    return std::move(tick_table);
-}
-
 TickTableRead::TickTableRead(const std::string& root_path, const std::string& exchange, const std::string& symbol) :
     root_path(root_path)
 {
@@ -156,41 +149,14 @@ std::unique_ptr<DatabaseTick> TickTableRead::_get_tick(void)
     }
 }
 
-TickTableWrite::TickTableWrite(const std::string& root_path, const std::string& exchange, const std::string& symbol) :
-    root_path(root_path)
-{
-    file.open(root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary);
-}
-
-TickTableWrite::~TickTableWrite(void)
-{
-    file.close();
-}
-
-void TickTableWrite::extend(uptrDatabaseTicks ticks, const time_point_us& first_timestamp)
-{
-    /*
-    auto tick = DatabaseTick{};
-    file >> tick;
-    if (file.bad() || file.fail()) {
-        return nullptr;
-    }
-    else {
-        return std::make_unique<DatabaseTick>(tick);
-    }
-    */
-}
-
-/*
 void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp)
 {
-    //auto slock = std::scoped_lock{ filedb_mutex };
+    auto slock = std::scoped_lock{ file_mutex };
 
     auto last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
-
     std::filesystem::create_directories(root_path + "/tick/" + exchange);
     auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app | std::ofstream::binary };
-    
+
     auto in_range = false;
     for (auto&& row : ticks->rows) {
         if (!in_range && (row.timestamp > last_timestamp)) {
@@ -203,16 +169,12 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     }
 
     file.close();
-
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
-*/
-
-//std::unique_ptr<IntervalTable> open_interval_table(const std::string& exchange, const std::string& symbol, const std::chrono::seconds& interval);
 
 void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx)
 {
-    //auto slock = std::scoped_lock{ filedb_mutex };
+    auto slock = std::scoped_lock{ file_mutex };
 
     std::filesystem::create_directories(root_path + "/interval/" + exchange);
     auto file = std::ofstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ofstream::app | std::ofstream::binary };

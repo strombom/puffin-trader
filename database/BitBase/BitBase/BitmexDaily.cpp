@@ -150,22 +150,17 @@ void BitmexDaily::tick_data_worker(void)
                 }
             }
 
-            const auto start = std::chrono::steady_clock::now();
-
+            Timer timer;
             auto symbol_names = std::unordered_set<std::string>{};
             for (auto&& symbol_tick_data = tick_data->begin(); symbol_tick_data != tick_data->end(); ++symbol_tick_data) {
                 const auto symbol_name = symbol_tick_data->first;
                 symbol_names.insert(symbol_name);
-                auto tick_table = database->open_tick_table_write(BitBase::Bitmex::exchange_name, symbol_name);
-                tick_table->extend(std::move(symbol_tick_data->second), BitBase::Bitmex::first_timestamp);
+                database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol_name, std::move(symbol_tick_data->second), BitBase::Bitmex::first_timestamp);
             }
             update_symbol_names(symbol_names);
             tick_data_updated_callback();
 
-            const auto end = std::chrono::steady_clock::now();
-            const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-            logger.info("BitmexDaily::tick_data_worker tick_data appended to database (%d ms)", elapsed);
+            logger.info("BitmexDaily::tick_data_worker tick_data appended to database (%d ms)", timer.elapsed().count()/1000);
         }
         logger.info("BitmexDaily::tick_data_worker end");
     }

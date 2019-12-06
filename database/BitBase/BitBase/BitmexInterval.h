@@ -30,6 +30,7 @@ private:
     uptrThread interval_data_worker_thread;
 
     void interval_data_worker(void);
+    void make_interval(const std::string& symbol, std::chrono::seconds interval);
 };
 
 using uptrBitmexInterval = std::unique_ptr<BitmexInterval>;

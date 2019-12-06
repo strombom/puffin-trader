@@ -29,27 +29,6 @@ private:
     std::unique_ptr<DatabaseTick> _get_tick(void);
 };
 
-class TickTableWrite
-{
-public:
-    TickTableWrite(const std::string& root_path, const std::string& exchange, const std::string& symbol);
-    ~TickTableWrite(void);
-
-    void extend(uptrDatabaseTicks ticks, const time_point_us& first_timestamp);
-
-private:
-    const std::string& root_path;
-    std::mutex file_mutex;
-    std::ofstream file;
-};
-
-class IntervalTable
-{
-    
-public:
-
-};
-
 class Database
 {
 public:
@@ -75,19 +54,15 @@ public:
     template<class T> void set_attribute(const std::string& key_a, const std::string& key_b, const std::string& key_c, const T& default_value) { set_attribute(key_a + "_" + key_b + "_" + key_c, default_value); }
 
     std::unique_ptr<TickTableRead> open_tick_table_read(const std::string& exchange, const std::string& symbol);
-    std::unique_ptr<TickTableWrite> open_tick_table_write(const std::string& exchange, const std::string& symbol);
 
-    //void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp);
-    //std::unique_ptr<DatabaseTick> get_tick(const std::string& exchange, const std::string& symbol, int row_idx);
-
-    //std::unique_ptr<IntervalTable> open_interval_table(const std::string& exchange, const std::string& symbol, const std::chrono::seconds& interval);
-
+    void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp);
     void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx);
 
 private:
     std::unique_ptr<SQLite::Database> attributes_db;
     const std::string root_path;
 
+    std::mutex file_mutex;
     std::mutex sqlite_mutex;
 };
 
