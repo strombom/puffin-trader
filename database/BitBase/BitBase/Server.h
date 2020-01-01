@@ -2,5 +2,8 @@
 
 class Server
 {
+public:
+    Server(void);
+
 };
 
