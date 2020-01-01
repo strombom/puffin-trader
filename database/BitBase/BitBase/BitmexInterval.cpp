@@ -7,8 +7,7 @@
 
 
 BitmexInterval::BitmexInterval(sptrDatabase database) :
-    database(database),
-    interval_data_thread_running(true)
+    database(database), interval_data_thread_running(true)
 {
     interval_data_worker_thread = std::make_unique<std::thread>(&BitmexInterval::interval_data_worker, this);
 }

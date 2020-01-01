@@ -1,5 +1,6 @@
 
 #include "Logger.h"
+#include "DateTime.h"
 #include "DownloadThread.h"
 
 #include "curl/curl.h"
@@ -19,13 +20,11 @@ DownloadThread::~DownloadThread(void)
 
 void DownloadThread::shutdown(void)
 {
-    logger.info("shutdown thread start");
     {
         auto slock = std::scoped_lock{ state_mutex };
         state = DownloadState::shutting_down;
     }
     download_start_condition.notify_all();
-    logger.info("shutdown thread end");
 }
 
 void DownloadThread::join(void) const
@@ -75,11 +74,12 @@ bool DownloadThread::test_client_id(const std::string& client_id)
 
 void DownloadThread::assign_task(uptrDownloadTask new_task)
 {
-    {
-        auto slock = std::scoped_lock{ pending_task_mutex };
+    auto slock = std::scoped_lock{ state_mutex };
+    if (state == DownloadState::idle) {
         pending_task = std::move(new_task);
+        state = DownloadState::pending;
+        download_start_condition.notify_one();
     }
-    download_start_condition.notify_one();
 }
 
 void DownloadThread::worker_thread(void)
@@ -91,11 +91,11 @@ void DownloadThread::worker_thread(void)
         }
 
         {
-            auto slock = std::scoped_lock{ state_mutex, pending_task_mutex, working_task_mutex };
+            auto slock = std::scoped_lock{ state_mutex, working_task_mutex };
             if (state == DownloadState::shutting_down) {
                 break;
             }
-            else if (pending_task && state != DownloadState::aborting) {
+            else if (state == DownloadState::pending) {
                 state = DownloadState::downloading;
                 working_task = std::move(pending_task);
             }
@@ -115,6 +115,8 @@ void DownloadThread::worker_thread(void)
                 curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
                 curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, download_progress_callback);
                 curl_easy_setopt(curl, CURLOPT_URL, working_task->get_url().c_str());
+                Timer timer;
+                logger.info("DownloadThread::worker_thread download (%d) start", working_task->get_download_id());
                 CURLcode res = curl_easy_perform(curl);
                 {
                     auto state_lock = std::scoped_lock{ state_mutex };
@@ -124,11 +126,11 @@ void DownloadThread::worker_thread(void)
                             auto task_lock = std::scoped_lock{ working_task_mutex };
                             task = std::move(working_task);
                         }
+                        logger.info("DownloadThread::worker_thread download (%d) success (%d ms)", task->get_download_id(), timer.elapsed().count() / 1000);
                         manager_callback_done(std::move(task));
                         state = DownloadState::idle;
-                        logger.info("DownloadThread::worker_thread done");
                     } else {
-                        logger.info("DownloadThread::worker_thread failed");
+                        logger.info("DownloadThread::worker_thread download failed (%d ms)", timer.elapsed().count() / 1000);
                         working_task->clear_data();
                     }
                 }

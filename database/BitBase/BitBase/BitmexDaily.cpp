@@ -1,6 +1,7 @@
 
 #include "BitBaseConstants.h"
 #include "BitmexDaily.h"
+#include "DateTime.h"
 #include "Logger.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -32,7 +33,6 @@ void BitmexDaily::shutdown(void)
         auto slock = std::scoped_lock{ start_download_mutex };
         state = BitmexDailyState::idle;
     }
-    logger.info("BitmexDaily::shutdown state = idle");
 
     tick_data_thread_running = false;
     tick_data_condition.notify_all();
@@ -63,8 +63,6 @@ void BitmexDaily::start_download(void)
 
 void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 {
-    logger.info("BitmexDaily::download_done_callback start");
-
     auto compressed = boost::iostreams::array_source{ payload->data(), payload->size() };
     auto out = boost::iostreams::filtering_streambuf<boost::iostreams::input>{};
     out.push(boost::iostreams::gzip_decompressor{});
@@ -73,8 +71,6 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
     auto decompressed = std::stringstream{};
     boost::iostreams::copy(out, decompressed);
     auto tick_data = parse_raw(decompressed);
-
-    logger.info("BitmexDaily::download_done_callback parsing done");
 
     if (!tick_data) {
         logger.error("BitmexDaily::download_done_callback parsing error!");
@@ -88,17 +84,11 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
     }
     tick_data_condition.notify_one();
 
-    logger.info("BitmexDaily::download_done_callback start next");
-
     start_next_download();
-
-    logger.info("BitmexDaily::download_done_callback end");
 }
 
 void BitmexDaily::start_next_download(void)
 {
-    logger.info("BitmexDaily::start_next start");
-    auto slock = std::scoped_lock{ start_download_mutex };
 
     if (state == BitmexDailyState::idle) {
         logger.info("BitmexDaily::start_next end (idle)");
@@ -111,12 +101,10 @@ void BitmexDaily::start_next_download(void)
         logger.info("BitmexDaily::start_next end (last index)");
         return;
     }
-    
+
     auto url = std::string{ BitBase::Bitmex::Daily::base_url_start } + date::format(BitBase::Bitmex::Daily::url_date_format, timestamp_next) + std::string{ BitBase::Bitmex::Daily::base_url_end };
     download_manager->download(url, BitBase::Bitmex::Daily::downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
     timestamp_next += date::days{ 1 };
-
-    logger.info("BitmexDaily::start_next end");
 }
 
 void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
@@ -135,7 +123,6 @@ void BitmexDaily::tick_data_worker(void)
             auto tick_data_lock = std::unique_lock<std::mutex>{ tick_data_mutex };
             tick_data_condition.wait(tick_data_lock);
         }
-        logger.info("BitmexDaily::tick_data_worker start");
 
         while (tick_data_thread_running) {
             auto tick_data = uptrTickData{};
@@ -162,14 +149,12 @@ void BitmexDaily::tick_data_worker(void)
 
             logger.info("BitmexDaily::tick_data_worker tick_data appended to database (%d ms)", timer.elapsed().count()/1000);
         }
-        logger.info("BitmexDaily::tick_data_worker end");
     }
     logger.info("BitmexDaily::tick_data_worker exit");
 }
 
 BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_data)
 {
-    logger.info("BitmexDaily::parse_raw start");
     Timer timer;
 
     auto tick_data = std::make_unique<TickData>();
@@ -246,7 +231,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         (*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
     }
 
-    logger.info("BitmexDaily::parse_raw end (%d)", timer.elapsed().count()/1000);
+    logger.info("BitmexDaily::parse_raw end (%d ms)", timer.elapsed().count()/1000);
 
     return tick_data;
 

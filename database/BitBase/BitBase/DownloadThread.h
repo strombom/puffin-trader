@@ -9,6 +9,7 @@ using manager_callback_done_t = std::function<void(uptrDownloadTask)>;
 
 enum class DownloadState {
     idle,
+    pending,
     downloading,
     aborting,
     shutting_down
@@ -40,7 +41,6 @@ private:
     uptrDownloadTask working_task;
 
     std::mutex state_mutex;
-    std::mutex pending_task_mutex;
     std::mutex working_task_mutex;
     std::mutex download_start_mutex;
     std::condition_variable download_start_condition;

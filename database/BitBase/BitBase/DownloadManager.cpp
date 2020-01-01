@@ -6,7 +6,7 @@
 #include "curl/curl.h"
 
 
-DownloadManager::DownloadManager(void)
+DownloadManager::DownloadManager(void) : running(true)
 {
     curl_global_init(CURL_GLOBAL_ALL);
 
@@ -148,7 +148,7 @@ void DownloadManager::pending_tasks_thread(void)
     while (running) {
         auto worker_lock = std::unique_lock{ pending_tasks_mutex };
         pending_tasks_condition.wait(worker_lock);
-
+        
         while (!pending_tasks.empty() && running) {
             auto slock = std::scoped_lock{ threads_mutex };
 
