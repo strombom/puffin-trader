@@ -36,5 +36,6 @@ namespace BitBase
     {
         constexpr auto time_format = "%F %T";
         constexpr auto root_path = "C:\\development\\github\\puffin-trader\\database";
+        constexpr auto sqlite_busy_timeout_ms = 5000;
     }
 }

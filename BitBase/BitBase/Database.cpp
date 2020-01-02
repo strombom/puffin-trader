@@ -8,7 +8,9 @@ Database::Database(const std::string& _root_path) :
     root_path(_root_path)
 {
     const auto attributes_file_path = _root_path + "\\attributes.sqlite";
-    attributes_db = std::make_unique<SQLite::Database>(attributes_file_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+    attributes_db = std::make_unique<SQLite::Database>(attributes_file_path, 
+                                                       SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE, 
+                                                       BitBase::Database::sqlite_busy_timeout_ms);
 
     attributes_db->exec("CREATE TABLE IF NOT EXISTS attributes (key TEXT PRIMARY KEY, value TEXT)");
 }

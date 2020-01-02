@@ -34,10 +34,10 @@ private:
     std::unordered_map<std::string, int> next_download_id;
     std::unordered_map<std::string, int> expected_download_id;
 
-    bool running;
     void pending_tasks_thread(void);
     void finished_tasks_thread(void);
 
+    std::atomic_bool running;
     std::unique_ptr<std::thread> pending_tasks_thread_handle;
     std::unique_ptr<std::thread> finished_tasks_thread_handle;
 };

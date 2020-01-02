@@ -126,8 +126,8 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
 
         intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell });
         last_price = next_last_price;
-
-    } while (timeperiod < last_timeperiod && timer.elapsed() >= BitBase::Interval::batch_timeout);
+        
+    } while (timeperiod < last_timeperiod && timer.elapsed() < BitBase::Interval::batch_timeout);
 
     database->extend_interval_data(BitBase::Bitmex::exchange_name, symbol, interval_name, intervals_data, timeperiod, tick_idx);
 }
