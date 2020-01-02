@@ -35,5 +35,6 @@ namespace BitBase
     namespace Database
     {
         constexpr auto time_format = "%F %T";
+        constexpr auto root_path = "C:\\development\\github\\puffin-trader\\database";
     }
 }

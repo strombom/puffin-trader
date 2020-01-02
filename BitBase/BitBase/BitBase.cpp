@@ -3,6 +3,7 @@
 #include "Bitmex.h"
 #include "Database.h"
 #include "DownloadManager.h"
+#include "BitBaseConstants.h"
 
 #include <future>
 #include <iostream>
@@ -60,7 +61,7 @@ int main()
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     auto download_manager = DownloadManager::create();
-    auto database = Database::create("C:\\development\\github\\puffin-trader\\database\\data");
+    auto database = Database::create(BitBase::Database::root_path);
     auto bitmex = Bitmex{ database, download_manager };
 
     auto keyboard_input = std::async(get_keyboard_input);
