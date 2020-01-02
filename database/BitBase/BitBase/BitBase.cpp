@@ -50,7 +50,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 
 static std::string get_keyboard_input()
 {
-    std::string cmd;
+    auto cmd = std::string{};
     std::cin >> cmd;
     return cmd;
 }
@@ -59,28 +59,25 @@ int main()
 {
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
-    sptrDownloadManager download_manager = DownloadManager::create();
-    sptrDatabase database = Database::create("C:\\development\\github\\puffin-trader\\database\\data");
+    auto download_manager = DownloadManager::create();
+    auto database = Database::create("C:\\development\\github\\puffin-trader\\database\\data");
+    auto bitmex = Bitmex{ database, download_manager };
 
-    Bitmex bitmex(database, download_manager);
-    
-    std::future<std::string> future = std::async(get_keyboard_input);
+    auto keyboard_input = std::async(get_keyboard_input);
     while (running) {
-        if (future.wait_for(std::chrono::milliseconds{ 500 }) == std::future_status::ready) {
-            std::string cmd = future.get();
+        if (keyboard_input.wait_for(std::chrono::milliseconds{ 500 }) == std::future_status::ready) {
+            std::string cmd = keyboard_input.get();
             if (cmd == "q" || cmd == "quit") {
                 running = false;
                 break;
             } else {
                 logger.info("Unknown command (%s)", cmd.c_str());
             }
-            future = std::async(get_keyboard_input);
+            keyboard_input = std::async(get_keyboard_input);
         }
     }
     logger.info("Shutting down");
 
     bitmex.shutdown();
     download_manager->shutdown();
-
-    download_manager->join();
 }
