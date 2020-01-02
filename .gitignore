@@ -6,3 +6,4 @@
 *.sqlite
 *.log
 *.idb
+*.pdb
