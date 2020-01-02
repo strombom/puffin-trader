@@ -57,7 +57,7 @@ const std::vector<std::string> Database::get_attribute(const std::string& key, c
     auto space_separated_string = std::ostringstream{};
     std::copy(default_string_vector.begin(), default_string_vector.end(), std::ostream_iterator<std::string>(space_separated_string, ","));
     auto value_stream = std::istringstream{ get_attribute(key, space_separated_string.str()) };
-    auto string_vector = std::vector<std::string>(std::istream_iterator<std::string>{value_stream}, std::istream_iterator<std::string>{});
+    const auto string_vector = std::vector<std::string>(std::istream_iterator<std::string>{value_stream}, std::istream_iterator<std::string>{});
     return string_vector;
 }
 
@@ -66,7 +66,7 @@ const std::unordered_set<std::string> Database::get_attribute(const std::string&
     auto space_separated_string = std::ostringstream{};
     std::copy(default_string_set.begin(), default_string_set.end(), std::ostream_iterator<std::string>(space_separated_string, ","));
     auto value_stream = std::istringstream{ get_attribute(key, space_separated_string.str()) };
-    auto string_set = std::unordered_set<std::string>(std::istream_iterator<std::string>{value_stream}, std::istream_iterator<std::string>{});
+    const auto string_set = std::unordered_set<std::string>(std::istream_iterator<std::string>{value_stream}, std::istream_iterator<std::string>{});
     return string_set;
 }
 

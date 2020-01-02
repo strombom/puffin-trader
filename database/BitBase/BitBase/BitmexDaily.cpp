@@ -137,7 +137,7 @@ void BitmexDaily::tick_data_worker(void)
                 }
             }
 
-            Timer timer;
+            auto timer = Timer{};
             auto symbol_names = std::unordered_set<std::string>{};
             for (auto&& symbol_tick_data = tick_data->begin(); symbol_tick_data != tick_data->end(); ++symbol_tick_data) {
                 const auto symbol_name = symbol_tick_data->first;
@@ -155,12 +155,12 @@ void BitmexDaily::tick_data_worker(void)
 
 BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_data)
 {
-    Timer timer;
+    auto timer = Timer{};
 
     auto tick_data = std::make_unique<TickData>();
 
     const auto linesregx = std::regex{ "\\n" };
-    auto indata = std::string{ raw_data.str() };
+    const auto indata = std::string{ raw_data.str() };
     auto row_it = std::sregex_token_iterator{ indata.begin(), indata.end(), linesregx, -1 };
     auto row_end = std::sregex_token_iterator{};
 
@@ -200,16 +200,16 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
             return nullptr;
         }
 
-        const std::string symbol = row.substr(commas[0], commas[1] - commas[0] - 1);
+        const std::string symbol = row.substr(commas[0], (size_t)(commas[1] - commas[0] - 1));
 
         auto buy = false;
-        if (row.substr(commas[1], commas[2] - commas[1] - 1) == "Buy") {
+        if (row.substr(commas[1], (size_t) (commas[2] - commas[1] - 1)) == "Buy") {
             buy = true;
         }
 
         auto volume = float{};
         try {
-            const std::string token = row.substr(commas[2], commas[3] - commas[2] - 1);
+            const std::string token = row.substr(commas[2], (size_t)(commas[3] - commas[2] - 1));
             volume = std::stof(token);
         }
         catch (...) {
@@ -218,7 +218,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
 
         auto price = float{};
         try {
-            const std::string token = row.substr(commas[3], commas[4] - commas[3] - 1);
+            const std::string token = row.substr(commas[3], (size_t)(commas[4] - commas[3] - 1));
             price = std::stof(token);
         }
         catch (...) {
@@ -231,7 +231,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         (*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
     }
 
-    logger.info("BitmexDaily::parse_raw end (%d ms)", timer.elapsed().count()/1000);
+    logger.info("BitmexDaily::parse_raw end (%d ms)", timer.elapsed().count() / 1000);
 
     return tick_data;
 

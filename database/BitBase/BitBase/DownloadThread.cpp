@@ -115,7 +115,7 @@ void DownloadThread::worker_thread(void)
                 curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
                 curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, download_progress_callback);
                 curl_easy_setopt(curl, CURLOPT_URL, working_task->get_url().c_str());
-                Timer timer;
+                auto timer = Timer{};
                 logger.info("DownloadThread::worker_thread download (%d) start", working_task->get_download_id());
                 CURLcode res = curl_easy_perform(curl);
                 {
