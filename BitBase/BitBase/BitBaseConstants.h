@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX";
-        constexpr auto first_timestamp = time_point_us{ date::sys_days(date::year{2017} / 01 / 01) };
+        constexpr auto first_timestamp = time_point_us{ date::sys_days(date::year{2019} / 06 / 01) };
 
         namespace Daily
         {
