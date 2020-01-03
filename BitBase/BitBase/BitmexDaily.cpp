@@ -89,7 +89,6 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 
 void BitmexDaily::start_next_download(void)
 {
-
     if (state == BitmexDailyState::idle) {
         logger.info("BitmexDaily::start_next end (idle)");
         return;

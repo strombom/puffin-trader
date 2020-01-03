@@ -61,6 +61,11 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
     auto tick_table = database->open_tick_table_read(BitBase::Bitmex::exchange_name, symbol);
     auto tick = tick_table->get_tick(std::max(0, tick_idx - 1));
 
+    if (!tick) {
+        // End of file
+        return;
+    }
+
     auto last_price = tick->price;
     auto next_last_price = last_price;
 
