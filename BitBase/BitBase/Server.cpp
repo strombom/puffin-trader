@@ -1,20 +1,35 @@
 #include "Server.h"
+#include "Logger.h"
 
 #include <zmq.hpp>
 
-Server::Server(void)
-{
-    zmq::context_t ctx;
-    zmq::socket_t sock(ctx, zmq::socket_type::push);
-    sock.bind("inproc://test");
-    const std::string_view m = "Hello, world";
-    sock.send(zmq::buffer(m), zmq::send_flags::dontwait);
 
-    /*
-    zmq::context_t ctx;
-    zmq::socket_t sock(ctx, zmq::socket_type::push);
-    sock.bind("inproc://test");
-    auto m = zmq::const_buffer("Hello", 5);
-    sock.send(m, zmq::send_flags::dontwait);
-    */
+Server::Server(sptrDatabase database) : 
+    database(database), server_running(true)
+{
+    server_thread_handle = std::make_unique<std::thread>(&Server::server_thread, this);
+}
+
+Server::~Server(void)
+{
+    server_running = false;
+    server_thread_handle->join();
+}
+
+void Server::server_thread(void)
+{
+    auto context = zmq::context_t{ 1 };
+    auto server = zmq::socket_t{ context, zmq::socket_type::rep };
+    server.bind("tcp://*:31000");
+    server.setsockopt(ZMQ_RCVTIMEO, 500);
+
+    while (server_running) {
+        auto message = zmq::message_t{};
+        auto recv_result = server.recv(message);
+        if (!recv_result) {
+            continue;
+        }
+        logger.info("Server::server_thread Message received");
+        auto send_result = server.send(message, zmq::send_flags::dontwait);
+    }
 }

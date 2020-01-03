@@ -1,9 +1,22 @@
 #pragma once
 
+#include "Database.h"
+
+#include <atomic>
+#include <thread>
+
+
 class Server
 {
 public:
-    Server(void);
+    Server(sptrDatabase database);
+    ~Server(void);
 
+private:
+    sptrDatabase database;
+
+    std::atomic_bool server_running;
+    std::unique_ptr<std::thread> server_thread_handle;
+
+    void server_thread(void);
 };
-

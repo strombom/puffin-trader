@@ -1,6 +1,7 @@
 
 #include "Logger.h"
 #include "Bitmex.h"
+#include "Server.h"
 #include "Database.h"
 #include "DownloadManager.h"
 #include "BitBaseConstants.h"
@@ -58,11 +59,14 @@ static std::string get_keyboard_input()
 
 int main()
 {
+    logger.info("BitBase started");
+
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     auto download_manager = DownloadManager::create();
     auto database = Database::create(BitBase::Database::root_path);
     auto bitmex = Bitmex{ database, download_manager };
+    auto server = Server{ database };
 
     auto keyboard_input = std::async(get_keyboard_input);
     while (running) {
