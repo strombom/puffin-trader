@@ -19,12 +19,15 @@
     <Filter Include="Source Files\DateTime">
       <UniqueIdentifier>{5376f141-4959-458f-b428-a4b797b4f7e5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\BitBase">
+      <UniqueIdentifier>{cdcaae43-a793-4804-896a-70bd9a874a96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BitBase">
+      <UniqueIdentifier>{026c6520-761d-4ba1-b5d0-d7ba3a2ff877}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BitBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
@@ -33,11 +36,11 @@
     <ClCompile Include="DateTime.cpp">
       <Filter>Source Files\DateTime</Filter>
     </ClCompile>
+    <ClCompile Include="BitBase.cpp">
+      <Filter>Source Files\BitBase</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BitBase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -49,6 +52,12 @@
     </ClInclude>
     <ClInclude Include="BitSimConstants.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BitBase.h">
+      <Filter>Header Files\BitBase</Filter>
+    </ClInclude>
+    <ClInclude Include="json.hpp">
+      <Filter>Header Files\BitBase</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

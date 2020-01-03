@@ -173,6 +173,7 @@
     <ClInclude Include="BitSimConstants.h" />
     <ClInclude Include="date.h" />
     <ClInclude Include="DateTime.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="Logger.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
