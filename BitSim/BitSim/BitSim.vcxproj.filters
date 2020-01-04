@@ -25,6 +25,12 @@
     <Filter Include="Source Files\BitBase">
       <UniqueIdentifier>{026c6520-761d-4ba1-b5d0-d7ba3a2ff877}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Libraries">
+      <UniqueIdentifier>{cd0fd6cf-beed-4d75-bb49-5f8386d45f35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries">
+      <UniqueIdentifier>{31958dad-2e72-4676-85d6-b0758fed1ffe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -38,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="BitBase.cpp">
       <Filter>Source Files\BitBase</Filter>
+    </ClCompile>
+    <ClCompile Include="json11.cpp">
+      <Filter>Source Files\Libraries</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -58,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="json.hpp">
       <Filter>Header Files\BitBase</Filter>
+    </ClInclude>
+    <ClInclude Include="json11.hpp">
+      <Filter>Header Files\Libraries</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

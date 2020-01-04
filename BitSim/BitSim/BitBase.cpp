@@ -1,8 +1,10 @@
 
+#include "Logger.h"
 #include "BitBase.h"
 #include "BitSimConstants.h"
 
-#include "json.hpp"
+#include "date.h"
+#include "json11.hpp"
 
 
 BitBase::BitBase(void)
@@ -13,13 +15,14 @@ BitBase::BitBase(void)
 
 void BitBase::get_intervals(void)
 {
-    constexpr auto timestamp_start = time_point_us{ date::sys_days(date::year{2019} / 06 / 01) };
-    constexpr auto timestamp_end   = time_point_us{ date::sys_days(date::year{2020} / 01 / 01) };
-
-    auto command = nlohmann::json{};
-    command["command"] = "get_intervals";
-    command["start"]   = timestamp_start.time_since_epoch().count();
-    command["end"]     = timestamp_end.time_since_epoch().count();
+    constexpr auto timestamp_start = date::sys_days(date::year{2019} / 06 / 01);
+    constexpr auto timestamp_end   = date::sys_days(date::year{2020} / 01 / 01);
+    
+    json11::Json command = json11::Json::object{
+        { "command", "get_intervals" },
+        { "start", date::format("%F %T", timestamp_start) },
+        { "end", date::format("%F %T", timestamp_end) },
+    };
 
     auto message = zmq::message_t{ command.dump() };
     auto result = client->send(message, zmq::send_flags::dontwait);

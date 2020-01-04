@@ -2,6 +2,7 @@
 #include "Logger.h"
 
 #include <zmq.hpp>
+#include "json11.hpp"
 
 
 Server::Server(sptrDatabase database) : 
@@ -29,7 +30,21 @@ void Server::server_thread(void)
         if (!recv_result) {
             continue;
         }
-        logger.info("Server::server_thread Message received");
+        auto message_string = std::string(static_cast<char*>(message.data()), message.size());
+        logger.info("Server::server_thread raw message (%s)", message_string.c_str());
+
+        auto error_message = std::string{ "{\"command\":\"error\"}" };
+        const auto command = json11::Json::parse(message_string.c_str(), error_message);
+        const auto command_name = command["command"].string_value();
+        
+        if (command_name == "get_intervals") {
+            logger.info("Server::server_thread get intervals!");
+
+        }
+        else {
+            logger.info("Server::server_thread unknown command!");
+        }
+
         auto send_result = server.send(message, zmq::send_flags::dontwait);
     }
 }
