@@ -54,9 +54,6 @@
     <ClCompile Include="BitBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Logger.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Bitmex.cpp">
       <Filter>Source Files\Bitmex</Filter>
     </ClCompile>
@@ -93,11 +90,11 @@
     <ClCompile Include="..\..\BitLib\json11\json11.cpp">
       <Filter>Source Files\Libraries</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\BitLib\Logger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DownloadManager.h">
       <Filter>Header Files\DownloadManager</Filter>
     </ClInclude>
@@ -142,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="..\..\BitLib\json11\json11.hpp">
       <Filter>Header Files\Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\Logger.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

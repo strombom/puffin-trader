@@ -149,7 +149,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\development\libraries\libtorch-1.3.1-release\include;C:\development\libraries\libtorch-1.3.1-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.3.1-release\include;C:\development\libraries\libtorch-1.3.1-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -165,18 +165,18 @@
   <ItemGroup>
     <ClCompile Include="..\..\BitLib\DateTime.cpp" />
     <ClCompile Include="..\..\BitLib\json11\json11.cpp" />
+    <ClCompile Include="..\..\BitLib\Logger.cpp" />
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="BitSim.cpp" />
-    <ClCompile Include="Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\date.h" />
     <ClInclude Include="..\..\BitLib\DateTime.h" />
     <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
+    <ClInclude Include="..\..\BitLib\Logger.h" />
     <ClInclude Include="BitBase.h" />
     <ClInclude Include="BitSimConstants.h" />
     <ClInclude Include="json.hpp" />
-    <ClInclude Include="Logger.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
