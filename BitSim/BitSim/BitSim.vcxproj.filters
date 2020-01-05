@@ -39,25 +39,19 @@
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DateTime.cpp">
-      <Filter>Source Files\DateTime</Filter>
-    </ClCompile>
     <ClCompile Include="BitBase.cpp">
       <Filter>Source Files\BitBase</Filter>
     </ClCompile>
-    <ClCompile Include="json11.cpp">
+    <ClCompile Include="..\..\BitLib\DateTime.cpp">
+      <Filter>Source Files\DateTime</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\json11\json11.cpp">
       <Filter>Source Files\Libraries</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="date.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
-    <ClInclude Include="DateTime.h">
-      <Filter>Header Files\DateTime</Filter>
     </ClInclude>
     <ClInclude Include="BitSimConstants.h">
       <Filter>Header Files</Filter>
@@ -68,7 +62,13 @@
     <ClInclude Include="json.hpp">
       <Filter>Header Files\BitBase</Filter>
     </ClInclude>
-    <ClInclude Include="json11.hpp">
+    <ClInclude Include="..\..\BitLib\date.h">
+      <Filter>Header Files\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\DateTime.h">
+      <Filter>Header Files\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\json11\json11.hpp">
       <Filter>Header Files\Libraries</Filter>
     </ClInclude>
   </ItemGroup>

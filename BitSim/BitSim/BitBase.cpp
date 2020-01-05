@@ -3,8 +3,8 @@
 #include "BitBase.h"
 #include "BitSimConstants.h"
 
-#include "date.h"
-#include "json11.hpp"
+#include "date/date.h"
+#include "json11/json11.hpp"
 
 
 BitBase::BitBase(void)

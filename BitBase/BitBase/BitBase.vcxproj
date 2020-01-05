@@ -109,7 +109,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>C:\development\github\puffin-trader\database\BitBase\BitBase;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\development\github\puffin-trader\BitLib;C:\development\github\puffin-trader\database\BitBase\BitBase;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zo %(AdditionalOptions)</AdditionalOptions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -162,6 +162,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\BitLib\DateTime.cpp" />
+    <ClCompile Include="..\..\BitLib\json11\json11.cpp" />
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="Bitmex.cpp" />
     <ClCompile Include="BitmexDaily.cpp" />
@@ -169,16 +171,17 @@
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="DatabaseIntervals.cpp" />
     <ClCompile Include="DatabaseTicks.cpp" />
-    <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DownloadTask.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
     <ClCompile Include="DownloadThread.cpp" />
-    <ClCompile Include="json11.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\apps\vcpkg-2019.09\installed\x64-windows\include\zmq.hpp" />
+    <ClInclude Include="..\..\BitLib\date.h" />
+    <ClInclude Include="..\..\BitLib\DateTime.h" />
+    <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
     <ClInclude Include="Bitmex.h" />
     <ClInclude Include="BitBaseConstants.h" />
     <ClInclude Include="BitmexDaily.h" />
@@ -186,13 +189,9 @@
     <ClInclude Include="Database.h" />
     <ClInclude Include="DatabaseIntervals.h" />
     <ClInclude Include="DatabaseTicks.h" />
-    <ClInclude Include="date.h" />
-    <ClInclude Include="DateTime.h" />
     <ClInclude Include="DownloadManager.h" />
     <ClInclude Include="DownloadTask.h" />
     <ClInclude Include="DownloadThread.h" />
-    <ClInclude Include="json.hpp" />
-    <ClInclude Include="json11.hpp" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Server.h" />
   </ItemGroup>

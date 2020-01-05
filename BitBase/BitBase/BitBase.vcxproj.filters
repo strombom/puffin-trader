@@ -40,14 +40,14 @@
     <Filter Include="Source Files\Server">
       <UniqueIdentifier>{a09e8bd8-a329-492b-ae02-ca03c8b87cde}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\DateTime">
-      <UniqueIdentifier>{93cdc729-3403-49bd-b4a7-cb876d1c34d1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Libraries">
       <UniqueIdentifier>{85962668-ae07-4362-bcd6-ef77e8194b61}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Libraries">
       <UniqueIdentifier>{8064fb3e-dde3-4683-9bed-3e31664ddfae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DateTime">
+      <UniqueIdentifier>{93cdc729-3403-49bd-b4a7-cb876d1c34d1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -87,19 +87,16 @@
     <ClCompile Include="DatabaseIntervals.cpp">
       <Filter>Source Files\Database</Filter>
     </ClCompile>
-    <ClCompile Include="DateTime.cpp">
+    <ClCompile Include="..\..\BitLib\DateTime.cpp">
       <Filter>Source Files\DateTime</Filter>
     </ClCompile>
-    <ClCompile Include="json11.cpp">
+    <ClCompile Include="..\..\BitLib\json11\json11.cpp">
       <Filter>Source Files\Libraries</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DateTime.h">
-      <Filter>Header Files\DateTime</Filter>
     </ClInclude>
     <ClInclude Include="DownloadManager.h">
       <Filter>Header Files\DownloadManager</Filter>
@@ -122,9 +119,6 @@
     <ClInclude Include="DownloadTask.h">
       <Filter>Header Files\DownloadManager</Filter>
     </ClInclude>
-    <ClInclude Include="date.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
     <ClInclude Include="BitmexInterval.h">
       <Filter>Header Files\Bitmex</Filter>
     </ClInclude>
@@ -137,13 +131,16 @@
     <ClInclude Include="DatabaseIntervals.h">
       <Filter>Header Files\Database</Filter>
     </ClInclude>
-    <ClInclude Include="json.hpp">
-      <Filter>Source Files\Server</Filter>
-    </ClInclude>
-    <ClInclude Include="json11.hpp">
+    <ClInclude Include="..\..\..\..\..\apps\vcpkg-2019.09\installed\x64-windows\include\zmq.hpp">
       <Filter>Header Files\Libraries</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\apps\vcpkg-2019.09\installed\x64-windows\include\zmq.hpp">
+    <ClInclude Include="..\..\BitLib\date.h">
+      <Filter>Header Files\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\DateTime.h">
+      <Filter>Header Files\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\json11\json11.hpp">
       <Filter>Header Files\Libraries</Filter>
     </ClInclude>
   </ItemGroup>
