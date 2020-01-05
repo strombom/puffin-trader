@@ -112,7 +112,7 @@ std::unique_ptr<TickTableRead> Database::open_tick_table_read(const std::string&
 {
     auto tick_table = std::make_unique<TickTableRead>(root_path, exchange, symbol);
 
-    return std::move(tick_table);
+    return tick_table;
 }
 
 TickTableRead::TickTableRead(const std::string& root_path, const std::string& exchange, const std::string& symbol) :
@@ -191,11 +191,11 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
 std::unique_ptr<DatabaseIntervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_us& timestamp_start, const time_point_us& timestamp_end, const std::chrono::seconds interval)
 {
     const auto interval_name = std::to_string(interval.count());
-    auto intervals = DatabaseIntervals{ timestamp_start, interval };
+    auto intervals = std::make_unique<DatabaseIntervals>(timestamp_start, interval);
     
     auto file = std::ifstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ifstream::binary };
-    file >> intervals;
+    file >> *intervals;
     file.close();
 
-    return std::make_unique<DatabaseIntervals>(intervals);
+    return intervals;
 }
