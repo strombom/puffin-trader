@@ -18,7 +18,7 @@ BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_man
 {
     // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
     const auto timestamp = database->get_attribute(BitBase::Bitmex::exchange_name, "XBTUSD", "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
-    timestamp_next = date::floor<date::days>(timestamp);
+    timestamp_next = date::floor<date::days>(timestamp) + date::days{ 1 };
 
     tick_data_worker_thread = std::make_unique<std::thread>(&BitmexDaily::tick_data_worker, this);
 }
@@ -91,14 +91,14 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 void BitmexDaily::start_next_download(void)
 {
     if (state == BitmexDailyState::idle) {
-        logger.info("BitmexDaily::start_next end (idle)");
+        //logger.info("BitmexDaily::start_next end (idle)");
         return;
     }
 
     auto last_timestamp = date::floor<date::days>(system_clock_us_now() - date::days{ 1 });
     if (timestamp_next > last_timestamp) {
         state = BitmexDailyState::idle;
-        logger.info("BitmexDaily::start_next end (last index)");
+        //logger.info("BitmexDaily::start_next end (last index)");
         return;
     }
 
