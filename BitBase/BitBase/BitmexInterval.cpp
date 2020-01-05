@@ -3,7 +3,6 @@
 #include "BitmexInterval.h"
 #include "DatabaseIntervals.h"
 
-#include "date.h"
 
 
 BitmexInterval::BitmexInterval(sptrDatabase database) :
@@ -134,5 +133,5 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
         
     } while (timeperiod < last_timeperiod && timer.elapsed() < BitBase::Interval::batch_timeout);
 
-    database->extend_interval_data(BitBase::Bitmex::exchange_name, symbol, interval_name, intervals_data, timeperiod, tick_idx);
+    database->extend_interval_data(BitBase::Bitmex::exchange_name, symbol, interval, intervals_data, timeperiod, tick_idx);
 }

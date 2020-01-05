@@ -56,7 +56,9 @@ public:
     std::unique_ptr<TickTableRead> open_tick_table_read(const std::string& exchange, const std::string& symbol);
 
     void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp);
-    void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx);
+    void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx);
+
+    std::unique_ptr<DatabaseIntervals> get_intervals(const std::string& exchange, const std::string& symbol, const time_point_us& timestamp_start, const time_point_us& timestamp_end, const std::chrono::seconds interval);
 
 private:
     std::unique_ptr<SQLite::Database> attributes_db;

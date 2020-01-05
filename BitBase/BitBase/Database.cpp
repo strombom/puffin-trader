@@ -174,8 +174,9 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
-void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::string& interval_name, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx)
+void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx)
 {
+    const auto interval_name = std::to_string(interval.count());
     auto slock = std::scoped_lock{ file_mutex };
 
     std::filesystem::create_directories(root_path + "/interval/" + exchange);
@@ -185,4 +186,16 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
 
     set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", timestamp);
     set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", tick_idx);
+}
+
+std::unique_ptr<DatabaseIntervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_us& timestamp_start, const time_point_us& timestamp_end, const std::chrono::seconds interval)
+{
+    const auto interval_name = std::to_string(interval.count());
+    auto intervals = std::make_unique<DatabaseIntervals>(DatabaseIntervals{ timestamp_start, interval });
+    
+    auto file = std::ifstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ifstream::binary };
+    file >> *intervals;
+    file.close();
+
+    return intervals;
 }

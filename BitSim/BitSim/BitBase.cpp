@@ -15,15 +15,22 @@ BitBase::BitBase(void)
 
 void BitBase::get_intervals(void)
 {
+    constexpr auto symbol          = "XBTUSD";
+    constexpr auto exchange        = "BITMEX";
     constexpr auto timestamp_start = date::sys_days(date::year{2019} / 06 / 01);
     constexpr auto timestamp_end   = date::sys_days(date::year{2020} / 01 / 01);
-    constexpr auto symbol          = "XBTUSD";
-    
+    constexpr auto interval        = std::chrono::seconds{ 10s };
+
+    assert(interval.count() > 0 && interval.count() <= INT_MAX);
+    assert(timestamp_end > timestamp_start);
+
     json11::Json command = json11::Json::object{
         { "command", "get_intervals" },
+        { "exchange", exchange },
         { "symbol", symbol },
         { "timestamp_start", DateTime::to_string(timestamp_start) },
         { "timestamp_end", DateTime::to_string(timestamp_end) },
+        { "interval_seconds", (int) interval.count() }
     };
 
     auto message = zmq::message_t{ command.dump() };

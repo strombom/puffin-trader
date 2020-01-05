@@ -45,11 +45,13 @@ void Server::server_thread(void)
         if (command_name == "get_intervals") {
             logger.info("Server::server_thread get intervals!");
 
+            const auto exchange = command["exchange"].string_value();
             const auto symbol = command["symbol"].string_value();
             const auto timestamp_start = DateTime::to_time_point_us(command["timestamp_start"].string_value());
             const auto timestamp_end = DateTime::to_time_point_us(command["timestamp_end"].string_value());
+            const auto interval = std::chrono::seconds{ command["interval_seconds"].int_value() };
 
-            //database->get_intervals();
+            auto intervals = database->get_intervals(exchange, symbol, timestamp_start, timestamp_end, interval);
 
         }
         else {

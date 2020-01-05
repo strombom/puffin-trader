@@ -18,10 +18,37 @@ std::ostream& operator<<(std::ostream& stream, const DatabaseInterval& row)
     return stream;
 }
 
+std::istream& operator>>(std::istream& stream, DatabaseInterval& row)
+{
+    stream >> row.last_price;
+    stream >> row.vol_buy;
+    stream >> row.vol_sell;
+
+    for (std::vector<step_prices_t>::size_type step = 0; step != row.prices_buy.size(); step++) {
+        stream >> row.prices_buy[step];
+    }
+
+    for (std::vector<step_prices_t>::size_type step = 0; step != row.prices_sell.size(); step++) {
+        stream >> row.prices_sell[step];
+    }
+
+    return stream;
+}
+
 std::ostream& operator<<(std::ostream& stream, const DatabaseIntervals& intervals_data)
 {
     for (auto&& row : intervals_data.rows) {
         stream << row;
+    }
+
+    return stream;
+}
+
+std::istream& operator>>(std::istream& stream, DatabaseIntervals& intervals_data)
+{
+    auto interval = DatabaseInterval{};
+    while (stream >> interval) {
+        intervals_data.rows.push_back(interval);
     }
 
     return stream;
