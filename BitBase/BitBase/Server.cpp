@@ -31,11 +31,11 @@ void Server::server_thread(void)
 
     while (server_running) {
         auto message = zmq::message_t{};
-        auto recv_result = server.recv(message);
+        const auto recv_result = server.recv(message);
         if (!recv_result) {
             continue;
         }
-        auto message_string = std::string(static_cast<char*>(message.data()), message.size());
+        const auto message_string = std::string(static_cast<char*>(message.data()), message.size());
         logger.info("Server::server_thread raw message (%s)", message_string.c_str());
 
         auto error_message = std::string{ "{\"command\":\"error\"}" };
@@ -45,9 +45,9 @@ void Server::server_thread(void)
         if (command_name == "get_intervals") {
             logger.info("Server::server_thread get intervals!");
 
-            auto symbol = command["symbol"].string_value();
-            auto timestamp_start = DateTime::to_time_point_us(command["timestamp_start"].string_value());
-            auto timestamp_end = DateTime::to_time_point_us(command["timestamp_end"].string_value());
+            const auto symbol = command["symbol"].string_value();
+            const auto timestamp_start = DateTime::to_time_point_us(command["timestamp_start"].string_value());
+            const auto timestamp_end = DateTime::to_time_point_us(command["timestamp_end"].string_value());
 
             //database->get_intervals();
 
@@ -56,6 +56,6 @@ void Server::server_thread(void)
             logger.info("Server::server_thread unknown command!");
         }
 
-        auto send_result = server.send(message, zmq::send_flags::dontwait);
+        const auto send_result = server.send(message, zmq::send_flags::dontwait);
     }
 }
