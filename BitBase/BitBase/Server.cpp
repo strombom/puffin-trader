@@ -1,8 +1,13 @@
+
 #include "Server.h"
 #include "Logger.h"
+#include "DateTime.h"
 
-#include <zmq.hpp>
 #include "json11.hpp"
+#pragma warning(push)
+#pragma warning(disable: 4005)
+#include <zmq.hpp>
+#pragma warning(pop)
 
 
 Server::Server(sptrDatabase database) : 
@@ -39,6 +44,12 @@ void Server::server_thread(void)
         
         if (command_name == "get_intervals") {
             logger.info("Server::server_thread get intervals!");
+
+            auto symbol = command["symbol"].string_value();
+            auto timestamp_start = DateTime::to_time_point_us(command["timestamp_start"].string_value());
+            auto timestamp_end = DateTime::to_time_point_us(command["timestamp_end"].string_value());
+
+            //database->get_intervals();
 
         }
         else {

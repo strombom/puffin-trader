@@ -1,7 +1,9 @@
 #pragma once
 
+#pragma warning(push)
 #pragma warning(disable: 4005)
 #include <zmq.hpp>
+#pragma warning(pop)
 
 
 class BitBase
