@@ -191,11 +191,20 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
 std::unique_ptr<DatabaseIntervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_us& timestamp_start, const time_point_us& timestamp_end, const std::chrono::seconds interval)
 {
     const auto interval_name = std::to_string(interval.count());
-    auto intervals = std::make_unique<DatabaseIntervals>(timestamp_start, interval);
-    
+    const auto interval_offset = (timestamp_start - BitBase::Bitmex::first_timestamp) / interval;
+
     auto file = std::ifstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ifstream::binary };
-    file >> *intervals;
+    file.seekg(interval_offset * sizeof(DatabaseInterval));
+
+    auto timestamp = timestamp_start;
+    auto database_intervals = std::make_unique<DatabaseIntervals>(BitBase::Bitmex::first_timestamp, interval);
+    auto database_interval = DatabaseInterval{};
+    while (file >> database_interval && timestamp < timestamp_end) {
+        database_intervals->rows.push_back(database_interval);
+        timestamp += interval;
+    }
+
     file.close();
 
-    return intervals;
+    return database_intervals;
 }

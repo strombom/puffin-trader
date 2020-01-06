@@ -15,7 +15,7 @@ public:
         last_price(last_price), vol_buy(vol_buy), vol_sell(vol_sell), prices_buy(prices_buy), prices_sell(prices_sell) {}
 
     friend std::ostream& operator<<(std::ostream& stream, const DatabaseInterval& row);
-    friend std::istream& operator>>(std::istream& stream, const DatabaseInterval& row);
+    friend std::istream& operator>>(std::istream& stream, DatabaseInterval& row);
 
     float last_price;
     float vol_buy;

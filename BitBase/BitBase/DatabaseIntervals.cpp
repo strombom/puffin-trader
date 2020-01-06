@@ -20,16 +20,16 @@ std::ostream& operator<<(std::ostream& stream, const DatabaseInterval& row)
 
 std::istream& operator>>(std::istream& stream, DatabaseInterval& row)
 {
-    stream >> row.last_price;
-    stream >> row.vol_buy;
-    stream >> row.vol_sell;
+    stream.read(reinterpret_cast <char*> (&row.last_price), sizeof(float));
+    stream.read(reinterpret_cast <char*> (&row.vol_buy), sizeof(float));
+    stream.read(reinterpret_cast <char*> (&row.vol_sell), sizeof(float));
 
     for (std::vector<step_prices_t>::size_type step = 0; step != row.prices_buy.size(); step++) {
-        stream >> row.prices_buy[step];
+        stream.read(reinterpret_cast <char*> (&row.prices_buy[step]), sizeof(float));
     }
 
     for (std::vector<step_prices_t>::size_type step = 0; step != row.prices_sell.size(); step++) {
-        stream >> row.prices_sell[step];
+        stream.read(reinterpret_cast <char*> (&row.prices_sell[step]), sizeof(float));
     }
 
     return stream;

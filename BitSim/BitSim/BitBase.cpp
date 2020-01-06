@@ -17,8 +17,8 @@ void BitBase::get_intervals(void)
 {
     constexpr auto symbol          = "XBTUSD";
     constexpr auto exchange        = "BITMEX";
-    constexpr auto timestamp_start = date::sys_days(date::year{2019} / 06 / 01);
-    constexpr auto timestamp_end   = date::sys_days(date::year{2020} / 01 / 01);
+    constexpr auto timestamp_start = date::sys_days(date::year{2019} / 07 / 01);
+    constexpr auto timestamp_end   = date::sys_days(date::year{2019} / 07 / 02);
     constexpr auto interval        = std::chrono::seconds{ 10s };
 
     assert(interval.count() > 0 && interval.count() <= INT_MAX);
