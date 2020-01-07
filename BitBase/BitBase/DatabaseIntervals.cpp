@@ -1,3 +1,5 @@
+
+#include "Logger.h"
 #include "DatabaseIntervals.h"
 
 
@@ -23,7 +25,7 @@ std::istream& operator>>(std::istream& stream, DatabaseInterval& row)
     stream.read(reinterpret_cast <char*> (&row.last_price), sizeof(float));
     stream.read(reinterpret_cast <char*> (&row.vol_buy), sizeof(float));
     stream.read(reinterpret_cast <char*> (&row.vol_sell), sizeof(float));
-
+    
     for (std::vector<step_prices_t>::size_type step = 0; step != row.prices_buy.size(); step++) {
         stream.read(reinterpret_cast <char*> (&row.prices_buy[step]), sizeof(float));
     }

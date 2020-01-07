@@ -170,8 +170,8 @@
     <ClCompile Include="BitSim.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\BitLib\date.h" />
     <ClInclude Include="..\..\BitLib\DateTime.h" />
+    <ClInclude Include="..\..\BitLib\date\date.h" />
     <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
     <ClInclude Include="..\..\BitLib\Logger.h" />
     <ClInclude Include="BitBase.h" />

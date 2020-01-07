@@ -59,9 +59,6 @@
     <ClInclude Include="json.hpp">
       <Filter>Header Files\BitBase</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\BitLib\date.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\BitLib\DateTime.h">
       <Filter>Header Files\DateTime</Filter>
     </ClInclude>
@@ -70,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="..\..\BitLib\Logger.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\date\date.h">
+      <Filter>Header Files\DateTime</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

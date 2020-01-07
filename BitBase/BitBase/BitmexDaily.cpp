@@ -52,9 +52,7 @@ void BitmexDaily::shutdown(void)
 void BitmexDaily::start_download(void)
 {
     assert(state == BitmexDailyState::idle);
-    logger.info("BitmexDaily::start_download");
     
-
     state = BitmexDailyState::downloading;
 
     for (int i = 0; i < BitBase::Bitmex::Daily::active_downloads_max; ++i) {
@@ -91,14 +89,12 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 void BitmexDaily::start_next_download(void)
 {
     if (state == BitmexDailyState::idle) {
-        //logger.info("BitmexDaily::start_next end (idle)");
         return;
     }
 
     auto last_timestamp = date::floor<date::days>(system_clock_us_now() - date::days{ 1 });
     if (timestamp_next > last_timestamp) {
         state = BitmexDailyState::idle;
-        //logger.info("BitmexDaily::start_next end (last index)");
         return;
     }
 

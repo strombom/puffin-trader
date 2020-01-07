@@ -13,7 +13,7 @@ public:
     Timer(void);
 
     void restart(void);
-    std::chrono::microseconds elapsed(void);
+    std::chrono::microseconds elapsed(void) const;
 
 private:
     std::chrono::steady_clock::time_point start_time_point;

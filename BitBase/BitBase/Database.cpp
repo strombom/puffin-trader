@@ -174,8 +174,12 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
-void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const DatabaseIntervals& intervals_data, const time_point_us& timestamp, int tick_idx)
+void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const DatabaseIntervals& intervals_data, const time_point_us& next_timestamp, int next_tick_idx)
 {
+    if (!intervals_data.rows.size()) {
+        return;
+    }
+
     const auto interval_name = std::to_string(interval.count());
     auto slock = std::scoped_lock{ file_mutex };
 
@@ -184,8 +188,8 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
     file << intervals_data;
     file.close();
 
-    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_timestamp", timestamp);
-    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_tick_idx", tick_idx);
+    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_timestamp", next_timestamp);
+    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_tick_idx", next_tick_idx);
 }
 
 std::unique_ptr<DatabaseIntervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_us& timestamp_start, const time_point_us& timestamp_end, const std::chrono::seconds interval)
@@ -196,12 +200,16 @@ std::unique_ptr<DatabaseIntervals> Database::get_intervals(const std::string& ex
     auto file = std::ifstream{ root_path + "/interval/" + exchange + "/" + symbol + "_" + interval_name + ".dat", std::ifstream::binary };
     file.seekg(interval_offset * sizeof(DatabaseInterval));
 
+    auto off = 60 * interval_offset;
+
     auto timestamp = timestamp_start;
     auto database_intervals = std::make_unique<DatabaseIntervals>(BitBase::Bitmex::first_timestamp, interval);
     auto database_interval = DatabaseInterval{};
     while (file >> database_interval && timestamp < timestamp_end) {
         database_intervals->rows.push_back(database_interval);
+        logger.info("Interval %s: %d %f, %f, %f", DateTime::to_string(timestamp).c_str(), off, database_interval.last_price, database_interval.vol_buy, database_interval.vol_sell);
         timestamp += interval;
+        off += 60;
     }
 
     file.close();
