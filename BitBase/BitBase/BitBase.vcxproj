@@ -163,15 +163,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\BitLib\DateTime.cpp" />
+    <ClCompile Include="..\..\BitLib\Intervals.cpp" />
     <ClCompile Include="..\..\BitLib\json11\json11.cpp" />
     <ClCompile Include="..\..\BitLib\Logger.cpp" />
+    <ClCompile Include="..\..\BitLib\Ticks.cpp" />
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="Bitmex.cpp" />
     <ClCompile Include="BitmexDaily.cpp" />
     <ClCompile Include="BitmexInterval.cpp" />
     <ClCompile Include="Database.cpp" />
-    <ClCompile Include="Intervals.cpp" />
-    <ClCompile Include="Ticks.cpp" />
     <ClCompile Include="DownloadTask.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
     <ClCompile Include="DownloadThread.cpp" />
@@ -179,17 +179,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\apps\vcpkg-2019.09\installed\x64-windows\include\zmq.hpp" />
+    <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
     <ClInclude Include="..\..\BitLib\date.h" />
     <ClInclude Include="..\..\BitLib\DateTime.h" />
+    <ClInclude Include="..\..\BitLib\Intervals.h" />
     <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
     <ClInclude Include="..\..\BitLib\Logger.h" />
+    <ClInclude Include="..\..\BitLib\Ticks.h" />
     <ClInclude Include="Bitmex.h" />
-    <ClInclude Include="BitBaseConstants.h" />
     <ClInclude Include="BitmexDaily.h" />
     <ClInclude Include="BitmexInterval.h" />
     <ClInclude Include="Database.h" />
-    <ClInclude Include="Intervals.h" />
-    <ClInclude Include="Ticks.h" />
     <ClInclude Include="DownloadManager.h" />
     <ClInclude Include="DownloadTask.h" />
     <ClInclude Include="DownloadThread.h" />

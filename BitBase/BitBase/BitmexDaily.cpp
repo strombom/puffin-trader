@@ -1,5 +1,5 @@
 
-#include "BitBaseConstants.h"
+#include "BitBotConstants.h"
 #include "BitmexDaily.h"
 #include "DateTime.h"
 #include "Logger.h"
@@ -222,7 +222,7 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
         }
 
         if ((*tick_data)[symbol] == nullptr) {
-            (*tick_data)[symbol] = std::make_unique<DatabaseTicks>();
+            (*tick_data)[symbol] = std::make_unique<Ticks>();
         }
         (*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
     }

@@ -4,7 +4,7 @@
 #include <torch/torch.h>
 #pragma warning(pop)
 
-#include "BitBase.h"
+#include "BitBaseClient.h"
 #include "Logger.h"
 
 #include <iostream>
@@ -13,9 +13,9 @@
 int main() {
     logger.info("BitSim started");
 
-    auto bitbase = BitBase();
+    auto bitbase_client = BitBaseClient();
 
-    bitbase.get_intervals();
+    bitbase_client.get_intervals();
 
     //torch::Tensor tensor = torch::eye(5);
     //std::cout << tensor << std::endl;

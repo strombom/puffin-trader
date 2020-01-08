@@ -126,28 +126,28 @@ TickTableRead::~TickTableRead(void)
     file.close();
 }
 
-std::unique_ptr<DatabaseTick> TickTableRead::get_next_tick(void)
+std::unique_ptr<Tick> TickTableRead::get_next_tick(void)
 {
     auto slock = std::scoped_lock{ file_mutex };
     return _get_tick();
 }
 
-std::unique_ptr<DatabaseTick> TickTableRead::get_tick(int tick_idx)
+std::unique_ptr<Tick> TickTableRead::get_tick(int tick_idx)
 {
     auto slock = std::scoped_lock{ file_mutex };
-    file.seekg(static_cast<int64_t>(tick_idx) * DatabaseTick::struct_size);
+    file.seekg(static_cast<int64_t>(tick_idx) * Tick::struct_size);
     return _get_tick();
 }
 
-std::unique_ptr<DatabaseTick> TickTableRead::_get_tick(void)
+std::unique_ptr<Tick> TickTableRead::_get_tick(void)
 {
-    auto tick = DatabaseTick{};
+    auto tick = Tick{};
     file >> tick;
     if (file.bad() || file.fail()) {
         return nullptr;
     }
     else {
-        return std::make_unique<DatabaseTick>(tick);
+        return std::make_unique<Tick>(tick);
     }
 }
 

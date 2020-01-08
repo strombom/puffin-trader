@@ -2,7 +2,7 @@
 #include "Ticks.h"
 
 
-std::ostream& operator<<(std::ostream& stream, const DatabaseTick& row)
+std::ostream& operator<<(std::ostream& stream, const Tick& row)
 {
     const auto timestamp = row.timestamp.time_since_epoch().count();
 
@@ -14,7 +14,7 @@ std::ostream& operator<<(std::ostream& stream, const DatabaseTick& row)
     return stream;
 }
 
-std::istream& operator>>(std::istream& stream, DatabaseTick& row)
+std::istream& operator>>(std::istream& stream, Tick& row)
 {
     auto timestamp_us = long long{};
     stream.read(reinterpret_cast<char*>(&timestamp_us), sizeof(timestamp_us));

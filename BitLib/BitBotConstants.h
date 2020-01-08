@@ -26,10 +26,10 @@ namespace BitBase
     namespace Interval
     {
         constexpr auto enabled_symbols = std::array<const char*, 1>{ "XBTUSD" };
+        constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
         constexpr auto batch_timeout = 1s;
         constexpr auto batch_size = 10000;
         constexpr auto intervals = std::array<std::chrono::seconds, 1>{ 10s };
-        constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
     }
 
     namespace Database
@@ -37,5 +37,13 @@ namespace BitBase
         constexpr auto time_format = "%F %T";
         constexpr auto root_path = "C:\\development\\github\\puffin-trader\\database";
         constexpr auto sqlite_busy_timeout_ms = 5000;
+    }
+}
+
+namespace BitSim
+{
+    namespace BitBase
+    {
+        constexpr auto address = "tcp://localhost:31000";
     }
 }

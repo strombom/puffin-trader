@@ -1,7 +1,7 @@
 
 #include "Logger.h"
 #include "BitmexInterval.h"
-#include "DatabaseIntervals.h"
+#include "Intervals.h"
 
 
 

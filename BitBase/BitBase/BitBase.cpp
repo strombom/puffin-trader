@@ -4,7 +4,7 @@
 #include "Server.h"
 #include "Database.h"
 #include "DownloadManager.h"
-#include "BitBaseConstants.h"
+#include "BitBotConstants.h"
 
 #include <future>
 #include <iostream>

@@ -1,19 +1,19 @@
 
 #include "Logger.h"
-#include "BitBase.h"
-#include "BitSimConstants.h"
+#include "BitBaseClient.h"
+#include "BitBotConstants.h"
 
 #include "date/date.h"
 #include "json11/json11.hpp"
 
 
-BitBase::BitBase(void)
+BitBaseClient::BitBaseClient(void)
 {
     client = std::make_unique<zmq::socket_t>(context, zmq::socket_type::req);
     client->connect(BitSim::BitBase::address);
 }
 
-void BitBase::get_intervals(void)
+void BitBaseClient::get_intervals(void)
 {
     constexpr auto symbol          = "XBTUSD";
     constexpr auto exchange        = "BITMEX";

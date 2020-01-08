@@ -6,10 +6,10 @@
 #pragma warning(pop)
 
 
-class BitBase
+class BitBaseClient
 {
 public:
-    BitBase(void);
+    BitBaseClient(void);
 
     void get_intervals(void);
 

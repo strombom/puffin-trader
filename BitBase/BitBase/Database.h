@@ -1,8 +1,8 @@
 #pragma once
 
 #include "DateTime.h"
-#include "DatabaseTicks.h"
-#include "DatabaseIntervals.h"
+#include "Ticks.h"
+#include "Intervals.h"
 
 #include <mutex>
 #include <string>
@@ -18,15 +18,15 @@ public:
     TickTableRead(const std::string& root_path, const std::string& exchange, const std::string& symbol);
     ~TickTableRead(void);
 
-    std::unique_ptr<DatabaseTick> get_tick(int tick_idx);
-    std::unique_ptr<DatabaseTick> get_next_tick(void);
+    std::unique_ptr<Tick> get_tick(int tick_idx);
+    std::unique_ptr<Tick> get_next_tick(void);
 
 private:
     const std::string& root_path;
     std::mutex file_mutex;
     std::ifstream file;
 
-    std::unique_ptr<DatabaseTick> _get_tick(void);
+    std::unique_ptr<Tick> _get_tick(void);
 };
 
 class Database
