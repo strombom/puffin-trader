@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Intervals.h"
+
 #pragma warning(push)
 #pragma warning(disable: 4005)
 #include <zmq.hpp>
@@ -11,7 +13,7 @@ class BitBaseClient
 public:
     BitBaseClient(void);
 
-    void get_intervals(void);
+    std::unique_ptr<Intervals> get_intervals(void);
 
 private:
     zmq::context_t context;

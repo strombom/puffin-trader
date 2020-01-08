@@ -31,6 +31,12 @@
     <Filter Include="Source Files\Libraries">
       <UniqueIdentifier>{31958dad-2e72-4676-85d6-b0758fed1ffe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Data">
+      <UniqueIdentifier>{c8372632-e7c1-4e4e-834e-855e9b328879}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Data">
+      <UniqueIdentifier>{8dd412cf-221c-4231-86d9-c36cd241da56}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -47,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="BitBaseClient.cpp">
       <Filter>Source Files\BitBase</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\Intervals.cpp">
+      <Filter>Source Files\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -70,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="BitBaseClient.h">
       <Filter>Header Files\BitBase</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\Intervals.h">
+      <Filter>Header Files\Data</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

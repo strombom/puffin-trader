@@ -15,7 +15,7 @@ int main() {
 
     auto bitbase_client = BitBaseClient();
 
-    bitbase_client.get_intervals();
+    auto intervals = bitbase_client.get_intervals();
 
     //torch::Tensor tensor = torch::eye(5);
     //std::cout << tensor << std::endl;

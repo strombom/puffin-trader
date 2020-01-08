@@ -13,7 +13,7 @@ BitBaseClient::BitBaseClient(void)
     client->connect(BitSim::BitBase::address);
 }
 
-void BitBaseClient::get_intervals(void)
+std::unique_ptr<Intervals> BitBaseClient::get_intervals(void)
 {
     constexpr auto symbol          = "XBTUSD";
     constexpr auto exchange        = "BITMEX";
@@ -38,20 +38,9 @@ void BitBaseClient::get_intervals(void)
     
     const auto recv_result = client->recv(message);
 
-    const auto message_string = std::string(static_cast<char*>(message.data()), message.size());
-    logger.info("BitBase::get_intervals msg: %d", message.size());
+    auto intervals_buffer = std::stringstream{ std::string(static_cast<char*>(message.data()), message.size()) };
+    auto intervals = Intervals{ timestamp_start , interval };
+    intervals_buffer >> intervals;
 
-
-
-    printf("\n");
-    printf("===\n");
-    printf("\n");
-    for (auto i = 0; i < message_string.size(); i++) {
-        if (i % 16 == 0) {
-            printf("\n");
-        }
-        printf("%02X ", (unsigned char) message_string[i]);
-    }
-
-
+    return std::make_unique<Intervals>(intervals);
 }
