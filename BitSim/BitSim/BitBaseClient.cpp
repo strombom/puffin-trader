@@ -3,7 +3,6 @@
 #include "BitBaseClient.h"
 #include "BitBotConstants.h"
 
-#include "date/date.h"
 #include "json11/json11.hpp"
 
 
@@ -13,13 +12,12 @@ BitBaseClient::BitBaseClient(void)
     client->connect(BitSim::BitBase::address);
 }
 
-std::unique_ptr<Intervals> BitBaseClient::get_intervals(void)
+std::unique_ptr<Intervals> BitBaseClient::get_intervals(const std::string& symbol,
+                                                        const std::string& exchange,
+                                                        const time_point_s timestamp_start,
+                                                        const time_point_s timestamp_end,
+                                                        std::chrono::seconds interval)
 {
-    constexpr auto symbol          = "XBTUSD";
-    constexpr auto exchange        = "BITMEX";
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } + std::chrono::minutes{ 0 };
-    constexpr auto timestamp_end   = date::sys_days(date::year{2019} / 06 / 01) + std::chrono::seconds{ 30 };
-    constexpr auto interval        = std::chrono::seconds{ 10s };
 
     assert(interval.count() > 0 && interval.count() <= INT_MAX);
     assert(timestamp_end > timestamp_start);
