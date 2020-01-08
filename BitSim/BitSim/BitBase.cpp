@@ -17,8 +17,8 @@ void BitBase::get_intervals(void)
 {
     constexpr auto symbol          = "XBTUSD";
     constexpr auto exchange        = "BITMEX";
-    constexpr auto timestamp_start = date::sys_days(date::year{2019} / 07 / 01);
-    constexpr auto timestamp_end   = date::sys_days(date::year{2019} / 07 / 02);
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } + std::chrono::minutes{ 0 };
+    constexpr auto timestamp_end   = date::sys_days(date::year{2019} / 06 / 01) + std::chrono::seconds{ 30 };
     constexpr auto interval        = std::chrono::seconds{ 10s };
 
     assert(interval.count() > 0 && interval.count() <= INT_MAX);
@@ -35,4 +35,23 @@ void BitBase::get_intervals(void)
 
     auto message = zmq::message_t{ command.dump() };
     auto result = client->send(message, zmq::send_flags::dontwait);
+    
+    const auto recv_result = client->recv(message);
+
+    const auto message_string = std::string(static_cast<char*>(message.data()), message.size());
+    logger.info("BitBase::get_intervals msg: %d", message.size());
+
+
+
+    printf("\n");
+    printf("===\n");
+    printf("\n");
+    for (auto i = 0; i < message_string.size(); i++) {
+        if (i % 16 == 0) {
+            printf("\n");
+        }
+        printf("%02X ", (unsigned char) message_string[i]);
+    }
+
+
 }

@@ -67,7 +67,7 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
     auto last_price = last_tick->price;
     auto tick = tick_table->get_tick(next_tick_idx);
 
-    auto intervals_data = DatabaseIntervals{ timestamp, interval };
+    auto intervals_data = Intervals{ timestamp, interval };
     const auto timer = Timer{};
 
     while (timestamp <= last_timestamp && timer.elapsed() < BitBase::Interval::batch_timeout) {

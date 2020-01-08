@@ -29,8 +29,8 @@ void Server::server_thread(void)
     server.bind("tcp://*:31000");
     server.setsockopt(ZMQ_RCVTIMEO, 500);
 
+    auto message = zmq::message_t{};
     while (server_running) {
-        auto message = zmq::message_t{};
         const auto recv_result = server.recv(message);
         if (!recv_result) {
             continue;
@@ -44,18 +44,19 @@ void Server::server_thread(void)
         
         if (command_name == "get_intervals") {
             logger.info("Server::server_thread get intervals!");
+            const auto intervals = database->get_intervals(command["exchange"].string_value(),
+                                                           command["symbol"].string_value(),
+                                                           DateTime::to_time_point_us(command["timestamp_start"].string_value()),
+                                                           DateTime::to_time_point_us(command["timestamp_end"].string_value()),
+                                                           std::chrono::seconds{ command["interval_seconds"].int_value() });
 
-            const auto exchange = command["exchange"].string_value();
-            const auto symbol = command["symbol"].string_value();
-            const auto timestamp_start = DateTime::to_time_point_us(command["timestamp_start"].string_value());
-            const auto timestamp_end = DateTime::to_time_point_us(command["timestamp_end"].string_value());
-            const auto interval = std::chrono::seconds{ command["interval_seconds"].int_value() };
-
-            auto intervals = database->get_intervals(exchange, symbol, timestamp_start, timestamp_end, interval);
-
+            auto buffer = std::stringstream{};
+            buffer << *intervals;
+            message = zmq::message_t{ buffer.str() };
         }
         else {
             logger.info("Server::server_thread unknown command!");
+            message = zmq::message_t{ }; // Return empty message indicating error
         }
 
         const auto send_result = server.send(message, zmq::send_flags::dontwait);

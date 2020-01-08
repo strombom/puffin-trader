@@ -1,9 +1,9 @@
 
 #include "Logger.h"
-#include "DatabaseIntervals.h"
+#include "Intervals.h"
 
 
-std::ostream& operator<<(std::ostream& stream, const DatabaseInterval& row)
+std::ostream& operator<<(std::ostream& stream, const Interval& row)
 {
     stream.write(reinterpret_cast<const char*>(&row.last_price), sizeof(row.last_price));
     stream.write(reinterpret_cast<const char*>(&row.vol_buy), sizeof(row.vol_buy));
@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& stream, const DatabaseInterval& row)
     return stream;
 }
 
-std::istream& operator>>(std::istream& stream, DatabaseInterval& row)
+std::istream& operator>>(std::istream& stream, Interval& row)
 {
     stream.read(reinterpret_cast <char*> (&row.last_price), sizeof(float));
     stream.read(reinterpret_cast <char*> (&row.vol_buy), sizeof(float));
@@ -37,7 +37,7 @@ std::istream& operator>>(std::istream& stream, DatabaseInterval& row)
     return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const DatabaseIntervals& intervals_data)
+std::ostream& operator<<(std::ostream& stream, const Intervals& intervals_data)
 {
     for (auto&& row : intervals_data.rows) {
         stream << row;
@@ -46,9 +46,9 @@ std::ostream& operator<<(std::ostream& stream, const DatabaseIntervals& interval
     return stream;
 }
 
-std::istream& operator>>(std::istream& stream, DatabaseIntervals& intervals_data)
+std::istream& operator>>(std::istream& stream, Intervals& intervals_data)
 {
-    auto interval = DatabaseInterval{};
+    auto interval = Interval{};
     while (stream >> interval) {
         intervals_data.rows.push_back(interval);
     }

@@ -170,8 +170,8 @@
     <ClCompile Include="BitmexDaily.cpp" />
     <ClCompile Include="BitmexInterval.cpp" />
     <ClCompile Include="Database.cpp" />
-    <ClCompile Include="DatabaseIntervals.cpp" />
-    <ClCompile Include="DatabaseTicks.cpp" />
+    <ClCompile Include="Intervals.cpp" />
+    <ClCompile Include="Ticks.cpp" />
     <ClCompile Include="DownloadTask.cpp" />
     <ClCompile Include="DownloadManager.cpp" />
     <ClCompile Include="DownloadThread.cpp" />
@@ -188,8 +188,8 @@
     <ClInclude Include="BitmexDaily.h" />
     <ClInclude Include="BitmexInterval.h" />
     <ClInclude Include="Database.h" />
-    <ClInclude Include="DatabaseIntervals.h" />
-    <ClInclude Include="DatabaseTicks.h" />
+    <ClInclude Include="Intervals.h" />
+    <ClInclude Include="Ticks.h" />
     <ClInclude Include="DownloadManager.h" />
     <ClInclude Include="DownloadTask.h" />
     <ClInclude Include="DownloadThread.h" />

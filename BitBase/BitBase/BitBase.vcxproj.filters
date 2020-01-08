@@ -78,12 +78,6 @@
     <ClCompile Include="BitmexInterval.cpp">
       <Filter>Source Files\Bitmex</Filter>
     </ClCompile>
-    <ClCompile Include="DatabaseTicks.cpp">
-      <Filter>Source Files\Database</Filter>
-    </ClCompile>
-    <ClCompile Include="DatabaseIntervals.cpp">
-      <Filter>Source Files\Database</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\BitLib\DateTime.cpp">
       <Filter>Source Files\DateTime</Filter>
     </ClCompile>
@@ -92,6 +86,12 @@
     </ClCompile>
     <ClCompile Include="..\..\BitLib\Logger.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Intervals.cpp">
+      <Filter>Source Files\Database</Filter>
+    </ClCompile>
+    <ClCompile Include="Ticks.cpp">
+      <Filter>Source Files\Database</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -119,14 +119,8 @@
     <ClInclude Include="BitmexInterval.h">
       <Filter>Header Files\Bitmex</Filter>
     </ClInclude>
-    <ClInclude Include="DatabaseTicks.h">
-      <Filter>Header Files\Database</Filter>
-    </ClInclude>
     <ClInclude Include="BitBaseConstants.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DatabaseIntervals.h">
-      <Filter>Header Files\Database</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\apps\vcpkg-2019.09\installed\x64-windows\include\zmq.hpp">
       <Filter>Header Files\Libraries</Filter>
@@ -142,6 +136,12 @@
     </ClInclude>
     <ClInclude Include="..\..\BitLib\Logger.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Intervals.h">
+      <Filter>Header Files\Database</Filter>
+    </ClInclude>
+    <ClInclude Include="Ticks.h">
+      <Filter>Header Files\Database</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
