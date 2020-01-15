@@ -30,9 +30,12 @@ public:
 class Intervals
 {
 public:
-
     Intervals(const time_point_us& timestamp_start, const std::chrono::seconds& interval) :
         timestamp_start(timestamp_start), interval(interval) {}
+
+    // Copy constructor
+    Intervals(const Intervals& intervals) :
+        rows(intervals.rows), timestamp_start(intervals.timestamp_start), interval(intervals.interval) {}
 
     friend std::ostream& operator<<(std::ostream& stream, const Intervals& intervals_data);
     friend std::istream& operator>>(std::istream& stream, Intervals& intervals_data);

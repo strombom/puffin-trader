@@ -7,7 +7,9 @@
 #include "BitBaseClient.h"
 #include "Logger.h"
 
+#include <random>
 #include <iostream>
+
 
 namespace params {
     constexpr auto batch_size = 2;
@@ -198,25 +200,54 @@ private:
 TORCH_MODULE(RepresentationLearner);
 
 
+class RandomRange
+{
+public:
+    RandomRange(int range_min, int range_max) :
+        random_generator(std::mt19937{ std::random_device{}() }),
+        rand_int(range_min, range_max),
+        range_min(range_min), range_max(range_max) {}
+
+    RandomRange(const RandomRange &random_range) :
+        random_generator(std::mt19937{ std::random_device{}() }),
+        rand_int(random_range.range_min, random_range.range_max),
+        range_min(random_range.range_min), range_max(random_range.range_max) {}
+
+    int get(void) {
+        return rand_int(random_generator);
+    }
+
+private:
+    int range_min;
+    int range_max;
+    std::mt19937 random_generator;
+    std::uniform_int_distribution<int> rand_int;
+};
+
+
 struct Batch {
     torch::Tensor past_observations;   // BxCxNxL (2x1x4x160)
     torch::Tensor future_positives;    // BxCxNxL (2x1x1x160)
     torch::Tensor future_negatives;    // BxCxNxL (2x1x9x160)
 
-    Batch(size_t batch_size) {
+    Batch(int batch_size, const Intervals &intervals, int index) {
 
     }
 
-
-
     /*
+        //auto a = std::array<float, 6>{ 1.0f, 2.0f, 3.0f, 1.1f, 1.2f, 1.3f };
+        //auto opts = torch::TensorOptions().dtype(torch::kFloat32);
+        //torch::Tensor t = torch::from_blob(t.data(), { 3 }, opts).to(torch::kInt64);
+        //auto t = torch::from_blob(a.data(), { 2, 3 }, opts).clone();
+        //std::cout << t << std::endl;
+
     std::array<float, params::segment_length> price;
     std::array<float, params::segment_length> vol_buy;
     std::array<float, params::segment_length> vol_sell;
 
-        torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
-        torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
-        torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
+    torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
+    torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
+    torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
 
     auto past_observations = torch::ones({ params::batch_size, 1, params::n_observations, params::segment_length });
     auto future_positives = torch::ones({ params::batch_size, 1, params::n_positive,     params::segment_length });
@@ -228,42 +259,24 @@ struct Batch {
 class TradeDataset : public torch::data::BatchDataset<TradeDataset, Batch, c10::ArrayRef<size_t>>
 {
 public:
-    TradeDataset(Intervals intervals) : intervals(intervals) {}
+    TradeDataset(std::unique_ptr<Intervals> intervals) : 
+        intervals(*intervals), 
+        random_index(params::n_observations * params::feature_size, (int) intervals->rows.size() - params::n_predictions * params::feature_size) {}
 
     Batch get_batch(c10::ArrayRef<size_t> request) {
-        return Batch{ request.size() };
+        const auto batch_size = (int) request.size();
+        const auto index = random_index.get();
+        return Batch{ batch_size, intervals, index };
     }
 
     c10::optional<size_t> size() const {
-        return 4;
+        return 10;
     }
 
 private:
+    RandomRange random_index;
     Intervals intervals;
 
-    /*
-    c10::optional<size_t> size(void) const {
-        return 4;
-    }
-
-    SegmentsBatch get(size_t index) {
-        logger.info("TradeDataset:get get it %d", index);
-
-        auto a = SegmentsBatch{};
-
-
-        //auto a = std::array<float, 6>{ 1.0f, 2.0f, 3.0f, 1.1f, 1.2f, 1.3f };
-        //auto opts = torch::TensorOptions().dtype(torch::kFloat32);
-        //torch::Tensor t = torch::from_blob(t.data(), { 3 }, opts).to(torch::kInt64);
-        //auto t = torch::from_blob(a.data(), { 2, 3 }, opts).clone();
-        //std::cout << t << std::endl;
-
-
-
-        return a;
-    }
-
-    */
     //void reset(void) {}
     //void save(torch::serialize::OutputArchive& archive) const {}
     //void load(torch::serialize::InputArchive& archive) {}
@@ -272,22 +285,18 @@ private:
 int main() {
     logger.info("BitSim started");
 
-    /*
     auto bitbase_client = BitBaseClient();
 
     constexpr auto symbol = "XBTUSD";
     constexpr auto exchange = "BITMEX";
     constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } + std::chrono::minutes{ 0 };
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 24 };
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 06 / 03) + std::chrono::hours{ 0 };
     constexpr auto interval = std::chrono::seconds{ 10s };
 
     auto intervals = bitbase_client.get_intervals(symbol, exchange, timestamp_start, timestamp_end, interval);
-    */
-
-    auto intervals = Intervals{ time_point_us{ date::sys_days(date::year{2019} / 06 / 01) }, std::chrono::seconds{10s} };
     
-    auto dataset = TradeDataset{ intervals };
-
+    auto dataset = TradeDataset{ std::move(intervals) };
+    
     auto model = RepresentationLearner{};
 
     auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
