@@ -14,9 +14,9 @@
 
 namespace params {
     constexpr auto batches_per_epoch = 2;
-    constexpr auto batch_size = 2;
+    constexpr auto batch_size = 3;
     constexpr auto segment_length = 160;
-    constexpr auto n_observations = 4;
+    constexpr auto n_observations = 8;
     constexpr auto n_predictions = 2;
     constexpr auto n_positive = 1;
     constexpr auto n_negative = 3;
@@ -232,7 +232,7 @@ struct Batch {
     torch::Tensor future_positives;    // BxCxNxL (2x3x1x160)
     torch::Tensor future_negatives;    // BxCxNxL (2x3x9x160)
 
-    Batch(const int batch_size, const int time_index, const Intervals &intervals) :
+    Batch(const int batch_size, RandomRange *random_range, const Intervals &intervals) :
         past_observations(torch::empty({ batch_size, 3, params::n_observations, params::feature_size })),
         future_positives(torch::empty({ batch_size, 3, params::n_predictions * params::n_positive, params::feature_size })),
         future_negatives(torch::empty({ batch_size, 3, params::n_predictions * params::n_negative, params::feature_size }))
@@ -247,6 +247,8 @@ struct Batch {
 
         for (auto batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
 
+            const auto time_index = random_range->get();
+
             for (auto obs_idx = 0; obs_idx < params::n_observations; ++obs_idx) {
                 const auto first_time_idx = time_index - (params::n_observations - obs_idx) * params::feature_size;
                 const auto first_price = intervals.rows[first_time_idx].last_price;
@@ -260,8 +262,6 @@ struct Batch {
                     past_observations[batch_idx][ch_sell_volume][obs_idx][feature_idx] = row->vol_sell;
                 }
             }
-
-            Utils::save_tensor(past_observations, "C:\\development\\github\\puffin-trader\\tmp\\x.zip");
 
 
             for (auto pred_idx = 0; pred_idx < params::n_predictions; ++pred_idx) {
@@ -294,6 +294,10 @@ struct Batch {
             }
             */
         }
+
+        Utils::save_tensor(past_observations, "x.zip");
+
+        auto a = 1;
 
 
         /*
@@ -346,8 +350,8 @@ public:
 
     Batch get_batch(c10::ArrayRef<size_t> request) {
         const auto batch_size = (int) request.size();
-        const auto time_index = random_index.get();
-        return Batch{ batch_size, time_index, intervals };
+        //const auto time_index = random_index.get();
+        return Batch{ batch_size, &random_index, intervals };
     }
 
     c10::optional<size_t> size(void) const {
