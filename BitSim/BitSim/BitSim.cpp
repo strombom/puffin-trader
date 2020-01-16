@@ -12,6 +12,7 @@
 
 
 namespace params {
+    constexpr auto batches_per_epoch = 2;
     constexpr auto batch_size = 2;
     constexpr auto segment_length = 160;
     constexpr auto n_observations = 4;
@@ -230,7 +231,13 @@ struct Batch {
     torch::Tensor future_positives;    // BxCxNxL (2x1x1x160)
     torch::Tensor future_negatives;    // BxCxNxL (2x1x9x160)
 
-    Batch(int batch_size, const Intervals &intervals, int index) {
+    Batch(int batch_size, const Intervals &intervals, int index) :
+        past_observations(torch::empty({ batch_size, 1, params::n_observations, params::feature_size })),
+        future_positives(torch::empty({ batch_size, 1, params::n_predictions * params::n_positive, params::feature_size })),
+        future_negatives(torch::empty({ batch_size, 1, params::n_predictions * params::n_positive, params::feature_size }))
+    {
+
+
 
     }
 
@@ -270,7 +277,7 @@ public:
     }
 
     c10::optional<size_t> size() const {
-        return 10;
+        return params::batches_per_epoch * params::batch_size;
     }
 
 private:
@@ -281,6 +288,7 @@ private:
     //void save(torch::serialize::OutputArchive& archive) const {}
     //void load(torch::serialize::InputArchive& archive) {}
 };
+
 
 int main() {
     logger.info("BitSim started");
