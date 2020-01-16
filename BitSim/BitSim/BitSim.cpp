@@ -48,7 +48,7 @@ output = model(x)
 
 struct TimeDistributedImpl : public torch::nn::Module
 {
-    TimeDistributedImpl(torch::nn::Module module, int time_steps)
+    TimeDistributedImpl(torch::nn::Module module, const int time_steps)
     {
         for (int idx = 0; idx < time_steps; ++idx) {
             layers->push_back(module);
@@ -203,8 +203,9 @@ TORCH_MODULE(RepresentationLearner);
 
 class RandomRange
 {
+    // https://stackoverflow.com/questions/288739/generate-random-numbers-uniformly-over-an-entire-range
 public:
-    RandomRange(int range_min, int range_max) :
+    RandomRange(const int range_min, const int range_max) :
         random_generator(std::mt19937{ std::random_device{}() }),
         rand_int(range_min, range_max),
         range_min(range_min), range_max(range_max) {}
@@ -227,17 +228,55 @@ private:
 
 
 struct Batch {
-    torch::Tensor past_observations;   // BxCxNxL (2x1x4x160)
-    torch::Tensor future_positives;    // BxCxNxL (2x1x1x160)
-    torch::Tensor future_negatives;    // BxCxNxL (2x1x9x160)
+    torch::Tensor past_observations;   // BxCxNxL (2x3x4x160)
+    torch::Tensor future_positives;    // BxCxNxL (2x3x1x160)
+    torch::Tensor future_negatives;    // BxCxNxL (2x3x9x160)
 
-    Batch(int batch_size, const Intervals &intervals, int index) :
+    Batch(const int batch_size, const int time_index, const Intervals &intervals) :
         past_observations(torch::empty({ batch_size, 1, params::n_observations, params::feature_size })),
         future_positives(torch::empty({ batch_size, 1, params::n_predictions * params::n_positive, params::feature_size })),
         future_negatives(torch::empty({ batch_size, 1, params::n_predictions * params::n_positive, params::feature_size }))
     {
+        // Channels
+        // 1 Price
+        // 2 Buy volume
+        // 3 Sell volume
+        const auto ch_price = 0;
+        const auto ch_buy_volume = 1;
+        const auto ch_sell_volume = 2;
 
+        for (auto batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
 
+            for (auto obs_idx = 0; obs_idx < params::n_observations; ++obs_idx) {
+                const auto first_time_idx = time_index - (params::n_observations - obs_idx) * params::feature_size;
+                const auto first_price = intervals.rows[first_time_idx].last_price;
+
+                for (auto feature_idx = 0; feature_idx < params::feature_size; ++feature_idx) {
+                    const auto row = &intervals.rows[first_time_idx + feature_idx];
+                    const auto price = row->last_price;
+                    const auto price_log = std::log2f(price / first_price);
+
+                    past_observations[batch_idx][ch_price][obs_idx][feature_idx] = price_log;
+                    past_observations[batch_idx][ch_buy_volume][obs_idx][feature_idx] = row->vol_buy;
+                    past_observations[batch_idx][ch_sell_volume][obs_idx][feature_idx] = row->vol_sell;
+                }
+            }
+        }
+
+        /*
+        https://pytorch.org/cppdocs/notes/tensor_basics.html
+
+        torch::Tensor foo = torch::rand({12, 12});
+
+        // assert foo is 2-dimensional and holds floats.
+        auto foo_a = foo.accessor<float,2>();
+        float trace = 0;
+
+        for(int i = 0; i < foo_a.size(0); i++) {
+            // use the accessor foo_a to get tensor data.
+            trace += foo_a[i][i];
+        }
+        */
 
     }
 
@@ -272,11 +311,11 @@ public:
 
     Batch get_batch(c10::ArrayRef<size_t> request) {
         const auto batch_size = (int) request.size();
-        const auto index = random_index.get();
-        return Batch{ batch_size, intervals, index };
+        const auto time_index = random_index.get();
+        return Batch{ batch_size, time_index, intervals };
     }
 
-    c10::optional<size_t> size() const {
+    c10::optional<size_t> size(void) const {
         return params::batches_per_epoch * params::batch_size;
     }
 
@@ -345,6 +384,14 @@ int main() {
 
 
 /*
+Seq2seq https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
+https://pytorch.org/cppdocs/frontend.html
+https://pytorch.org/tutorials/advanced/cpp_frontend.html
+https://discuss.pytorch.org/t/usage-of-cross-entropy-loss/14841/2
+https://pytorch.org/docs/stable/nn.html#gru
+https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
+
+
 #include <torch/torch.h>
 
 #include "custom_dataset.h"
