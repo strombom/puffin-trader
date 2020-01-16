@@ -149,7 +149,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.3.1-release\include;C:\development\libraries\libtorch-1.3.1-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Apps\Python37\Include;C:\Apps\Python37\Lib\site-packages\numpy\core\include;C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.3.1-release\include;C:\development\libraries\libtorch-1.3.1-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -158,8 +158,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>c10.lib;c10_cuda.lib;caffe2_detectron_ops_gpu.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;clog.lib;cpuinfo.lib;libprotobufd.lib;libprotobuf-lited.lib;libprotocd.lib;torch.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\development\libraries\libtorch-1.3.1-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>c10.lib;c10_cuda.lib;caffe2_detectron_ops_gpu.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;clog.lib;cpuinfo.lib;libprotobufd.lib;libprotobuf-lited.lib;libprotocd.lib;torch.lib;python37.lib;python3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Apps\Python37\libs;C:\development\libraries\libtorch-1.3.1-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -167,6 +167,7 @@
     <ClCompile Include="..\..\BitLib\Intervals.cpp" />
     <ClCompile Include="..\..\BitLib\json11\json11.cpp" />
     <ClCompile Include="..\..\BitLib\Logger.cpp" />
+    <ClCompile Include="..\..\BitLib\Utils.cpp" />
     <ClCompile Include="BitBaseClient.cpp" />
     <ClCompile Include="BitSim.cpp" />
   </ItemGroup>
@@ -177,6 +178,7 @@
     <ClInclude Include="..\..\BitLib\Intervals.h" />
     <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
     <ClInclude Include="..\..\BitLib\Logger.h" />
+    <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
     <ClInclude Include="json.hpp" />
   </ItemGroup>
