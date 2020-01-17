@@ -37,6 +37,12 @@
     <Filter Include="Source Files\Data">
       <UniqueIdentifier>{8dd412cf-221c-4231-86d9-c36cd241da56}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\FeatureEncoder">
+      <UniqueIdentifier>{0ec7d761-75da-4b01-bc24-0397a58886f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\FeatureEncoder">
+      <UniqueIdentifier>{fe00bf6f-13fb-40d6-8d41-3ab290c0f02e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -59,6 +65,12 @@
     </ClCompile>
     <ClCompile Include="..\..\BitLib\Utils.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FE_DataLoader.cpp">
+      <Filter>Source Files\FeatureEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="FE_Model.cpp">
+      <Filter>Source Files\FeatureEncoder</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +99,15 @@
       <Filter>Header Files\Data</Filter>
     </ClInclude>
     <ClInclude Include="..\..\BitLib\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FE_DataLoader.h">
+      <Filter>Header Files\FeatureEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="FE_Model.h">
+      <Filter>Header Files\FeatureEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="BitSim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

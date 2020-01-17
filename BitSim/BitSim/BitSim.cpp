@@ -7,318 +7,12 @@
 #include "BitBaseClient.h"
 #include "Logger.h"
 #include "Utils.h"
+#include "FE_DataLoader.h"
+#include "FE_Model.h"
 
-#include <random>
 #include <iostream>
 
 
-namespace params {
-    constexpr auto batches_per_epoch = 2;
-    constexpr auto batch_size = 3;
-    constexpr auto segment_length = 160;
-    constexpr auto n_observations = 8;
-    constexpr auto n_predictions = 2;
-    constexpr auto n_positive = 1;
-    constexpr auto n_negative = 3;
-
-    constexpr auto feature_size = 256;
-
-    const auto ch_price = 0;
-    const auto ch_buy_volume = 1;
-    const auto ch_sell_volume = 2;
-}
-
-/*
-class TimeDistributed(nn.Module):
-    def __init__(self, layer, time_steps, *args):
-        super(TimeDistributed, self).__init__()
-
-        self.layers = nn.ModuleList([layer(*args) for i in range(time_steps)])
-
-    def forward(self, x):
-
-        batch_size, time_steps, C, H, W = x.size()
-        output = torch.tensor([])
-        for i in range(time_steps):
-          output_t = self.layers[i](x[:, i, :, :, :])
-          output_t  = y.unsqueeze(1)
-          output = torch.cat((output, output_t ), 1)
-        return output
-
-x = torch.rand(20, 100, 1, 5, 9)
-model = TimeDistributed(nn.Conv2d, time_steps = 100, 1, 8, (3, 3) , 2,   1 ,True)
-output = model(x)
-*/
-
-
-struct TimeDistributedImpl : public torch::nn::Module
-{
-    TimeDistributedImpl(torch::nn::Module module, const int time_steps)
-    {
-        for (int idx = 0; idx < time_steps; ++idx) {
-            layers->push_back(module);
-        }
-    }
-
-    torch::Tensor forward(torch::Tensor x) {
-        auto output = torch::Tensor{};
-        for (auto layer : *layers) {
-            //auto output_t = layer->forward();
-        }
-        // x                                                            // BxCxNxL  (2x1x4x160)
-        //x = x.reshape({ x.size(0), x.size(1), x.size(2) * x.size(3) }); // BxCx(NL) (2x1x640)
-        //x = encoder->forward(x);                                        // BxCxN    (2x512x4)
-        //x = x.transpose(1, 2);                                          // BxNxC    (2x4x512)
-        return x;
-    };
-
-private:
-    torch::nn::ModuleList layers;
-};
-TORCH_MODULE(TimeDistributed);
-
-struct FeatureEncoderImpl : public torch::nn::Module
-{
-    FeatureEncoderImpl(void) {
-        encoder = register_module("feature_encoder_cnn", torch::nn::Sequential{
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{1, params::feature_size, 10}.stride(5).padding(3).with_bias(false)},
-            torch::nn::BatchNorm{params::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{params::feature_size, params::feature_size, 8}.stride(4).padding(2).with_bias(false)},
-            torch::nn::BatchNorm{params::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{params::feature_size, params::feature_size, 4}.stride(2).padding(1).with_bias(false)},
-            torch::nn::BatchNorm{params::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{params::feature_size, params::feature_size, 4}.stride(2).padding(1).with_bias(false)},
-            torch::nn::BatchNorm{params::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{params::feature_size, params::feature_size, 4}.stride(2).padding(1).with_bias(false)},
-            torch::nn::BatchNorm{params::feature_size},
-            torch::nn::Functional{torch::relu}
-            });
-    }
-    
-    torch::Tensor forward(torch::Tensor x) {
-        x = encoder->forward(x);
-        return x;
-
-        //for (auto encoder : encoders) {
-
-        //}
-        // x                                                              // BxCxNxL  (2x1x4x160)
-        //x = x.reshape({ x.size(0), x.size(1), x.size(2) * x.size(3) }); // BxCx(NL) (2x1x640)
-        //x = encoder->forward(x);                                        // BxCxN    (2x512x4)
-        //x = x.transpose(1, 2);                                          // BxNxC    (2x4x512)
-        //return x;
-    };
-
-private:
-    torch::nn::Sequential encoder;
-};
-TORCH_MODULE(FeatureEncoder);
-
-
-struct FeaturePredictorImpl : public torch::nn::Module
-{
-    // TODO: Attention? https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
-
-    FeaturePredictorImpl(void) {
-        gru = register_module("feature_preditor_gru", 
-            torch::nn::GRU{ 
-                torch::nn::GRUOptions{ params::feature_size, params::feature_size }
-                    .layers(1)
-                    .bidirectional(false)
-                    .batch_first(true)
-            }
-        );
-    }
-
-    torch::Tensor forward(torch::Tensor observed_features) {
-        const auto initial_hidden = torch::zeros({ 1, params::batch_size, params::feature_size });
-        auto gru_result = gru->forward(observed_features, initial_hidden);
-        auto prediction = gru_result.output;                       // BxNxC
-        prediction = prediction.select(1, prediction.size(1) - 1); // BxC
-        return prediction;
-    };
-
-private:
-    torch::nn::GRU gru{ nullptr };
-};
-TORCH_MODULE(FeaturePredictor);
-
-
-struct RepresentationLearnerImpl : public torch::nn::Module
-{
-    RepresentationLearnerImpl(void) {
-        const auto feature_count = params::n_observations + params::n_predictions * (params::n_positive + params::n_negative);
-
-        register_module("feature encoder", feature_encoder);
-        register_module("feature predictor", feature_predictor);
-    };
-
-    std::tuple<double, double> forward_fit(
-        torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
-        torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
-        torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
-    {
-        auto past_features     = feature_encoder->forward(past_observations); // BxCxN (2x512x4)
-        auto positive_features = feature_encoder->forward(future_positives);  // BxCxN (2x512x1)
-        auto negative_features = feature_encoder->forward(future_negatives);  // BxCxN (2x512x9)
-        std::cout << "past_features: "     << past_features.sizes()     << std::endl;
-        std::cout << "positive_features: " << positive_features.sizes() << std::endl;
-        std::cout << "negative_features: " << negative_features.sizes() << std::endl;
-
-        auto prediction = feature_predictor->forward(past_features);      // BxNxC
-        std::cout << "prediction: " << prediction.sizes() << std::endl;
-
-
-
-        auto accuracy = 1.0;
-        auto info_nce = -0.5;
-        /*
-            # TODO - optimized back - prop with K.categorical_cross_entropy() ?
-            z, z_hat = inputs
-            # z.shape() = (B, neg + 1, T, pred_steps, dim_z)
-            z_hat = K.expand_dims(z_hat, axis = 1)  # add pos / neg example axis
-            # z_pred.shape() = (B, 1, T, pred_steps, dim_z)
-            logits = K.sum(z * z_hat, axis = -1)  # dot product
-            # logits.shape() = (B, neg + 1, T, pred_steps)
-            log_ll = logits[:, 0, ...] - tf.math.reduce_logsumexp(logits, axis = 1)
-            # log_ll.shape() = (B, T, pred_steps)
-            loss = -K.mean(log_ll, axis = [1, 2])
-            # calculate prediction accuracy
-            acc = K.cast(K.equal(K.argmax(logits, axis = 1), 0), 'float32')
-            acc = K.mean(acc, axis = [0, 1])
-        */
-
-        return std::make_tuple(accuracy, info_nce);
-    };
-
-    void forward_predict(void) {
-
-    }
-
-private:
-    FeatureEncoder feature_encoder{};
-    FeaturePredictor feature_predictor{};
-};
-TORCH_MODULE(RepresentationLearner);
-
-
-class RandomRange
-{
-    // https://stackoverflow.com/questions/288739/generate-random-numbers-uniformly-over-an-entire-range
-public:
-    RandomRange(const int range_min, const int range_max) :
-        random_generator(std::mt19937{ std::random_device{}() }),
-        rand_int(range_min, range_max),
-        range_min(range_min), range_max(range_max) {}
-
-    RandomRange(const RandomRange &random_range) :
-        random_generator(std::mt19937{ std::random_device{}() }),
-        rand_int(random_range.range_min, random_range.range_max),
-        range_min(random_range.range_min), range_max(random_range.range_max) {}
-
-    int get(void) {
-        return rand_int(random_generator);
-    }
-
-private:
-    int range_min;
-    int range_max;
-    std::mt19937 random_generator;
-    std::uniform_int_distribution<int> rand_int;
-};
-
-struct Batch {
-    torch::Tensor past_observations;   // BxCxNxL (2x3x4x160)
-    torch::Tensor future_positives;    // BxCxNxL (2x3x(1x1)x160)
-    torch::Tensor future_negatives;    // BxCxNxL (2x3x(1x9)x160)
-
-    Batch(const int batch_size, RandomRange *random_range, const Intervals &intervals) :
-        past_observations(torch::empty({ batch_size, 3, params::n_observations, params::feature_size })),
-        future_positives(torch::empty({ batch_size, 3, params::n_predictions * params::n_positive, params::feature_size })),
-        future_negatives(torch::empty({ batch_size, 3, params::n_predictions * params::n_negative, params::feature_size }))
-    {
-        for (auto batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
-            const auto time_index = random_range->get();
-
-            for (auto obs_idx = 0; obs_idx < params::n_observations; ++obs_idx) {
-                const auto first_time_idx = time_index - (params::n_observations - obs_idx) * params::feature_size;
-                const auto first_price = intervals.rows[first_time_idx].last_price;
-
-                for (auto feature_idx = 0; feature_idx < params::feature_size; ++feature_idx) {
-                    const auto row = &intervals.rows[(int) ((long) first_time_idx + feature_idx)];
-                    const auto price_log = std::log2f(row->last_price / first_price);
-
-                    past_observations[batch_idx][params::ch_price][obs_idx][feature_idx] = price_log;
-                    past_observations[batch_idx][params::ch_buy_volume][obs_idx][feature_idx] = row->vol_buy;
-                    past_observations[batch_idx][params::ch_sell_volume][obs_idx][feature_idx] = row->vol_sell;
-                }
-            }
-
-            for (auto pred_idx = 0; pred_idx < params::n_predictions * params::n_positive; ++pred_idx) {
-                const auto first_time_idx = time_index + pred_idx * params::feature_size;
-                const auto first_price = intervals.rows[first_time_idx].last_price;
-
-                for (auto feature_idx = 0; feature_idx < params::feature_size; ++feature_idx) {
-                    const auto row = &intervals.rows[(int) ((long) first_time_idx + feature_idx)];
-                    const auto price_log = std::log2f(row->last_price / first_price);
-
-                    future_positives[batch_idx][params::ch_price][pred_idx][feature_idx] = price_log;
-                    future_positives[batch_idx][params::ch_buy_volume][pred_idx][feature_idx] = row->vol_buy;
-                    future_positives[batch_idx][params::ch_sell_volume][pred_idx][feature_idx] = row->vol_sell;
-                }
-            }
-
-            for (auto pred_idx = 0; pred_idx < params::n_predictions * params::n_negative; ++pred_idx) {
-                const auto random_index = random_range->get();
-                const auto first_price = intervals.rows[random_index].last_price;
-
-                for (auto feature_idx = 0; feature_idx < params::feature_size; ++feature_idx) {
-                    const auto row = &intervals.rows[(int) ((long) random_index + feature_idx)];
-                    const auto price_log = std::log2f(row->last_price / first_price);
-
-                    future_negatives[batch_idx][params::ch_price][pred_idx][feature_idx] = price_log;
-                    future_negatives[batch_idx][params::ch_buy_volume][pred_idx][feature_idx] = row->vol_buy;
-                    future_negatives[batch_idx][params::ch_sell_volume][pred_idx][feature_idx] = row->vol_sell;
-                }
-            }
-        }
-
-        Utils::save_tensor(past_observations, "past_observations.tensor");
-        Utils::save_tensor(future_positives,  "future_positives.tensor");
-        Utils::save_tensor(future_negatives,  "future_negatives.tensor");
-    }
-};
-
-
-class TradeDataset : public torch::data::BatchDataset<TradeDataset, Batch, c10::ArrayRef<size_t>>
-{
-public:
-    TradeDataset(std::unique_ptr<Intervals> intervals) : 
-        intervals(*intervals), 
-        random_index(params::n_observations * params::feature_size, (int) intervals->rows.size() - params::n_predictions * params::feature_size) {}
-
-    Batch get_batch(c10::ArrayRef<size_t> request) {
-        const auto batch_size = (int) request.size();
-        //const auto time_index = random_index.get();
-        return Batch{ batch_size, &random_index, intervals };
-    }
-
-    c10::optional<size_t> size(void) const {
-        return params::batches_per_epoch * params::batch_size;
-    }
-
-private:
-    RandomRange random_index;
-    Intervals intervals;
-
-    //void reset(void) {}
-    //void save(torch::serialize::OutputArchive& archive) const {}
-    //void load(torch::serialize::InputArchive& archive) {}
-};
 
 
 int main() {
@@ -340,7 +34,7 @@ int main() {
 
     auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
         std::move(dataset),
-        torch::data::DataLoaderOptions().batch_size(params::batch_size));
+        torch::data::DataLoaderOptions().batch_size(BitSim::batch_size));
 
     auto optimizer = torch::optim::Adam{ model->parameters(), torch::optim::AdamOptions(1e-3) };
 
@@ -353,8 +47,8 @@ int main() {
             model->zero_grad();
 
             auto past_observations = batch.past_observations;
-            auto future_positives  = batch.future_positives; // torch::ones({ params::batch_size, 1, params::n_positive,     params::segment_length });
-            auto future_negatives  = batch.future_negatives; // torch::ones({ params::batch_size, 1, params::n_negative,     params::segment_length });
+            auto future_positives  = batch.future_positives; // torch::ones({ BitSim::batch_size, 1, BitSim::n_positive,     BitSim::observation_length });
+            auto future_negatives  = batch.future_negatives; // torch::ones({ BitSim::batch_size, 1, BitSim::n_negative,     BitSim::observation_length });
 
             //std::cout << "past_observations: " << past_observations.sizes() << std::endl;
             //std::cout << "future_positives: " << future_positives.sizes() << std::endl;
@@ -388,17 +82,17 @@ int main() {
     //auto t = torch::from_blob(a.data(), { 2, 3 }, opts).clone();
     //std::cout << t << std::endl;
 
-    std::array<float, params::segment_length> price;
-    std::array<float, params::segment_length> vol_buy;
-    std::array<float, params::segment_length> vol_sell;
+    std::array<float, BitSim::observation_length> price;
+    std::array<float, BitSim::observation_length> vol_buy;
+    std::array<float, BitSim::observation_length> vol_sell;
 
     torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
     torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
     torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
 
-    auto past_observations = torch::ones({ params::batch_size, 1, params::n_observations, params::segment_length });
-    auto future_positives = torch::ones({ params::batch_size, 1, params::n_positive,     params::segment_length });
-    auto future_negatives = torch::ones({ params::batch_size, 1, params::n_negative,     params::segment_length });
+    auto past_observations = torch::ones({ BitSim::batch_size, 1, BitSim::n_observations, BitSim::observation_length });
+    auto future_positives = torch::ones({ BitSim::batch_size, 1, BitSim::n_positive,     BitSim::observation_length });
+    auto future_negatives = torch::ones({ BitSim::batch_size, 1, BitSim::n_negative,     BitSim::observation_length });
 
 
 Seq2seq https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html

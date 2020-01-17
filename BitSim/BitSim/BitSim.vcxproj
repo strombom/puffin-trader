@@ -170,6 +170,8 @@
     <ClCompile Include="..\..\BitLib\Utils.cpp" />
     <ClCompile Include="BitBaseClient.cpp" />
     <ClCompile Include="BitSim.cpp" />
+    <ClCompile Include="FE_DataLoader.cpp" />
+    <ClCompile Include="FE_Model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
@@ -180,6 +182,9 @@
     <ClInclude Include="..\..\BitLib\Logger.h" />
     <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
+    <ClInclude Include="BitSim.h" />
+    <ClInclude Include="FE_DataLoader.h" />
+    <ClInclude Include="FE_Model.h" />
     <ClInclude Include="json.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
