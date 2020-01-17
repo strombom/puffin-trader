@@ -22,6 +22,10 @@ namespace params {
     constexpr auto n_negative = 3;
 
     constexpr auto feature_size = 256;
+
+    const auto ch_price = 0;
+    const auto ch_buy_volume = 1;
+    const auto ch_sell_volume = 2;
 }
 
 /*
@@ -229,24 +233,15 @@ private:
 
 struct Batch {
     torch::Tensor past_observations;   // BxCxNxL (2x3x4x160)
-    torch::Tensor future_positives;    // BxCxNxL (2x3x1x160)
-    torch::Tensor future_negatives;    // BxCxNxL (2x3x9x160)
+    torch::Tensor future_positives;    // BxCxNxL (2x3x(1x1)x160)
+    torch::Tensor future_negatives;    // BxCxNxL (2x3x(1x9)x160)
 
     Batch(const int batch_size, RandomRange *random_range, const Intervals &intervals) :
         past_observations(torch::empty({ batch_size, 3, params::n_observations, params::feature_size })),
         future_positives(torch::empty({ batch_size, 3, params::n_predictions * params::n_positive, params::feature_size })),
         future_negatives(torch::empty({ batch_size, 3, params::n_predictions * params::n_negative, params::feature_size }))
     {
-        // Channels
-        // 1 Price
-        // 2 Buy volume
-        // 3 Sell volume
-        const auto ch_price = 0;
-        const auto ch_buy_volume = 1;
-        const auto ch_sell_volume = 2;
-
         for (auto batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
-
             const auto time_index = random_range->get();
 
             for (auto obs_idx = 0; obs_idx < params::n_observations; ++obs_idx) {
@@ -254,90 +249,48 @@ struct Batch {
                 const auto first_price = intervals.rows[first_time_idx].last_price;
 
                 for (auto feature_idx = 0; feature_idx < params::feature_size; ++feature_idx) {
-                    const auto row = &intervals.rows[(int) (first_time_idx + feature_idx)];
+                    const auto row = &intervals.rows[(int) ((long) first_time_idx + feature_idx)];
                     const auto price_log = std::log2f(row->last_price / first_price);
 
-                    past_observations[batch_idx][ch_price][obs_idx][feature_idx] = price_log;
-                    past_observations[batch_idx][ch_buy_volume][obs_idx][feature_idx] = row->vol_buy;
-                    past_observations[batch_idx][ch_sell_volume][obs_idx][feature_idx] = row->vol_sell;
+                    past_observations[batch_idx][params::ch_price][obs_idx][feature_idx] = price_log;
+                    past_observations[batch_idx][params::ch_buy_volume][obs_idx][feature_idx] = row->vol_buy;
+                    past_observations[batch_idx][params::ch_sell_volume][obs_idx][feature_idx] = row->vol_sell;
                 }
             }
 
-
-            for (auto pred_idx = 0; pred_idx < params::n_predictions; ++pred_idx) {
+            for (auto pred_idx = 0; pred_idx < params::n_predictions * params::n_positive; ++pred_idx) {
                 const auto first_time_idx = time_index + pred_idx * params::feature_size;
                 const auto first_price = intervals.rows[first_time_idx].last_price;
 
                 for (auto feature_idx = 0; feature_idx < params::feature_size; ++feature_idx) {
-                    const auto row = &intervals.rows[(int) (first_time_idx + feature_idx)];
+                    const auto row = &intervals.rows[(int) ((long) first_time_idx + feature_idx)];
                     const auto price_log = std::log2f(row->last_price / first_price);
 
-                    future_positives[batch_idx][ch_price][pred_idx][feature_idx] = price_log;
-                    future_positives[batch_idx][ch_buy_volume][pred_idx][feature_idx] = row->vol_buy;
-                    future_positives[batch_idx][ch_sell_volume][pred_idx][feature_idx] = row->vol_sell;
+                    future_positives[batch_idx][params::ch_price][pred_idx][feature_idx] = price_log;
+                    future_positives[batch_idx][params::ch_buy_volume][pred_idx][feature_idx] = row->vol_buy;
+                    future_positives[batch_idx][params::ch_sell_volume][pred_idx][feature_idx] = row->vol_sell;
                 }
             }
 
-            /*
-            for (auto pred_idx = 0; pred_idx < params::n_predictions; ++pred_idx) {
-                const auto first_time_idx = time_index + pred_idx * params::feature_size;
-                const auto first_price = intervals.rows[first_time_idx].last_price;
+            for (auto pred_idx = 0; pred_idx < params::n_predictions * params::n_negative; ++pred_idx) {
+                const auto random_index = random_range->get();
+                const auto first_price = intervals.rows[random_index].last_price;
 
                 for (auto feature_idx = 0; feature_idx < params::feature_size; ++feature_idx) {
-                    const auto row = &intervals.rows[(int) (first_time_idx + feature_idx)];
+                    const auto row = &intervals.rows[(int) ((long) random_index + feature_idx)];
                     const auto price_log = std::log2f(row->last_price / first_price);
 
-                    future_negatives[batch_idx][ch_price][pred_idx][feature_idx] = price_log;
-                    future_negatives[batch_idx][ch_buy_volume][pred_idx][feature_idx] = row->vol_buy;
-                    future_negatives[batch_idx][ch_sell_volume][pred_idx][feature_idx] = row->vol_sell;
+                    future_negatives[batch_idx][params::ch_price][pred_idx][feature_idx] = price_log;
+                    future_negatives[batch_idx][params::ch_buy_volume][pred_idx][feature_idx] = row->vol_buy;
+                    future_negatives[batch_idx][params::ch_sell_volume][pred_idx][feature_idx] = row->vol_sell;
                 }
             }
-            */
         }
 
-        Utils::save_tensor(past_observations, "x.zip");
-
-        auto a = 1;
-
-
-        /*
-        logger.info("idx (%d), price (%f), price_log (%f), buy (%f), sell (%f)", feature_idx, price, price_log, row->vol_buy, row->vol_sell);
-
-        https://pytorch.org/cppdocs/notes/tensor_basics.html
-
-        torch::Tensor foo = torch::rand({12, 12});
-
-        // assert foo is 2-dimensional and holds floats.
-        auto foo_a = foo.accessor<float,2>();
-        float trace = 0;
-
-        for(int i = 0; i < foo_a.size(0); i++) {
-            // use the accessor foo_a to get tensor data.
-            trace += foo_a[i][i];
-        }
-        */
-
+        Utils::save_tensor(past_observations, "past_observations.tensor");
+        Utils::save_tensor(future_positives,  "future_positives.tensor");
+        Utils::save_tensor(future_negatives,  "future_negatives.tensor");
     }
-
-    /*
-        //auto a = std::array<float, 6>{ 1.0f, 2.0f, 3.0f, 1.1f, 1.2f, 1.3f };
-        //auto opts = torch::TensorOptions().dtype(torch::kFloat32);
-        //torch::Tensor t = torch::from_blob(t.data(), { 3 }, opts).to(torch::kInt64);
-        //auto t = torch::from_blob(a.data(), { 2, 3 }, opts).clone();
-        //std::cout << t << std::endl;
-
-    std::array<float, params::segment_length> price;
-    std::array<float, params::segment_length> vol_buy;
-    std::array<float, params::segment_length> vol_sell;
-
-    torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
-    torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
-    torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
-
-    auto past_observations = torch::ones({ params::batch_size, 1, params::n_observations, params::segment_length });
-    auto future_positives = torch::ones({ params::batch_size, 1, params::n_positive,     params::segment_length });
-    auto future_negatives = torch::ones({ params::batch_size, 1, params::n_negative,     params::segment_length });
-    */
 };
 
 
@@ -428,6 +381,26 @@ int main() {
 
 
 /*
+
+    //auto a = std::array<float, 6>{ 1.0f, 2.0f, 3.0f, 1.1f, 1.2f, 1.3f };
+    //auto opts = torch::TensorOptions().dtype(torch::kFloat32);
+    //torch::Tensor t = torch::from_blob(t.data(), { 3 }, opts).to(torch::kInt64);
+    //auto t = torch::from_blob(a.data(), { 2, 3 }, opts).clone();
+    //std::cout << t << std::endl;
+
+    std::array<float, params::segment_length> price;
+    std::array<float, params::segment_length> vol_buy;
+    std::array<float, params::segment_length> vol_sell;
+
+    torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
+    torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
+    torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
+
+    auto past_observations = torch::ones({ params::batch_size, 1, params::n_observations, params::segment_length });
+    auto future_positives = torch::ones({ params::batch_size, 1, params::n_positive,     params::segment_length });
+    auto future_negatives = torch::ones({ params::batch_size, 1, params::n_negative,     params::segment_length });
+
+
 Seq2seq https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
 https://pytorch.org/cppdocs/frontend.html
 https://pytorch.org/tutorials/advanced/cpp_frontend.html
