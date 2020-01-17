@@ -6,7 +6,6 @@
 
 #include "BitBaseClient.h"
 #include "Logger.h"
-#include "Utils.h"
 #include "FE_DataLoader.h"
 #include "FE_Model.h"
 

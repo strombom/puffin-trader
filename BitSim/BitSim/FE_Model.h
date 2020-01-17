@@ -41,27 +41,18 @@ struct TimeDistributedImpl : public torch::nn::Module
         }
     }
 
-    torch::Tensor forward(torch::Tensor x) {
-        auto output = torch::Tensor{};
-        for (auto layer : *layers) {
-            //auto output_t = layer->forward();
-        }
-        // x                                                            // BxCxNxL  (2x1x4x160)
-        //x = x.reshape({ x.size(0), x.size(1), x.size(2) * x.size(3) }); // BxCx(NL) (2x1x640)
-        //x = encoder->forward(x);                                        // BxCxN    (2x512x4)
-        //x = x.transpose(1, 2);                                          // BxNxC    (2x4x512)
-        return x;
-    };
+    torch::Tensor forward(torch::Tensor x);
 
 private:
     torch::nn::ModuleList layers;
 };
 TORCH_MODULE(TimeDistributed);
 
+
 struct FeatureEncoderImpl : public torch::nn::Module
 {
-    FeatureEncoderImpl(void) {
-        encoder = register_module("feature_encoder_cnn", torch::nn::Sequential{
+    FeatureEncoderImpl(const std::string &name = "feature_encoder_cnn") :
+        encoder(register_module(name, torch::nn::Sequential{
             torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::n_channels, BitSim::feature_size, 10}.stride(5).padding(3).with_bias(false)},
             torch::nn::BatchNorm{BitSim::feature_size},
             torch::nn::Functional{torch::relu},
@@ -77,22 +68,9 @@ struct FeatureEncoderImpl : public torch::nn::Module
             torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).with_bias(false)},
             torch::nn::BatchNorm{BitSim::feature_size},
             torch::nn::Functional{torch::relu}
-            });
-    }
-
-    torch::Tensor forward(torch::Tensor x) {
-        x = encoder->forward(x);
-        return x;
-
-        //for (auto encoder : encoders) {
-
-        //}
-        // x                                                              // BxCxNxL  (2x1x4x160)
-        //x = x.reshape({ x.size(0), x.size(1), x.size(2) * x.size(3) }); // BxCx(NL) (2x1x640)
-        //x = encoder->forward(x);                                        // BxCxN    (2x512x4)
-        //x = x.transpose(1, 2);                                          // BxNxC    (2x4x512)
-        //return x;
-    };
+            })) {}
+    
+    torch::Tensor forward(torch::Tensor x);
 
 private:
     torch::nn::Sequential encoder;
@@ -102,86 +80,40 @@ TORCH_MODULE(FeatureEncoder);
 
 struct FeaturePredictorImpl : public torch::nn::Module
 {
-    // TODO: Attention? https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
-
-    FeaturePredictorImpl(void) {
-        gru = register_module("feature_preditor_gru",
+    FeaturePredictorImpl(const std::string &name = "feature_preditor_gru") :
+        gru(register_module(name,
             torch::nn::GRU{
                 torch::nn::GRUOptions{ BitSim::feature_size, BitSim::feature_size }
                     .layers(1)
                     .bidirectional(false)
                     .batch_first(true)
             }
-        );
-    }
+        )) {}
 
-    torch::Tensor forward(torch::Tensor observed_features) {
-        const auto initial_hidden = torch::zeros({ 1, BitSim::batch_size, BitSim::feature_size });
-        auto gru_result = gru->forward(observed_features, initial_hidden);
-        auto prediction = gru_result.output;                       // BxNxC
-        prediction = prediction.select(1, prediction.size(1) - 1); // BxC
-        return prediction;
-    };
+    torch::Tensor forward(torch::Tensor observed_features);
 
 private:
-    torch::nn::GRU gru{ nullptr };
+    torch::nn::GRU gru;
 };
 TORCH_MODULE(FeaturePredictor);
 
 
 struct RepresentationLearnerImpl : public torch::nn::Module
 {
-    RepresentationLearnerImpl(void) {
-        const auto feature_count = BitSim::n_observations + BitSim::n_predictions * (BitSim::n_positive + BitSim::n_negative);
-
-        register_module("feature encoder", feature_encoder);
-        register_module("feature predictor", feature_predictor);
-    };
+    RepresentationLearnerImpl(const std::string& encoder_name = "feature encoder", 
+                              const std::string& predictor_name = "feature predictor") :
+        feature_encoder(register_module(encoder_name, FeatureEncoder{})),
+        feature_predictor(register_module(predictor_name, FeaturePredictor{})) {}
 
     std::tuple<double, double> forward_fit(
         torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
         torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
-        torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
-    {
-        auto past_features = feature_encoder->forward(past_observations); // BxCxN (2x512x4)
-        auto positive_features = feature_encoder->forward(future_positives);  // BxCxN (2x512x1)
-        auto negative_features = feature_encoder->forward(future_negatives);  // BxCxN (2x512x9)
-        std::cout << "past_features: " << past_features.sizes() << std::endl;
-        std::cout << "positive_features: " << positive_features.sizes() << std::endl;
-        std::cout << "negative_features: " << negative_features.sizes() << std::endl;
+        torch::Tensor future_negatives);   // BxCxNxL (2x1x9x160)
 
-        auto prediction = feature_predictor->forward(past_features);      // BxNxC
-        std::cout << "prediction: " << prediction.sizes() << std::endl;
-
-
-
-        auto accuracy = 1.0;
-        auto info_nce = -0.5;
-        /*
-            # TODO - optimized back - prop with K.categorical_cross_entropy() ?
-            z, z_hat = inputs
-            # z.shape() = (B, neg + 1, T, pred_steps, dim_z)
-            z_hat = K.expand_dims(z_hat, axis = 1)  # add pos / neg example axis
-            # z_pred.shape() = (B, 1, T, pred_steps, dim_z)
-            logits = K.sum(z * z_hat, axis = -1)  # dot product
-            # logits.shape() = (B, neg + 1, T, pred_steps)
-            log_ll = logits[:, 0, ...] - tf.math.reduce_logsumexp(logits, axis = 1)
-            # log_ll.shape() = (B, T, pred_steps)
-            loss = -K.mean(log_ll, axis = [1, 2])
-            # calculate prediction accuracy
-            acc = K.cast(K.equal(K.argmax(logits, axis = 1), 0), 'float32')
-            acc = K.mean(acc, axis = [0, 1])
-        */
-
-        return std::make_tuple(accuracy, info_nce);
-    };
-
-    void forward_predict(void) {
-
-    }
+    void forward_predict(void);
 
 private:
-    FeatureEncoder feature_encoder{};
-    FeaturePredictor feature_predictor{};
+    FeatureEncoder feature_encoder;
+    FeaturePredictor feature_predictor;
 };
 TORCH_MODULE(RepresentationLearner);
