@@ -9,42 +9,21 @@
 #pragma warning(pop)
 
 
-/*
-class TimeDistributed(nn.Module):
-    def __init__(self, layer, time_steps, *args):
-        super(TimeDistributed, self).__init__()
-
-        self.layers = nn.ModuleList([layer(*args) for i in range(time_steps)])
-
-    def forward(self, x):
-
-        batch_size, time_steps, C, H, W = x.size()
-        output = torch.tensor([])
-        for i in range(time_steps):
-          output_t = self.layers[i](x[:, i, :, :, :])
-          output_t  = y.unsqueeze(1)
-          output = torch.cat((output, output_t ), 1)
-        return output
-
-x = torch.rand(20, 100, 1, 5, 9)
-model = TimeDistributed(nn.Conv2d, time_steps = 100, 1, 8, (3, 3) , 2,   1 ,True)
-output = model(x)
-*/
-
-
 struct TimeDistributedImpl : public torch::nn::Module
 {
-    TimeDistributedImpl(torch::nn::Module module, const int time_steps)
+    TimeDistributedImpl(torch::nn::Module module, const int time_steps, const std::string& name = "time distributed") :
+        module(module), time_steps(time_steps)
     {
-        for (int idx = 0; idx < time_steps; ++idx) {
-            layers->push_back(module);
-        }
+        //for (int idx = 0; idx < time_steps; ++idx) {
+            //layers->push_back(module);
+        //}
     }
 
     torch::Tensor forward(torch::Tensor x);
 
 private:
-    torch::nn::ModuleList layers;
+    torch::nn::Module module;
+    const int time_steps;
 };
 TORCH_MODULE(TimeDistributed);
 
@@ -53,21 +32,21 @@ struct FeatureEncoderImpl : public torch::nn::Module
 {
     FeatureEncoderImpl(const std::string &name = "feature_encoder_cnn") :
         encoder(register_module(name, torch::nn::Sequential{
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::n_channels, BitSim::feature_size, 10}.stride(5).padding(3).with_bias(false)},
-            torch::nn::BatchNorm{BitSim::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 8}.stride(4).padding(2).with_bias(false)},
-            torch::nn::BatchNorm{BitSim::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).with_bias(false)},
-            torch::nn::BatchNorm{BitSim::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).with_bias(false)},
-            torch::nn::BatchNorm{BitSim::feature_size},
-            torch::nn::Functional{torch::relu},
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).with_bias(false)},
-            torch::nn::BatchNorm{BitSim::feature_size},
-            torch::nn::Functional{torch::relu}
+            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::n_channels, BitSim::feature_size, 10}.stride(5).padding(3).bias(false)},
+            torch::nn::BatchNorm1d{BitSim::feature_size},
+            torch::nn::ReLU6{},
+            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 8}.stride(4).padding(2).bias(false)},
+            torch::nn::BatchNorm1d{BitSim::feature_size},
+            torch::nn::ReLU6{},
+            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).bias(false)},
+            torch::nn::BatchNorm1d{BitSim::feature_size},
+            torch::nn::ReLU6{},
+            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).bias(false)},
+            torch::nn::BatchNorm1d{BitSim::feature_size},
+            torch::nn::ReLU6{},
+            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).bias(false)},
+            torch::nn::BatchNorm1d{BitSim::feature_size},
+            torch::nn::ReLU6{}
             })) {}
     
     torch::Tensor forward(torch::Tensor x);

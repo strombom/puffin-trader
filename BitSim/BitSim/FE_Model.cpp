@@ -2,11 +2,42 @@
 #include "FE_Model.h"
 
 
+/*
+class TimeDistributed(nn.Module):
+    def __init__(self, layer, time_steps, *args):
+        super(TimeDistributed, self).__init__()
+
+        self.layers = nn.ModuleList([layer(*args) for i in range(time_steps)])
+
+    def forward(self, x):
+
+        batch_size, time_steps, C, H, W = x.size()
+        output = torch.tensor([])
+        for i in range(time_steps):
+          output_t = self.layers[i](x[:, i, :, :, :])
+          output_t  = y.unsqueeze(1)
+          output = torch.cat((output, output_t ), 1)
+        return output
+
+x = torch.rand(20, 100, 1, 5, 9)
+model = TimeDistributed(nn.Conv2d, time_steps = 100, 1, 8, (3, 3) , 2,   1 ,True)
+output = model(x)
+*/
+
+
 torch::Tensor TimeDistributedImpl::forward(torch::Tensor x) {
+    
+    std::cout << "x " << x.sizes() << std::endl;
+
+    /*
     auto output = torch::Tensor{};
+    auto idx = 0;
     for (auto layer : *layers) {
-        //auto output_t = layer->forward();
+        auto output_t = layer-> (x);
+
+        ++idx;
     }
+    */
     // x                                                            // BxCxNxL  (2x1x4x160)
     //x = x.reshape({ x.size(0), x.size(1), x.size(2) * x.size(3) }); // BxCx(NL) (2x1x640)
     //x = encoder->forward(x);                                        // BxCxN    (2x512x4)
@@ -16,6 +47,10 @@ torch::Tensor TimeDistributedImpl::forward(torch::Tensor x) {
 
 
 torch::Tensor FeatureEncoderImpl::forward(torch::Tensor x) {
+
+    std::cout << "FeatureEncoder.forward " << x.sizes() << std::endl;
+
+
     x = encoder->forward(x);
     return x;
 
@@ -42,10 +77,11 @@ torch::Tensor FeaturePredictorImpl::forward(torch::Tensor observed_features) {
 
 std::tuple<double, double> RepresentationLearnerImpl::forward_fit(
     torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
-    torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
-    torch::Tensor future_negatives)    // BxCxNxL (2x1x9x160)
+    torch::Tensor future_positives,    // BxCxNxL (2x1x(1x1)x160)
+    torch::Tensor future_negatives)    // BxCxNxL (2x1x(1x9)x160)
 {
-    auto past_features = feature_encoder->forward(past_observations); // BxCxN (2x512x4)
+    std::cout << "past_observations: " << past_observations.sizes() << std::endl;
+    auto past_features     = feature_encoder->forward(past_observations); // BxCxN (2x512x4)
     auto positive_features = feature_encoder->forward(future_positives);  // BxCxN (2x512x1)
     auto negative_features = feature_encoder->forward(future_negatives);  // BxCxN (2x512x9)
     std::cout << "past_features: " << past_features.sizes() << std::endl;

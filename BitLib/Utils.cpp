@@ -1,7 +1,10 @@
 
 #include "Utils.h"
 
+#pragma warning(push, 0)
+#pragma warning(disable: 4146)
 #include <torch/script.h>
+#pragma warning(pop)
 
 
 constexpr auto default_path = "C:\\development\\github\\puffin-trader\\tmp\\";

@@ -53,7 +53,7 @@ int main() {
             //std::cout << "future_positives: " << future_positives.sizes() << std::endl;
             //std::cout << "future_negatives: " << future_negatives.sizes() << std::endl;
 
-            //auto [accuracy, info_nce] = model->forward_fit(past_observations, future_positives, future_negatives);
+            auto [accuracy, info_nce] = model->forward_fit(past_observations, future_positives, future_negatives);
             //std::cout << accuracy << ", " << info_nce << std::endl;
 
             logger.info("main data_loader batch size: %d", 0); // batch.size());
