@@ -9,25 +9,6 @@
 #pragma warning(pop)
 
 
-struct TimeDistributedImpl : public torch::nn::Module
-{
-    TimeDistributedImpl(torch::nn::Module module, const int time_steps, const std::string& name = "time distributed") :
-        module(module), time_steps(time_steps)
-    {
-        //for (int idx = 0; idx < time_steps; ++idx) {
-            //layers->push_back(module);
-        //}
-    }
-
-    torch::Tensor forward(torch::Tensor x);
-
-private:
-    torch::nn::Module module;
-    const int time_steps;
-};
-TORCH_MODULE(TimeDistributed);
-
-
 struct FeatureEncoderImpl : public torch::nn::Module
 {
     FeatureEncoderImpl(const std::string &name = "feature_encoder_cnn") :

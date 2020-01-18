@@ -3,7 +3,8 @@
 #include "Utils.h"
 
 
-Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request) {
+Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
+{
     const auto batch_size = (int)request.size();
     auto batch = Batch{ batch_size };
 
@@ -58,6 +59,7 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request) {
     return batch;
 }
 
-c10::optional<size_t> TradeDataset::size(void) const {
+c10::optional<size_t> TradeDataset::size(void) const
+{
     return BitSim::batches_per_epoch * BitSim::batch_size;
 }
