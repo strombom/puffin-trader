@@ -28,6 +28,7 @@ torch::Tensor FeaturePredictorImpl::forward(torch::Tensor observed_features)
     auto gru_result = gru->forward(observed_features, initial_hidden);
     auto prediction = gru_result.output;                       // BxNxC
     prediction = prediction.select(1, prediction.size(1) - 1); // BxC
+    prediction = prediction.reshape({ prediction.size(0), 1, prediction.size(1) }); // Bx1xC
     return prediction;
 };
 
@@ -37,6 +38,32 @@ std::tuple<double, double> RepresentationLearnerImpl::forward_fit(
     torch::Tensor future_positives,    // BxCxNxL (2x1x(1x1)x160)
     torch::Tensor future_negatives)    // BxCxNxL (2x1x(1x9)x160)
 {
+    /*
+    auto a = torch::ones({ 2, 1, 3 });
+    auto b = torch::ones({ 2, 2, 3 });
+
+    a[0][0][0] = 1;
+    a[0][0][1] = 2;
+    a[0][0][2] = 3;
+
+    b[0][0][0] = 1;
+    b[0][0][1] = 2;
+    b[0][0][2] = 3;
+
+    b[0][1][0] = 4;
+    b[0][1][1] = 5;
+    b[0][1][2] = 6;
+
+
+    std::cout << "a: " << std::endl << a << std::endl;
+    std::cout << "b: " << std::endl << b << std::endl;
+
+    auto c = torch::einsum("bij,bkj->bkj", { a, b });
+    //auto c = torch::mm(a, b.transpose(0, 1));
+
+    std::cout << "c: " << std::endl << c << std::endl;
+    */
+
     std::cout << "past_observations: " << past_observations.sizes() << std::endl;
     auto past_features     = feature_encoder->forward(past_observations); // BxCxN (2x512x4)
     auto positive_features = feature_encoder->forward(future_positives);  // BxCxN (2x512x1)
@@ -48,24 +75,30 @@ std::tuple<double, double> RepresentationLearnerImpl::forward_fit(
     auto prediction = feature_predictor->forward(past_features);      // BxNxC
     std::cout << "prediction: " << prediction.sizes() << std::endl;
 
+    auto target = torch::cat({ positive_features, negative_features }, 1);
+    std::cout << "target: " << target.sizes() << std::endl;
+
+    auto logits = torch::einsum("bij,bkj->bkj", { prediction, target }); // Dot product
+    std::cout << "logits: " << logits.sizes() << std::endl;
+
 
 
     auto accuracy = 1.0;
     auto info_nce = -0.5;
     /*
-        # TODO - optimized back - prop with K.categorical_cross_entropy() ?
-        z, z_hat = inputs
-        # z.shape() = (B, neg + 1, T, pred_steps, dim_z)
-        z_hat = K.expand_dims(z_hat, axis = 1)  # add pos / neg example axis
+        # TODO - optimized back-prop with K.categorical_cross_entropy()?
+        z_targ, z_pred = inputs
+        # z_targ.shape() = (B, neg+1, T, pred_steps, dim_z)
+        z_pred = K.expand_dims(z_pred, axis=1)  # add pos/neg example axis
         # z_pred.shape() = (B, 1, T, pred_steps, dim_z)
-        logits = K.sum(z * z_hat, axis = -1)  # dot product
-        # logits.shape() = (B, neg + 1, T, pred_steps)
-        log_ll = logits[:, 0, ...] - tf.math.reduce_logsumexp(logits, axis = 1)
+        logits = K.sum(z_targ * z_pred, axis=-1)  # dot product
+        # logits.shape() = (B, neg+1, T, pred_steps)
+        log_ll = logits[:, 0, ...] - tf.math.reduce_logsumexp(logits, axis=1)
         # log_ll.shape() = (B, T, pred_steps)
-        loss = -K.mean(log_ll, axis = [1, 2])
+        loss = -K.mean(log_ll, axis=[1, 2])
         # calculate prediction accuracy
-        acc = K.cast(K.equal(K.argmax(logits, axis = 1), 0), 'float32')
-        acc = K.mean(acc, axis = [0, 1])
+        acc = K.cast(K.equal(K.argmax(logits, axis=1), 0), 'float32')
+        acc = K.mean(acc, axis=[0, 1])
     */
 
     return std::make_tuple(accuracy, info_nce);
