@@ -36,10 +36,8 @@ int main() {
         torch::data::DataLoaderOptions().batch_size(BitSim::batch_size));
 
     auto optimizer = torch::optim::Adam{ model->parameters(), torch::optim::AdamOptions(1e-3) };
-
-    auto n_epochs = 10;
-
-    for (auto epoch = 1; epoch <= n_epochs; ++epoch) {
+    
+    for (auto epoch = 1; epoch <= BitSim::batches_per_epoch; ++epoch) {
 
         for (auto& batch : *data_loader) {
 
@@ -53,10 +51,14 @@ int main() {
             //std::cout << "future_positives: " << future_positives.sizes() << std::endl;
             //std::cout << "future_negatives: " << future_negatives.sizes() << std::endl;
 
-            auto [accuracy, info_nce] = model->forward_fit(past_observations, future_positives, future_negatives);
+            auto [info_nce_loss, accuracy] = model->forward_fit(past_observations, future_positives, future_negatives);
             //std::cout << accuracy << ", " << info_nce << std::endl;
 
-            logger.info("main data_loader batch size: %d", 0); // batch.size());
+            info_nce_loss.backward();
+            optimizer.step();
+
+
+            logger.info("main data_loader loss: %f", info_nce_loss.item().to<double>()); // batch.size());
             //std::cout << std::endl;
 
 

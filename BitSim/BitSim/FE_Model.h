@@ -65,7 +65,7 @@ struct RepresentationLearnerImpl : public torch::nn::Module
         feature_encoder(register_module(encoder_name, FeatureEncoder{})),
         feature_predictor(register_module(predictor_name, FeaturePredictor{})) {}
 
-    std::tuple<double, double> forward_fit(
+    std::tuple<torch::Tensor, double> forward_fit(
         torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
         torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
         torch::Tensor future_negatives);   // BxCxNxL (2x1x9x160)
