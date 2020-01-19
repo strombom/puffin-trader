@@ -24,11 +24,12 @@ torch::Tensor FeatureEncoderImpl::forward(torch::Tensor x)
 torch::Tensor FeaturePredictorImpl::forward(torch::Tensor observed_features)
 {
     // TODO: Attention? https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
-    const auto initial_hidden = torch::zeros({ 1, BitSim::batch_size, BitSim::feature_size });
+    const auto initial_hidden = torch::zeros({ 1, BitSim::batch_size, BitSim::feature_size }).cuda();
     auto gru_result = gru->forward(observed_features, initial_hidden);
     auto prediction = gru_result.output;                       // BxNxC
     prediction = prediction.select(1, prediction.size(1) - 1); // BxC
     prediction = prediction.reshape({ prediction.size(0), 1, prediction.size(1) }); // Bx1xC
+    prediction = sigmoid(prediction);
     return prediction;
 };
 
@@ -81,14 +82,14 @@ std::tuple<torch::Tensor, double> RepresentationLearnerImpl::forward_fit(
     auto logits_all = torch::einsum("bij,bkj->bk", { prediction, target }); // Dot product, sum features
     std::cout << "logits_all: " << logits_all.sizes() << std::endl;
 
-    auto logits_positive = logits_all.select(1, 0); // .unsqueeze(1);
+    auto logits_positive = logits_all.select(1, 0);
     std::cout << "logits_positive: " << logits_positive.sizes() << std::endl;
 
     auto logits_ratio = logits_positive - logits_all.logsumexp(1);
     std::cout << "logits_ratio: " << logits_ratio.sizes() << std::endl;
     std::cout << logits_ratio << std::endl;
 
-    auto info_nce_loss = -logits_ratio.mean(); // [0] .item().to<double>();
+    auto info_nce_loss = -logits_ratio.mean();
     std::cout << "info_nce_loss: " << info_nce_loss << std::endl;
 
     auto accuracy = 1.0;

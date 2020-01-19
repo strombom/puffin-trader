@@ -22,7 +22,7 @@ int main() {
     constexpr auto symbol = "XBTUSD";
     constexpr auto exchange = "BITMEX";
     constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } + std::chrono::minutes{ 0 };
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 06 / 03) + std::chrono::hours{ 0 };
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 07 / 01) + std::chrono::hours{ 0 };
     constexpr auto interval = std::chrono::seconds{ 10s };
 
     auto intervals = bitbase_client.get_intervals(symbol, exchange, timestamp_start, timestamp_end, interval);
@@ -30,18 +30,19 @@ int main() {
     auto dataset = TradeDataset{ std::move(intervals) };
     
     auto model = RepresentationLearner{};
+    model->to(c10::DeviceType::CUDA);
 
     auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
         std::move(dataset),
-        torch::data::DataLoaderOptions().batch_size(BitSim::batch_size));
+        torch::data::DataLoaderOptions().batch_size(BitSim::batch_size).workers(10));
 
     auto optimizer = torch::optim::Adam{ model->parameters(), torch::optim::AdamOptions(1e-3) };
     
-    for (auto epoch = 1; epoch <= BitSim::batches_per_epoch; ++epoch) {
+    for (auto epoch = 1; epoch <= BitSim::n_epochs; ++epoch) {
 
         for (auto& batch : *data_loader) {
 
-            model->zero_grad();
+            optimizer.zero_grad();
 
             auto past_observations = batch.past_observations;
             auto future_positives  = batch.future_positives; // torch::ones({ BitSim::batch_size, 1, BitSim::n_positive,     BitSim::observation_length });

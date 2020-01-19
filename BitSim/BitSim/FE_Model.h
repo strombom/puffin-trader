@@ -27,7 +27,7 @@ struct FeatureEncoderImpl : public torch::nn::Module
             torch::nn::ReLU6{},
             torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).bias(false)},
             torch::nn::BatchNorm1d{BitSim::feature_size},
-            torch::nn::ReLU6{}
+            torch::nn::Sigmoid{}
             })) {}
     
     torch::Tensor forward(torch::Tensor x);
@@ -48,12 +48,14 @@ struct FeaturePredictorImpl : public torch::nn::Module
                     .bidirectional(false)
                     .batch_first(true)
             }
-        )) {}
+        )),
+        sigmoid(register_module(name + "_sigmoid", torch::nn::Sigmoid{})) {}
 
     torch::Tensor forward(torch::Tensor observed_features);
 
 private:
     torch::nn::GRU gru;
+    torch::nn::Sigmoid sigmoid;
 };
 TORCH_MODULE(FeaturePredictor);
 
