@@ -72,6 +72,9 @@
     <ClCompile Include="FE_Model.cpp">
       <Filter>Source Files\FeatureEncoder</Filter>
     </ClCompile>
+    <ClCompile Include="FE_Scheduler.cpp">
+      <Filter>Source Files\FeatureEncoder</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="json.hpp">
@@ -109,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="BitSim.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FE_Scheduler.h">
+      <Filter>Header Files\FeatureEncoder</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

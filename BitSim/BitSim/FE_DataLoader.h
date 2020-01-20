@@ -42,9 +42,9 @@ struct Batch {
     torch::Tensor future_negatives;    // BxCxNxL (2x3x(1x9)x160)
 
     Batch(const int batch_size) :
-        past_observations(torch::empty({ batch_size, 3, BitSim::n_observations,                     BitSim::observation_length }).cuda()),
-        future_positives (torch::empty({ batch_size, 3, BitSim::n_predictions * BitSim::n_positive, BitSim::observation_length }).cuda()),
-        future_negatives (torch::empty({ batch_size, 3, BitSim::n_predictions * BitSim::n_negative, BitSim::observation_length }).cuda()) {}
+        past_observations(torch::empty({ batch_size, 3, BitSim::n_observations,                     BitSim::observation_length })), //.cuda()
+        future_positives (torch::empty({ batch_size, 3, BitSim::n_predictions * BitSim::n_positive, BitSim::observation_length })),
+        future_negatives (torch::empty({ batch_size, 3, BitSim::n_predictions * BitSim::n_negative, BitSim::observation_length })) {}
 };
 
 

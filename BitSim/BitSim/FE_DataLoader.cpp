@@ -1,10 +1,13 @@
 
 #include "FE_DataLoader.h"
 #include "Utils.h"
+#include "DateTime.h"
 
 
 Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
 {
+    auto timer = Timer();
+
     const auto batch_size = (int)request.size();
     auto batch = Batch{ batch_size };
 
@@ -54,6 +57,14 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
         }
     }
 
+    //timer.print_elapsed("DataLoader generate data");
+    //timer.restart();
+
+    batch.past_observations = batch.past_observations.cuda();
+    batch.future_positives = batch.future_positives.cuda();
+    batch.future_negatives = batch.future_negatives.cuda();
+
+    //timer.print_elapsed("DataLoader move to cuda");
     //Utils::save_tensor(batch.past_observations, "past_observations.tensor");
 
     return batch;

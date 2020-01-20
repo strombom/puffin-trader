@@ -1,6 +1,8 @@
 
 #include "DateTime.h"
 
+#include <iostream>
+
 
 Timer::Timer(void)
 {
@@ -16,6 +18,11 @@ std::chrono::microseconds Timer::elapsed(void) const
 {
     const auto end = std::chrono::steady_clock::now();
     return std::chrono::duration_cast<std::chrono::microseconds>(end - start_time_point);
+}
+
+void Timer::print_elapsed(const std::string& message) const
+{
+    std::cout << message << " elapsed: " << elapsed().count() / 1000.0f << "ms" << std::endl;
 }
 
 const time_point_us DateTime::to_time_point_us(const std::string& string)

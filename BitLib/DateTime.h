@@ -14,6 +14,7 @@ public:
 
     void restart(void);
     std::chrono::microseconds elapsed(void) const;
+    void print_elapsed(const std::string& message) const;
 
 private:
     std::chrono::steady_clock::time_point start_time_point;

@@ -49,7 +49,10 @@ struct FeaturePredictorImpl : public torch::nn::Module
                     .batch_first(true)
             }
         )),
-        sigmoid(register_module(name + "_sigmoid", torch::nn::Sigmoid{})) {}
+        sigmoid(register_module(name + "_sigmoid", torch::nn::Sigmoid{})) {
+    
+        //torch::nn::init
+    }
 
     torch::Tensor forward(torch::Tensor observed_features);
 

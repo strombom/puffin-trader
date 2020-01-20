@@ -149,7 +149,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Apps\Python37\Include;C:\Apps\Python37\Lib\site-packages\numpy\core\include;C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.4.0-release\include;C:\development\libraries\libtorch-1.4.0-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.4.0-release\include;C:\development\libraries\libtorch-1.4.0-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -159,7 +159,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>c10.lib;c10_cuda.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;clog.lib;cpuinfo.lib;libprotobufd.lib;libprotobuf-lited.lib;libprotocd.lib;torch.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Apps\Python37\libs;C:\development\libraries\libtorch-1.4.0-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\development\libraries\libtorch-1.4.0-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -172,6 +172,7 @@
     <ClCompile Include="BitSim.cpp" />
     <ClCompile Include="FE_DataLoader.cpp" />
     <ClCompile Include="FE_Model.cpp" />
+    <ClCompile Include="FE_Scheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
@@ -185,6 +186,7 @@
     <ClInclude Include="BitSim.h" />
     <ClInclude Include="FE_DataLoader.h" />
     <ClInclude Include="FE_Model.h" />
+    <ClInclude Include="FE_Scheduler.h" />
     <ClInclude Include="json.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

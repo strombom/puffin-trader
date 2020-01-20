@@ -8,14 +8,17 @@
 #include "Logger.h"
 #include "FE_DataLoader.h"
 #include "FE_Model.h"
+#include "FE_Scheduler.h"
+#include "DateTime.h"
 
 #include <iostream>
-
-
+#include <fstream>
 
 
 int main() {
     logger.info("BitSim started");
+
+    auto timer = Timer();
 
     auto bitbase_client = BitBaseClient();
 
@@ -32,47 +35,64 @@ int main() {
     auto model = RepresentationLearner{};
     model->to(c10::DeviceType::CUDA);
 
+    timer.restart();
     auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
         std::move(dataset),
-        torch::data::DataLoaderOptions().batch_size(BitSim::batch_size).workers(10));
-
-    auto optimizer = torch::optim::Adam{ model->parameters(), torch::optim::AdamOptions(1e-3) };
+        torch::data::DataLoaderOptions{}.batch_size(BitSim::batch_size).workers(10));
+    timer.print_elapsed("DataLoader");
     
+    auto optimizer = torch::optim::SGD{ model->parameters(), torch::optim::SGDOptions{0.01}.momentum(0.9) };
+
+    const auto n_iterations = 200;
+    auto iteration = 0;
+    auto scheduler = FE_Scheduler{ n_iterations, 0.01, 0.0005, 0.95, 0.80, iteration };
+    //auto scheduler = FE_Scheduler{ n_iterations, 100, 0.0000001, 1.0, 1.0, 0, true };
+    
+    //auto file = std::ofstream{ "C:\\development\\github\\puffin-trader\\tmp\\lr_test.txt" };
+
     for (auto epoch = 1; epoch <= BitSim::n_epochs; ++epoch) {
 
+        timer.restart();
         for (auto& batch : *data_loader) {
+            timer.print_elapsed("Batch loaded");
+            timer.restart();
 
             optimizer.zero_grad();
 
             auto past_observations = batch.past_observations;
-            auto future_positives  = batch.future_positives; // torch::ones({ BitSim::batch_size, 1, BitSim::n_positive,     BitSim::observation_length });
-            auto future_negatives  = batch.future_negatives; // torch::ones({ BitSim::batch_size, 1, BitSim::n_negative,     BitSim::observation_length });
-
-            //std::cout << "past_observations: " << past_observations.sizes() << std::endl;
-            //std::cout << "future_positives: " << future_positives.sizes() << std::endl;
-            //std::cout << "future_negatives: " << future_negatives.sizes() << std::endl;
+            auto future_positives  = batch.future_positives;
+            auto future_negatives  = batch.future_negatives;
 
             auto [info_nce_loss, accuracy] = model->forward_fit(past_observations, future_positives, future_negatives);
-            //std::cout << accuracy << ", " << info_nce << std::endl;
 
             info_nce_loss.backward();
             optimizer.step();
+            timer.print_elapsed("Step");
 
+            const auto [learning_rate, momentum] = scheduler.calc();
+            optimizer.options.learning_rate(learning_rate);
+            optimizer.options.momentum(momentum);
 
             logger.info("main data_loader loss: %f", info_nce_loss.item().to<double>()); // batch.size());
-            //std::cout << std::endl;
+            logger.info("main learning_rate (%f) momentum (%f)", learning_rate, momentum);
 
+            //file << iteration << "," << learning_rate << "," << info_nce_loss.item().to<double>() << std::endl;
 
-            /*
-                MSE
-                squared_error = (y_predicted - y_actual) ** 2
-                sum_squared_error = np.sum(squared_error)
-                mse = sum_squared_error / y_actual.size
-            */
+            ++iteration;
+
+            if (scheduler.finished()) {
+                break;
+            }
+
+            timer.restart();
+
         }
-
+        if (scheduler.finished()) {
+            break;
+        }
     }
 
+    //file.close();
 }
 
 

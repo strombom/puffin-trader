@@ -65,35 +65,35 @@ std::tuple<torch::Tensor, double> RepresentationLearnerImpl::forward_fit(
     std::cout << "c: " << std::endl << c << std::endl;
     */
 
-    std::cout << "past_observations: " << past_observations.sizes() << std::endl;
+    //std::cout << "past_observations: " << past_observations.sizes() << std::endl;
     auto past_features     = feature_encoder->forward(past_observations); // BxCxN (2x512x4)
     auto positive_features = feature_encoder->forward(future_positives);  // BxCxN (2x512x1)
     auto negative_features = feature_encoder->forward(future_negatives);  // BxCxN (2x512x9)
-    std::cout << "past_features: " << past_features.sizes() << std::endl;
-    std::cout << "positive_features: " << positive_features.sizes() << std::endl;
-    std::cout << "negative_features: " << negative_features.sizes() << std::endl;
+    //std::cout << "past_features: " << past_features.sizes() << std::endl;
+    //std::cout << "positive_features: " << positive_features.sizes() << std::endl;
+    //std::cout << "negative_features: " << negative_features.sizes() << std::endl;
 
     auto prediction = feature_predictor->forward(past_features);      // BxNxC
-    std::cout << "prediction: " << prediction.sizes() << std::endl;
+    //std::cout << "prediction: " << prediction.sizes() << std::endl;
 
     auto target = torch::cat({ positive_features, negative_features }, 1);
-    std::cout << "target: " << target.sizes() << std::endl;
+    //std::cout << "target: " << target.sizes() << std::endl;
 
     auto logits_all = torch::einsum("bij,bkj->bk", { prediction, target }); // Dot product, sum features
-    std::cout << "logits_all: " << logits_all.sizes() << std::endl;
+    //std::cout << "logits_all: " << logits_all.sizes() << std::endl;
 
     auto logits_positive = logits_all.select(1, 0);
-    std::cout << "logits_positive: " << logits_positive.sizes() << std::endl;
+    //std::cout << "logits_positive: " << logits_positive.sizes() << std::endl;
 
     auto logits_ratio = logits_positive - logits_all.logsumexp(1);
-    std::cout << "logits_ratio: " << logits_ratio.sizes() << std::endl;
-    std::cout << logits_ratio << std::endl;
+    //std::cout << "logits_ratio: " << logits_ratio.sizes() << std::endl;
+    //std::cout << logits_ratio << std::endl;
 
     auto info_nce_loss = -logits_ratio.mean();
-    std::cout << "info_nce_loss: " << info_nce_loss << std::endl;
+    //std::cout << "info_nce_loss: " << info_nce_loss << std::endl;
 
     auto accuracy = 1.0;
-    auto info_nce = -0.5;
+    //auto info_nce = -0.5;
     /*
         # TODO - optimized back-prop with K.categorical_cross_entropy()?
         z_targ, z_pred = inputs
@@ -108,6 +108,14 @@ std::tuple<torch::Tensor, double> RepresentationLearnerImpl::forward_fit(
         # calculate prediction accuracy
         acc = K.cast(K.equal(K.argmax(logits, axis=1), 0), 'float32')
         acc = K.mean(acc, axis=[0, 1])
+
+    */
+
+    /*
+        MSE
+        squared_error = (y_predicted - y_actual) ** 2
+        sum_squared_error = np.sum(squared_error)
+        mse = sum_squared_error / y_actual.size
     */
 
     return std::make_tuple(info_nce_loss, accuracy);
