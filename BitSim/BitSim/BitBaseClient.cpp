@@ -12,11 +12,11 @@ BitBaseClient::BitBaseClient(void)
     client->connect(BitSim::BitBase::address);
 }
 
-std::unique_ptr<Intervals> BitBaseClient::get_intervals(const std::string& symbol,
-                                                        const std::string& exchange,
-                                                        const time_point_s timestamp_start,
-                                                        const time_point_s timestamp_end,
-                                                        std::chrono::seconds interval)
+uptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
+                                           const std::string& exchange,
+                                           const time_point_s timestamp_start,
+                                           const time_point_s timestamp_end,
+                                           std::chrono::seconds interval)
 {
 
     assert(interval.count() > 0 && interval.count() <= INT_MAX);

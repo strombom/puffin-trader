@@ -173,6 +173,7 @@
     <ClCompile Include="FE_DataLoader.cpp" />
     <ClCompile Include="FE_Model.cpp" />
     <ClCompile Include="FE_Scheduler.cpp" />
+    <ClCompile Include="FE_Training.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
@@ -187,6 +188,7 @@
     <ClInclude Include="FE_DataLoader.h" />
     <ClInclude Include="FE_Model.h" />
     <ClInclude Include="FE_Scheduler.h" />
+    <ClInclude Include="FE_Training.h" />
     <ClInclude Include="json.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -44,3 +44,5 @@ public:
     time_point_us timestamp_start;
     std::chrono::seconds interval;
 };
+
+using uptrIntervals = std::unique_ptr<Intervals>;
