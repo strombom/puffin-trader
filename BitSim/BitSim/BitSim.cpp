@@ -44,52 +44,44 @@ int main() {
     auto optimizer = torch::optim::SGD{ model->parameters(), torch::optim::SGDOptions{0.01}.momentum(0.9) };
 
     const auto n_iterations = 200;
-    auto iteration = 0;
-    auto scheduler = FE_Scheduler{ n_iterations, 0.01, 0.0005, 0.95, 0.80, iteration };
-    //auto scheduler = FE_Scheduler{ n_iterations, 100, 0.0000001, 1.0, 1.0, 0, true };
+    const auto start_iteration = 0;
+    auto scheduler = FE_Scheduler{ n_iterations, 0.01, 0.0002, 0.95, 0.80, start_iteration, false };
+    //auto scheduler = FE_Scheduler{ n_iterations, 100, 0.0000001, 1.0, 1.0, start_iteration, true };
     
     //auto file = std::ofstream{ "C:\\development\\github\\puffin-trader\\tmp\\lr_test.txt" };
 
-    for (auto epoch = 1; epoch <= BitSim::n_epochs; ++epoch) {
-
+    timer.restart();
+    for (auto& batch : *data_loader) {
+        timer.print_elapsed("Batch loaded");
         timer.restart();
-        for (auto& batch : *data_loader) {
-            timer.print_elapsed("Batch loaded");
-            timer.restart();
 
-            optimizer.zero_grad();
+        optimizer.zero_grad();
 
-            auto past_observations = batch.past_observations;
-            auto future_positives  = batch.future_positives;
-            auto future_negatives  = batch.future_negatives;
+        auto past_observations = batch.past_observations;
+        auto future_positives  = batch.future_positives;
+        auto future_negatives  = batch.future_negatives;
 
-            auto [info_nce_loss, accuracy] = model->forward_fit(past_observations, future_positives, future_negatives);
+        auto [info_nce_loss, accuracy] = model->forward_fit(past_observations, future_positives, future_negatives);
 
-            info_nce_loss.backward();
-            optimizer.step();
-            timer.print_elapsed("Step");
+        info_nce_loss.backward();
+        optimizer.step();
+        timer.print_elapsed("Step");
 
-            const auto [learning_rate, momentum] = scheduler.calc();
-            optimizer.options.learning_rate(learning_rate);
-            optimizer.options.momentum(momentum);
+        const auto [learning_rate, momentum] = scheduler.calc();
+        optimizer.options.learning_rate(learning_rate);
+        optimizer.options.momentum(momentum);
 
-            logger.info("main data_loader loss: %f", info_nce_loss.item().to<double>()); // batch.size());
-            logger.info("main learning_rate (%f) momentum (%f)", learning_rate, momentum);
+        logger.info("main data_loader loss: %f", info_nce_loss.item().to<double>()); // batch.size());
+        logger.info("main learning_rate (%f) momentum (%f)", learning_rate, momentum);
 
-            //file << iteration << "," << learning_rate << "," << info_nce_loss.item().to<double>() << std::endl;
+        //file << iteration << "," << learning_rate << "," << info_nce_loss.item().to<double>() << std::endl;
 
-            ++iteration;
-
-            if (scheduler.finished()) {
-                break;
-            }
-
-            timer.restart();
-
-        }
         if (scheduler.finished()) {
             break;
         }
+
+        timer.restart();
+
     }
 
     //file.close();

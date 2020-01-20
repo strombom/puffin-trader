@@ -72,5 +72,5 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
 
 c10::optional<size_t> TradeDataset::size(void) const
 {
-    return BitSim::batches_per_epoch * BitSim::batch_size;
+    return BitSim::n_batches * BitSim::batch_size;
 }

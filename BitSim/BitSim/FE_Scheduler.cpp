@@ -12,6 +12,8 @@ std::tuple<double, double> FE_Scheduler::calc(void)
         return std::make_tuple(learning_rate, mo_max);
     }
 
+
+
     return std::make_tuple(1.0, mo_max);
 }
 

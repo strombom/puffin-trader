@@ -2,8 +2,7 @@
 
 
 namespace BitSim {
-    constexpr auto n_epochs = 100;
-    constexpr auto batches_per_epoch = 100;
+    constexpr auto n_batches = 100;
     constexpr auto batch_size = 20;
     constexpr auto observation_length = 160;
     constexpr auto n_channels = 3;
