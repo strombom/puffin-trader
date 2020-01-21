@@ -2,11 +2,11 @@
 
 
 namespace BitSim {
-    constexpr auto n_batches = 100;
-    constexpr auto batch_size = 20;
+    constexpr auto n_batches = 10;
+    constexpr auto batch_size = 500;
     constexpr auto observation_length = 160;
     constexpr auto n_channels = 3;
-    constexpr auto n_observations = 5;
+    constexpr auto n_observations = 10;
     constexpr auto n_predictions = 1;
     constexpr auto n_positive = 1;
     constexpr auto n_negative = 19;

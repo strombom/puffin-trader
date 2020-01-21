@@ -5,6 +5,7 @@
 #include "FE_Model.h"
 #include "DateTime.h"
 #include "Logger.h"
+#include "Utils.h"
 
 #include <iostream>
 #include <fstream>
@@ -28,8 +29,13 @@ void FE_Training::measure_observations(void)
         std::move(dataset),
         torch::data::DataLoaderOptions{}.batch_size(BitSim::batch_size).workers(10));
 
+    auto idx = 0;
     for (auto& batch : *data_loader) {
 
+        Utils::save_tensor(batch.past_observations, std::string{ "past_observations_" } + std::to_string(idx) + std::string{ ".tensor" });
+        Utils::save_tensor(batch.future_positives,  std::string{ "future_positives_" }  + std::to_string(idx) + std::string{ ".tensor" });
+        Utils::save_tensor(batch.future_negatives,  std::string{ "future_negatives_" }  + std::to_string(idx) + std::string{ ".tensor" });
+        ++idx;
     }
 
 }

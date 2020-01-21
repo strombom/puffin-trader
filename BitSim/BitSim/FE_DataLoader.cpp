@@ -4,6 +4,25 @@
 #include "DateTime.h"
 
 
+float root_transform(float start_price, float price)
+{
+    // Transform the price ratio into a -1 to 1 distribution
+
+    auto indicator = price / start_price - 1.0f;
+    auto sign = 1;
+    if (indicator < 0) {
+        sign = -1;
+    }
+
+    indicator = std::powf(sign * indicator, 0.01);
+    if (indicator > 0.902) {
+        indicator -= 0.902;
+    }
+    indicator *= sign * 12.5f;
+    
+    return indicator;
+}
+
 Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
 {
     auto timer = Timer();
@@ -20,9 +39,9 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
 
             for (auto interval_idx = 0; interval_idx < BitSim::observation_length; ++interval_idx) {
                 const auto row = &intervals.rows[(int)((long)first_time_idx + interval_idx)];
-                const auto price_log = std::log2f(row->last_price / first_price);
+                const auto price = root_transform(first_price, row->last_price);
 
-                batch.past_observations[batch_idx][BitSim::ch_price][obs_idx][interval_idx] = price_log;
+                batch.past_observations[batch_idx][BitSim::ch_price][obs_idx][interval_idx] = price;
                 batch.past_observations[batch_idx][BitSim::ch_buy_volume][obs_idx][interval_idx] = row->vol_buy;
                 batch.past_observations[batch_idx][BitSim::ch_sell_volume][obs_idx][interval_idx] = row->vol_sell;
             }
@@ -34,9 +53,9 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
 
             for (auto interval_idx = 0; interval_idx < BitSim::observation_length; ++interval_idx) {
                 const auto row = &intervals.rows[(int)((long)first_time_idx + interval_idx)];
-                const auto price_log = std::log2f(row->last_price / first_price);
+                const auto price = root_transform(first_price, row->last_price);
 
-                batch.future_positives[batch_idx][BitSim::ch_price][pred_idx][interval_idx] = price_log;
+                batch.future_positives[batch_idx][BitSim::ch_price][pred_idx][interval_idx] = price;
                 batch.future_positives[batch_idx][BitSim::ch_buy_volume][pred_idx][interval_idx] = row->vol_buy;
                 batch.future_positives[batch_idx][BitSim::ch_sell_volume][pred_idx][interval_idx] = row->vol_sell;
             }
@@ -48,9 +67,9 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
 
             for (auto interval_idx = 0; interval_idx < BitSim::observation_length; ++interval_idx) {
                 const auto row = &intervals.rows[(int)((long)negative_index + interval_idx)];
-                const auto price_log = std::log2f(row->last_price / first_price);
+                const auto price = root_transform(first_price, row->last_price);
 
-                batch.future_negatives[batch_idx][BitSim::ch_price][pred_idx][interval_idx] = price_log;
+                batch.future_negatives[batch_idx][BitSim::ch_price][pred_idx][interval_idx] = price;
                 batch.future_negatives[batch_idx][BitSim::ch_buy_volume][pred_idx][interval_idx] = row->vol_buy;
                 batch.future_negatives[batch_idx][BitSim::ch_sell_volume][pred_idx][interval_idx] = row->vol_sell;
             }
