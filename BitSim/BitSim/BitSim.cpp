@@ -20,7 +20,7 @@ int main() {
     
     auto fe_training = FE_Training{ std::move(intervals) };
 
-    fe_training.measure_observations();
+    fe_training.train();
 
+    logger.info("BitSim exit");
 }
-
