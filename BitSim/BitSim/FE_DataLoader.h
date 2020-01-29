@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Intervals.h"
-#include "BitSim.h"
+#include "BitBotConstants.h"
 
 #include <random>
 #pragma warning(push, 0)

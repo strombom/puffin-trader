@@ -78,6 +78,9 @@
     <ClCompile Include="FE_Training.cpp">
       <Filter>Source Files\FeatureEncoder</Filter>
     </ClCompile>
+    <ClCompile Include="FE_Observations.cpp">
+      <Filter>Source Files\FeatureEncoder</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="json.hpp">
@@ -113,13 +116,13 @@
     <ClInclude Include="FE_Model.h">
       <Filter>Header Files\FeatureEncoder</Filter>
     </ClInclude>
-    <ClInclude Include="BitSim.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FE_Scheduler.h">
       <Filter>Header Files\FeatureEncoder</Filter>
     </ClInclude>
     <ClInclude Include="FE_Training.h">
+      <Filter>Header Files\FeatureEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="FE_Observations.h">
       <Filter>Header Files\FeatureEncoder</Filter>
     </ClInclude>
   </ItemGroup>

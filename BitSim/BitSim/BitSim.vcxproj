@@ -172,6 +172,7 @@
     <ClCompile Include="BitSim.cpp" />
     <ClCompile Include="FE_DataLoader.cpp" />
     <ClCompile Include="FE_Model.cpp" />
+    <ClCompile Include="FE_Observations.cpp" />
     <ClCompile Include="FE_Scheduler.cpp" />
     <ClCompile Include="FE_Training.cpp" />
   </ItemGroup>
@@ -184,9 +185,9 @@
     <ClInclude Include="..\..\BitLib\Logger.h" />
     <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
-    <ClInclude Include="BitSim.h" />
     <ClInclude Include="FE_DataLoader.h" />
     <ClInclude Include="FE_Model.h" />
+    <ClInclude Include="FE_Observations.h" />
     <ClInclude Include="FE_Scheduler.h" />
     <ClInclude Include="FE_Training.h" />
     <ClInclude Include="json.hpp" />

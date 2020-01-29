@@ -64,12 +64,12 @@ void FE_Training::train(void)
         scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.0000001, 2.0, 1.0, 1.0, start_iteration, true);
     }
     else {
-        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.01, 0.0002, 0.95, 0.80, start_iteration, false);
+        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.01, 0.001, 0.98, 0.90, start_iteration, false);
     }
 
     timer.restart();
     for (auto& batch : *data_loader) {
-        timer.print_elapsed("Batch loaded");
+        //timer.print_elapsed("Batch loaded");
         timer.restart();
 
         optimizer.zero_grad();
@@ -82,7 +82,7 @@ void FE_Training::train(void)
 
         info_nce_loss.backward();
         optimizer.step();
-        timer.print_elapsed("Step");
+        //timer.print_elapsed("Step");
 
         const auto [learning_rate, momentum] = scheduler->calc(info_nce_loss.item().to<double>());
         optimizer.options.learning_rate(learning_rate);

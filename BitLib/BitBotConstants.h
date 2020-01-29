@@ -46,4 +46,21 @@ namespace BitSim
     {
         constexpr auto address = "tcp://localhost:31000";
     }
+
+    constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
+
+    constexpr auto n_batches = 160;
+    constexpr auto batch_size = 20;
+    constexpr auto observation_length = 64;
+    constexpr auto n_channels = 3;
+    constexpr auto n_observations = 6;
+    constexpr auto n_predictions = 1;
+    constexpr auto n_positive = 1;
+    constexpr auto n_negative = 19;
+
+    constexpr auto feature_size = 128;
+
+    const auto ch_price = 0;
+    const auto ch_buy_volume = 1;
+    const auto ch_sell_volume = 2;
 }

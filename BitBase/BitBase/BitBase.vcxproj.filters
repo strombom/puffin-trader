@@ -122,9 +122,6 @@
     <ClInclude Include="..\..\..\..\..\apps\vcpkg-2019.09\installed\x64-windows\include\zmq.hpp">
       <Filter>Header Files\Libraries</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\BitLib\date.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\BitLib\DateTime.h">
       <Filter>Header Files\DateTime</Filter>
     </ClInclude>
@@ -142,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="..\..\BitLib\BitBotConstants.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\date\date.h">
+      <Filter>Header Files\DateTime</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

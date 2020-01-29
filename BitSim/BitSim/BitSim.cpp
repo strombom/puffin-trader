@@ -1,5 +1,6 @@
 
 #include "BitBaseClient.h"
+#include "FE_Observations.h"
 #include "FE_Training.h"
 #include "DateTime.h"
 #include "Logger.h"
@@ -18,9 +19,11 @@ int main() {
 
     auto intervals = bitbase_client.get_intervals(symbol, exchange, timestamp_start, timestamp_end, interval);
     
-    auto fe_training = FE_Training{ std::move(intervals) };
+    auto observations = FE_Observations{ std::move(intervals), timestamp_start };
+    observations.save(BitSim::observations_path);
 
-    fe_training.train();
+    //auto fe_training = FE_Training{ std::move(intervals) };
+    //fe_training.train();
 
     logger.info("BitSim exit");
 }

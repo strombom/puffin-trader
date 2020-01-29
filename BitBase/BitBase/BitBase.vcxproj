@@ -180,8 +180,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\apps\vcpkg-2019.09\installed\x64-windows\include\zmq.hpp" />
     <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
-    <ClInclude Include="..\..\BitLib\date.h" />
     <ClInclude Include="..\..\BitLib\DateTime.h" />
+    <ClInclude Include="..\..\BitLib\date\date.h" />
     <ClInclude Include="..\..\BitLib\Intervals.h" />
     <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
     <ClInclude Include="..\..\BitLib\Logger.h" />

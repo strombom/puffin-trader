@@ -15,8 +15,6 @@ FE_Scheduler::FE_Scheduler(int n_iterations, double lr_max, double lr_min, doubl
 
 std::tuple<double, double> FE_Scheduler::calc(double loss)
 {
-    ++iteration;
-
     if (lr_test) {
         return calc_lr_test(loss);
     }
@@ -34,7 +32,7 @@ std::tuple<double, double> FE_Scheduler::calc(double loss)
         // Learning rate falling
         const auto progress = (double)(iteration - lr_top_idx) / (annealing_idx - lr_top_idx);
         learning_rate = lr_max - progress * (lr_max - lr_min);
-        momentum = mo_max + progress * (mo_max - mo_min);
+        momentum = mo_min + progress * (mo_max - mo_min);
     }
     else {
         // Learning rate annealing
@@ -43,6 +41,7 @@ std::tuple<double, double> FE_Scheduler::calc(double loss)
         momentum = mo_max;
     }
 
+    ++iteration;
     return std::make_tuple(learning_rate, momentum);
 }
 
