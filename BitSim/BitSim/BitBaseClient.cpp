@@ -12,7 +12,7 @@ BitBaseClient::BitBaseClient(void)
     client->connect(BitSim::BitBase::address);
 }
 
-uptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
+sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
                                            const std::string& exchange,
                                            const time_point_s timestamp_start,
                                            const time_point_s timestamp_end,
@@ -40,5 +40,5 @@ uptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
     auto intervals = Intervals{ timestamp_start , interval };
     intervals_buffer >> intervals;
 
-    return std::make_unique<Intervals>(intervals);
+    return std::make_shared<Intervals>(intervals);
 }

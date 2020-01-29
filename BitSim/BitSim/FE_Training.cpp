@@ -24,7 +24,7 @@ void FE_Training::test_learning_rate(void)
 
 void FE_Training::measure_observations(void)
 {
-    auto dataset = TradeDataset{ std::move(intervals) };
+    auto dataset = TradeDataset{ intervals };
     auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
         std::move(dataset),
         torch::data::DataLoaderOptions{}.batch_size(BitSim::batch_size).workers(10));

@@ -1,18 +1,97 @@
 #include "FE_Observations.h"
 
 #include "BitBotConstants.h"
+#include "DateTime.h"
+#include "Logger.h"
+
+#include <future>
 
 
-FE_Observations::FE_Observations(uptrIntervals intervals, time_point_s start_time) :
+FE_Observations::FE_Observations(sptrIntervals intervals, time_point_s start_time) :
     start_time(start_time), interval(intervals->interval)
 {
+    const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
+    
+    const auto n_observations = (long) intervals->rows.size() - BitSim::observation_length;
+    observations = torch::empty({ n_observations, BitSim::n_channels, BitSim::observation_length });
 
-    auto n_observations = (long) intervals->rows.size();
-    observations = torch::empty({ n_observations, 3, BitSim::observation_length });
+    logger.info("n_observations: %d", n_observations);
 
+    for (auto i = 0; i < 1; ++i) {
+        auto timer = Timer{};
+
+        for (auto idx_obs = 0; idx_obs < n_observations; idx_obs += n_threads) {
+            auto futures = std::queue<std::future<torch::Tensor>>{};
+
+            for (auto idx_task = 0; idx_task < n_threads && idx_obs + idx_task < n_observations; ++idx_task) {
+                auto future = std::async(std::launch::async, &FE_Observations::make_observation, this, intervals, idx_obs + idx_task);
+                futures.push(std::move(future));
+            }
+
+            for (auto idx_task = 0; !futures.empty(); ++idx_task) {
+                observations[idx_obs + idx_task] = futures.front().get();
+                futures.pop();
+            }
+
+            if (idx_obs % 100 == 0) {
+                logger.info("working %6.2f%%, %d / %d", (float)idx_obs / n_observations * 100, idx_obs, n_observations);
+            }
+        }
+
+        timer.print_elapsed("done");
+    }
+}
+
+torch::Tensor FE_Observations::make_observation(sptrIntervals intervals, int idx_obs)
+{
+    auto observation = torch::empty({ BitSim::n_channels, BitSim::observation_length });
+
+    const auto first_price = intervals->rows[idx_obs].last_price;
+
+    for (auto idx_interval = 0; idx_interval < BitSim::observation_length; ++idx_interval) {
+        const auto&& row = &intervals->rows[(int)((long)idx_obs + idx_interval)];
+
+        observations[idx_obs][BitSim::ch_price][idx_interval] = price_transform(first_price, row->last_price);
+        observations[idx_obs][BitSim::ch_buy_volume][idx_interval] = volume_transform(row->vol_buy);
+        observations[idx_obs][BitSim::ch_sell_volume][idx_interval] = volume_transform(row->vol_sell);
+    }
+
+    return torch::Tensor(observation);
 }
 
 void FE_Observations::save(const std::string& file_path)
 {
+    torch::save(observations, file_path + "_tensor");
+}
 
+float FE_Observations::price_transform(float start_price, float price)
+{
+    // Transform the price ratio into a -1 to 1 distribution
+
+    auto indicator = price / start_price - 1.0f;
+    auto sign = 1;
+    if (indicator < 0) {
+        sign = -1;
+    }
+
+    indicator = std::powf(sign * indicator, 0.01f);
+    if (indicator > 0.902f) {
+        indicator -= 0.902f;
+    }
+    indicator *= sign * 12.5f;
+
+    return indicator;
+}
+
+float FE_Observations::volume_transform(float volume)
+{
+    // Transform the volume into a 0 to 1 distribution
+
+    auto indicator = std::powf(volume, 0.1f);
+    if (indicator > 0.95f) {
+        indicator -= 0.95f;
+    }
+    indicator *= 0.2f;
+
+    return indicator;
 }

@@ -6,7 +6,7 @@
 class FE_Training
 {
 public:
-    FE_Training(uptrIntervals intervals) :
+    FE_Training(sptrIntervals intervals) :
         intervals(std::move(intervals)) {}
 
     void train(void);
@@ -14,6 +14,6 @@ public:
     void measure_observations(void);
 
 private:
-    uptrIntervals intervals;
+    sptrIntervals intervals;
 };
 

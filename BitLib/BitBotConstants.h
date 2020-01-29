@@ -51,7 +51,7 @@ namespace BitSim
 
     constexpr auto n_batches = 160;
     constexpr auto batch_size = 20;
-    constexpr auto observation_length = 64;
+    constexpr auto observation_length = 128;
     constexpr auto n_channels = 3;
     constexpr auto n_observations = 6;
     constexpr auto n_predictions = 1;

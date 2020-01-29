@@ -45,4 +45,4 @@ public:
     std::chrono::seconds interval;
 };
 
-using uptrIntervals = std::unique_ptr<Intervals>;
+using sptrIntervals = std::shared_ptr<Intervals>;

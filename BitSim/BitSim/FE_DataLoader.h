@@ -51,7 +51,7 @@ struct Batch {
 class TradeDataset : public torch::data::BatchDataset<TradeDataset, Batch, c10::ArrayRef<size_t>>
 {
 public:
-    TradeDataset(std::unique_ptr<Intervals> intervals) :
+    TradeDataset(sptrIntervals intervals) :
         intervals(*intervals),
         random_index(BitSim::n_observations* BitSim::feature_size, (int)intervals->rows.size() - BitSim::n_predictions * BitSim::feature_size) {}
 
