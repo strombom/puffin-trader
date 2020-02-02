@@ -8,6 +8,12 @@ using time_point_us = std::chrono::time_point<std::chrono::system_clock, std::ch
 #define system_clock_us_now() std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now())
 
 
+template <class time_point>
+static const std::string datetime_to_string(const time_point timestamp)
+{
+    return date::format("%F %T", timestamp);
+}
+
 class Timer {
 public:
     Timer(void);

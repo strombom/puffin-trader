@@ -93,7 +93,6 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
 
         if (!valid_interval) {
             // End of tick data, do not save current (incomplete) interval
-            timestamp -= interval;
             break;
         }
 
