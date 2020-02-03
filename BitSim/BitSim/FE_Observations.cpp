@@ -7,15 +7,21 @@
 #include <future>
 
 
+FE_Observations::FE_Observations(const std::string& file_path)
+{
+    load(file_path);
+}
+
 FE_Observations::FE_Observations(sptrIntervals intervals, time_point_s start_time) :
     start_time(start_time), interval(intervals->interval)
 {
-    const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
-    
-    const auto n_observations = (long) intervals->rows.size() - BitSim::observation_length;
+    const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);    
+    const auto n_observations = (long) intervals->rows.size() - BitSim::observation_length + 1;
+    if (n_observations <= 0) {
+        observations = torch::empty({ 0, BitSim::n_channels, BitSim::observation_length });
+        return;
+    }
     observations = torch::empty({ n_observations, BitSim::n_channels, BitSim::observation_length });
-
-    logger.info("n_observations: %d", n_observations);
 
     for (auto i = 0; i < 1; ++i) {
         auto timer = Timer{};
@@ -29,12 +35,12 @@ FE_Observations::FE_Observations(sptrIntervals intervals, time_point_s start_tim
             }
 
             for (auto idx_task = 0; !futures.empty(); ++idx_task) {
-                observations[idx_obs + idx_task] = futures.front().get();
+                observations[(long)idx_obs + idx_task] = futures.front().get();
                 futures.pop();
             }
 
             if (idx_obs % 100 == 0) {
-                logger.info("working %6.2f%%, %d / %d", (float)idx_obs / n_observations * 100, idx_obs, n_observations);
+                logger.info("working %6.2f%%, %d / %d", ((float)idx_obs) / n_observations * 100, idx_obs, n_observations);
             }
         }
 
@@ -45,12 +51,10 @@ FE_Observations::FE_Observations(sptrIntervals intervals, time_point_s start_tim
 torch::Tensor FE_Observations::make_observation(sptrIntervals intervals, int idx_obs)
 {
     auto observation = torch::empty({ BitSim::n_channels, BitSim::observation_length });
-
     const auto first_price = intervals->rows[idx_obs].last_price;
 
     for (auto idx_interval = 0; idx_interval < BitSim::observation_length; ++idx_interval) {
         const auto&& row = &intervals->rows[(int)((long)idx_obs + idx_interval)];
-
         observations[idx_obs][BitSim::ch_price][idx_interval] = price_transform(first_price, row->last_price);
         observations[idx_obs][BitSim::ch_buy_volume][idx_interval] = volume_transform(row->vol_buy);
         observations[idx_obs][BitSim::ch_sell_volume][idx_interval] = volume_transform(row->vol_sell);
@@ -62,12 +66,39 @@ torch::Tensor FE_Observations::make_observation(sptrIntervals intervals, int idx
 void FE_Observations::save(const std::string& file_path)
 {
     torch::save(observations, file_path + "_tensor");
+
+    auto file = std::ofstream{ file_path + "_attr" };
+    file << start_time.time_since_epoch().count() << std::endl;
+    file << interval.count() << std::endl;
+    file.close();
+}
+
+void FE_Observations::load(const std::string& file_path)
+{
+    auto start_time_raw = 0;
+    auto interval_raw = 0;
+
+    {
+        auto file = std::ifstream{ file_path + "_attr" };
+        file >> start_time_raw >> interval_raw;
+        file.close();
+    }
+
+    start_time = time_point_s{ std::chrono::seconds{start_time_raw} };
+    interval = std::chrono::seconds{ interval_raw };
+
+    torch::load(observations, file_path + "_tensor");
+}
+
+void FE_Observations::print(void)
+{
+    std::cout << "Observations, start time: " << datetime_to_string(start_time) << std::endl;
+    std::cout << observations.sizes() << std::endl;
 }
 
 float FE_Observations::price_transform(float start_price, float price)
 {
     // Transform the price ratio into a -1 to 1 distribution
-
     auto indicator = price / start_price - 1.0f;
     auto sign = 1;
     if (indicator < 0) {
@@ -86,7 +117,6 @@ float FE_Observations::price_transform(float start_price, float price)
 float FE_Observations::volume_transform(float volume)
 {
     // Transform the volume into a 0 to 1 distribution
-
     auto indicator = std::powf(volume, 0.1f);
     if (indicator > 0.95f) {
         indicator -= 0.95f;
