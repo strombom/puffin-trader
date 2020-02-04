@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "DownloadTask.h"
 
 #include <string>

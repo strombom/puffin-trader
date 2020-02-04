@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 
 #include "DateTime.h"
 #include "Ticks.h"
@@ -9,7 +10,6 @@
 #include <vector>
 #include <fstream>
 #include <unordered_set>
-#include "SQLiteCpp/SQLiteCpp.h"
 
 
 class TickTableRead

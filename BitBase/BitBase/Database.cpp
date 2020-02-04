@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "Logger.h"
 #include "Database.h"
 

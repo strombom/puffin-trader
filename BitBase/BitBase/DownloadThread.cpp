@@ -1,9 +1,8 @@
+#include "pch.h"
 
 #include "Logger.h"
 #include "DateTime.h"
 #include "DownloadThread.h"
-
-#include "curl/curl.h"
 
 
 DownloadThread::DownloadThread(manager_callback_done_t manager_callback_done) :

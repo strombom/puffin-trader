@@ -1,3 +1,4 @@
+#include "pch.h"
 
 #include "DownloadManager.h"
 #include "Logger.h"

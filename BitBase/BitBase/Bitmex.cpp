@@ -1,4 +1,4 @@
-
+#include "pch.h"
 
 #include "Bitmex.h"
 #include "Logger.h"

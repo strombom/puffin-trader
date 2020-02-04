@@ -1,12 +1,10 @@
+#include "pch.h"
 
 #include "BitBotConstants.h"
 #include "BitmexDaily.h"
 #include "DateTime.h"
 #include "Logger.h"
 
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/copy.hpp>
 #include <regex>
 #include <string>
 #include <array>

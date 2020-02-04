@@ -1,13 +1,8 @@
+#include "pch.h"
 
 #include "Server.h"
 #include "Logger.h"
 #include "DateTime.h"
-
-#include "json11/json11.hpp"
-#pragma warning(push)
-#pragma warning(disable: 4005)
-#include <zmq.hpp>
-#pragma warning(pop)
 
 
 Server::Server(sptrDatabase database) : 

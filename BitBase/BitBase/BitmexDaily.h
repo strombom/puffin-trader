@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 
 #include "DateTime.h"
 #include "Database.h"
@@ -7,6 +8,7 @@
 
 #include <mutex>
 #include <string>
+
 
 using tick_data_updated_callback_t = std::function<void(void)>;
 

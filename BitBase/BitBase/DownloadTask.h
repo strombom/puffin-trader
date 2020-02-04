@@ -1,6 +1,8 @@
 #pragma once
+#include "pch.h"
 
 #include <functional>
+
 
 using download_data_t = std::vector<char>;
 using sptr_download_data_t = std::shared_ptr<download_data_t>;

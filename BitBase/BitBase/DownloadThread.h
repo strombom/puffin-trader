@@ -1,8 +1,10 @@
 #pragma once
+#include "pch.h"
 
 #include "DownloadTask.h"
 
 #include <future>
+
 
 using manager_callback_done_t = std::function<void(uptrDownloadTask)>;
 
