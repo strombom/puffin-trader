@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "FE_Observations.h"
 
 #include "BitBotConstants.h"
@@ -94,6 +96,16 @@ void FE_Observations::print(void)
 {
     std::cout << "Observations, start time: " << datetime_to_string(start_time) << std::endl;
     std::cout << observations.sizes() << std::endl;
+}
+
+int64_t FE_Observations::size(void)
+{
+    return observations.size(0);
+}
+
+torch::Tensor FE_Observations::get(int index)
+{
+    return observations[index];
 }
 
 float FE_Observations::price_transform(float start_price, float price)

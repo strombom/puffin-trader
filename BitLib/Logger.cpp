@@ -1,8 +1,10 @@
+#include "pch.h"
+
 #include "Logger.h"
-#include "date/date.h"
 
 #include <stdarg.h>
 #include <mutex>
+
 
 Logger logger;
 

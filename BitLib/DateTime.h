@@ -1,6 +1,6 @@
 #pragma once
+#include "pch.h"
 
-#include "date/date.h"
 
 using time_point_s = std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>;
 using time_point_us = std::chrono::time_point<std::chrono::system_clock, std::chrono::microseconds>;

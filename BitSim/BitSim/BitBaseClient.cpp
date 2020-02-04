@@ -1,9 +1,8 @@
+#include "pch.h"
 
 #include "Logger.h"
 #include "BitBaseClient.h"
 #include "BitBotConstants.h"
-
-#include "json11/json11.hpp"
 
 
 BitBaseClient::BitBaseClient(void)

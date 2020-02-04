@@ -1,5 +1,6 @@
-#include "FE_Training.h"
+#include "pch.h"
 
+#include "FE_Training.h"
 #include "FE_DataLoader.h"
 #include "FE_Scheduler.h"
 #include "FE_Model.h"
@@ -10,11 +11,6 @@
 #include <iostream>
 #include <fstream>
 
-#pragma warning(push, 0)
-#pragma warning(disable: 4146)
-//#include <torch/torch.h>
-#pragma warning(pop)
-
 
 void FE_Training::test_learning_rate(void)
 {
@@ -24,7 +20,7 @@ void FE_Training::test_learning_rate(void)
 
 void FE_Training::measure_observations(void)
 {
-    auto dataset = TradeDataset{ intervals };
+    auto dataset = TradeDataset{ observations };
     auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
         std::move(dataset),
         torch::data::DataLoaderOptions{}.batch_size(BitSim::batch_size).workers(10));
@@ -45,7 +41,7 @@ void FE_Training::train(void)
 
     auto timer = Timer();
 
-    auto dataset = TradeDataset{ std::move(intervals) };
+    auto dataset = TradeDataset{ observations };
 
     auto model = RepresentationLearner{};
     model->to(c10::DeviceType::CUDA);

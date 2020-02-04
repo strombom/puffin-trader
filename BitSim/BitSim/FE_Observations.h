@@ -1,13 +1,9 @@
 #pragma once
+#include "pch.h"
 
 #include "Intervals.h"
 
 #include <string>
-
-#pragma warning(push, 0)
-#pragma warning(disable: 4146)
-#include <torch/torch.h>
-#pragma warning(pop)
 
 
 class FE_Observations
@@ -19,10 +15,13 @@ public:
     void save(const std::string& file_path);
     void load(const std::string& file_path);
 
+    int64_t size(void);
+    torch::Tensor get(int index);
+
     void print(void);
 
 private:
-    torch::Tensor observations; // TxCxL (10000x3x160)
+    torch::Tensor observations; // TxCxL (10000x3x128)
     time_point_s start_time;
     std::chrono::seconds interval;
 
@@ -30,3 +29,5 @@ private:
     float price_transform(float start_price, float price);
     float volume_transform(float volume);
 };
+
+using sptrFE_Observations = std::shared_ptr<FE_Observations>;

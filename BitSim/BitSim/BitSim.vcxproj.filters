@@ -81,11 +81,11 @@
     <ClCompile Include="FE_Observations.cpp">
       <Filter>Source Files\FeatureEncoder</Filter>
     </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="json.hpp">
-      <Filter>Header Files\BitBase</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\BitLib\DateTime.h">
       <Filter>Header Files\DateTime</Filter>
     </ClInclude>
@@ -124,6 +124,9 @@
     </ClInclude>
     <ClInclude Include="FE_Observations.h">
       <Filter>Header Files\FeatureEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
