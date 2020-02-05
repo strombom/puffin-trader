@@ -37,7 +37,9 @@ FE_Observations::FE_Observations(sptrIntervals intervals, time_point_s start_tim
             }
 
             for (auto idx_task = 0; !futures.empty(); ++idx_task) {
-                observations[(long)idx_obs + idx_task] = futures.front().get();
+                auto a = futures.front().get();
+                observations[(long)idx_obs + idx_task] = a;
+                //std::cout << a << std::endl;
                 futures.pop();
             }
 
@@ -57,12 +59,12 @@ torch::Tensor FE_Observations::make_observation(sptrIntervals intervals, int idx
 
     for (auto idx_interval = 0; idx_interval < BitSim::observation_length; ++idx_interval) {
         const auto&& row = &intervals->rows[(int)((long)idx_obs + idx_interval)];
-        observations[idx_obs][BitSim::ch_price][idx_interval] = price_transform(first_price, row->last_price);
-        observations[idx_obs][BitSim::ch_buy_volume][idx_interval] = volume_transform(row->vol_buy);
-        observations[idx_obs][BitSim::ch_sell_volume][idx_interval] = volume_transform(row->vol_sell);
+        observation[BitSim::ch_price][idx_interval] = price_transform(first_price, row->last_price);
+        observation[BitSim::ch_buy_volume][idx_interval] = volume_transform(row->vol_buy);
+        observation[BitSim::ch_sell_volume][idx_interval] = volume_transform(row->vol_sell);
     }
 
-    return torch::Tensor(observation);
+    return observation;
 }
 
 void FE_Observations::save(const std::string& file_path)

@@ -74,7 +74,7 @@ std::tuple<torch::Tensor, double> RepresentationLearnerImpl::forward_fit(
     std::cout << "past_features: " << past_features.sizes() << std::endl;
     std::cout << "positive_features: " << positive_features.sizes() << std::endl;
     std::cout << "negative_features: " << negative_features.sizes() << std::endl;
-
+    
     auto prediction = feature_predictor->forward(past_features);      // BxNxC
     std::cout << "prediction: " << prediction.sizes() << std::endl;
 

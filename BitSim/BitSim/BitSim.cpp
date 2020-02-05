@@ -74,9 +74,10 @@ int main()
     }
     else {
         observations = std::make_shared<FE_Observations>( BitSim::observations_path );
+        observations->load(BitSim::observations_path);
     }
     
-    observations->print();
+    //observations->print();
     
     auto fe_training = FE_Training{ observations };
     fe_training.train();
