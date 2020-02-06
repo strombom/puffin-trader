@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX"; 
-        constexpr auto first_timestamp = time_point_us{ date::sys_days(date::year{2020} / 01 / 01) };
+        constexpr auto first_timestamp = time_point_us{ date::sys_days(date::year{2019} / 06 / 01) };
 
         namespace Daily
         {
@@ -58,7 +58,7 @@ namespace BitSim
     constexpr auto n_positive = 1;
     constexpr auto n_negative = 19;
 
-    constexpr auto feature_size = 16;
+    constexpr auto feature_size = 128;
 
     const auto ch_price = 0;
     const auto ch_buy_volume = 1;
