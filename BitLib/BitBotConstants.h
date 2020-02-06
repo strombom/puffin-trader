@@ -58,7 +58,7 @@ namespace BitSim
     constexpr auto n_positive = 1;
     constexpr auto n_negative = 19;
 
-    constexpr auto feature_size = 128;
+    constexpr auto feature_size = 16;
 
     const auto ch_price = 0;
     const auto ch_buy_volume = 1;

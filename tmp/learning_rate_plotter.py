@@ -3,6 +3,7 @@ import csv
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 
 
 def plot_learning_rate(filename):
@@ -33,12 +34,16 @@ def plot_learning_rate(filename):
 
         for col_idx, ax in enumerate(axes):
             ax.set_ylabel(titles[col_idx])
-            ax.yaxis.label.set_color(colors[col_idx])
-            ax.tick_params(axis='y', colors=colors[col_idx], size=4, width=1.5)
-            #if col_idx > 1:
-            #    ax.spines["right"].set_position(("axes", 1.15 * (col_idx - 1)))
+            if col_idx == 0:
+                ax.set_yscale('log')
             width = 1
             ax.plot(x, data[:, col_idx], color=colors[col_idx], linewidth=width)
+            ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
+            ax.yaxis.set_minor_formatter(mtick.FormatStrFormatter('%.2f'))
+            ax.tick_params(axis='y', which='both', colors=colors[col_idx], size=4, width=1.5)
+            ax.yaxis.label.set_color(colors[col_idx])
+            if col_idx > 2:
+                ax.spines["right"].set_position(("axes", 1.15 * (col_idx - 2)))
         
         fig.tight_layout()
         fig.savefig('learning_rate.png', dpi=140)
@@ -53,6 +58,7 @@ initial = ""
 while True:
     current = read_file(filename=filename)
     if initial != current:
+        print("file updated")
         plot_learning_rate(filename=filename)
         initial = current
 
