@@ -15,7 +15,6 @@
 void FE_Training::test_learning_rate(void)
 {
 
-
 }
 
 void FE_Training::measure_observations(void)
@@ -60,12 +59,15 @@ void FE_Training::train(void)
         scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.0000001, 2.0, 1.0, 1.0, start_iteration, true);
     }
     else {
-        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.01, 0.001, 0.98, 0.90, start_iteration, false);
+        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.05, 0.005, 0.95, 0.90, start_iteration, false);
     }
+
+    auto train_csv = CSVLogger({"Loss", "LR", "Mom"}, "C:\\development\\github\\puffin-trader\\tmp\\learning_rate.csv");
 
     timer.restart();
     for (auto& batch : *data_loader) {
         //timer.print_elapsed("Batch loaded");
+
         timer.restart();
 
         optimizer.zero_grad();
@@ -85,6 +87,8 @@ void FE_Training::train(void)
         optimizer.options.momentum(momentum);
         logger.info("step loss(%f) lr(%f) mom(%f)", info_nce_loss.item().to<double>(), learning_rate, momentum);
         
+        train_csv.append_row({ info_nce_loss.item().to<double>(), learning_rate, momentum });
+
         if (scheduler->finished()) {
             break;
         }

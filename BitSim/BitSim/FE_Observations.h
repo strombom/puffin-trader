@@ -21,6 +21,8 @@ public:
     void print(void);
 
 private:
+    std::mutex get_mutex;
+
     torch::Tensor observations; // TxCxL (10000x3x128)
     time_point_s start_time;
     std::chrono::seconds interval;

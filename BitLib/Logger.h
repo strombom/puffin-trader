@@ -3,6 +3,7 @@
 
 #include <string>
 #include <mutex>
+#include <iostream>
 
 
 class Logger
@@ -19,3 +20,34 @@ private:
 };
 
 extern Logger logger;
+
+class CSVLogger
+{
+public:
+    CSVLogger(std::vector<std::string> col_names, std::string file_path);
+
+    template <class value_type>
+    void append_row(std::vector<value_type> values)
+    {
+        bool first_row = true;
+        for (auto&& value : values) {
+            if (first_row) {
+                first_row = false;
+            } else {
+                file << ",";
+            }
+            file << value;
+        }
+        file << std::endl;
+        file.flush();
+    }
+
+    template <class value_type>
+    void append_row(std::initializer_list<value_type> values)
+    {
+        append_row(std::vector<value_type>{ values });
+    }
+
+private:
+    std::ofstream file;
+};

@@ -45,3 +45,9 @@ void Logger::error(const char* format, ...)
     va_end(args);
     printf("\n");
 }
+
+CSVLogger::CSVLogger(std::vector<std::string> col_names, std::string file_path)
+{
+    file.open(file_path);
+    append_row(col_names);
+}

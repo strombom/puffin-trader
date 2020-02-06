@@ -17,7 +17,7 @@ FE_Observations::FE_Observations(const std::string& file_path)
 FE_Observations::FE_Observations(sptrIntervals intervals, time_point_s start_time) :
     start_time(start_time), interval(intervals->interval)
 {
-    const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);    
+    const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
     const auto n_observations = (long) intervals->rows.size() - BitSim::observation_length + 1;
     if (n_observations <= 0) {
         observations = torch::empty({ 0, BitSim::n_channels, BitSim::observation_length });
@@ -107,6 +107,8 @@ int64_t FE_Observations::size(void)
 
 torch::Tensor FE_Observations::get(int index)
 {
+    auto lock = std::scoped_lock(get_mutex);
+
     return observations[index];
 }
 

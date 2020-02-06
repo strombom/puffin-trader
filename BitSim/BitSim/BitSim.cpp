@@ -59,11 +59,13 @@ int main()
 
     logger.info("BitSim started");
 
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 24 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 01 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
     auto observations = sptrFE_Observations{ nullptr };
 
-    if (false) {
+    constexpr auto command = "train";
+
+    if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
         constexpr auto symbol = "XBTUSD";
         constexpr auto exchange = "BITMEX";
@@ -72,15 +74,22 @@ int main()
         observations = std::make_shared<FE_Observations>( std::move(intervals), timestamp_start );
         observations->save(BitSim::observations_path);
     }
-    else {
+    else if (command == "train") {
         observations = std::make_shared<FE_Observations>( BitSim::observations_path );
         observations->load(BitSim::observations_path);
+
+        auto fe_training = FE_Training{ observations };
+        fe_training.train();
+    }
+    else if (command == "visual") {
+        //auto a = torch::tensorb
+        constexpr auto logdir = "C:\\development\\github\\puffin-trader\\tmp\\log";
+
+
     }
     
     //observations->print();
     
-    auto fe_training = FE_Training{ observations };
-    fe_training.train();
 
     logger.info("BitSim exit");
 }
