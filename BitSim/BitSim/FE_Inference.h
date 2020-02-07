@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 
 #include <string>
 
@@ -9,6 +10,8 @@ class FE_Inference
 {
 public:
     FE_Inference(const std::string& file_path);
+
+
 
 private:
     RepresentationLearner model{};

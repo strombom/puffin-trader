@@ -65,7 +65,7 @@ int main()
     constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
     auto observations = sptrFE_Observations{ nullptr };
 
-    constexpr auto command = "train";
+    constexpr auto command = "inference";
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -78,7 +78,6 @@ int main()
     }
     else if (command == "train") {
         observations = std::make_shared<FE_Observations>( BitSim::observations_path );
-        observations->load(BitSim::observations_path);
 
         auto fe_training = FE_Training{ observations };
         fe_training.train();
@@ -89,6 +88,7 @@ int main()
         constexpr auto logdir = "C:\\development\\github\\puffin-trader\\tmp\\log";
     }
     else if (command == "inference") {
+        observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights_0893.pt" };
 
     }
