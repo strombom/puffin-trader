@@ -11,5 +11,5 @@ public:
     FE_Inference(const std::string& file_path);
 
 private:
-    RepresentationLearner model{ nullptr };
+    RepresentationLearner model{};
 };

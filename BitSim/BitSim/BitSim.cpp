@@ -65,7 +65,7 @@ int main()
     constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
     auto observations = sptrFE_Observations{ nullptr };
 
-    constexpr auto command = "train";
+    constexpr auto command = "inference";
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -89,7 +89,7 @@ int main()
         constexpr auto logdir = "C:\\development\\github\\puffin-trader\\tmp\\log";
     }
     else if (command == "inference") {
-        auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights.pt" };
+        auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights_0893.pt" };
 
     }
     
