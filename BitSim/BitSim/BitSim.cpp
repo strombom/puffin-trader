@@ -4,7 +4,9 @@
 #include "BitBaseClient.h"
 #include "Logger.h"
 #include "FE_Observations.h"
+#include "FE_Inference.h"
 #include "FE_Training.h"
+#include "FE_Model.h"
 
 #include "DateTime.h"
 #include <iostream>
@@ -59,7 +61,7 @@ int main()
 
     logger.info("BitSim started");
 
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 01 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
     constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
     auto observations = sptrFE_Observations{ nullptr };
 
@@ -80,16 +82,18 @@ int main()
 
         auto fe_training = FE_Training{ observations };
         fe_training.train();
+        fe_training.save_weights("C:\\development\\github\\puffin-trader\\tmp\\fe_weights.pt");
     }
     else if (command == "visual") {
         //auto a = torch::tensorb
         constexpr auto logdir = "C:\\development\\github\\puffin-trader\\tmp\\log";
-
+    }
+    else if (command == "inference") {
+        auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights.pt" };
 
     }
     
-    //observations->print();
-    
+    //observations->print();    
 
     logger.info("BitSim exit");
 }

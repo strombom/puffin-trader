@@ -6,7 +6,7 @@
 
 struct FeatureEncoderImpl : public torch::nn::Module
 {
-    FeatureEncoderImpl(const std::string &name = "feature_encoder_cnn") :
+    FeatureEncoderImpl(const std::string& name = "feature_encoder_cnn") :
         encoder(register_module(name, torch::nn::Sequential{
             torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::n_channels, BitSim::feature_size, 8}.stride(4).padding(2).bias(false)},
             torch::nn::BatchNorm1d{BitSim::feature_size},

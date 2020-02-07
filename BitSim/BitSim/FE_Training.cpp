@@ -3,7 +3,6 @@
 #include "FE_Training.h"
 #include "FE_DataLoader.h"
 #include "FE_Scheduler.h"
-#include "FE_Model.h"
 #include "DateTime.h"
 #include "Logger.h"
 #include "Utils.h"
@@ -42,7 +41,7 @@ void FE_Training::train(void)
 
     auto dataset = TradeDataset{ observations };
 
-    auto model = RepresentationLearner{};
+    model = RepresentationLearner{};
     model->to(c10::DeviceType::CUDA);
 
     timer.restart();
@@ -59,7 +58,7 @@ void FE_Training::train(void)
         scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.0000001, 2.0, 1.0, 1.0, start_iteration, true);
     }
     else {
-        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.05, 0.005, 0.95, 0.90, start_iteration, false);
+        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.2, 0.01, 0.90, 0.85, start_iteration, false);
     }
 
     auto train_csv = CSVLogger({"Loss", "LR", "Mom"}, "C:\\development\\github\\puffin-trader\\tmp\\learning_rate.csv");
@@ -96,6 +95,12 @@ void FE_Training::train(void)
     }
 }
 
+void FE_Training::save_weights(const std::string& file_path)
+{
+    auto archive = torch::serialize::OutputArchive{};
+    model->save(archive);
+    archive.save_to(file_path);
+}
 
 //file.close();
 /*

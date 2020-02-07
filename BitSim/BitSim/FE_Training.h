@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 
+#include "FE_Model.h"
 #include "FE_Observations.h"
 
 
@@ -14,7 +15,10 @@ public:
     void test_learning_rate(void);
     void measure_observations(void);
 
+    void save_weights(const std::string& file_path);
+
 private:
     sptrFE_Observations observations;
+    RepresentationLearner model{ nullptr };
 };
 

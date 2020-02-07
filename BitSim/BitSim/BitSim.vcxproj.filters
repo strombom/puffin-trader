@@ -84,6 +84,9 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FE_Inference.cpp">
+      <Filter>Source Files\FeatureEncoder</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\DateTime.h">
@@ -127,6 +130,9 @@
     </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FE_Inference.h">
+      <Filter>Header Files\FeatureEncoder</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
