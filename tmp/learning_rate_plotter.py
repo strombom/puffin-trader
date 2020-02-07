@@ -47,6 +47,7 @@ def plot_learning_rate(filename):
         
         fig.tight_layout()
         fig.savefig('learning_rate.png', dpi=140)
+        plt.close()
 
 
 def read_file(filename):
