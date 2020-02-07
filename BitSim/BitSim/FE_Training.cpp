@@ -58,7 +58,7 @@ void FE_Training::train(void)
         scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.0000001, 2.0, 1.0, 1.0, start_iteration, true);
     }
     else {
-        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.2, 0.01, 0.90, 0.85, start_iteration, false);
+        scheduler = std::make_unique<FE_Scheduler>(BitSim::n_batches, 0.2, 0.005, 0.90, 0.85, start_iteration, false);
     }
 
     auto train_csv = CSVLogger({"Loss", "LR", "Mom"}, "C:\\development\\github\\puffin-trader\\tmp\\learning_rate.csv");

@@ -49,11 +49,11 @@ namespace BitSim
 
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
 
-    constexpr auto n_batches = 5000;
+    constexpr auto n_batches = 20000;
     constexpr auto batch_size = 500;
     constexpr auto observation_length = 128;
     constexpr auto n_channels = 3;
-    constexpr auto n_observations = 6;
+    constexpr auto n_observations = 10;
     constexpr auto n_predictions = 1;
     constexpr auto n_positive = 1;
     constexpr auto n_negative = 19;

@@ -63,4 +63,4 @@ while True:
         plot_learning_rate(filename=filename)
         initial = current
 
-    time.sleep(0.5)
+    time.sleep(1)
