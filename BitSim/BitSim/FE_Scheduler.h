@@ -19,6 +19,7 @@ private:
     double mo_min;
     const bool lr_test;
 
+    const double lr_top_part = 0.25;
     const double annealing_part = 0.1;
     int lr_top_idx;
     int annealing_idx;

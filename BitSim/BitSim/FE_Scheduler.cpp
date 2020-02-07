@@ -11,7 +11,7 @@ FE_Scheduler::FE_Scheduler(int n_iterations, double lr_max, double lr_min, doubl
         log_file.open("C:\\development\\github\\puffin-trader\\tmp\\lr_test.txt");
     }
 
-    lr_top_idx = (int)(n_iterations * (1 - annealing_part) / 2);
+    lr_top_idx = (int)(n_iterations * lr_top_part);
     annealing_idx = (int)(n_iterations * (1 - annealing_part));
 }
 
@@ -39,7 +39,7 @@ std::tuple<double, double> FE_Scheduler::calc(double loss)
     else {
         // Learning rate annealing
         const auto progress = (double)(iteration - annealing_idx) / (n_iterations - annealing_idx);
-        learning_rate = lr_min - progress * (lr_min / 2);
+        learning_rate = lr_min - progress * (lr_min / 4);
         momentum = mo_max;
     }
 
