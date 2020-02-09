@@ -7,6 +7,7 @@
 #include "FE_Inference.h"
 #include "FE_Training.h"
 #include "FE_Model.h"
+#include "Utils.h"
 
 #include "DateTime.h"
 #include <iostream>
@@ -92,9 +93,10 @@ int main()
         auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights_0893.pt" };
 
         auto random_observations = observations->get_random(5);
-        auto feature = inference.forward(random_observations);
+        auto features = inference.forward(random_observations);
 
-        std::cout << feature << std::endl;
+        std::cout << features << std::endl;
+        Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
     
     //observations->print();    

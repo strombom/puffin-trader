@@ -48,6 +48,7 @@ namespace BitSim
     }
 
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
+    constexpr auto tmp_path = "C:\\development\\github\\puffin-trader\\tmp";
 
     constexpr auto n_batches = 20000;
     constexpr auto batch_size = 500;

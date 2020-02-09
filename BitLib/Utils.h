@@ -9,7 +9,7 @@ class Utils
 {
 public:
 
-    static void save_tensor(const torch::Tensor &tensor, const std::string& filepath);
+    static void save_tensor(const torch::Tensor &tensor, const std::string& path, const std::string& filename);
 
 private:
 
