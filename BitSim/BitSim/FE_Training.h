@@ -15,7 +15,7 @@ public:
     void test_learning_rate(void);
     void measure_observations(void);
 
-    void save_weights(const std::string& file_path);
+    void save_weights(const std::string& path, const std::string& filename);
 
 private:
     sptrFE_Observations observations;

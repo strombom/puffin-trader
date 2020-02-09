@@ -37,16 +37,13 @@ int main()
 
         auto fe_training = FE_Training{ observations };
         fe_training.train();
-        fe_training.save_weights("C:\\development\\github\\puffin-trader\\tmp\\fe_weights.pt");
-    }
-    else if (command == "visual") {
-        constexpr auto logdir = "C:\\development\\github\\puffin-trader\\tmp\\log";
+        fe_training.save_weights(BitSim::tmp_path, "fe_weights.pt");
     }
     else if (command == "inference") {
         observations = std::make_shared<FE_Observations>(BitSim::observations_path);
-        auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights_0893.pt" };
+        auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_0893.pt" };
 
-        auto random_observations = observations->get_range(0, 3000, 64);
+        auto random_observations = observations->get_range(0, 3000, 256);
         auto features = inference.forward(random_observations);
 
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");

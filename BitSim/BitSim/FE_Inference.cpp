@@ -3,9 +3,9 @@
 #include "FE_Inference.h"
 
 
-FE_Inference::FE_Inference(const std::string& file_path)
+FE_Inference::FE_Inference(const std::string& path, const std::string& filename)
 {
-    torch::load(model, file_path);
+    torch::load(model, path + "\\" + filename);
     model->to(torch::DeviceType::CPU);
     model->eval();
 }

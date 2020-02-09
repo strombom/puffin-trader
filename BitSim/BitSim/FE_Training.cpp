@@ -95,11 +95,11 @@ void FE_Training::train(void)
     }
 }
 
-void FE_Training::save_weights(const std::string& file_path)
+void FE_Training::save_weights(const std::string& path ,const std::string& filename)
 {
     auto archive = torch::serialize::OutputArchive{};
     model->save(archive);
-    archive.save_to(file_path);
+    archive.save_to(path + "\\" + filename);
 }
 
 //file.close();
