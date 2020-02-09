@@ -15,51 +15,6 @@
 
 int main()
 {
-    /*
-    auto obs = torch::zeros({ 2, 2, 3 });
-    auto batch = torch::zeros({ 2, 2, 2, 3 });
-
-    obs[0][0][0] = 1;
-    obs[0][0][1] = 2;
-    obs[0][0][2] = 3;
-    obs[0][1][0] = 4;
-    obs[0][1][1] = 5;
-    obs[0][1][2] = 6;
-
-    obs[1][0][0] = 2;
-    obs[1][0][1] = 3;
-    obs[1][0][2] = 4;
-    obs[1][1][0] = 5;
-    obs[1][1][1] = 6;
-    obs[1][1][2] = 7;
-
-    //batch[0].slice(2, 0, 0, 1) = obs[0];
-
-    std::cout << "one batch" << std::endl;
-    std::cout << batch[0] << std::endl;
-
-    std::cout << "slice" << std::endl;
-    std::cout << batch[0].slice(1, 0, 1, 1).reshape({2, 3}) << std::endl;
-
-    std::cout << "one obs" << std::endl;
-    std::cout << obs[0] << std::endl;
-
-    batch[0].slice(1, 0, 1, 1).reshape({ 2, 3 }) = obs[0];
-    batch[0].slice(1, 1, 2, 1).reshape({ 2, 3 }) = obs[1];
-
-    std::cout << "obs" << std::endl;
-    std::cout << obs << std::endl;
-
-    std::cout << "batch" << std::endl;
-    std::cout << batch << std::endl;
-
-    std::cout << "one batch" << std::endl;
-    std::cout << batch[0].slice(1, 0, 1, 1).reshape({ 2, 3 }) << std::endl;
-    return 1;
-    */
-
-    //batch.past_observations[batch_idx].slice(2, obs_idx, obs_idx, 1) = observations->get(obs_time_idx);
-
     logger.info("BitSim started");
 
     constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
@@ -85,21 +40,17 @@ int main()
         fe_training.save_weights("C:\\development\\github\\puffin-trader\\tmp\\fe_weights.pt");
     }
     else if (command == "visual") {
-        //auto a = torch::tensorb
         constexpr auto logdir = "C:\\development\\github\\puffin-trader\\tmp\\log";
     }
     else if (command == "inference") {
         observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights_0893.pt" };
 
-        auto random_observations = observations->get_random(5);
+        auto random_observations = observations->get_range(0, 3000, 64);
         auto features = inference.forward(random_observations);
 
-        std::cout << features << std::endl;
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
     
-    //observations->print();    
-
     logger.info("BitSim exit");
 }

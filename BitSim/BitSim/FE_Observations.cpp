@@ -135,6 +135,20 @@ torch::Tensor FE_Observations::get_random(int count)
     return get(indices);
 }
 
+torch::Tensor FE_Observations::get_range(int start, int count)
+{
+    return get_range(start, count, 1);
+}
+
+torch::Tensor FE_Observations::get_range(int start, int count, int step)
+{
+    auto indices = std::vector<size_t>{};
+    for (auto idx = 0; idx < count; ++idx) {
+        indices.push_back(start + idx * step);
+    }
+    return get(indices);
+}
+
 float FE_Observations::price_transform(float start_price, float price)
 {
     // Transform the price ratio into a -1 to 1 distribution
