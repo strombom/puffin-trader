@@ -11,7 +11,7 @@ class FE_Inference
 public:
     FE_Inference(const std::string& file_path);
 
-
+    torch::Tensor forward(torch::Tensor observation);
 
 private:
     RepresentationLearner model{};

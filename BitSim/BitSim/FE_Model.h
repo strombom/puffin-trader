@@ -73,7 +73,7 @@ struct RepresentationLearnerImpl : public torch::nn::Module
         torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
         torch::Tensor future_negatives);   // BxCxNxL (2x1x9x160)
 
-    void forward_predict(void);
+    torch::Tensor forward_predict(torch::Tensor observation);
 
 private:
     FeatureEncoder feature_encoder;

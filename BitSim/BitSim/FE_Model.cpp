@@ -13,7 +13,8 @@ torch::Tensor FeatureEncoderImpl::forward(torch::Tensor x)
 
     for (auto&& in : ins) {
         // in: BxCxNxL (2x3x4x160)
-        auto feature = encoder->forward(in.squeeze()).transpose(1, 2); // BxNxL (2x3x256)
+        auto feature = encoder->forward(in.squeeze(2)); // BxNxL (2x3x256)
+        feature = feature.transpose(1, 2);
         features.push_back(feature);
     }
 
@@ -34,6 +35,11 @@ torch::Tensor FeaturePredictorImpl::forward(torch::Tensor observed_features)
     return prediction;
 };
 
+torch::Tensor RepresentationLearnerImpl::forward_predict(torch::Tensor observation)
+{
+    auto features = feature_encoder->forward(observation);
+    return features;
+}
 
 std::tuple<torch::Tensor, double> RepresentationLearnerImpl::forward_fit(
     torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
@@ -95,8 +101,3 @@ std::tuple<torch::Tensor, double> RepresentationLearnerImpl::forward_fit(
 
     return std::make_tuple(info_nce_loss, accuracy);
 };
-
-void RepresentationLearnerImpl::forward_predict(void)
-{
-
-}
