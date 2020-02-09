@@ -17,6 +17,8 @@ public:
 
     int64_t size(void);
     torch::Tensor get(int index);
+    torch::Tensor get(c10::ArrayRef<size_t> index);
+    torch::Tensor get_random(int count);
 
     void print(void);
 

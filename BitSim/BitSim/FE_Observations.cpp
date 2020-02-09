@@ -5,6 +5,7 @@
 #include "BitBotConstants.h"
 #include "DateTime.h"
 #include "Logger.h"
+#include "Utils.h"
 
 #include <future>
 
@@ -110,6 +111,28 @@ torch::Tensor FE_Observations::get(int index)
     auto lock = std::scoped_lock(get_mutex);
 
     return observations[index];
+}
+
+torch::Tensor FE_Observations::get(c10::ArrayRef<size_t> indices)
+{
+    std::cout << indices << std::endl;
+    auto lock = std::scoped_lock(get_mutex);
+    auto output = torch::empty({ (long)indices.size(), BitSim::n_channels, BitSim::feature_size });
+
+    for (auto idx = 0; idx < indices.size(); ++idx) {
+        output[idx] = observations[indices[idx]];
+    }
+    return output;
+}
+
+torch::Tensor FE_Observations::get_random(int count)
+{
+    auto random = RandomRange{ 0, (int) observations.size(0) };
+    auto indices = std::vector<size_t>{};
+    for (auto idx = 0; idx < count; ++idx) {
+        indices.push_back(random.get());
+    }
+    return get(indices);
 }
 
 float FE_Observations::price_transform(float start_price, float price)

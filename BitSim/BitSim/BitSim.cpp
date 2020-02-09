@@ -91,11 +91,10 @@ int main()
         observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto inference = FE_Inference{ "C:\\development\\github\\puffin-trader\\tmp\\fe_weights_0893.pt" };
 
-        auto feature = inference.forward(observations->get(0));
-        feature = inference.forward(observations->get(1));
-        feature = inference.forward(observations->get(2));
+        auto random_observations = observations->get_random(5);
+        auto feature = inference.forward(random_observations);
 
-        //std::cout << feature << std::endl;
+        std::cout << feature << std::endl;
     }
     
     //observations->print();    
