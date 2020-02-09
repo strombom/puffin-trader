@@ -37,6 +37,7 @@ torch::Tensor FeaturePredictorImpl::forward(torch::Tensor observed_features)
 
 torch::Tensor RepresentationLearnerImpl::forward_predict(torch::Tensor observation)
 {
+    torch::NoGradGuard no_grad;
     auto features = feature_encoder->forward(observation);
     return features;
 }
