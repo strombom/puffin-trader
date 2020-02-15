@@ -149,6 +149,11 @@ torch::Tensor FE_Observations::get_range(int start, int count, int step)
     return get(indices);
 }
 
+torch::Tensor FE_Observations::get_all(void)
+{
+    return observations;
+}
+
 float FE_Observations::price_transform(float start_price, float price)
 {
     // Transform the price ratio into a -1 to 1 distribution

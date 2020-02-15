@@ -43,6 +43,12 @@
     <Filter Include="Header Files\FeatureEncoder">
       <UniqueIdentifier>{fe00bf6f-13fb-40d6-8d41-3ab290c0f02e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ReinforcementLearning">
+      <UniqueIdentifier>{bc3bb557-69e6-4ba1-a0e2-1a345d861794}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ReinforcementLearning">
+      <UniqueIdentifier>{5da6b7ff-6da3-4759-a671-ba03a74b8a9b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -86,6 +92,15 @@
     </ClCompile>
     <ClCompile Include="FE_Inference.cpp">
       <Filter>Source Files\FeatureEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="RL_Training.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
+    <ClCompile Include="RL_Agent.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
+    <ClCompile Include="RL_Closer.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +148,15 @@
     </ClInclude>
     <ClInclude Include="FE_Inference.h">
       <Filter>Header Files\FeatureEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Training.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Agent.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Closer.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

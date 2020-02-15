@@ -183,6 +183,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="RL_Agent.cpp" />
+    <ClCompile Include="RL_Closer.cpp" />
+    <ClCompile Include="RL_Training.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
@@ -200,6 +203,9 @@
     <ClInclude Include="FE_Scheduler.h" />
     <ClInclude Include="FE_Training.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="RL_Agent.h" />
+    <ClInclude Include="RL_Closer.h" />
+    <ClInclude Include="RL_Training.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

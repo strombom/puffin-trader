@@ -2,11 +2,12 @@
 
 #include "BitBotConstants.h"
 #include "BitBaseClient.h"
-#include "Logger.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
 #include "FE_Training.h"
 #include "FE_Model.h"
+#include "RL_Closer.h"
+#include "Logger.h"
 #include "Utils.h"
 
 #include "DateTime.h"
@@ -43,10 +44,15 @@ int main()
         observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_0893.pt" };
 
-        auto random_observations = observations->get_range(0, 3000, 256);
-        auto features = inference.forward(random_observations);
-
+        auto features = inference.forward(observations->get_all());
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
+
+    }
+    else if (command == "train_closer") {
+        observations = std::make_shared<FE_Observations>(BitSim::observations_path);
+
+        auto rl_closer = RL_Closer{ observations };
+        rl_closer.train();
     }
     
     logger.info("BitSim exit");
