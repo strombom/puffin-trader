@@ -43,10 +43,10 @@ int main()
     else if (command == "inference") {
         observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_0893.pt" };
-
         auto features = inference.forward(observations->get_all());
-        Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
 
+        std::cout << "Inference, features " << features.sizes() << std::endl;
+        Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
     else if (command == "train_closer") {
         observations = std::make_shared<FE_Observations>(BitSim::observations_path);

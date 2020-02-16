@@ -5,23 +5,23 @@
 
 torch::Tensor FeatureEncoderImpl::forward(torch::Tensor x)
 {
-    const auto size = (int) x.sizes()[2];
+    const auto batch_size = x.size(0);
+    const auto n = x.size(2);
+    const auto max_chunk_size = 250000;
+    const auto chunk_count = 1 + batch_size * n / max_chunk_size;
 
-    auto features = std::vector<torch::Tensor>{};
-    features.reserve(size);
-    auto ins = x.chunk(size, 2);
+    const auto chunks = x.transpose(1, 2).reshape({ batch_size * n, BitSim::n_channels, BitSim::feature_size }).chunk(chunk_count);
+    auto features = torch::empty({ batch_size, n, BitSim::feature_size });
 
-    for (auto&& in : ins) {
-        // in: BxCxNxL (2x3x4x160)
-        auto feature = encoder->forward(in.squeeze(2)); // BxNxL (2x3x256)
-        feature = feature.transpose(1, 2);
-        features.push_back(feature);
+    for (auto chunk_idx = 0; chunk_idx < chunks.size(); ++chunk_idx) {
+        const auto chunk_size = chunks[chunk_idx].size(0);
+        auto feature = encoder->forward(chunks[chunk_idx]); // (B*N)xCxL
+        feature = feature.transpose(1, 2).reshape({ chunk_size, n, BitSim::feature_size }); // BxNxL (2x1x256)
+        features.narrow(0, chunk_idx, chunk_size) = feature;
     }
 
-    auto y = torch::cat(features, 1); // BxNxL (2x4x256)
-    return y;
+    return features;
 };
-
 
 torch::Tensor FeaturePredictorImpl::forward(torch::Tensor observed_features)
 {
@@ -43,9 +43,9 @@ torch::Tensor RepresentationLearnerImpl::forward_predict(torch::Tensor observati
 }
 
 std::tuple<torch::Tensor, double> RepresentationLearnerImpl::forward_fit(
-    torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
-    torch::Tensor future_positives,    // BxCxNxL (2x1x(1x1)x160)
-    torch::Tensor future_negatives)    // BxCxNxL (2x1x(1x9)x160)
+    torch::Tensor past_observations,   // BxCxNxL (2x3x4x160)
+    torch::Tensor future_positives,    // BxCxNxL (2x3x(1x1)x160)
+    torch::Tensor future_negatives)    // BxCxNxL (2x3x(1x9)x160)
 {
     auto past_features     = feature_encoder->forward(past_observations); // BxCxN (2x512x4)
     auto positive_features = feature_encoder->forward(future_positives);  // BxCxN (2x512x1)

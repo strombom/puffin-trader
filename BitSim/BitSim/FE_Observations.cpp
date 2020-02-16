@@ -115,7 +115,6 @@ torch::Tensor FE_Observations::get(int index)
 
 torch::Tensor FE_Observations::get(c10::ArrayRef<size_t> indices)
 {
-    std::cout << indices << std::endl;
     auto lock = std::scoped_lock(get_mutex);
     auto output = torch::empty({ (long)indices.size(), BitSim::n_channels, BitSim::feature_size });
 
