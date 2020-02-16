@@ -3,21 +3,21 @@
 #include "FE_Model.h"
 
 
-torch::Tensor FeatureEncoderImpl::forward(torch::Tensor x)
+torch::Tensor FeatureEncoderImpl::forward(torch::Tensor observations)
 {
-    const auto batch_size = x.size(0);
-    const auto n = x.size(2);
-    const auto max_chunk_size = 250000;
+    const auto batch_size = observations.size(0);
+    const auto n = observations.size(2);
+    const auto max_chunk_size = 50000; // Adjust to GPU memory
     const auto chunk_count = 1 + batch_size * n / max_chunk_size;
 
-    const auto chunks = x.transpose(1, 2).reshape({ batch_size * n, BitSim::n_channels, BitSim::feature_size }).chunk(chunk_count);
-    auto features = torch::empty({ batch_size, n, BitSim::feature_size });
+    const auto chunks = observations.transpose(1, 2).reshape({ batch_size * n, BitSim::n_channels, BitSim::feature_size }).chunk(chunk_count);
+    auto features = torch::empty({ batch_size, BitSim::feature_size, n }).cuda();
 
     for (auto chunk_idx = 0; chunk_idx < chunks.size(); ++chunk_idx) {
         const auto chunk_size = chunks[chunk_idx].size(0);
-        auto feature = encoder->forward(chunks[chunk_idx]); // (B*N)xCxL
-        feature = feature.transpose(1, 2).reshape({ chunk_size, n, BitSim::feature_size }); // BxNxL (2x1x256)
-        features.narrow(0, chunk_idx, chunk_size) = feature;
+        auto feature = encoder->forward(chunks[chunk_idx]); // (B*N)xLxC
+        feature = feature.reshape({ chunk_size / n, n, BitSim::feature_size }).transpose(1, 2); // BxNxL (20x256x4)
+        features.narrow(0, chunk_idx, chunk_size / n) = feature;
     }
 
     return features;
