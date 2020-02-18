@@ -2,11 +2,17 @@
 
 #include "Utils.h"
 
+#include "torch/serialize.h"
+
 
 void Utils::save_tensor(const torch::Tensor& tensor, const std::string& path, const std::string& filename)
-{   
-    auto bytes = torch::jit::pickle_save(tensor);
-    auto fout = std::ofstream{ path + "\\" + filename, std::ios::out | std::ios::binary };
-    fout.write(bytes.data(), bytes.size());
-    fout.close();
+{
+    torch::save(tensor, path + "\\" + filename);
+}
+
+torch::Tensor Utils::load_tensor(const std::string& path, const std::string& filename)
+{
+    auto tensor = std::vector<torch::Tensor>{};
+    torch::load(tensor, path + "\\" + filename);
+    return tensor[0];
 }
