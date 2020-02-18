@@ -64,4 +64,11 @@ namespace BitSim
     const auto ch_price = 0;
     const auto ch_buy_volume = 1;
     const auto ch_sell_volume = 2;
+
+    namespace Closer
+    {
+        constexpr auto n_episodes = 10;
+
+        constexpr auto initial_random_action = 1000;
+    }
 }
