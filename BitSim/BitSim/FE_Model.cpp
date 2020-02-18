@@ -11,13 +11,14 @@ torch::Tensor FeatureEncoderImpl::forward(torch::Tensor observations)
     const auto chunk_count = 1 + batch_size * n / max_chunk_size;
 
     const auto chunks = observations.transpose(1, 2).reshape({ batch_size * n, BitSim::n_channels, BitSim::feature_size }).chunk(chunk_count);
+    const auto first_chunk_size = chunks[0].size(0);
     auto features = torch::empty({ batch_size, n, BitSim::feature_size }).cuda();
 
     for (auto chunk_idx = 0; chunk_idx < chunks.size(); ++chunk_idx) {
         const auto chunk_size = chunks[chunk_idx].size(0);
         auto feature = encoder->forward(chunks[chunk_idx]); // (B*N)xLxC
         feature = feature.transpose(1, 2).reshape({ chunk_size / n, n, BitSim::feature_size }); // BxNxL (20x256x4)
-        features.narrow(0, chunk_idx, chunk_size / n) = feature;
+        features.narrow(0, chunk_idx * first_chunk_size, chunk_size / n) = feature;
     }
 
     return features;
