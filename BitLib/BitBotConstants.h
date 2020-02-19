@@ -68,6 +68,7 @@ namespace BitSim
     namespace Closer
     {
         constexpr auto n_episodes = 10;
+        constexpr auto save_period = 100;
 
         constexpr auto initial_random_action = 1000;
     }

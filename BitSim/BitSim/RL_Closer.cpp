@@ -6,41 +6,61 @@
 
 void RL_Closer::train(void)
 {
-
-
     for (auto idx_episode = 0; idx_episode < BitSim::Closer::n_episodes; ++idx_episode) {
         auto state = environment.reset();
-        auto done = false;
-        auto action = get_action(state);
+        step_episode = 0;
 
-        while (!done) {
+        while (true) {
+            auto action = get_action(state);
+            auto [next_state, done] = step(action);
 
-            done = false;
+            ++step_total;
+            ++step_episode;
+
+            if (done) {
+                break;
+            }
+        }
+
+        update_model();
+
+        if (idx_episode % BitSim::Closer::save_period == 0 ||
+            idx_episode == BitSim::Closer::n_episodes - 1) {
+            save_params(idx_episode);
+            interim_test();
         }
     }
 }
 
-RL_Closer::Action RL_Closer::get_action(State state)
+void RL_Closer::save_params(int idx_period)
 {
 
-    if (n_step_total > BitSim::Closer::initial_random_action) {
+}
+
+void RL_Closer::update_model(void)
+{
+
+}
+
+void RL_Closer::interim_test(void)
+{
+
+}
+
+RL_Action RL_Closer::get_action(RL_State state)
+{
+
+    if (step_total > BitSim::Closer::initial_random_action) {
         return environment.random_action();
     }
 
     return actor.get_action(state);
 }
 
-RL_Closer::State RL_Closer::Environment::reset(void)
+std::tuple<RL_State, bool> RL_Closer::step(RL_Action action)
 {
-    return RL_Closer::State{};
-}
-
-RL_Closer::Action RL_Closer::Environment::random_action(void)
-{
-    return RL_Closer::Action{};
-}
-
-RL_Closer::Action RL_Closer::Actor::get_action(State state)
-{
-    return RL_Closer::Action{};
+    auto done = false;
+    auto state = RL_State{};
+    
+    return std::make_tuple(state, done);
 }

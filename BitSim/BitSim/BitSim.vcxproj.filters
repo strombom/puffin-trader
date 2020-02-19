@@ -102,6 +102,18 @@
     <ClCompile Include="RL_Closer.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
+    <ClCompile Include="RL_Environment.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
+    <ClCompile Include="RL_Action.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
+    <ClCompile Include="RL_Actor.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
+    <ClCompile Include="RL_State.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\DateTime.h">
@@ -156,6 +168,18 @@
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
     <ClInclude Include="RL_Closer.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Environment.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Action.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Actor.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_State.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
   </ItemGroup>
