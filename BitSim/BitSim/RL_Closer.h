@@ -11,8 +11,8 @@
 class RL_Closer
 {
 public:
-    RL_Closer(sptrFE_Observations observations) :
-        observations(observations),
+    RL_Closer(torch::Tensor features) :
+        features(features),
         step_total(0),
         step_episode(0)
     {}
@@ -20,7 +20,7 @@ public:
     void train(void);
 
 private:
-    sptrFE_Observations observations;
+    torch::Tensor features;
     
     int step_total;
     int step_episode;

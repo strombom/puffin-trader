@@ -47,6 +47,15 @@ const int Database::get_attribute(const std::string& key, int default_value)
     return return_value;
 }
 
+const time_point_s Database::get_attribute(const std::string& key, const time_point_s& default_date_time)
+{
+    const auto attribute = get_attribute(key, date::format(BitBase::Database::time_format, default_date_time));
+    auto value = std::istringstream{ attribute };
+    auto time_point = time_point_s{};
+    value >> date::parse(BitBase::Database::time_format, time_point);
+    return time_point;
+}
+
 const time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
 {
     const auto attribute = get_attribute(key, date::format(BitBase::Database::time_format, default_date_time));

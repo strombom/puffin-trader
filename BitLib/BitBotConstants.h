@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX"; 
-        constexpr auto first_timestamp = time_point_us{ date::sys_days(date::year{2019} / 06 / 01) };
+        constexpr auto first_timestamp = time_point_s{ date::sys_days(date::year{2019} / 06 / 01) };
 
         namespace Daily
         {
@@ -48,6 +48,7 @@ namespace BitSim
     }
 
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
+    constexpr auto intervals_path = "C:\\development\\github\\puffin-trader\\tmp\\intervals.dat";
     constexpr auto tmp_path = "C:\\development\\github\\puffin-trader\\tmp";
 
     constexpr auto n_batches = 20000;

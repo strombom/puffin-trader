@@ -59,7 +59,7 @@ RL_Action RL_Closer::get_action(RL_State state)
 
 std::tuple<RL_State, bool> RL_Closer::step(RL_Action action)
 {
-    auto done = false;
+    auto done = true;
     auto state = RL_State{};
     
     return std::make_tuple(state, done);

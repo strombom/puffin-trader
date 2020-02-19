@@ -8,6 +8,8 @@
 class RL_Environment
 {
 public:
+    RL_Environment(void) {}
+
     RL_State reset(void);
     RL_Action random_action(void);
 };

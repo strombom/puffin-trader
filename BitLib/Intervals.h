@@ -13,7 +13,6 @@ using step_prices_t = std::array<float, BitBase::Interval::steps.size()>;
 class Interval
 {
 public:
-
     Interval(void) : last_price(0), vol_buy(0), vol_sell(0) {}
     Interval(float last_price, float vol_buy, float vol_sell, const step_prices_t& prices_buy, const step_prices_t& prices_sell) :
         last_price(last_price), vol_buy(vol_buy), vol_sell(vol_sell), prices_buy(prices_buy), prices_sell(prices_sell) {}
@@ -31,18 +30,26 @@ public:
 class Intervals
 {
 public:
-    Intervals(const time_point_us& timestamp_start, const std::chrono::seconds& interval) :
+    Intervals(const time_point_s& timestamp_start, const std::chrono::seconds& interval) :
         timestamp_start(timestamp_start), interval(interval) {}
+
+    Intervals(const std::string& file_path)
+    {
+        load(file_path);
+    }
 
     // Copy constructor
     Intervals(const Intervals& intervals) :
         rows(intervals.rows), timestamp_start(intervals.timestamp_start), interval(intervals.interval) {}
 
+    void load(const std::string& file_path);
+    void save(const std::string& file_path) const;
+
     friend std::ostream& operator<<(std::ostream& stream, const Intervals& intervals_data);
     friend std::istream& operator>>(std::istream& stream, Intervals& intervals_data);
 
     std::vector<Interval> rows;
-    time_point_us timestamp_start;
+    time_point_s timestamp_start;
     std::chrono::seconds interval;
 };
 

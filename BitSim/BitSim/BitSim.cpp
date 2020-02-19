@@ -1,7 +1,8 @@
 #include "pch.h"
 
-#include "BitBotConstants.h"
 #include "BitBaseClient.h"
+#include "BitBotConstants.h"
+#include "BitmexSimulator.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
 #include "FE_Training.h"
@@ -29,6 +30,8 @@ int main()
         constexpr auto exchange = "BITMEX";
         constexpr auto interval = std::chrono::seconds{ 10s };
         auto intervals = bitbase_client.get_intervals(symbol, exchange, timestamp_start, timestamp_end, interval);
+        intervals->save(BitSim::intervals_path);
+
         auto observations = std::make_shared<FE_Observations>( std::move(intervals), timestamp_start );
         observations->save(BitSim::observations_path);
     }
@@ -48,12 +51,12 @@ int main()
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
     else if (command == "train_closer") {
-        auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
+        auto intervals = Intervals{ BitSim::intervals_path };
         auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
-
         std::cout << "features: " << features.sizes() << std::endl;
 
-        auto rl_closer = RL_Closer{ observations };
+        auto simulator = BitmexSimulator{};
+        auto rl_closer = RL_Closer{ features };
         rl_closer.train();
     }
     

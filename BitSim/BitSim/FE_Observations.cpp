@@ -68,7 +68,7 @@ torch::Tensor FE_Observations::make_observation(sptrIntervals intervals, int idx
     return observation;
 }
 
-void FE_Observations::save(const std::string& file_path)
+void FE_Observations::save(const std::string& file_path) const
 {
     torch::save(observations, file_path + "_tensor");
 

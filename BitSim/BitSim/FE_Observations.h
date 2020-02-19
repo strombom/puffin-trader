@@ -12,8 +12,8 @@ public:
     FE_Observations(const std::string& file_path);
     FE_Observations(sptrIntervals intervals, time_point_s start_time);
 
-    void save(const std::string& file_path);
     void load(const std::string& file_path);
+    void save(const std::string& file_path) const;
 
     int64_t size(void);
     torch::Tensor get(int index);

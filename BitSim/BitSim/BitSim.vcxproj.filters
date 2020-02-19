@@ -49,6 +49,12 @@
     <Filter Include="Header Files\ReinforcementLearning">
       <UniqueIdentifier>{5da6b7ff-6da3-4759-a671-ba03a74b8a9b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Simulator">
+      <UniqueIdentifier>{9337abb5-f562-48b1-9d30-2d74035128cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Simulator">
+      <UniqueIdentifier>{a180a3d8-e32f-4824-8b32-5a87d1876a5a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -113,6 +119,9 @@
     </ClCompile>
     <ClCompile Include="RL_State.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmexSimulator.cpp">
+      <Filter>Source Files\Simulator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +190,9 @@
     </ClInclude>
     <ClInclude Include="RL_State.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexSimulator.h">
+      <Filter>Header Files\Simulator</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -38,6 +38,7 @@ public:
 
     const std::string get_attribute(const std::string& key, const std::string& default_string);
     const int get_attribute(const std::string& key, int default_value);
+    const time_point_s get_attribute(const std::string& key, const time_point_s& default_date_time);
     const time_point_us get_attribute(const std::string& key, const time_point_us& default_date_time);
     const std::vector<std::string> get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector);
     const std::unordered_set<std::string> get_attribute(const std::string& key, const std::unordered_set<std::string>& default_string_set);

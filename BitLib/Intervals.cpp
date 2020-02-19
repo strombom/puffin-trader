@@ -56,3 +56,35 @@ std::istream& operator>>(std::istream& stream, Intervals& intervals_data)
 
     return stream;
 }
+
+void Intervals::load(const std::string& file_path)
+{
+    auto start_time_raw = 0;
+    auto interval_raw = 0;
+
+    auto attr_file = std::ifstream{ file_path + "_attr" };
+    attr_file >> start_time_raw >> interval_raw;
+    attr_file.close();
+
+    timestamp_start = time_point_s{ std::chrono::seconds{start_time_raw} };
+    interval = std::chrono::seconds{ interval_raw };
+
+    auto data_file = std::ifstream{ file_path + "_data", std::ios::binary };
+    auto database_interval = Interval{};
+    while (data_file >> database_interval) {
+        rows.push_back(database_interval);
+    }
+    data_file.close();
+}
+
+void Intervals::save(const std::string& file_path) const
+{
+    auto data_file = std::ofstream{ file_path + "_data", std::ios::binary };
+    data_file << *this;
+    data_file.close();
+
+    auto attr_file = std::ofstream{ file_path + "_attr" };
+    attr_file << timestamp_start.time_since_epoch().count() << std::endl;
+    attr_file << interval.count() << std::endl;
+    attr_file.close();
+}
