@@ -88,3 +88,13 @@ void Intervals::save(const std::string& file_path) const
     attr_file << interval.count() << std::endl;
     attr_file.close();
 }
+
+time_point_s Intervals::get_timestamp_start(void) const
+{
+    return timestamp_start;
+}
+
+time_point_s Intervals::get_timestamp_end(void) const
+{
+    return timestamp_start + interval * rows.size();
+}

@@ -3,6 +3,7 @@
 #include "DateTime.h"
 
 #include <iostream>
+#include <random>
 
 
 Timer::Timer(void)
@@ -37,4 +38,15 @@ const time_point_us DateTime::to_time_point_us(const std::string& string)
 const std::string DateTime::to_string(const time_point_us timestamp)
 {
     return date::format(time_format, timestamp);
+}
+
+const time_point_s DateTime::random_timestamp(const time_point_s timestamp_start, const time_point_s timestamp_end, const std::chrono::seconds interval)
+{
+    static auto random_generator = std::mt19937{ std::random_device{}() };
+    const auto start = timestamp_start.time_since_epoch().count();
+    const auto end = timestamp_end.time_since_epoch().count();
+    auto rand_int = std::uniform_int_distribution<long long>{ start, end }(random_generator);
+    auto timestamp_int = rand_int - rand_int % interval.count();
+    auto timestamp = time_point_s{ std::chrono::seconds{ timestamp_int } };
+    return timestamp;
 }

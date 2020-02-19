@@ -51,6 +51,12 @@ namespace BitSim
     constexpr auto intervals_path = "C:\\development\\github\\puffin-trader\\tmp\\intervals.dat";
     constexpr auto tmp_path = "C:\\development\\github\\puffin-trader\\tmp";
 
+    constexpr auto symbol = "XBTUSD";
+    constexpr auto exchange = "BITMEX";
+    constexpr auto interval = std::chrono::seconds{ 10s };
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
+
     constexpr auto n_batches = 20000;
     constexpr auto batch_size = 500;
     constexpr auto observation_length = 128;
@@ -68,9 +74,10 @@ namespace BitSim
 
     namespace Closer
     {
-        constexpr auto n_episodes = 10;
+        constexpr auto n_episodes = 20;
         constexpr auto save_period = 100;
 
         constexpr auto initial_random_action = 1000;
+        constexpr auto closing_timeout = std::chrono::seconds{ 7*24h };
     }
 }

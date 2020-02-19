@@ -30,6 +30,7 @@ class DateTime {
 public:
     static const time_point_us to_time_point_us(const std::string& string);
     static const std::string to_string(const time_point_us);
+    static const time_point_s random_timestamp(const time_point_s timestamp_start, const time_point_s timestamp_end, const std::chrono::seconds interval);
 
 private:
     static constexpr auto time_format = "%F %T";

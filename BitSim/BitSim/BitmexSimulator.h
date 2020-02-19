@@ -14,6 +14,7 @@ public:
 
 private:
     sptrIntervals intervals;
+    time_point_s current_timestamp;
 };
 
 using sptrBitmexSimulator = std::shared_ptr<BitmexSimulator>;
