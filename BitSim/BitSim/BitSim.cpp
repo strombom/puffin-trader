@@ -51,12 +51,12 @@ int main()
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
     else if (command == "train_closer") {
-        auto intervals = Intervals{ BitSim::intervals_path };
+        auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
         auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
         std::cout << "features: " << features.sizes() << std::endl;
 
-        auto simulator = BitmexSimulator{};
-        auto rl_closer = RL_Closer{ features };
+        auto simulator = std::make_shared<BitmexSimulator>(intervals);
+        auto rl_closer = RL_Closer{ features, simulator };
         rl_closer.train();
     }
     

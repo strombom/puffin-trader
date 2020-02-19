@@ -1,18 +1,20 @@
 #pragma once
 #include "pch.h"
 
-#include "FE_Observations.h"
 #include "RL_Actor.h"
-#include "RL_Environment.h"
 #include "RL_State.h"
 #include "RL_Action.h"
+#include "RL_Environment.h"
+#include "FE_Observations.h"
+#include "BitmexSimulator.h"
 
 
 class RL_Closer
 {
 public:
-    RL_Closer(torch::Tensor features) :
+    RL_Closer(torch::Tensor features, sptrBitmexSimulator simulator) :
         features(features),
+        environment(RL_Environment{ simulator }),
         step_total(0),
         step_episode(0)
     {}

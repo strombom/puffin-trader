@@ -4,6 +4,8 @@
 
 RL_State RL_Environment::reset(void)
 {
+    simulator->reset();
+
     return RL_State{};
 }
 

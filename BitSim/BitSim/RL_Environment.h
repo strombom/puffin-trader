@@ -3,13 +3,19 @@
 
 #include "RL_State.h"
 #include "RL_Action.h"
+#include "BitmexSimulator.h"
 
 
 class RL_Environment
 {
 public:
-    RL_Environment(void) {}
+    RL_Environment(sptrBitmexSimulator simulator) :
+        simulator(simulator) {}
 
     RL_State reset(void);
     RL_Action random_action(void);
+
+private:
+    sptrBitmexSimulator simulator;
+
 };
