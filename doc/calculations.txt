@@ -1,0 +1,72 @@
+Fair Price = Index Price * (1 + Funding Basis)
+Funding Basis = Funding Rate * (Time Until Funding / Funding Interval)
+
+
+
+
+---
+Index price: .BXBT
+Funding rate: 
+
+
+
+Wallet balance = Deposits - Withdrawals + Realised PNL
+Margin Balance = Wallet Balance + Unrealised PNL
+Available Balance = Margin Balance - Order Margin - Position Margin
+Unrealised PNL = PnL from all open positions = (1/entry_price - 1/exit_price) * contracts
+Position Margin = Initial margin on open positions = Entry value / leverage + uPnL
+Order Margin = Initial margin on open orders
+Realised PnL = Includes fees
+
+#bankrupcy_price = entry_price / (1 + initial_margin)
+#liquidation_price = bankrupcy_price + (entry_price * (maintenance_margin + funding_rate))
+
+minimum_margin_balance = wallet_balance * (1 - (maintenance_margin + taker_fee + funding_rate))
+liquidation_price = 1 / (1 / entry_price + minimum_margin_balance/position_size)
+
+Sell Liqudit Formula : Price+(Price/(Levarage - 1))
+
+funding_rate = 0.01%
+funding_interval = 8h
+funding_basis = funding_rate * (time_until_funding / funding_interval)
+fair_price = index_price * (1 + funding_basis)
+
+
+
+
+
+#fair_basis = (impact_mid_price / index_price - 1) / (time_to_expiry / 365)
+#fair_value = index_price * fair_basis * (time_to_expiry / 365)
+#fair_price = index_price + fair_value
+
+
+Example: Let's say that you open an XBT futures long position of 12,000 contracts with 3 XBT in your account at an average entry price of $5000.
+
+Quantity_Contracts * -1 * (1/Entry_Price - 1/Liquidation_Price) = Account_Margin_Balance - (Maintenance_Margin        *  Position_Value)
+
+12000              * -1 * (1/5000        - 1/Liquidation_Price) = 3                      - ((0.5% * (1/5000 * 12000)) + (0.075% * (1/2222 * 12000)))
+
+-12000                  * (0.0002        - 1/Liquidation_Price) = 3                      - (0.012                     + 0.00405045)
+
+0.0002 - 1/liq = -0.0002486624625
+1/liq = 0.00044866246250000006
+liq=2228.847
+
+Liquidation_Price = $2228.85 
+
+
+
+ liq = 1/((0.4219 - ((0.5% * (1/9627.42 * 10000)) + (0.075% * (1/6846.5 * 10000)))) / 10000 + 1/9627.42)
+
+
+
+Quantity_Contracts * -1 * (1/Entry_Price - 1/Liquidation_Price) = Account_Margin_Balance - (Maintenance_Margin + Liquidation_Fee)
+
+
+
+
+
+
+
+
+
