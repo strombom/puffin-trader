@@ -66,20 +66,12 @@ class Simulator:
         else:
             print("Sell: {:.1f} contracts at {:.2f} USD/BTC => {:.4f} BTC".format(n_contracts, price, value))
 
-        #if self.n_contracts == 0:
-        #    upnl = 0
-        #else:
-        #    upnl = (1/self.entry_price - 1/price) * n_contracts
-        #self.wallet -= taker_fee + upnl
-
         rpnl = 0
 
         if self.n_contracts > 0 and n_contracts < 0:
-            print("a", self.n_contracts, n_contracts, min(-n_contracts, self.n_contracts))
-            rpnl += (1/self.entry_price - 1/price) * min(-n_contracts, self.n_contracts) # * max(0, self.n_contracts + n_contracts)
+            rpnl += (1/self.entry_price - 1/price) * min(-n_contracts, self.n_contracts)
 
         elif self.n_contracts < 0 and n_contracts > 0:
-            print("b", self.n_contracts, n_contracts, max(-n_contracts, self.n_contracts))
             rpnl += (1/self.entry_price - 1/price) * max(-n_contracts, self.n_contracts)
 
         print("rpnl", rpnl * 1000)
@@ -93,6 +85,10 @@ class Simulator:
 
         self.n_contracts += n_contracts
 
+        if self.n_contracts == 0:
+            self.wallet += self.position_rpnl
+            self.position_rpnl = 0
+
 
     def print_balance(self, mark_price):
         print("  Wallet balance: {}".format(self.wallet))
@@ -100,8 +96,8 @@ class Simulator:
             upnl = (1/self.entry_price - 1/mark_price) * self.n_contracts
             entry_value = abs(self.n_contracts / self.entry_price)
             maintenance_margin = maintenance_rate * entry_value
-            liquidation_fee = taker_fee * (self.wallet + entry_value)
-            liquidation_price = self.n_contracts * self.entry_price / (self.entry_price * (self.wallet - maintenance_margin - liquidation_fee) + self.n_contracts)
+            liquidation_fee = taker_fee * (self.wallet + self.position_rpnl + entry_value)
+            liquidation_price = self.n_contracts * self.entry_price / (self.entry_price * (self.wallet + self.position_rpnl - maintenance_margin - liquidation_fee) + self.n_contracts)
             if liquidation_price < 0:
                 if self.n_contracts < 0:
                     liquidation_price = 100000000
@@ -135,6 +131,8 @@ sim.print_balance(mark_price=9649.0)
 sim.buy(n_contracts=1000.0, price=9659.0)
 sim.print_balance(mark_price=9652.67)
 sim.sell(n_contracts=7000.0, price=9663.0)
+sim.print_balance(mark_price=9673.08)
+sim.buy(n_contracts=1000.0, price=9673.0)
 sim.print_balance(mark_price=9673.08)
 #sim.print_balance(7000.0)
 
