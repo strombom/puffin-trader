@@ -12,7 +12,7 @@ public:
     static void save_tensor(const torch::Tensor& tensor, const std::string& path, const std::string& filename);
     static torch::Tensor load_tensor(const std::string& path, const std::string& filename);
 
-    static float random(float min, float max);
+    static double random(double min, double max);
     static int random(int min, int max);
 
 private:

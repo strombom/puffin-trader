@@ -17,10 +17,10 @@ torch::Tensor Utils::load_tensor(const std::string& path, const std::string& fil
     return tensor[0];
 }
 
-float Utils::random(float min, float max)
+double Utils::random(double min, double max)
 {
     static auto random_generator = std::mt19937{ std::random_device{}() };
-    return std::uniform_real_distribution<float>{min, max}(random_generator);
+    return std::uniform_real_distribution<double>{min, max}(random_generator);
 }
 
 int Utils::random(int min, int max)
