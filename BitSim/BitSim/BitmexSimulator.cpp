@@ -54,3 +54,28 @@ void BitmexSimulator::execute_order(double price, double order_contracts, bool t
     // Calculate position contracts
     pos_contracts += order_contracts;
 }
+
+double BitmexSimulator::liquidation_price(void)
+{
+    constexpr auto max_liquidation_price = 100000000.0;
+
+    if (pos_contracts == 0) {
+        return max_liquidation_price;
+    }
+
+    const auto entry_value = pos_contracts / entry_price;
+    const auto maintenance_margin = BitSim::BitMex::maintenance_rate * abs(entry_value);
+    const auto liquidation_fee = BitSim::BitMex::taker_fee * abs(wallet + entry_value);
+
+    auto liquidation_price = (pos_contracts * entry_price) / (entry_price * (wallet - maintenance_margin - liquidation_fee) + pos_contracts);
+    if (liquidation_price < 0) {
+        if (pos_contracts < 0) {
+            liquidation_price = max_liquidation_price;
+        }
+        else {
+            liquidation_price = 0.0;
+        }
+    }
+
+    return liquidation_price;
+}

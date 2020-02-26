@@ -29,6 +29,7 @@ private:
     double pos_contracts;
 
     void execute_order(double price, double contracts, bool taker);
+    double liquidation_price(void);
 };
 
 using sptrBitmexSimulator = std::shared_ptr<BitmexSimulator>;
