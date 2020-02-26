@@ -72,6 +72,14 @@ namespace BitSim
     const auto ch_buy_volume = 1;
     const auto ch_sell_volume = 2;
 
+    namespace BitMex
+    {
+        constexpr auto margin = 100.0f;
+        constexpr auto taker_fee = 0.075f / 100;
+        constexpr auto maker_fee = -0.025f / 100;
+        constexpr auto maintenance_rate = 0.5f / 100;
+    }
+
     namespace Closer
     {
         constexpr auto n_episodes = 20;

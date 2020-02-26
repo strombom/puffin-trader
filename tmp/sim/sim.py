@@ -8,7 +8,6 @@ class Simulator:
         self.wallet = wallet
         self.entry_price = 0.0
         self.n_contracts = 0.0 # +long -short
-        self.position_rpnl = 0.0
         self.margin = 100
 
     def buy(self, n_contracts, price):
@@ -32,9 +31,7 @@ class Simulator:
         elif self.n_contracts < 0 and n_contracts > 0:
             rpnl += (1/self.entry_price - 1/price) * max(-n_contracts, self.n_contracts)
 
-
         self.wallet += rpnl
-        self.position_rpnl += rpnl
         
         if (self.n_contracts >= 0 and n_contracts > 0) or (self.n_contracts <= 0 and n_contracts < 0):
             self.entry_price = (self.n_contracts * self.entry_price + n_contracts * price) / (self.n_contracts + n_contracts)
@@ -43,9 +40,6 @@ class Simulator:
             self.entry_price = price
 
         self.n_contracts += n_contracts
-
-        if self.n_contracts == 0:
-            self.position_rpnl = 0
 
     def print_balance(self, mark_price):
         print("  Wallet balance: {}".format(self.wallet))
@@ -66,7 +60,6 @@ class Simulator:
             print("  Contracts: {}".format(self.n_contracts))
             print("  Liquidation price: {}".format(liquidation_price))
             print("  UPnL: {}".format(upnl*1000))
-            print("  RPnL: {}".format(self.position_rpnl*1000))
         print("====")
 
 
