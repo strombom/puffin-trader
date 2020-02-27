@@ -30,7 +30,7 @@ private:
     RL_Actor actor;
     RL_Environment environment;
     RL_Action get_action(RL_State state);
-    std::tuple<RL_State, bool> step(RL_Action action);
+    RL_State step(RL_Action action);
     void update_model(void);
     void save_params(int idx_period);
     void interim_test(void);

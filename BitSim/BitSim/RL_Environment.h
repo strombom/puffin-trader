@@ -13,7 +13,7 @@ public:
         simulator(simulator) {}
 
     RL_State reset(void);
-    std::tuple<RL_State, bool> step(const RL_Action &action);
+    RL_State step(const RL_Action &action);
     double get_reward(void);
     RL_Action random_action(void);
 

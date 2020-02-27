@@ -8,7 +8,7 @@
 void BitmexSimulator::reset(void)
 {
     const auto episode_length = ((std::chrono::seconds) BitSim::Closer::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
-    intervals_idx = Utils::random(0, (int) intervals->rows.size() - 2);
+    intervals_idx = Utils::random(0, (int) intervals->rows.size() - 1);
     intervals_idx_start = intervals_idx;
     intervals_idx_end = intervals_idx + episode_length;
     
@@ -22,9 +22,12 @@ double BitmexSimulator::get_value(void)
     return 0.0;
 }
 
-std::tuple<RL_State, bool> BitmexSimulator::step(const RL_Action& action)
+RL_State BitmexSimulator::step(const RL_Action& action)
 {
-    return std::make_tuple(RL_State{}, true);
+    auto state = RL_State{};
+    state.set_done();
+
+    return state;
 }
 
 void BitmexSimulator::put_order(double price, double contracts)

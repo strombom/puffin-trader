@@ -17,7 +17,7 @@ public:
 
     void reset(void);
     double get_value(void);
-    std::tuple<RL_State, bool> step(const RL_Action& action);
+    RL_State step(const RL_Action& action);
 
     void put_order(double price, double contracts);
 

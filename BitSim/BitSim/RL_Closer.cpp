@@ -10,16 +10,12 @@ void RL_Closer::train(void)
         auto state = environment.reset();
         step_episode = 0;
 
-        while (true) {
+        while (!state.is_done()) {
             auto action = get_action(state);
-            auto [next_state, done] = environment.step(action);
+            state = environment.step(action);
 
             ++step_total;
             ++step_episode;
-
-            if (done) {
-                break;
-            }
         }
 
         auto reward = environment.get_reward();
@@ -59,11 +55,11 @@ RL_Action RL_Closer::get_action(RL_State state)
     return actor.get_action(state);
 }
 
-std::tuple<RL_State, bool> RL_Closer::step(RL_Action action)
+RL_State RL_Closer::step(RL_Action action)
 {
-    auto [next_state, done] = environment.step(action);
+    auto next_state = environment.step(action);
     
     // TODO: Add transition to memory
 
-    return std::make_tuple(next_state, done);
+    return next_state;
 }
