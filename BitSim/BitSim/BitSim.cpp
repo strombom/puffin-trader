@@ -28,12 +28,14 @@ int main()
         auto bitbase_client = BitBaseClient();
         constexpr auto symbol = "XBTUSD";
         constexpr auto exchange = "BITMEX";
-        //constexpr auto interval = std::chrono::seconds{ 10s };
+        constexpr auto interval = std::chrono::seconds{ 10s };
         auto intervals = bitbase_client.get_intervals(symbol, exchange, BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         intervals->save(BitSim::intervals_path);
+        std::cout << "Intervals: " << intervals->rows.size() << std::endl;
 
-        auto observations = std::make_shared<FE_Observations>( std::move(intervals), BitSim::timestamp_start );
+        auto observations = std::make_shared<FE_Observations>( intervals, BitSim::timestamp_start );
         observations->save(BitSim::observations_path);
+        std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
     }
     else if (command == "train") {
         auto observations = std::make_shared<FE_Observations>( BitSim::observations_path );
@@ -44,16 +46,21 @@ int main()
     }
     else if (command == "inference") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
+        std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
+
         auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_0893.pt" };
         auto features = inference.forward(observations->get_all());
-
         std::cout << "Inference, features " << features.sizes() << std::endl;
+
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
     else if (command == "train_closer") {
+        auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
         auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
+        std::cout << "observations: " << observations->get_all().sizes() << std::endl;
         std::cout << "features: " << features.sizes() << std::endl;
+        std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
         auto simulator = std::make_shared<BitmexSimulator>(intervals);
         auto rl_closer = RL_Closer{ features, simulator };

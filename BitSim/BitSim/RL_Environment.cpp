@@ -9,6 +9,16 @@ RL_State RL_Environment::reset(void)
     return RL_State{};
 }
 
+std::tuple<RL_State, bool> RL_Environment::step(const RL_Action& action)
+{
+    return simulator->step(action);
+}
+
+double RL_Environment::get_reward(void)
+{
+    return simulator->get_value();
+}
+
 RL_Action RL_Environment::random_action(void)
 {
     return RL_Action{};
