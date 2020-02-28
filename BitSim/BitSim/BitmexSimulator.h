@@ -19,8 +19,6 @@ public:
     double get_value(void);
     RL_State step(const RL_Action& action);
 
-    void put_order(double price, double contracts);
-
 private:
     sptrIntervals intervals;
 
@@ -31,8 +29,10 @@ private:
     double wallet;
     double pos_price;
     double pos_contracts;
-    
-    void execute_order(double price, double contracts, bool taker);
+
+    void market_order(double contracts);
+    void limit_order(double contracts, double price);
+    void execute_order(double contracts, double price, bool taker);
     double liquidation_price(void);
 };
 

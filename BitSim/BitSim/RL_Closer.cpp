@@ -48,7 +48,7 @@ void RL_Closer::interim_test(void)
 RL_Action RL_Closer::get_action(RL_State state)
 {
     if (step_total < BitSim::Closer::initial_random_action) {
-        return actor.get_random_action();
+        //return actor.get_random_action();
     }
 
     return actor.get_action(state);
