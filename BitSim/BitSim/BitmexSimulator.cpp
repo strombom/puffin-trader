@@ -7,7 +7,7 @@
 
 void BitmexSimulator::reset(void)
 {
-    const auto episode_length = ((std::chrono::seconds) BitSim::Closer::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
+    constexpr auto episode_length = ((std::chrono::seconds) BitSim::Closer::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
     intervals_idx = Utils::random(0, (int) intervals->rows.size() - 1);
     intervals_idx_start = intervals_idx;
     intervals_idx_end = intervals_idx + episode_length;
@@ -24,8 +24,28 @@ double BitmexSimulator::get_value(void)
 
 RL_State BitmexSimulator::step(const RL_Action& action)
 {
+    const auto prev_interval = intervals->rows[intervals_idx];
+
+    const auto buy_price = prev_interval.last_price * (1 - action.buy_position / 2.0);
+    const auto sell_price = prev_interval.last_price * (1 + action.sell_position / 2.0);
+    const auto buy_size = action.buy_size * wallet / 2.0;
+    const auto sell_size = action.sell_size * wallet / 2.0;
+
+    const auto next_interval = intervals->rows[intervals_idx + 1];
+
+    if (buy_price > next_interval.prices_buy[0]) {
+        const auto price = next_interval.prices_buy[0];
+        // if buy_position < 0.1 => market buy!
+        //const auto contracts = 
+        //execute_order(, )
+    }
+
     auto state = RL_State{};
-    state.set_done();
+    
+    ++intervals_idx;
+    if (intervals_idx == intervals_idx_end - 1) {
+        state.set_done();
+    }
 
     return state;
 }

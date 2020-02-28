@@ -31,7 +31,7 @@ private:
     double wallet;
     double pos_price;
     double pos_contracts;
-
+    
     void execute_order(double price, double contracts, bool taker);
     double liquidation_price(void);
 };

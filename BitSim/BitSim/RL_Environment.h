@@ -15,7 +15,6 @@ public:
     RL_State reset(void);
     RL_State step(const RL_Action &action);
     double get_reward(void);
-    RL_Action random_action(void);
 
 private:
     sptrBitmexSimulator simulator;

@@ -18,8 +18,3 @@ double RL_Environment::get_reward(void)
 {
     return simulator->get_value();
 }
-
-RL_Action RL_Environment::random_action(void)
-{
-    return RL_Action{};
-}

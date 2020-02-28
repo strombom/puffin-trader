@@ -9,5 +9,6 @@ class RL_Actor
 {
 public:
     RL_Action get_action(RL_State state);
+    RL_Action get_random_action(void);
 
 };
