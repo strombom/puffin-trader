@@ -34,6 +34,8 @@ private:
     void limit_order(double contracts, double price);
     void execute_order(double contracts, double price, bool taker);
     double liquidation_price(void);
+    double sigmoid_to_price(double price, double sigmoid);
+    std::tuple<double, double> calculate_order_size(double buy_size, double sell_size);
 };
 
 using sptrBitmexSimulator = std::shared_ptr<BitmexSimulator>;

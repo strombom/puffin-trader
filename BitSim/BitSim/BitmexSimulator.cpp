@@ -22,7 +22,7 @@ double BitmexSimulator::get_value(void)
     return 0.0;
 }
 
-double sigmoid_to_price(double price, double sigmoid) {
+double BitmexSimulator::sigmoid_to_price(double price, double sigmoid) {
     // High output when sigmoid near 0
     // Low output when sigmoid near 1
     auto p = std::pow(price / 100.0, 5.0 * (1.0 - sigmoid) / 4.0 - 0.25) - 1.0;
@@ -30,12 +30,56 @@ double sigmoid_to_price(double price, double sigmoid) {
     return std::max(0.0, p);
 }
 
+std::tuple<double, double> BitmexSimulator::calculate_order_size(double buy_size, double sell_size)
+{
+    if (wallet == 0.0) {
+        return std::make_tuple(0.0, 0.0);
+    }
+
+    const auto mark_price = intervals->rows[intervals_idx].last_price;
+    auto position_margin = 0.0;
+    auto position_leverage = 0.0;
+
+    if (pos_contracts != 0.0) {
+        const auto sign = pos_contracts / abs(pos_contracts);
+        const auto entry_value = std::abs(pos_contracts / pos_price);
+        const auto mark_value = std::abs(pos_contracts / mark_price);
+        const auto upnl = sign * (entry_value - mark_value);
+
+        position_margin = std::max(0.0, std::abs(pos_contracts / pos_price) - upnl);
+        position_leverage = position_margin / wallet;
+    }
+
+    auto max_margin = BitSim::BitMex::max_leverage * wallet;
+    auto available_margin = max_margin - position_margin;
+
+    auto max_buy_contracts = 0.0;
+    if (pos_contracts > 0.0) {
+        max_buy_contracts = std::max(0.0, available_margin * mark_price);
+    }
+    else {
+        max_buy_contracts = max_margin * mark_price;
+    }
+
+    auto max_sell_contracts = 0.0;
+    if (pos_contracts < 0.0) {
+        max_sell_contracts = std::max(0.0, available_margin * mark_price);
+    }
+    else {
+        max_sell_contracts = max_margin * mark_price;
+    }
+
+    auto buy_contracts = std::min(max_buy_contracts, 2.0 * max_margin * mark_price * (buy_size - BitSim::Closer::order_hysteresis) * (1.0 + BitSim::Closer::order_hysteresis));
+    auto sell_contracts = std::min(max_sell_contracts, 2.0 * max_margin * mark_price * (sell_size - BitSim::Closer::order_hysteresis) * (1.0 + BitSim::Closer::order_hysteresis));
+
+    return std::make_tuple(buy_contracts, sell_contracts);
+}
+
 RL_State BitmexSimulator::step(const RL_Action& action)
 {
     const auto prev_interval = intervals->rows[intervals_idx];
 
-    const auto buy_contracts = std::max(0.0, action.buy_size - action.sell_size) * wallet;
-    const auto sell_contracts = std::max(0.0, action.sell_size - action.buy_size) * wallet;
+    const auto [buy_contracts, sell_contracts] = calculate_order_size(action.buy_size, action.sell_size);
 
     const auto buy_delta_price = sigmoid_to_price(prev_interval.last_price, action.buy_position);
     const auto sell_delta_price = sigmoid_to_price(prev_interval.last_price, action.sell_position);
@@ -72,6 +116,8 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
         }
     }
+
+    std::cout << "--- " << std::endl;
     
     auto state = RL_State{};
     state.set_done();

@@ -75,10 +75,11 @@ namespace BitSim
 
     namespace BitMex
     {
-        constexpr auto margin = 100.0f;
-        constexpr auto taker_fee = 0.075f / 100;
-        constexpr auto maker_fee = -0.025f / 100;
-        constexpr auto maintenance_rate = 0.5f / 100;
+        constexpr auto leverage = 100.0;
+        constexpr auto taker_fee = 0.075 / 100;
+        constexpr auto maker_fee = -0.025 / 100;
+        constexpr auto maintenance_rate = 0.5 / 100;
+        constexpr auto max_leverage = 10.0;
     }
 
     namespace Closer
@@ -86,7 +87,9 @@ namespace BitSim
         constexpr auto n_episodes = 1;
         constexpr auto save_period = 100;
 
-        constexpr auto initial_random_action = 1000;
         constexpr auto episode_length = std::chrono::seconds{ 1h }; // std::chrono::seconds{ 2*7*24h };
+        
+        constexpr auto initial_random_action = 1000;
+        constexpr auto order_hysteresis = 0.1;
     }
 }
