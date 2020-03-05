@@ -68,9 +68,11 @@ std::tuple<double, double> BitmexSimulator::calculate_order_size(double buy_size
     else {
         max_sell_contracts = max_margin * mark_price;
     }
+    
+    const auto max_contracts = 2.0 * max_margin * mark_price * std::max(0.0, buy_size - BitSim::Closer::order_hysteresis) / (1.0 - BitSim::Closer::order_hysteresis);
 
-    auto buy_contracts = std::min(max_buy_contracts, 2.0 * max_margin * mark_price * (buy_size - BitSim::Closer::order_hysteresis) * (1.0 + BitSim::Closer::order_hysteresis));
-    auto sell_contracts = std::min(max_sell_contracts, 2.0 * max_margin * mark_price * (sell_size - BitSim::Closer::order_hysteresis) * (1.0 + BitSim::Closer::order_hysteresis));
+    auto buy_contracts = std::min(max_buy_contracts, max_contracts);
+    auto sell_contracts = std::min(max_sell_contracts, max_contracts);
 
     return std::make_tuple(buy_contracts, sell_contracts);
 }
