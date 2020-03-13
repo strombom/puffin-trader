@@ -3,92 +3,7 @@ taker_fee = 0.075 / 100
 maintenance_rate = 0.5 / 100
 
 max_leverage = 10.0
-
-
-def marg(wallet, contracts, entry_price, price, buy_size, sell_size):
-    print("Wallet:", wallet, "Contracts:", contracts, "Entry price:", entry_price, "Mark price:", price)
-
-    position_margin = 0.0
-    position_leverage = 0.0
-    upnl = 0.0
-
-    if contracts != 0.0:
-        sign = contracts / abs(contracts)
-        entry_value = abs(contracts / entry_price)
-        mark_value = abs(contracts / price)
-        upnl = sign * (entry_value - mark_value)
-
-        if entry_price > 0.0:
-            position_margin = max(0.0, abs(contracts / entry_price) - upnl)
-        position_leverage = position_margin / wallet
-
-    max_margin = max_leverage * wallet
-    available_margin = max_margin - position_margin
-
-    if contracts > 0.0:
-        max_buy_contracts = max(0.0, available_margin * price)
-    else:
-        max_buy_contracts = max_margin * price
-
-    if contracts < 0.0:
-        max_sell_contracts = max(0.0, available_margin * price)
-    else:
-        max_sell_contracts = max_margin * price
-
-    buy_contracts = min(max_buy_contracts, 2.0 * max_margin * price * buy_size)
-    sell_contracts = min(max_sell_contracts, 2.0 * max_margin * price * sell_size)
-
-    #if buy_size > 0.0:
-
-
-
-    print("UPnL", upnl)
-    print("Position margin", position_margin)
-    print("Position leverage", position_leverage)
-
-    print("Available margin", available_margin)
-    print("Max buy contracts", max_buy_contracts)
-    print("Max sell contracts", max_sell_contracts)
-    print("Buy contracts", buy_contracts)
-    print("Sell contracts", sell_contracts)
-    print("---")
-
-
-
-marg(wallet=2.0, contracts=0.0, entry_price=100.0, price=110.0, buy_size=1.0, sell_size=0.0)
-#marg(wallet=2.0, contracts=0.0, entry_price=100.0, price=100.0, buy_size=1.0, sell_size=0.0)
-#marg(wallet=2.0, contracts=0.0, entry_price=100.0, price=90.0, buy_size=1.0, sell_size=0.0)
-
-marg(wallet=2.0, contracts=2000.0, entry_price=100.0, price=110.0, buy_size=1.0, sell_size=0.0)
-#marg(wallet=2.0, contracts=2000.0, entry_price=100.0, price=100.0, buy_size=1.0, sell_size=0.0)
-#marg(wallet=2.0, contracts=2000.0, entry_price=100.0, price=90.0, buy_size=1.0, sell_size=0.0)
-
-marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=110.0, buy_size=1.0, sell_size=0.0)
-marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=100.0, buy_size=1.0, sell_size=0.0)
-marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=90.0, buy_size=1.0, sell_size=0.0)
-
-
-
-
-"""
-    const auto price = intervals->rows[intervals_idx].last_price;
-    const auto upnl = (1.0 / pos_price + 1 / price) * pos_contracts;
-    auto position_margin = 0.0;
-    if (pos_contracts != 0) {
-        position_margin = std::abs(pos_contracts / pos_price);
-    }
-    
-    const auto available_balance = wallet + upnl - position_margin;
-
-    const auto available_margin = 
-"""
-
-
-quit()
-
-
-
-
+order_hysteresis = 0.1
 
 class Simulator:
     def __init__(self, wallet=1.0):
@@ -148,6 +63,117 @@ class Simulator:
             print("  Liquidation price: {}".format(liquidation_price))
             print("  UPnL: {}".format(upnl*1000))
         print("====")
+
+
+
+def marg(wallet, contracts, entry_price, price, buy_size, sell_size):
+    print("Wallet:", wallet, "Contracts:", contracts, "Entry price:", entry_price, "Mark price:", price)
+
+    position_margin = 0.0
+    position_leverage = 0.0
+    upnl = 0.0
+
+    if contracts != 0.0:
+        sign = contracts / abs(contracts)
+        entry_value = abs(contracts / entry_price)
+        mark_value = abs(contracts / price)
+        upnl = sign * (entry_value - mark_value)
+
+        if entry_price > 0.0:
+            position_margin = max(0.0, abs(contracts / entry_price) - upnl)
+        position_leverage = position_margin / wallet
+
+    max_margin = max_leverage * wallet
+    available_margin = max_margin - position_margin
+
+    max_contracts = max_leverage * (wallet + upnl) * price
+
+    if contracts > 0.0:
+        max_buy_contracts = max(0.0, available_margin * price)
+        max_sell_contracts = max(0.0, max_contracts + contracts)
+    elif contracts < 0.0:
+        max_buy_contracts = max(0.0, max_contracts - contracts)
+        max_sell_contracts = max(0.0, available_margin * price)
+    else:
+        max_buy_contracts = max_margin * price
+        max_sell_contracts = max_margin * price
+
+    buy_size = max(0, (buy_size - order_hysteresis) / (1.0 - order_hysteresis))
+    sell_size = max(0, (sell_size - order_hysteresis) / (1.0 - order_hysteresis))
+
+    buy_contracts = min(max_buy_contracts, max_contracts * buy_size);
+    sell_contracts = min(max_sell_contracts, max_contracts * sell_size);
+
+    print("UPnL", upnl)
+    print("Max margin", max_margin)
+    print("Position margin", position_margin)
+    print("Position leverage", position_leverage)
+
+    print("Available margin", available_margin)
+    #print("Max buy contracts", max_buy_contracts)
+    print("Max sell contracts", max_sell_contracts)
+    #print("Max contracts", max_contracts)
+    #print("Buy contracts", buy_contracts)
+    #print("Sell contracts", sell_contracts)
+    print("---")
+
+
+marg(wallet=2.0, contracts=1000.0, entry_price=100.0, price=90.0, buy_size=0.5, sell_size=0.0)
+marg(wallet=2.0, contracts=1000.0, entry_price=100.0, price=110.0, buy_size=0.5, sell_size=0.0)
+
+
+
+sim = Simulator(wallet=2.0)
+
+sim.buy(n_contracts=1000.0, price=100.0)
+sim.print_balance(mark_price=110.0)
+sim.sell(n_contracts=4200.0, price=110.0)
+sim.print_balance(mark_price=110.0)
+
+
+#marg(wallet=2.0, contracts=0.0, entry_price=100.0, price=110.0, buy_size=1.0, sell_size=0.0)
+#marg(wallet=2.0, contracts=0.0, entry_price=100.0, price=100.0, buy_size=1.0, sell_size=0.0)
+#marg(wallet=2.0, contracts=0.0, entry_price=100.0, price=90.0, buy_size=1.0, sell_size=0.0)
+
+#marg(wallet=2.0, contracts=2000.0, entry_price=100.0, price=110.0, buy_size=1.0, sell_size=0.0)
+#marg(wallet=2.0, contracts=2000.0, entry_price=100.0, price=100.0, buy_size=1.0, sell_size=0.0)
+#marg(wallet=2.0, contracts=2000.0, entry_price=100.0, price=90.0, buy_size=1.0, sell_size=0.0)
+
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=110.0, buy_size=0.0, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=110.0, buy_size=0.05, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=110.0, buy_size=0.1, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=110.0, buy_size=0.15, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=110.0, buy_size=0.20, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=110.0, buy_size=1.0, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=100.0, buy_size=1.0, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=90.0, buy_size=0.05, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=90.0, buy_size=0.10, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=90.0, buy_size=0.15, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=90.0, buy_size=0.9, sell_size=0.0)
+#marg(wallet=2.0, contracts=-2000.0, entry_price=100.0, price=90.0, buy_size=1.0, sell_size=0.0)
+
+
+
+
+"""
+    const auto price = intervals->rows[intervals_idx].last_price;
+    const auto upnl = (1.0 / pos_price + 1 / price) * pos_contracts;
+    auto position_margin = 0.0;
+    if (pos_contracts != 0) {
+        position_margin = std::abs(pos_contracts / pos_price);
+    }
+    
+    const auto available_balance = wallet + upnl - position_margin;
+
+    const auto available_margin = 
+"""
+
+
+quit()
+
+
+
+
 
 
 sim = Simulator(wallet=0.420481)
