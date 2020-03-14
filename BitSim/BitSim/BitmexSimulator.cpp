@@ -62,7 +62,7 @@ RL_State BitmexSimulator::step(const RL_Action& action)
     std::cout << "--- " << std::endl;
 
     auto state = RL_State{};
-    state.set_done();
+    //state.set_done();
 
     if (is_liquidated()) {
         state.set_done();

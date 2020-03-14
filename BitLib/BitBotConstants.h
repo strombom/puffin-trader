@@ -54,9 +54,9 @@ namespace BitSim
     constexpr auto symbol = "XBTUSD";
     constexpr auto exchange = "BITMEX";
     constexpr auto interval = std::chrono::seconds{ 10s };
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
-    //constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 06 / 02) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + 0h + 0min + 0s;
+    //constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 06 / 02) + 0h + 0min + 0s;
 
     constexpr auto n_batches = 20000;
     constexpr auto batch_size = 500;
@@ -88,7 +88,7 @@ namespace BitSim
         constexpr auto n_episodes = 1;
         constexpr auto save_period = 100;
 
-        constexpr auto episode_length = std::chrono::seconds{ 1h }; // std::chrono::seconds{ 2*7*24h };
+        constexpr auto episode_length = 60s; // 2*7*24h;
         
         constexpr auto initial_random_action = 1000;
         constexpr auto order_hysteresis = 0.1;
