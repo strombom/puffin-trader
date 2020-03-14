@@ -19,7 +19,14 @@ void BitmexSimulator::reset(void)
 
 double BitmexSimulator::get_value(void)
 {
-    return 0.0;
+    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
+    if (pos_contracts > 0.0) {
+        execute_order(-pos_contracts, next_price - 0.5, true);
+    }
+    else if (pos_contracts < 0.0) {
+        execute_order(pos_contracts, next_price + 0.5, true);
+    }
+    return wallet * next_price;
 }
 
 double BitmexSimulator::sigmoid_to_price(double price, double sigmoid) {
@@ -124,6 +131,10 @@ RL_State BitmexSimulator::step(const RL_Action& action)
     
     auto state = RL_State{};
     state.set_done();
+
+    if (is_liquidated()) {
+        state.set_done();
+    }
     
     ++intervals_idx;
     if (intervals_idx == intervals_idx_end - 1) {
@@ -215,4 +226,14 @@ double BitmexSimulator::liquidation_price(void)
     }
 
     return liquidation_price;
+}
+
+bool BitmexSimulator::is_liquidated(void)
+{
+    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
+    if ((pos_contracts > 0.0 && next_price < liquidation_price()) ||
+        (pos_contracts < 0.0 && next_price > liquidation_price())) {
+        return true;
+    }
+    return false;
 }
