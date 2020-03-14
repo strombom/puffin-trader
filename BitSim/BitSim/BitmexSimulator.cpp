@@ -30,7 +30,7 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 {
     const auto prev_interval = intervals->rows[intervals_idx];
 
-    const auto [buy_contracts, sell_contracts] = calculate_order_size(action.buy_size, action.sell_size);
+    const auto [buy_contracts, sell_contracts, log_upnl] = calculate_order_size(action.buy_size, action.sell_size);
 
     const auto buy_delta_price = sigmoid_to_price(prev_interval.last_price, action.buy_position);
     const auto sell_delta_price = sigmoid_to_price(prev_interval.last_price, action.sell_position);
@@ -43,6 +43,12 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
     std::cout << "--- " << std::endl;
 
+    auto log_order_price = (double)prev_interval.last_price;
+    auto log_order_size = buy_contracts;
+    if (sell_contracts > buy_contracts) {
+        log_order_size = -sell_contracts;
+    }
+
     if (buy_contracts > 0) {
         if (buy_delta_price == 0) {
             std::cout << "Market buy" << std::endl;
@@ -52,6 +58,7 @@ RL_State BitmexSimulator::step(const RL_Action& action)
         else {
             std::cout << "Limit buy" << std::endl;
             limit_order(buy_contracts, prev_interval.last_price - buy_delta_price);
+            log_order_price -= buy_delta_price;
         }
     }
 
@@ -64,13 +71,19 @@ RL_State BitmexSimulator::step(const RL_Action& action)
         else {
             std::cout << "Limit sell" << std::endl;
             limit_order(-sell_contracts, prev_interval.last_price + sell_delta_price);
+            log_order_price += sell_delta_price;
 
         }
     }
 
     std::cout << "--- " << std::endl;
 
-    logger->log(pos_contracts);
+    logger->log(prev_interval.last_price,
+                log_order_price, 
+                log_order_size,
+                pos_contracts,
+                wallet,
+                log_upnl);
 
     auto state = RL_State{};
 
@@ -109,10 +122,10 @@ double BitmexSimulator::sigmoid_to_price(double price, double sigmoid) {
     return std::max(0.0, p);
 }
 
-std::tuple<double, double> BitmexSimulator::calculate_order_size(double buy_size, double sell_size)
+std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double buy_size, double sell_size)
 {
     if (wallet == 0.0) {
-        return std::make_tuple(0.0, 0.0);
+        return std::make_tuple(0.0, 0.0, 0.0);
     }
 
     const auto mark_price = intervals->rows[intervals_idx].last_price;
@@ -154,7 +167,7 @@ std::tuple<double, double> BitmexSimulator::calculate_order_size(double buy_size
     const auto buy_contracts = std::min(max_buy_contracts, max_contracts * buy_fraction);
     const auto sell_contracts = std::min(max_sell_contracts, max_contracts * sell_fraction);
 
-    return std::make_tuple(buy_contracts, sell_contracts);
+    return std::make_tuple(buy_contracts, sell_contracts, upnl);
 }
 
 void BitmexSimulator::market_order(double contracts)
@@ -254,9 +267,10 @@ bool BitmexSimulator::is_liquidated(void)
 BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &&filename)
 {
     file.open(std::string{ BitSim::tmp_path } +"\\" + filename);
+    file << "last_price,order_price,order_size,contracts,wallet,upnl" << std::endl;
 }
 
-void BitmexSimulatorLogger::log(double contracts)
+void BitmexSimulatorLogger::log(double last_price, double order_price, double order_size, double contracts, double wallet, double upnl)
 {
-    file << contracts << std::endl;
+    file << last_price << "," << order_price << "," << order_size << "," << contracts << "," << wallet << "," << upnl << std::endl;
 }

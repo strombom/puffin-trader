@@ -11,7 +11,7 @@ class BitmexSimulatorLogger
 public:
     BitmexSimulatorLogger(const std::string &&filename);
 
-    void log(double contracts);
+    void log(double last_price, double order_price, double order_size, double contracts, double wallet, double upnl);
 
 private:
     std::ofstream file;
@@ -44,7 +44,7 @@ private:
     bool is_liquidated(void);
     double liquidation_price(void);
     double sigmoid_to_price(double price, double sigmoid);
-    std::tuple<double, double> calculate_order_size(double buy_size, double sell_size);
+    std::tuple<double, double, double> calculate_order_size(double buy_size, double sell_size);
 
     std::unique_ptr<BitmexSimulatorLogger> logger;
 };
