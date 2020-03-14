@@ -17,6 +17,65 @@ void BitmexSimulator::reset(void)
     pos_contracts = 0.0;
 }
 
+RL_State BitmexSimulator::step(const RL_Action& action)
+{
+    const auto prev_interval = intervals->rows[intervals_idx];
+
+    const auto [buy_contracts, sell_contracts] = calculate_order_size(action.buy_size, action.sell_size);
+
+    const auto buy_delta_price = sigmoid_to_price(prev_interval.last_price, action.buy_position);
+    const auto sell_delta_price = sigmoid_to_price(prev_interval.last_price, action.sell_position);
+
+    std::cout << "--- " << std::endl;
+    std::cout << "action.buy_size: " << action.buy_size << std::endl;
+    std::cout << "action.sell_size: " << action.sell_size << std::endl;
+    std::cout << "buy_n_contracts: " << buy_contracts << std::endl;
+    std::cout << "sell_n_contracts: " << sell_contracts << std::endl;
+
+    std::cout << "--- " << std::endl;
+
+    if (buy_contracts > 0) {
+        if (buy_delta_price == 0) {
+            std::cout << "Market buy" << std::endl;
+            market_order(buy_contracts);
+
+        }
+        else {
+            std::cout << "Limit buy" << std::endl;
+            limit_order(buy_contracts, prev_interval.last_price - buy_delta_price);
+        }
+    }
+
+    if (sell_contracts > 0) {
+        if (sell_delta_price == 0) {
+            std::cout << "Market sell" << std::endl;
+            market_order(-sell_contracts);
+
+        }
+        else {
+            std::cout << "Limit sell" << std::endl;
+            limit_order(-sell_contracts, prev_interval.last_price + sell_delta_price);
+
+        }
+    }
+
+    std::cout << "--- " << std::endl;
+
+    auto state = RL_State{};
+    state.set_done();
+
+    if (is_liquidated()) {
+        state.set_done();
+    }
+
+    ++intervals_idx;
+    if (intervals_idx == intervals_idx_end - 1) {
+        state.set_done();
+    }
+
+    return state;
+}
+
 double BitmexSimulator::get_value(void)
 {
     const auto next_price = intervals->rows[intervals_idx + 1].last_price;
@@ -83,65 +142,6 @@ std::tuple<double, double> BitmexSimulator::calculate_order_size(double buy_size
     const auto sell_contracts = std::min(max_sell_contracts, max_contracts * sell_fraction);
 
     return std::make_tuple(buy_contracts, sell_contracts);
-}
-
-RL_State BitmexSimulator::step(const RL_Action& action)
-{
-    const auto prev_interval = intervals->rows[intervals_idx];
-
-    const auto [buy_contracts, sell_contracts] = calculate_order_size(action.buy_size, action.sell_size);
-
-    const auto buy_delta_price = sigmoid_to_price(prev_interval.last_price, action.buy_position);
-    const auto sell_delta_price = sigmoid_to_price(prev_interval.last_price, action.sell_position);
-
-    std::cout << "--- " << std::endl;
-    std::cout << "action.buy_size: " << action.buy_size << std::endl;
-    std::cout << "action.sell_size: " << action.sell_size << std::endl;
-    std::cout << "buy_n_contracts: " << buy_contracts << std::endl;
-    std::cout << "sell_n_contracts: " << sell_contracts << std::endl;
-
-    std::cout << "--- " << std::endl;
-
-    if (buy_contracts > 0) {
-        if (buy_delta_price == 0) {
-            std::cout << "Market buy" << std::endl;
-            market_order(buy_contracts);
-
-        }
-        else {
-            std::cout << "Limit buy" << std::endl;
-            limit_order(buy_contracts, prev_interval.last_price - buy_delta_price);
-        }
-    }
-
-    if (sell_contracts > 0) {
-        if (sell_delta_price == 0) {
-            std::cout << "Market sell" << std::endl;
-            market_order(-sell_contracts);
-
-        }
-        else {
-            std::cout << "Limit sell" << std::endl;
-            limit_order(-sell_contracts, prev_interval.last_price + sell_delta_price);
-
-        }
-    }
-
-    std::cout << "--- " << std::endl;
-    
-    auto state = RL_State{};
-    state.set_done();
-
-    if (is_liquidated()) {
-        state.set_done();
-    }
-    
-    ++intervals_idx;
-    if (intervals_idx == intervals_idx_end - 1) {
-        state.set_done();
-    }
-
-    return state;
 }
 
 void BitmexSimulator::market_order(double contracts)
