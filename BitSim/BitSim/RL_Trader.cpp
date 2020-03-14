@@ -30,12 +30,12 @@ void RL_Trader::train(void)
     }
 }
 
-void RL_Trader::save_params(int idx_period)
+void RL_Trader::update_model(void)
 {
 
 }
 
-void RL_Trader::update_model(void)
+void RL_Trader::save_params(int idx_period)
 {
 
 }

@@ -6,14 +6,22 @@
 #include "RL_Action.h"
 
 
+class BitmexSimulatorLogger
+{
+public:
+    BitmexSimulatorLogger(const std::string &&filename);
+
+    void log(double contracts);
+
+private:
+    std::ofstream file;
+
+};
+
 class BitmexSimulator
 {
 public:
-    BitmexSimulator(sptrIntervals intervals) :
-        intervals(intervals),
-        intervals_idx_start(0), intervals_idx_end(0),
-        intervals_idx(0),
-        wallet(0.0), pos_price(0.0), pos_contracts(0.0) {}
+    BitmexSimulator(sptrIntervals intervals);
 
     void reset(void);
     double get_value(void);
@@ -37,6 +45,8 @@ private:
     double liquidation_price(void);
     double sigmoid_to_price(double price, double sigmoid);
     std::tuple<double, double> calculate_order_size(double buy_size, double sell_size);
+
+    std::unique_ptr<BitmexSimulatorLogger> logger;
 };
 
 using sptrBitmexSimulator = std::shared_ptr<BitmexSimulator>;

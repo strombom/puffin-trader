@@ -5,6 +5,15 @@
 #include "BitmexSimulator.h"
 
 
+BitmexSimulator::BitmexSimulator(sptrIntervals intervals) :
+    intervals(intervals),
+    intervals_idx_start(0), intervals_idx_end(0),
+    intervals_idx(0),
+    wallet(0.0), pos_price(0.0), pos_contracts(0.0)
+{
+    logger = std::make_unique<BitmexSimulatorLogger>("simulation.csv");
+}
+
 void BitmexSimulator::reset(void)
 {
     constexpr auto episode_length = ((std::chrono::seconds) BitSim::Closer::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
@@ -61,10 +70,14 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
     std::cout << "--- " << std::endl;
 
+    logger->log(pos_contracts);
+
     auto state = RL_State{};
-    //state.set_done();
 
     if (is_liquidated()) {
+        wallet = 0.0;
+        pos_price = 0.0;
+        pos_contracts = 0.0;
         state.set_done();
     }
 
@@ -236,4 +249,14 @@ bool BitmexSimulator::is_liquidated(void)
         return true;
     }
     return false;
+}
+
+BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &&filename)
+{
+    file.open(std::string{ BitSim::tmp_path } +"\\" + filename);
+}
+
+void BitmexSimulatorLogger::log(double contracts)
+{
+    file << contracts << std::endl;
 }
