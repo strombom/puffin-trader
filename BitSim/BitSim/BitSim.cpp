@@ -7,7 +7,7 @@
 #include "FE_Inference.h"
 #include "FE_Training.h"
 #include "FE_Model.h"
-#include "RL_Closer.h"
+#include "RL_Trader.h"
 #include "Logger.h"
 #include "Utils.h"
 
@@ -63,8 +63,8 @@ int main()
         std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
         auto simulator = std::make_shared<BitmexSimulator>(intervals);
-        auto rl_closer = RL_Closer{ features, simulator };
-        rl_closer.train();
+        auto rl_trader = RL_Trader{ features, simulator };
+        rl_trader.train();
     }
     
     logger.info("BitSim exit");

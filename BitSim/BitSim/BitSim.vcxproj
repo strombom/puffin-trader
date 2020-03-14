@@ -187,7 +187,7 @@
     <ClCompile Include="RL_Action.cpp" />
     <ClCompile Include="RL_Actor.cpp" />
     <ClCompile Include="RL_Agent.cpp" />
-    <ClCompile Include="RL_Closer.cpp" />
+    <ClCompile Include="RL_Trader.cpp" />
     <ClCompile Include="RL_Environment.cpp" />
     <ClCompile Include="RL_State.cpp" />
     <ClCompile Include="RL_Training.cpp" />
@@ -212,7 +212,7 @@
     <ClInclude Include="RL_Action.h" />
     <ClInclude Include="RL_Actor.h" />
     <ClInclude Include="RL_Agent.h" />
-    <ClInclude Include="RL_Closer.h" />
+    <ClInclude Include="RL_Trader.h" />
     <ClInclude Include="RL_Environment.h" />
     <ClInclude Include="RL_State.h" />
     <ClInclude Include="RL_Training.h" />

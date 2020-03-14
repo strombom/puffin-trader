@@ -105,9 +105,6 @@
     <ClCompile Include="RL_Agent.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
-    <ClCompile Include="RL_Closer.cpp">
-      <Filter>Source Files\ReinforcementLearning</Filter>
-    </ClCompile>
     <ClCompile Include="RL_Environment.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
@@ -122,6 +119,9 @@
     </ClCompile>
     <ClCompile Include="BitmexSimulator.cpp">
       <Filter>Source Files\Simulator</Filter>
+    </ClCompile>
+    <ClCompile Include="RL_Trader.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -176,9 +176,6 @@
     <ClInclude Include="RL_Agent.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
-    <ClInclude Include="RL_Closer.h">
-      <Filter>Header Files\ReinforcementLearning</Filter>
-    </ClInclude>
     <ClInclude Include="RL_Environment.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
@@ -193,6 +190,9 @@
     </ClInclude>
     <ClInclude Include="BitmexSimulator.h">
       <Filter>Header Files\Simulator</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Trader.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

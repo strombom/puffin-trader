@@ -9,10 +9,10 @@
 #include "BitmexSimulator.h"
 
 
-class RL_Closer
+class RL_Trader
 {
 public:
-    RL_Closer(torch::Tensor features, sptrBitmexSimulator simulator) :
+    RL_Trader(torch::Tensor features, sptrBitmexSimulator simulator) :
         features(features),
         environment(RL_Environment{ simulator }),
         step_total(0),
