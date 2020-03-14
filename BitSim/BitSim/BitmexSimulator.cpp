@@ -39,40 +39,41 @@ std::tuple<double, double> BitmexSimulator::calculate_order_size(double buy_size
     const auto mark_price = intervals->rows[intervals_idx].last_price;
     auto position_margin = 0.0;
     auto position_leverage = 0.0;
+    auto upnl = 0.0;
 
     if (pos_contracts != 0.0) {
         const auto sign = pos_contracts / abs(pos_contracts);
         const auto entry_value = std::abs(pos_contracts / pos_price);
         const auto mark_value = std::abs(pos_contracts / mark_price);
-        const auto upnl = sign * (entry_value - mark_value);
+        upnl = sign * (entry_value - mark_value);
 
         position_margin = std::max(0.0, std::abs(pos_contracts / pos_price) - upnl);
         position_leverage = position_margin / wallet;
     }
 
-    auto max_margin = BitSim::BitMex::max_leverage * wallet;
-    auto available_margin = max_margin - position_margin;
+    const auto max_margin = BitSim::BitMex::max_leverage * wallet;
+    const auto available_margin = max_margin - position_margin;
+    const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
 
-    auto max_buy_contracts = 0.0;
+    auto max_buy_contracts = max_margin * mark_price;
+    auto max_sell_contracts = max_margin * mark_price;
+
     if (pos_contracts > 0.0) {
         max_buy_contracts = std::max(0.0, available_margin * mark_price);
+        max_sell_contracts = std::max(0.0, max_contracts + pos_contracts);
     }
-    else {
-        max_buy_contracts = max_margin * mark_price;
-    }
-
-    auto max_sell_contracts = 0.0;
-    if (pos_contracts < 0.0) {
+    else if (pos_contracts < 0.0) {
+        max_buy_contracts = std::max(0.0, max_contracts - pos_contracts);
         max_sell_contracts = std::max(0.0, available_margin * mark_price);
     }
-    else {
-        max_sell_contracts = max_margin * mark_price;
-    }
-    
-    const auto max_contracts = 2.0 * max_margin * mark_price * std::max(0.0, buy_size - BitSim::Closer::order_hysteresis) / (1.0 - BitSim::Closer::order_hysteresis);
 
-    auto buy_contracts = std::min(max_buy_contracts, max_contracts);
-    auto sell_contracts = std::min(max_sell_contracts, max_contracts);
+    buy_size = std::max(0.0, buy_size - sell_size);
+    sell_size = std::max(0.0, sell_size - buy_size);
+    const auto buy_fraction = std::max(0.0, (buy_size - BitSim::BitMex::order_hysteresis) / (1.0 - BitSim::BitMex::order_hysteresis));
+    const auto sell_fraction = std::max(0.0, (sell_size - BitSim::BitMex::order_hysteresis) / (1.0 - BitSim::BitMex::order_hysteresis));
+
+    const auto buy_contracts = std::min(max_buy_contracts, max_contracts * buy_fraction);
+    const auto sell_contracts = std::min(max_sell_contracts, max_contracts * sell_fraction);
 
     return std::make_tuple(buy_contracts, sell_contracts);
 }
@@ -135,28 +136,28 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 void BitmexSimulator::market_order(double contracts)
 {
     std::cout << "market_order size(" << contracts << ")" << std::endl;
-    const auto next_interval = intervals->rows[intervals_idx + 1];
+    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
 
-    if (contracts > 0) {
+    if (contracts > 0.0) {
         // Buy
-
-        for (auto&& price_buy : next_interval.prices_buy) {
-            std::cout << "price buy: " << price_buy << std::endl;
-        }
-    }
-    else if (contracts < 0) {
+        execute_order(contracts, next_price + 0.5, true);
+    } 
+    else if (contracts < 0.0) {
         // Sell
+        execute_order(contracts, next_price - 0.5, true);
 
-        for (auto&& price_sell : next_interval.prices_sell) {
-            std::cout << "price sell: " << price_sell << std::endl;
-        }
     }
 }
 
 void BitmexSimulator::limit_order(double contracts, double price)
 {
     std::cout << "limit_order size(" << contracts << ") price(" << price << ")" << std::endl;
+    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
 
+    if ((contracts > 0.0 && next_price < price) ||
+        (contracts < 0.0 && next_price > price)) {
+        execute_order(contracts, price, false);
+    }
 }
 
 void BitmexSimulator::execute_order(double order_contracts, double price, bool taker)

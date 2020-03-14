@@ -80,6 +80,7 @@ namespace BitSim
         constexpr auto maker_fee = -0.025 / 100;
         constexpr auto maintenance_rate = 0.5 / 100;
         constexpr auto max_leverage = 10.0;
+        constexpr auto order_hysteresis = 0.1;
     }
 
     namespace Closer
