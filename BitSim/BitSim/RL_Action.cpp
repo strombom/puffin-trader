@@ -5,8 +5,11 @@
 
 RL_Action RL_Action::random(void)
 {
-    return RL_Action{ Utils::random(0.0, 1.0), 
-                      Utils::random(0.0, 1.0), 
-                      Utils::random(0.0, 1.0),
-                      Utils::random(0.0, 1.0) };
+    // Make actions bottom-heavy - more often close to 0 than 1
+    const auto exponent = 5.0;
+
+    return RL_Action{ std::pow(Utils::random(0.0, 1.0), exponent),
+                      std::pow(Utils::random(0.0, 1.0), exponent),
+                      std::pow(Utils::random(0.0, 1.0), exponent),
+                      std::pow(Utils::random(0.0, 1.0), exponent) };
 }

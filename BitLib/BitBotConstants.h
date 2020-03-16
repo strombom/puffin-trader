@@ -90,7 +90,7 @@ namespace BitSim
 
         constexpr auto episode_length = 10h; // 2*7*24h;
         
-        constexpr auto initial_random_action = 1000;
+        constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;
     }
 }

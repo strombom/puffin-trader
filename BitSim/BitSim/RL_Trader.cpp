@@ -11,14 +11,14 @@ void RL_Trader::train(void)
         step_episode = 0;
 
         while (!state.is_done()) {
-            auto action = get_action(state);
+            const auto action = get_action(state);
             state = environment.step(action);
 
             ++step_total;
             ++step_episode;
         }
 
-        auto reward = environment.get_reward();
+        const auto reward = environment.get_reward();
 
         update_model();
 
@@ -48,7 +48,7 @@ void RL_Trader::interim_test(void)
 RL_Action RL_Trader::get_action(RL_State state)
 {
     if (step_total < BitSim::Closer::initial_random_action) {
-        //return actor.get_random_action();
+        return actor.get_random_action();
     }
 
     return actor.get_action(state);
