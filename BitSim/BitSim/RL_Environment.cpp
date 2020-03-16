@@ -16,5 +16,5 @@ RL_State RL_Environment::step(const RL_Action& action)
 
 double RL_Environment::get_reward(void)
 {
-    return simulator->get_value();
+    return simulator->get_reward();
 }

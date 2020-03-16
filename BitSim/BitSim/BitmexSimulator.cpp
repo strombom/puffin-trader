@@ -24,6 +24,7 @@ void BitmexSimulator::reset(void)
     wallet = 1.0;
     pos_price = 0.0;
     pos_contracts = 0.0;
+    start_value = wallet * intervals->rows[intervals_idx_start].last_price;
 }
 
 RL_State BitmexSimulator::step(const RL_Action& action)
@@ -102,7 +103,7 @@ RL_State BitmexSimulator::step(const RL_Action& action)
     return state;
 }
 
-double BitmexSimulator::get_value(void)
+double BitmexSimulator::get_reward(void)
 {
     const auto next_price = intervals->rows[intervals_idx + 1].last_price;
     if (pos_contracts > 0.0) {
@@ -111,7 +112,8 @@ double BitmexSimulator::get_value(void)
     else if (pos_contracts < 0.0) {
         execute_order(pos_contracts, next_price + 0.5, true);
     }
-    return wallet * next_price;
+    const auto value = wallet * next_price;
+    return value / start_value;
 }
 
 double BitmexSimulator::sigmoid_to_price(double price, double sigmoid) {

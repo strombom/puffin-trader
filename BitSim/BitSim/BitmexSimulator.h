@@ -24,7 +24,7 @@ public:
     BitmexSimulator(sptrIntervals intervals);
 
     void reset(void);
-    double get_value(void);
+    double get_reward(void);
     RL_State step(const RL_Action& action);
 
 private:
@@ -34,6 +34,7 @@ private:
     int intervals_idx_end;
     int intervals_idx;
 
+    double start_value;
     double wallet;
     double pos_price;
     double pos_contracts;
