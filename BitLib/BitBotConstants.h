@@ -83,7 +83,7 @@ namespace BitSim
         constexpr auto order_hysteresis = 0.1;
     }
 
-    namespace Closer
+    namespace Trader
     {
         constexpr auto n_episodes = 1;
         constexpr auto save_period = 100;

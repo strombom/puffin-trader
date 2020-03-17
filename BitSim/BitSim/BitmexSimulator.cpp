@@ -16,7 +16,7 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals) :
 
 void BitmexSimulator::reset(void)
 {
-    constexpr auto episode_length = ((std::chrono::seconds) BitSim::Closer::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
+    constexpr auto episode_length = ((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
     intervals_idx = 0; // Utils::random(0, (int)intervals->rows.size() - 1);
     intervals_idx_start = intervals_idx;
     intervals_idx_end = intervals_idx + episode_length;
