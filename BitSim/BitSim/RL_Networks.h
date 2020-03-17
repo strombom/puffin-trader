@@ -10,9 +10,7 @@ public:
     torch::Tensor forward(torch::Tensor x);
 
 private:
-    //torch::nn::ModuleList layers;
     torch::nn::Sequential layers;
-    //std::vector<torch::nn::Module> layers;
 };
 TORCH_MODULE(MultilayerPerceptron);
 
@@ -22,7 +20,7 @@ class FlattenMultilayerPerceptronImpl : public torch::nn::Module
 public:
     FlattenMultilayerPerceptronImpl(const std::string& name, int input_size, int output_size);
 
-    torch::Tensor forward(torch::Tensor x);
+    torch::Tensor forward(torch::Tensor x, torch::Tensor y);
 
 private:
     MultilayerPerceptron mlp;
@@ -39,6 +37,8 @@ public:
 
 private:
     MultilayerPerceptron mlp;
+    torch::nn::Linear mean;
+    torch::nn::Linear std;
 };
 TORCH_MODULE(GaussianDist);
 

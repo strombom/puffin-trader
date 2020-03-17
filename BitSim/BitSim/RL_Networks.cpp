@@ -21,8 +21,17 @@ MultilayerPerceptronImpl::MultilayerPerceptronImpl(const std::string& name, int 
     auto output_layer = register_module(name + "_linear_output", torch::nn::Linear{ BitSim::Trader::hidden_size, output_size });
     auto activation = register_module(name + "_output_activation", torch::nn::ReLU6{});
 
+    constexpr auto init_w = 3e-3;
+    torch::nn::init::uniform_(output_layer->weight, -init_w, init_w);
+    torch::nn::init::uniform_(output_layer->bias, -init_w, init_w);
+
     layers->push_back(output_layer);
     layers->push_back(activation);
+}
+
+torch::Tensor MultilayerPerceptronImpl::forward(torch::Tensor x)
+{
+    return layers->forward(x);
 }
 
 FlattenMultilayerPerceptronImpl::FlattenMultilayerPerceptronImpl(const std::string& name, int input_size, int output_size) :
@@ -31,31 +40,33 @@ FlattenMultilayerPerceptronImpl::FlattenMultilayerPerceptronImpl(const std::stri
 
 }
 
-GaussianDistImpl::GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
-    mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size }))
+torch::Tensor FlattenMultilayerPerceptronImpl::forward(torch::Tensor x, torch::Tensor y)
 {
+    return mlp->forward(torch::cat({ x, y }, -1));
+}
 
+GaussianDistImpl::GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
+    mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })),
+    mean(register_module(name + "_mean", torch::nn::Linear{ input_size, output_size })),
+    std(register_module(name + "_std", torch::nn::Linear{ input_size, output_size }))
+{
+    constexpr auto init_w = 3e-3;
+    torch::nn::init::uniform_(mean->weight, -init_w, init_w);
+    torch::nn::init::uniform_(mean->bias, -init_w, init_w);
+    torch::nn::init::uniform_(std->weight, -init_w, init_w);
+    torch::nn::init::uniform_(std->bias, -init_w, init_w);
+}
+
+torch::Tensor GaussianDistImpl::forward(torch::Tensor x)
+{
+    x = mlp->forward(x);
+    return x;
 }
 
 TanhGaussianDistParamsImpl::TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size) :
     gaussian_dist(register_module(name, GaussianDist{ name + "_gauss", input_size, output_size }))
 {
 
-}
-
-torch::Tensor MultilayerPerceptronImpl::forward(torch::Tensor x)
-{
-    return layers->forward(x);
-}
-
-torch::Tensor FlattenMultilayerPerceptronImpl::forward(torch::Tensor x)
-{
-    return mlp->forward(x);
-}
-
-torch::Tensor GaussianDistImpl::forward(torch::Tensor x)
-{
-    return mlp->forward(x);
 }
 
 torch::Tensor TanhGaussianDistParamsImpl::forward(torch::Tensor x)
