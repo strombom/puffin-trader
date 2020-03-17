@@ -10,7 +10,9 @@ public:
     torch::Tensor forward(torch::Tensor x);
 
 private:
-    std::vector<torch::nn::Linear> layers;
+    //torch::nn::ModuleList layers;
+    torch::nn::Sequential layers;
+    //std::vector<torch::nn::Module> layers;
 };
 TORCH_MODULE(MultilayerPerceptron);
 
@@ -18,8 +20,7 @@ TORCH_MODULE(MultilayerPerceptron);
 class FlattenMultilayerPerceptronImpl : public torch::nn::Module
 {
 public:
-    FlattenMultilayerPerceptronImpl(const std::string& name, int input_size, int output_size) :
-        mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })) {}
+    FlattenMultilayerPerceptronImpl(const std::string& name, int input_size, int output_size);
 
     torch::Tensor forward(torch::Tensor x);
 
@@ -32,8 +33,7 @@ TORCH_MODULE(FlattenMultilayerPerceptron);
 class GaussianDistImpl : public torch::nn::Module
 {
 public:
-    GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
-        mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })) {}
+    GaussianDistImpl(const std::string& name, int input_size, int output_size);
 
     torch::Tensor forward(torch::Tensor x);
 
@@ -46,8 +46,7 @@ TORCH_MODULE(GaussianDist);
 class TanhGaussianDistParamsImpl : public torch::nn::Module
 {
 public:
-    TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size) :
-        gaussian_dist(register_module(name, GaussianDist{ name + "_gauss", input_size, output_size })) {}
+    TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size);
 
     torch::Tensor forward(torch::Tensor x);
 

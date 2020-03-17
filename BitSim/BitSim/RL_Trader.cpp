@@ -2,10 +2,15 @@
 
 #include "RL_Trader.h"
 #include "BitBotConstants.h"
+#include "RL_Agent.h"
 
 
 void RL_Trader::train(void)
 {
+    auto agent = RL_Agent{};
+
+    return;
+
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
         auto state = environment.reset();
         step_episode = 0;
