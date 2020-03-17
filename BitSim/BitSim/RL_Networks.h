@@ -5,10 +5,12 @@
 class MultilayerPerceptronImpl : public torch::nn::Module
 {
 public:
-    MultilayerPerceptronImpl(const std::string& name, int input_size, int output_size, int layer_count);
+    MultilayerPerceptronImpl(const std::string& name, int input_size, int output_size);
+
+    torch::Tensor forward(torch::Tensor x);
 
 private:
-    std::vector<torch::nn::Linear> linear_layers;
+    std::vector<torch::nn::Linear> layers;
 };
 TORCH_MODULE(MultilayerPerceptron);
 
@@ -16,8 +18,13 @@ TORCH_MODULE(MultilayerPerceptron);
 class FlattenMultilayerPerceptronImpl : public torch::nn::Module
 {
 public:
-    FlattenMultilayerPerceptronImpl(const std::string& name) {}
+    FlattenMultilayerPerceptronImpl(const std::string& name, int input_size, int output_size) :
+        mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })) {}
 
+    torch::Tensor forward(torch::Tensor x);
+
+private:
+    MultilayerPerceptron mlp;
 };
 TORCH_MODULE(FlattenMultilayerPerceptron);
 
@@ -25,8 +32,10 @@ TORCH_MODULE(FlattenMultilayerPerceptron);
 class GaussianDistImpl : public torch::nn::Module
 {
 public:
-    GaussianDistImpl(const std::string& name, int input_size, int output_size, int layer_count) : 
-        mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size, layer_count })) {}
+    GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
+        mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })) {}
+
+    torch::Tensor forward(torch::Tensor x);
 
 private:
     MultilayerPerceptron mlp;
@@ -37,8 +46,10 @@ TORCH_MODULE(GaussianDist);
 class TanhGaussianDistParamsImpl : public torch::nn::Module
 {
 public:
-    TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size, int layer_count) :
-        gaussian_dist(register_module(name, GaussianDist{ name + "_gauss", input_size, output_size, layer_count })) {}
+    TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size) :
+        gaussian_dist(register_module(name, GaussianDist{ name + "_gauss", input_size, output_size })) {}
+
+    torch::Tensor forward(torch::Tensor x);
 
 private:
     GaussianDist gaussian_dist;

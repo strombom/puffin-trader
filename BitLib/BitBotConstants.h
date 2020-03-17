@@ -92,5 +92,10 @@ namespace BitSim
         
         constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;
+
+        constexpr auto hidden_count = 2;
+        constexpr auto hidden_size = 256;
+        constexpr auto state_dim = feature_size + 1; // Features, leverage (-1 to +1)
+        constexpr auto action_dim = 4; // buy_position, buy_size, sell_position, sell_size
     }
 }
