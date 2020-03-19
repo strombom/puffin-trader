@@ -11,3 +11,8 @@ bool RL_State::is_done(void)
 {
     return done;
 }
+
+torch::Tensor RL_State::to_tensor(void)
+{
+    return torch::empty(1);
+}

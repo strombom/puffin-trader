@@ -5,8 +5,8 @@
 
 RL_Action RL_Actor::get_action(RL_State state)
 {
-    // buy_position, buy_size, sell_position, sell_size
-    return RL_Action{ 0.0, 0.0, 0.6, 0.5 };
+    const auto [action, log_prob, z, mean, std] = policy->forward(state.to_tensor());
+    return RL_Action{ action };
 }
 
 RL_Action RL_Actor::get_random_action(void)
