@@ -12,7 +12,7 @@ void RL_Trader::train(void)
 
         while (!state.is_done()) {
             const auto action = get_action(state);
-            state = environment.step(action);
+            state = step(action);
 
             ++step_total;
             ++step_episode;

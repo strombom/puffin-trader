@@ -5,6 +5,7 @@
 #include "RL_State.h"
 #include "RL_Action.h"
 #include "RL_Environment.h"
+#include "RL_ReplayBuffer.h"
 #include "FE_Observations.h"
 #include "BitmexSimulator.h"
 
@@ -29,6 +30,7 @@ private:
 
     RL_Actor actor;
     RL_Environment environment;
+    RL_ReplayBuffer replay_buffer;
     RL_Action get_action(RL_State state);
     RL_State step(RL_Action action);
     void update_model(void);

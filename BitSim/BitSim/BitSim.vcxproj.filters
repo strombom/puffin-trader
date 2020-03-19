@@ -123,6 +123,9 @@
     <ClCompile Include="RL_Networks.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
+    <ClCompile Include="RL_ReplayBuffer.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\DateTime.h">
@@ -192,6 +195,9 @@
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
     <ClInclude Include="RL_Networks.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_ReplayBuffer.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
   </ItemGroup>
