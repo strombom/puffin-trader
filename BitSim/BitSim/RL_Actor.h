@@ -12,10 +12,10 @@ class RL_Actor
 public:
     RL_Actor(void) :
         policy(TanhGaussianDistParams{ "policy", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-        vf(MultilayerPerceptron{ "vf", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-        vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-        qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-        qf_2(FlattenMultilayerPerceptron{ "vf", BitSim::Trader::state_dim, BitSim::Trader::action_dim })
+        vf(MultilayerPerceptron{ "vf", BitSim::Trader::state_dim, 1 }),
+        vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, 1 }),
+        qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
+        qf_2(FlattenMultilayerPerceptron{ "vf", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 })
     {}
 
     RL_Action get_action(RL_State state);
