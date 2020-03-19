@@ -33,12 +33,12 @@ class GaussianDistImpl : public torch::nn::Module
 public:
     GaussianDistImpl(const std::string& name, int input_size, int output_size);
 
-    torch::Tensor forward(torch::Tensor x);
+    std::tuple<torch::Tensor, torch::Tensor> get_dist_params(torch::Tensor x);
 
 private:
     MultilayerPerceptron mlp;
-    torch::nn::Linear mean;
-    torch::nn::Linear std;
+    torch::nn::Sequential mean_layer;
+    torch::nn::Sequential log_std_layer;
 };
 TORCH_MODULE(GaussianDist);
 
@@ -48,10 +48,11 @@ class TanhGaussianDistParamsImpl : public torch::nn::Module
 public:
     TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size);
 
-    torch::Tensor forward(torch::Tensor x);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor x);
 
 private:
     GaussianDist gaussian_dist;
+
 };
 TORCH_MODULE(TanhGaussianDistParams);
 

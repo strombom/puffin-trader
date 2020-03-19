@@ -21,9 +21,9 @@ MultilayerPerceptronImpl::MultilayerPerceptronImpl(const std::string& name, int 
     auto output_layer = register_module(name + "_linear_output", torch::nn::Linear{ BitSim::Trader::hidden_size, output_size });
     auto activation = register_module(name + "_output_activation", torch::nn::ReLU6{});
 
-    constexpr auto init_w = 3e-3;
-    torch::nn::init::uniform_(output_layer->weight, -init_w, init_w);
-    torch::nn::init::uniform_(output_layer->bias, -init_w, init_w);
+    //constexpr auto init_w = 3e-3;
+    //torch::nn::init::uniform_(output_layer->weight, -init_w, init_w);
+    //torch::nn::init::uniform_(output_layer->bias, -init_w, init_w);
 
     layers->push_back(output_layer);
     layers->push_back(activation);
@@ -47,20 +47,30 @@ torch::Tensor FlattenMultilayerPerceptronImpl::forward(torch::Tensor x, torch::T
 
 GaussianDistImpl::GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
     mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })),
-    mean(register_module(name + "_mean", torch::nn::Linear{ input_size, output_size })),
-    std(register_module(name + "_std", torch::nn::Linear{ input_size, output_size }))
+    mean_layer(register_module(name + "_mean", torch::nn::Sequential{ torch::nn::Linear{input_size, output_size}, torch::nn::ReLU6{} })),
+    log_std_layer(register_module(name + "_std", torch::nn::Sequential{ torch::nn::Linear{input_size, output_size}, torch::nn::Tanh{} }))
 {
-    constexpr auto init_w = 3e-3;
+    /*
+    constexpr auto init_w = 3e-3;    
     torch::nn::init::uniform_(mean->weight, -init_w, init_w);
     torch::nn::init::uniform_(mean->bias, -init_w, init_w);
     torch::nn::init::uniform_(std->weight, -init_w, init_w);
     torch::nn::init::uniform_(std->bias, -init_w, init_w);
+    */
 }
 
-torch::Tensor GaussianDistImpl::forward(torch::Tensor x)
+std::tuple<torch::Tensor, torch::Tensor> GaussianDistImpl::get_dist_params(torch::Tensor x)
 {
     x = mlp->forward(x);
-    return x;
+
+    const auto mean = mean_layer->forward(x);
+    const auto log_std = log_std_layer->forward(x);
+
+    constexpr auto log_std_min = -20.0;
+    constexpr auto log_std_max = 2.0;
+    const auto std = torch::exp(log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1.0));
+
+    return std::make_tuple(mean, std);
 }
 
 TanhGaussianDistParamsImpl::TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size) :
@@ -69,7 +79,19 @@ TanhGaussianDistParamsImpl::TanhGaussianDistParamsImpl(const std::string& name, 
 
 }
 
-torch::Tensor TanhGaussianDistParamsImpl::forward(torch::Tensor x)
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> TanhGaussianDistParamsImpl::forward(torch::Tensor x)
 {
-    return gaussian_dist->forward(x);
+    const auto [mean, std] = gaussian_dist->get_dist_params(x);
+
+    // Reparametrization trick
+    const auto eps = torch::normal(0.0, 1.0, std.sizes());
+    const auto z = mean + eps * std;
+
+    // Normalize action and log_prob. Appendix C https://arxiv.org/pdf/1812.05905.pdf
+    constexpr auto epsilon = 1e-6;
+    const auto action = torch::tanh(z);
+    const auto dist_log_prob = -(z - mean).pow(2) / (2 * std.pow(2)) - std.log() - std::log(std::sqrt(2 * M_PI));
+    const auto log_prob = dist_log_prob - (1 - action.pow(2) + epsilon).log().sum(-1, true);
+
+    return std::make_tuple(action, log_prob, z, mean, std);
 }
