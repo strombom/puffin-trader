@@ -102,9 +102,6 @@
     <ClCompile Include="RL_Training.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
-    <ClCompile Include="RL_Agent.cpp">
-      <Filter>Source Files\ReinforcementLearning</Filter>
-    </ClCompile>
     <ClCompile Include="RL_Environment.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
@@ -174,9 +171,6 @@
       <Filter>Header Files\FeatureEncoder</Filter>
     </ClInclude>
     <ClInclude Include="RL_Training.h">
-      <Filter>Header Files\ReinforcementLearning</Filter>
-    </ClInclude>
-    <ClInclude Include="RL_Agent.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
     <ClInclude Include="RL_Environment.h">

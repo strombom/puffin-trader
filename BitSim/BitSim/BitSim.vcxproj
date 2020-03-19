@@ -186,7 +186,6 @@
     </ClCompile>
     <ClCompile Include="RL_Action.cpp" />
     <ClCompile Include="RL_Actor.cpp" />
-    <ClCompile Include="RL_Agent.cpp" />
     <ClCompile Include="RL_Networks.cpp" />
     <ClCompile Include="RL_Trader.cpp" />
     <ClCompile Include="RL_Environment.cpp" />
@@ -212,7 +211,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="RL_Action.h" />
     <ClInclude Include="RL_Actor.h" />
-    <ClInclude Include="RL_Agent.h" />
     <ClInclude Include="RL_Networks.h" />
     <ClInclude Include="RL_Trader.h" />
     <ClInclude Include="RL_Environment.h" />
