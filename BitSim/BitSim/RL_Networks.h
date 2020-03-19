@@ -55,25 +55,3 @@ private:
 
 };
 TORCH_MODULE(TanhGaussianDistParams);
-
-/*
-struct RepresentationLearnerImpl : public torch::nn::Module
-{
-    RepresentationLearnerImpl(const std::string& encoder_name = "feature encoder", 
-                              const std::string& predictor_name = "feature predictor") :
-        feature_encoder(register_module(encoder_name, FeatureEncoder{})),
-        feature_predictor(register_module(predictor_name, FeaturePredictor{})) {}
-
-    std::tuple<torch::Tensor, double> forward_fit(
-        torch::Tensor past_observations,   // BxCxNxL (2x1x4x160)
-        torch::Tensor future_positives,    // BxCxNxL (2x1x1x160)
-        torch::Tensor future_negatives);   // BxCxNxL (2x1x9x160)
-
-    torch::Tensor forward_predict(torch::Tensor observations);
-
-private:
-    FeatureEncoder feature_encoder;
-    FeaturePredictor feature_predictor;
-};
-TORCH_MODULE(RepresentationLearner);
-*/
