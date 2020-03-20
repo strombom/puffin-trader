@@ -108,7 +108,7 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
 double BitmexSimulator::get_reward(void)
 {
-    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
+    const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
     const auto taker_fee = BitSim::BitMex::taker_fee * abs(pos_contracts / next_price);
     const auto position_pnl = (1 / pos_price - 1 / next_price) * pos_contracts - taker_fee;
     const auto value = (wallet + position_pnl) * next_price / start_value;
@@ -176,7 +176,7 @@ std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double 
 void BitmexSimulator::market_order(double contracts)
 {
     std::cout << "market_order size(" << contracts << ")" << std::endl;
-    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
+    const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
 
     if (contracts > 0.0) {
         // Buy
@@ -192,7 +192,7 @@ void BitmexSimulator::market_order(double contracts)
 void BitmexSimulator::limit_order(double contracts, double price)
 {
     std::cout << "limit_order size(" << contracts << ") price(" << price << ")" << std::endl;
-    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
+    const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
 
     if ((contracts > 0.0 && next_price < price) ||
         (contracts < 0.0 && next_price > price)) {
@@ -259,7 +259,7 @@ double BitmexSimulator::liquidation_price(void)
 
 bool BitmexSimulator::is_liquidated(void)
 {
-    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
+    const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
     if ((pos_contracts > 0.0 && next_price < liquidation_price()) ||
         (pos_contracts < 0.0 && next_price > liquidation_price())) {
         return true;
