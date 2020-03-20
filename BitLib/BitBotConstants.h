@@ -87,7 +87,8 @@ namespace BitSim
     {
         constexpr auto n_episodes = 1;
         constexpr auto save_period = 100;
-
+        constexpr auto buffer_size = 1e6;
+        constexpr auto batch_size = 128;
         constexpr auto episode_length = 10h; // 2*7*24h;
         
         constexpr auto initial_random_action = 10000;

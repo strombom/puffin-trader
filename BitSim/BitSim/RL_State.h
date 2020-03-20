@@ -4,7 +4,9 @@
 class RL_State
 {
 public:
-    RL_State(void) : done(false) {}
+    RL_State(double reward) : 
+        done(false),
+        reward(reward) {}
     
     void set_done(void);
     bool is_done(void);
@@ -12,4 +14,5 @@ public:
 
 private:
     bool done;
+    double reward;
 };

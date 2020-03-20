@@ -86,7 +86,9 @@ RL_State BitmexSimulator::step(const RL_Action& action)
                 wallet,
                 log_upnl);
 
-    auto state = RL_State{};
+    const auto reward = 0.0;
+
+    auto state = RL_State{ reward };
 
     if (is_liquidated()) {
         wallet = 0.0;

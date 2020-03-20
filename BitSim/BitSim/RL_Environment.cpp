@@ -6,7 +6,8 @@ RL_State RL_Environment::reset(void)
 {
     simulator->reset();
 
-    return RL_State{};
+    constexpr auto reward = 0.0;
+    return RL_State{ reward };
 }
 
 RL_State RL_Environment::step(const RL_Action& action)
