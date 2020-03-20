@@ -9,7 +9,8 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals) :
     intervals(intervals),
     intervals_idx_start(0), intervals_idx_end(0),
     intervals_idx(0),
-    wallet(0.0), pos_price(0.0), pos_contracts(0.0)
+    wallet(0.0), pos_price(0.0), pos_contracts(0.0),
+    previous_value(0.0)
 {
     logger = std::make_unique<BitmexSimulatorLogger>("simulation.csv");
 }
@@ -24,6 +25,7 @@ void BitmexSimulator::reset(void)
     wallet = 1.0;
     pos_price = 0.0;
     pos_contracts = 0.0;
+    previous_value = 0.0;
     start_value = wallet * intervals->rows[intervals_idx_start].last_price;
 }
 
@@ -86,8 +88,7 @@ RL_State BitmexSimulator::step(const RL_Action& action)
                 wallet,
                 log_upnl);
 
-    const auto reward = 0.0;
-
+    const auto reward = get_reward();
     auto state = RL_State{ reward };
 
     if (is_liquidated()) {
@@ -107,20 +108,18 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
 double BitmexSimulator::get_reward(void)
 {
-    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
-    if (pos_contracts > 0.0) {
-        execute_order(-pos_contracts, next_price - 0.5, true);
-    }
-    else if (pos_contracts < 0.0) {
-        execute_order(pos_contracts, next_price + 0.5, true);
-    }
-    const auto value = wallet * next_price;
-    return value / start_value;
+    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
+    const auto taker_fee = BitSim::BitMex::taker_fee * abs(pos_contracts / next_price);
+    const auto position_pnl = (1 / pos_price - 1 / next_price) * pos_contracts - taker_fee;
+    const auto value = (wallet + position_pnl) * next_price / start_value;
+    const auto reward = value - previous_value;
+
+    previous_value = value;
+    return reward;
 }
 
 double BitmexSimulator::sigmoid_to_price(double price, double sigmoid) {
-    // High output when sigmoid near 0
-    // Low output when sigmoid near 1
+    // High output when sigmoid near 0, low output when sigmoid near 1
     auto p = std::pow(price / 100.0, 5.0 * (1.0 - sigmoid) / 4.0 - 0.25) - 1.0;
     p = std::round(p * 2.0) * 0.5;
     return std::max(0.0, p);
@@ -177,7 +176,7 @@ std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double 
 void BitmexSimulator::market_order(double contracts)
 {
     std::cout << "market_order size(" << contracts << ")" << std::endl;
-    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
+    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
 
     if (contracts > 0.0) {
         // Buy
@@ -193,7 +192,7 @@ void BitmexSimulator::market_order(double contracts)
 void BitmexSimulator::limit_order(double contracts, double price)
 {
     std::cout << "limit_order size(" << contracts << ") price(" << price << ")" << std::endl;
-    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
+    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
 
     if ((contracts > 0.0 && next_price < price) ||
         (contracts < 0.0 && next_price > price)) {
@@ -260,7 +259,7 @@ double BitmexSimulator::liquidation_price(void)
 
 bool BitmexSimulator::is_liquidated(void)
 {
-    const auto next_price = intervals->rows[intervals_idx + 1].last_price;
+    const auto next_price = intervals->rows[(long)intervals_idx + 1].last_price;
     if ((pos_contracts > 0.0 && next_price < liquidation_price()) ||
         (pos_contracts < 0.0 && next_price > liquidation_price())) {
         return true;

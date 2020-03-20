@@ -18,8 +18,6 @@ void RL_Trader::train(void)
             ++step_episode;
         }
 
-        const auto reward = environment.get_reward();
-
         update_model();
 
         if (idx_episode % BitSim::Trader::save_period == 0 ||

@@ -24,7 +24,6 @@ public:
     BitmexSimulator(sptrIntervals intervals);
 
     void reset(void);
-    double get_reward(void);
     RL_State step(const RL_Action& action);
 
 private:
@@ -38,11 +37,13 @@ private:
     double wallet;
     double pos_price;
     double pos_contracts;
+    double previous_value;
 
     void market_order(double contracts);
     void limit_order(double contracts, double price);
     void execute_order(double contracts, double price, bool taker);
     bool is_liquidated(void);
+    double get_reward(void);
     double liquidation_price(void);
     double sigmoid_to_price(double price, double sigmoid);
     std::tuple<double, double, double> calculate_order_size(double buy_size, double sell_size);
