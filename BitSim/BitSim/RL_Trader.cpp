@@ -12,7 +12,7 @@ void RL_Trader::train(void)
 
         while (!state.is_done()) {
             const auto action = get_action(state);
-            state = step(action);
+            state = step(state, action);
 
             ++step_total;
             ++step_episode;
@@ -52,11 +52,9 @@ RL_Action RL_Trader::get_action(RL_State state)
     return actor.get_action(state);
 }
 
-RL_State RL_Trader::step(RL_Action action)
+RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
     auto next_state = environment.step(action);
-    
-    // TODO: Add transition to memory
-
+    replay_buffer.append(current_state, next_state, action);
     return next_state;
 }

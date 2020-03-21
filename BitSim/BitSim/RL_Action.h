@@ -4,6 +4,12 @@
 class RL_Action
 {
 public:
+    RL_Action(void) :
+        buy_position(0.0),
+        buy_size(0.0),
+        sell_position(0.0),
+        sell_size(0.0) {}
+
     RL_Action(torch::Tensor action) :
         buy_position(action[0].item().to<double>()), 
         buy_size(action[1].item().to<double>()), 

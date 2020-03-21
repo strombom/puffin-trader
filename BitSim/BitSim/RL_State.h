@@ -4,6 +4,10 @@
 class RL_State
 {
 public:
+    RL_State(void) :
+        done(false),
+        reward(0.0) {}
+
     RL_State(double reward) : 
         done(false),
         reward(reward) {}
