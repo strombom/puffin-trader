@@ -1,9 +1,8 @@
 #pragma once
 #include "pch.h"
 
-#include "RL_Actor.h"
 #include "RL_State.h"
-#include "RL_Action.h"
+#include "RL_Networks.h"
 #include "RL_Environment.h"
 #include "RL_ReplayBuffer.h"
 #include "FE_Observations.h"
@@ -28,7 +27,7 @@ private:
     int step_total;
     int step_episode;
 
-    RL_Actor actor;
+    RL_Networks networks;
     RL_Environment environment;
     RL_ReplayBuffer replay_buffer;
     RL_Action get_action(RL_State state);

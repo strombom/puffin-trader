@@ -14,6 +14,7 @@ public:
         length(0) {}
 
     void append(RL_State current_state, RL_State next_state, RL_Action action);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
 private:
     RL_State current_states[BitSim::Trader::buffer_size];

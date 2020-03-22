@@ -108,9 +108,6 @@
     <ClCompile Include="RL_Action.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
-    <ClCompile Include="RL_Actor.cpp">
-      <Filter>Source Files\ReinforcementLearning</Filter>
-    </ClCompile>
     <ClCompile Include="RL_State.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
@@ -180,9 +177,6 @@
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
     <ClInclude Include="RL_Action.h">
-      <Filter>Header Files\ReinforcementLearning</Filter>
-    </ClInclude>
-    <ClInclude Include="RL_Actor.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
     <ClInclude Include="RL_State.h">

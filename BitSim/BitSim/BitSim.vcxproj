@@ -185,7 +185,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="RL_Action.cpp" />
-    <ClCompile Include="RL_Actor.cpp" />
     <ClCompile Include="RL_Networks.cpp" />
     <ClCompile Include="RL_ReplayBuffer.cpp" />
     <ClCompile Include="RL_Trader.cpp" />
@@ -211,7 +210,6 @@
     <ClInclude Include="FE_Training.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="RL_Action.h" />
-    <ClInclude Include="RL_Actor.h" />
     <ClInclude Include="RL_Networks.h" />
     <ClInclude Include="RL_ReplayBuffer.h" />
     <ClInclude Include="RL_Trader.h" />

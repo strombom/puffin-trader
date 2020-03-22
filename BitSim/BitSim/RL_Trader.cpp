@@ -30,6 +30,9 @@ void RL_Trader::train(void)
 
 void RL_Trader::update_model(void)
 {
+    auto [states, actions, rewards, next_states] = replay_buffer.sample();
+
+    const auto [action, log_prob, z, mean, std] = networks.forward_policy(states);
 
 }
 
@@ -46,10 +49,10 @@ void RL_Trader::interim_test(void)
 RL_Action RL_Trader::get_action(RL_State state)
 {
     if (step_total < BitSim::Trader::initial_random_action) {
-        return actor.get_random_action();
+        return networks.get_random_action();
     }
 
-    return actor.get_action(state);
+    return networks.get_action(state);
 }
 
 RL_State RL_Trader::step(RL_State current_state, RL_Action action)

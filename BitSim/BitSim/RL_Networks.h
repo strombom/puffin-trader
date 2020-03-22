@@ -1,6 +1,10 @@
 #pragma once
 #include "pch.h"
 
+#include "RL_State.h"
+#include "RL_Action.h"
+#include "BitBotConstants.h"
+
 
 class MultilayerPerceptronImpl : public torch::nn::Module
 {
@@ -55,3 +59,27 @@ private:
 
 };
 TORCH_MODULE(TanhGaussianDistParams);
+
+
+class RL_Networks
+{
+public:
+    RL_Networks(void) :
+        policy(TanhGaussianDistParams{ "policy", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
+        vf(MultilayerPerceptron{ "vf", BitSim::Trader::state_dim, 1 }),
+        vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, 1 }),
+        qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
+        qf_2(FlattenMultilayerPerceptron{ "vf", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 })
+    {}
+
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward_policy(torch::Tensor states);
+    RL_Action get_action(RL_State state);
+    RL_Action get_random_action(void);
+
+private:
+    TanhGaussianDistParams policy;
+    MultilayerPerceptron vf;
+    MultilayerPerceptron vf_target;
+    FlattenMultilayerPerceptron qf_1;
+    FlattenMultilayerPerceptron qf_2;
+};

@@ -95,3 +95,20 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
 
     return std::make_tuple(action, log_prob, z, mean, std);
 }
+
+RL_Action RL_Networks::get_action(RL_State state)
+{
+    const auto [action, log_prob, z, mean, std] = policy->forward(state.to_tensor());
+    return RL_Action{ action };
+}
+
+RL_Action RL_Networks::get_random_action(void)
+{
+    return RL_Action::random();
+}
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_Networks::forward_policy(torch::Tensor states)
+{
+    //const auto [action, log_prob, z, mean, std] = policy->forward(state.to_tensor());
+    return policy->forward(states);
+}
