@@ -4,6 +4,17 @@
 #include "BitBotConstants.h"
 
 
+RL_Trader::RL_Trader(torch::Tensor features, sptrBitmexSimulator simulator) :
+    features(features),
+    environment(RL_Environment{ simulator }),
+    step_total(0),
+    step_episode(0)
+{
+
+    //self.alpha_optim = optim.Adam([self.log_alpha], lr = optim_cfg.lr_entropy)
+    //auto optimizer = torch::optim::SGD{ model->parameters(), torch::optim::SGDOptions{0.01}.momentum(0.9) };
+}
+
 void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {

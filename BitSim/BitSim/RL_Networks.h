@@ -64,19 +64,18 @@ TORCH_MODULE(TanhGaussianDistParams);
 class RL_Networks
 {
 public:
-    RL_Networks(void) :
-        policy(TanhGaussianDistParams{ "policy", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-        vf(MultilayerPerceptron{ "vf", BitSim::Trader::state_dim, 1 }),
-        vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, 1 }),
-        qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
-        qf_2(FlattenMultilayerPerceptron{ "vf", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 })
-    {}
+    RL_Networks(void);
 
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward_policy(torch::Tensor states);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward_policy(torch::Tensor states); // action, log_prob, z, mean, std
     RL_Action get_action(RL_State state);
     RL_Action get_random_action(void);
+    torch::Tensor tune_entropy(torch::Tensor log_prob);
 
 private:
+    torch::Tensor log_alpha;
+    torch::optim::Adam alpha_optim;
+    double target_entropy;
+
     TanhGaussianDistParams policy;
     MultilayerPerceptron vf;
     MultilayerPerceptron vf_target;

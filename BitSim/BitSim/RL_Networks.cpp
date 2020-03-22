@@ -96,6 +96,19 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
     return std::make_tuple(action, log_prob, z, mean, std);
 }
 
+RL_Networks::RL_Networks(void) :
+    policy(TanhGaussianDistParams{ "policy", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
+    vf(MultilayerPerceptron{ "vf", BitSim::Trader::state_dim, 1 }),
+    vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, 1 }),
+    qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
+    qf_2(FlattenMultilayerPerceptron{ "vf", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
+    log_alpha(torch::zeros(1)),
+    alpha_optim(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy),
+    target_entropy(-BitSim::Trader::action_dim)
+{
+
+}
+
 RL_Action RL_Networks::get_action(RL_State state)
 {
     const auto [action, log_prob, z, mean, std] = policy->forward(state.to_tensor());
@@ -109,6 +122,15 @@ RL_Action RL_Networks::get_random_action(void)
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_Networks::forward_policy(torch::Tensor states)
 {
-    //const auto [action, log_prob, z, mean, std] = policy->forward(state.to_tensor());
     return policy->forward(states);
+}
+
+torch::Tensor RL_Networks::tune_entropy(torch::Tensor log_prob)
+{
+    auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
+    alpha_optim.zero_grad();
+    alpha_loss.backward();
+    alpha_optim.step();
+    auto alpha = log_alpha.exp();
+    return alpha;
 }

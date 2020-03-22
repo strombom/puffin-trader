@@ -12,12 +12,7 @@
 class RL_Trader
 {
 public:
-    RL_Trader(torch::Tensor features, sptrBitmexSimulator simulator) :
-        features(features),
-        environment(RL_Environment{ simulator }),
-        step_total(0),
-        step_episode(0)
-    {}
+    RL_Trader(torch::Tensor features, sptrBitmexSimulator simulator);
 
     void train(void);
 
