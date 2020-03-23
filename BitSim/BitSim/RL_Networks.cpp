@@ -104,7 +104,10 @@ RL_Networks::RL_Networks(void) :
     qf_2(FlattenMultilayerPerceptron{ "vf", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
     log_alpha(torch::zeros(1)),
     alpha_optim(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy),
-    target_entropy(-BitSim::Trader::action_dim)
+    target_entropy(-BitSim::Trader::action_dim),
+    qf_1_optim(qf_1->parameters(), BitSim::Trader::learning_rate_qf_1),
+    qf_2_optim(qf_2->parameters(), BitSim::Trader::learning_rate_qf_2),
+    vf_optim(vf->parameters(), BitSim::Trader::learning_rate_vf)
 {
 
 }
@@ -144,6 +147,20 @@ double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor a
     auto v_target = q_pred - alpha * log_prob;
     auto vf_loss = torch::mse_loss(v_pred, v_target.detach());
     
+    // Train Q
+    qf_1_optim.zero_grad();
+    qf_1_loss.backward();
+    qf_1_optim.step();
+
+    qf_2_optim.zero_grad();
+    qf_2_loss.backward();
+    qf_2_optim.step();
+
+    // Train V
+    vf_optim.zero_grad();
+    vf_loss.backward();
+    vf_optim.step();
+
     auto actor_loss = 0.0;
     if (step % BitSim::Trader::policy_update_freq == 0) {
         //actor_loss = train_actor(alpha, log_prob, z, mean, std, v_pred, q_pred);

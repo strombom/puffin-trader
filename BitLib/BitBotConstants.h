@@ -93,6 +93,9 @@ namespace BitSim
         constexpr auto gamma_discount = 0.99;
         constexpr auto learning_rate_entropy = 3e-4;
         constexpr auto policy_update_freq = 2;
+        constexpr auto learning_rate_qf_1 = 3e-4;
+        constexpr auto learning_rate_qf_2 = 3e-4;
+        constexpr auto learning_rate_vf = 3e-4;
         
         constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;

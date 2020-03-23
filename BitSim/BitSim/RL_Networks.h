@@ -75,6 +75,9 @@ private:
     torch::Tensor log_alpha;
     torch::optim::Adam alpha_optim;
     double target_entropy;
+    torch::optim::Adam qf_1_optim;
+    torch::optim::Adam qf_2_optim;
+    torch::optim::Adam vf_optim;
 
     TanhGaussianDistParams policy;
     MultilayerPerceptron vf;
