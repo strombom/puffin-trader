@@ -96,6 +96,7 @@ namespace BitSim
         constexpr auto learning_rate_qf_1 = 3e-4;
         constexpr auto learning_rate_qf_2 = 3e-4;
         constexpr auto learning_rate_vf = 3e-4;
+        constexpr auto learning_rate_actor = 3e-4;
         
         constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;

@@ -97,7 +97,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
 }
 
 RL_Networks::RL_Networks(void) :
-    policy(TanhGaussianDistParams{ "policy", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
+    actor(TanhGaussianDistParams{ "actor", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
     vf(MultilayerPerceptron{ "vf", BitSim::Trader::state_dim, 1 }),
     vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, 1 }),
     qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
@@ -107,14 +107,15 @@ RL_Networks::RL_Networks(void) :
     target_entropy(-BitSim::Trader::action_dim),
     qf_1_optim(qf_1->parameters(), BitSim::Trader::learning_rate_qf_1),
     qf_2_optim(qf_2->parameters(), BitSim::Trader::learning_rate_qf_2),
-    vf_optim(vf->parameters(), BitSim::Trader::learning_rate_vf)
+    vf_optim(vf->parameters(), BitSim::Trader::learning_rate_vf),
+    actor_optim(actor->parameters(), BitSim::Trader::learning_rate_actor)
 {
 
 }
 
 RL_Action RL_Networks::get_action(RL_State state)
 {
-    const auto [action, log_prob, z, mean, std] = policy->forward(state.to_tensor());
+    const auto [action, log_prob, z, mean, std] = actor->forward(state.to_tensor());
     return RL_Action{ action };
 }
 
@@ -125,7 +126,7 @@ RL_Action RL_Networks::get_random_action(void)
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_Networks::forward_policy(torch::Tensor states)
 {
-    return policy->forward(states);
+    return actor->forward(states);
 }
 
 double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
@@ -161,12 +162,17 @@ double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor a
     vf_loss.backward();
     vf_optim.step();
 
-    auto actor_loss = 0.0;
     if (step % BitSim::Trader::policy_update_freq == 0) {
-        //actor_loss = train_actor(alpha, log_prob, z, mean, std, v_pred, q_pred);
+        auto advantage = q_pred - v_pred.detach();
+        auto actor_loss = (alpha * log_prob - advantage).mean();
+
+        // Train actor
+        actor_optim.zero_grad();
+        actor_loss.backward();
+        actor_optim.step();
     }
 
-    return actor_loss;
+    return 0.0;
 }
 
 torch::Tensor RL_Networks::tune_entropy(torch::Tensor log_prob)

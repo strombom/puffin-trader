@@ -78,8 +78,9 @@ private:
     torch::optim::Adam qf_1_optim;
     torch::optim::Adam qf_2_optim;
     torch::optim::Adam vf_optim;
+    torch::optim::Adam actor_optim;
 
-    TanhGaussianDistParams policy;
+    TanhGaussianDistParams actor;
     MultilayerPerceptron vf;
     MultilayerPerceptron vf_target;
     FlattenMultilayerPerceptron qf_1;
