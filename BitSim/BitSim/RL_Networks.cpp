@@ -131,14 +131,19 @@ double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor a
 
     auto alpha = tune_entropy(log_prob);
 
+    // Q loss
     auto q_1_pred = qf_1->forward(states, actions);
     auto q_2_pred = qf_2->forward(states, actions);
-    auto v_target = vf->forward(next_states);
-    auto q_target = rewards + BitSim::Trader::gamma_discount * v_target;
+    auto q_target = rewards + BitSim::Trader::gamma_discount * vf_target->forward(next_states);
+    auto qf_1_loss = torch::mse_loss(q_1_pred, q_target.detach());
+    auto qf_2_loss = torch::mse_loss(q_2_pred, q_target.detach());
 
-    auto v_pred = torch::zeros(1);
-    auto q_pred = torch::zeros(1);
-
+    // V loss
+    auto v_pred = vf->forward(states);
+    auto q_pred = torch::min(qf_1->forward(states, next_states), qf_2->forward(states, next_states));
+    auto v_target = q_pred - alpha * log_prob;
+    auto vf_loss = torch::mse_loss(v_pred, v_target.detach());
+    
     auto actor_loss = 0.0;
     if (step % BitSim::Trader::policy_update_freq == 0) {
         //actor_loss = train_actor(alpha, log_prob, z, mean, std, v_pred, q_pred);
