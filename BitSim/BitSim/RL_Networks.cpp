@@ -124,16 +124,9 @@ RL_Action RL_Networks::get_random_action(void)
     return RL_Action::random();
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_Networks::forward_policy(torch::Tensor states)
-{
-    return actor->forward(states);
-}
-
 std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
 {
-    auto losses = std::array<double, 5>{};
-
-    const auto [action, log_prob, z, mean, std] = forward_policy(states);
+    const auto [action, log_prob, z, mean, std] = actor->forward(states);
 
     // Tune entropy
     auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
@@ -168,6 +161,8 @@ std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, 
     vf_optim.zero_grad();
     vf_loss.backward();
     vf_optim.step();
+
+    auto losses = std::array<double, 5>{ 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     if (step % BitSim::Trader::policy_update_freq == 0) {
         auto advantage = q_pred - v_pred.detach();

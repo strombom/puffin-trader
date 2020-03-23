@@ -66,7 +66,6 @@ class RL_Networks
 public:
     RL_Networks(void);
 
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward_policy(torch::Tensor states); // action, log_prob, z, mean, std
     RL_Action get_action(RL_State state);
     RL_Action get_random_action(void);
     std::array<double, 5> update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states);
