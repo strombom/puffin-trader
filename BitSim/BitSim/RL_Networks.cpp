@@ -129,11 +129,18 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
     return actor->forward(states);
 }
 
-double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
+std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
 {
+    auto losses = std::array<double, 5>{};
+
     const auto [action, log_prob, z, mean, std] = forward_policy(states);
 
-    auto alpha = tune_entropy(log_prob);
+    // Tune entropy
+    auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
+    alpha_optim.zero_grad();
+    alpha_loss.backward();
+    alpha_optim.step();
+    auto alpha = log_alpha.exp();
 
     // Q loss
     auto q_1_pred = qf_1->forward(states, actions);
@@ -165,6 +172,7 @@ double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor a
     if (step % BitSim::Trader::policy_update_freq == 0) {
         auto advantage = q_pred - v_pred.detach();
         auto actor_loss = (alpha * log_prob - advantage).mean();
+        losses[0] = actor_loss.item().toDouble();
 
         // Train actor
         actor_optim.zero_grad();
@@ -172,15 +180,10 @@ double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor a
         actor_optim.step();
     }
 
-    return 0.0;
-}
+    losses[1] = qf_1_loss.item().toDouble();
+    losses[2] = qf_2_loss.item().toDouble();
+    losses[3] = vf_loss.item().toDouble();
+    losses[4] = alpha_loss.item().toDouble();
 
-torch::Tensor RL_Networks::tune_entropy(torch::Tensor log_prob)
-{
-    auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
-    alpha_optim.zero_grad();
-    alpha_loss.backward();
-    alpha_optim.step();
-    auto alpha = log_alpha.exp();
-    return alpha;
+    return losses;
 }
