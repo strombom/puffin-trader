@@ -43,8 +43,10 @@ void RL_Trader::update_model(void)
 {
     auto [states, actions, rewards, next_states] = replay_buffer.sample();
 
-    const auto [action, log_prob, z, mean, std] = networks.forward_policy(states);
+    auto loss = networks.update_model(step_total, states, actions, rewards, next_states);
 
+    // Log
+    // actor_loss
 }
 
 void RL_Trader::save_params(int idx_period)

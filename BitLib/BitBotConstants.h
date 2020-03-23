@@ -92,6 +92,7 @@ namespace BitSim
         constexpr auto episode_length = 10h; // 2*7*24h;
         constexpr auto gamma_discount = 0.99;
         constexpr auto learning_rate_entropy = 3e-4;
+        constexpr auto policy_update_freq = 2;
         
         constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;

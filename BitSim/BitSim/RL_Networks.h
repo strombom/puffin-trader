@@ -69,7 +69,7 @@ public:
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward_policy(torch::Tensor states); // action, log_prob, z, mean, std
     RL_Action get_action(RL_State state);
     RL_Action get_random_action(void);
-    torch::Tensor tune_entropy(torch::Tensor log_prob);
+    double update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states);
 
 private:
     torch::Tensor log_alpha;
@@ -81,4 +81,6 @@ private:
     MultilayerPerceptron vf_target;
     FlattenMultilayerPerceptron qf_1;
     FlattenMultilayerPerceptron qf_2;
+
+    torch::Tensor tune_entropy(torch::Tensor log_prob);
 };

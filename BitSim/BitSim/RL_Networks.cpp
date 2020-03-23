@@ -125,6 +125,28 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
     return policy->forward(states);
 }
 
+double RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
+{
+    const auto [action, log_prob, z, mean, std] = forward_policy(states);
+
+    auto alpha = tune_entropy(log_prob);
+
+    auto q_1_pred = qf_1->forward(states, actions);
+    auto q_2_pred = qf_2->forward(states, actions);
+    auto v_target = vf->forward(next_states);
+    auto q_target = rewards + BitSim::Trader::gamma_discount * v_target;
+
+    auto v_pred = torch::zeros(1);
+    auto q_pred = torch::zeros(1);
+
+    auto actor_loss = 0.0;
+    if (step % BitSim::Trader::policy_update_freq == 0) {
+        //actor_loss = train_actor(alpha, log_prob, z, mean, std, v_pred, q_pred);
+    }
+
+    return actor_loss;
+}
+
 torch::Tensor RL_Networks::tune_entropy(torch::Tensor log_prob)
 {
     auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
