@@ -45,7 +45,6 @@ void RL_Trader::update_model(void)
     auto losses = networks.update_model(step_total, states, actions, rewards, next_states);
 
     // Log
-    // actor_loss
     csv_logger.append_row(losses);
 }
 
