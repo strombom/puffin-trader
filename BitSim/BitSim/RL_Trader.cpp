@@ -8,11 +8,10 @@ RL_Trader::RL_Trader(torch::Tensor features, sptrBitmexSimulator simulator) :
     features(features),
     environment(RL_Environment{ simulator }),
     step_total(0),
-    step_episode(0)
+    step_episode(0),
+    csv_logger(BitSim::Trader::log_names, BitSim::Trader::log_path)
 {
 
-    //self.alpha_optim = optim.Adam([self.log_alpha], lr = optim_cfg.lr_entropy)
-    //auto optimizer = torch::optim::SGD{ model->parameters(), torch::optim::SGDOptions{0.01}.momentum(0.9) };
 }
 
 void RL_Trader::train(void)

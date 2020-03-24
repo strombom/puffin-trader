@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 
+#include "Logger.h"
 #include "RL_State.h"
 #include "RL_Networks.h"
 #include "RL_Environment.h"
@@ -30,4 +31,6 @@ private:
     void update_model(void);
     void save_params(int idx_period);
     void interim_test(void);
+
+    CSVLogger csv_logger;
 };

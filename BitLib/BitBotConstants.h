@@ -105,5 +105,11 @@ namespace BitSim
         constexpr auto hidden_size = 256;
         constexpr auto state_dim = feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 4; // buy_position, buy_size, sell_position, sell_size
+
+        constexpr auto log_name_total_loss = "total loss";
+        constexpr auto log_name_actor_loss = "actor loss";
+        constexpr auto log_names = std::array<const char*, 2>{ log_name_total_loss, log_name_actor_loss };
+        constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
+
     }
 }

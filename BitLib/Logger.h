@@ -26,6 +26,12 @@ class CSVLogger
 public:
     CSVLogger(std::vector<std::string> col_names, std::string file_path);
 
+    template <int array_length>
+    CSVLogger(std::array<const char*, array_length> col_names, std::string file_path)
+    {
+        CSVLogger(std::vector<std::string>{col_names.begin(), col_names.end()}, file_path);
+    }
+
     template <class value_type>
     void append_row(std::vector<value_type> values)
     {
