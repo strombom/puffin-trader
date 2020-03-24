@@ -108,7 +108,11 @@ namespace BitSim
 
         constexpr auto log_name_total_loss = "total loss";
         constexpr auto log_name_actor_loss = "actor loss";
-        constexpr auto log_names = std::array<const char*, 2>{ log_name_total_loss, log_name_actor_loss };
+        constexpr auto log_name_qf1_loss = "qf1 loss";
+        constexpr auto log_name_qf2_loss = "qf2 loss";
+        constexpr auto log_name_vf_loss = "vf loss";
+        constexpr auto log_name_alpha_loss = "alpha loss";
+        constexpr auto log_names = std::array<const char*, 6>{ log_name_actor_loss, log_name_total_loss, log_name_qf1_loss, log_name_qf2_loss, log_name_vf_loss, log_name_alpha_loss };
         constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
 
     }

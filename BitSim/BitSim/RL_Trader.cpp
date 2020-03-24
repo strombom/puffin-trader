@@ -46,6 +46,7 @@ void RL_Trader::update_model(void)
 
     // Log
     // actor_loss
+    csv_logger.append_row(losses);
 }
 
 void RL_Trader::save_params(int idx_period)

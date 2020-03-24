@@ -54,6 +54,12 @@ public:
         append_row(std::vector<value_type>{ values });
     }
 
+    template <class value_type, int col_count>
+    void append_row(std::array<value_type, col_count> values)
+    {
+        append_row(std::vector<value_type>{ values.begin(), values.end() });
+    }
+
 private:
     std::ofstream file;
 };
