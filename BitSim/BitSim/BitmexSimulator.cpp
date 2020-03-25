@@ -38,13 +38,12 @@ RL_State BitmexSimulator::step(const RL_Action& action)
     const auto buy_delta_price = sigmoid_to_price(prev_interval.last_price, action.buy_position);
     const auto sell_delta_price = sigmoid_to_price(prev_interval.last_price, action.sell_position);
 
-    std::cout << "--- " << std::endl;
-    std::cout << "action.buy_size: " << action.buy_size << std::endl;
-    std::cout << "action.sell_size: " << action.sell_size << std::endl;
-    std::cout << "buy_n_contracts: " << buy_contracts << std::endl;
-    std::cout << "sell_n_contracts: " << sell_contracts << std::endl;
-
-    std::cout << "--- " << std::endl;
+    //std::cout << "--- " << std::endl;
+    //std::cout << "action.buy_size: " << action.buy_size << std::endl;
+    //std::cout << "action.sell_size: " << action.sell_size << std::endl;
+    //std::cout << "buy_n_contracts: " << buy_contracts << std::endl;
+    //std::cout << "sell_n_contracts: " << sell_contracts << std::endl;
+    //std::cout << "--- " << std::endl;
 
     auto log_order_price = (double)prev_interval.last_price;
     auto log_order_size = buy_contracts;
@@ -54,12 +53,12 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
     if (buy_contracts > 0) {
         if (buy_delta_price == 0) {
-            std::cout << "Market buy" << std::endl;
+            //std::cout << "Market buy" << std::endl;
             market_order(buy_contracts);
 
         }
         else {
-            std::cout << "Limit buy" << std::endl;
+            //std::cout << "Limit buy" << std::endl;
             limit_order(buy_contracts, prev_interval.last_price - buy_delta_price);
             log_order_price -= buy_delta_price;
         }
@@ -67,19 +66,19 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
     if (sell_contracts > 0) {
         if (sell_delta_price == 0) {
-            std::cout << "Market sell" << std::endl;
+            //std::cout << "Market sell" << std::endl;
             market_order(-sell_contracts);
 
         }
         else {
-            std::cout << "Limit sell" << std::endl;
+            //std::cout << "Limit sell" << std::endl;
             limit_order(-sell_contracts, prev_interval.last_price + sell_delta_price);
             log_order_price += sell_delta_price;
 
         }
     }
 
-    std::cout << "--- " << std::endl;
+    //std::cout << "--- " << std::endl;
 
     logger->log(prev_interval.last_price,
                 log_order_price, 
@@ -175,7 +174,7 @@ std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double 
 
 void BitmexSimulator::market_order(double contracts)
 {
-    std::cout << "market_order size(" << contracts << ")" << std::endl;
+    //std::cout << "market_order size(" << contracts << ")" << std::endl;
     const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
 
     if (contracts > 0.0) {
@@ -191,7 +190,7 @@ void BitmexSimulator::market_order(double contracts)
 
 void BitmexSimulator::limit_order(double contracts, double price)
 {
-    std::cout << "limit_order size(" << contracts << ") price(" << price << ")" << std::endl;
+    //std::cout << "limit_order size(" << contracts << ") price(" << price << ")" << std::endl;
     const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
 
     if ((contracts > 0.0 && next_price < price) ||
