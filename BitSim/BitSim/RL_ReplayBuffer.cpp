@@ -2,11 +2,21 @@
 #include "RL_ReplayBuffer.h"
 
 
-void RL_ReplayBuffer::append(RL_State current_state, RL_State next_state, RL_Action action)
+RL_ReplayBuffer::RL_ReplayBuffer(void) :
+    idx(0),
+    length(0)
 {
-    current_states[idx] = current_state;
-    next_states[idx] = next_state;
-    actions[idx] = action;
+    current_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
+    actions = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::action_dim });
+    rewards = torch::zeros({ BitSim::Trader::buffer_size, 1 });
+    next_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
+}
+
+void RL_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, double reward, const RL_State& next_state)
+{
+    current_states[idx] = current_state.to_tensor();
+    next_states[idx] = next_state.to_tensor();
+    actions[idx] = action.to_tensor();
 
     idx = (idx + 1) % BitSim::Trader::buffer_size;
     length = std::min(length + 1, BitSim::Trader::buffer_size);
@@ -14,10 +24,7 @@ void RL_ReplayBuffer::append(RL_State current_state, RL_State next_state, RL_Act
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_ReplayBuffer::sample(void)
 {
-    // states, actions, rewards, next_states
-    auto a = torch::zeros(1);
-    auto b = torch::zeros(1);
-    auto c = torch::zeros(1);
-    auto d = torch::zeros(1);
-    return std::make_tuple(a, b, c, d);
+    const auto indices = torch::randint(BitSim::Trader::buffer_size, BitSim::Trader::batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+
+    return std::make_tuple(current_states.index(indices), actions.index(indices), rewards.index(indices), next_states.index(indices));
 }

@@ -125,6 +125,7 @@ RL_Action RL_Networks::get_random_action(void)
 
 std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
 {
+    std::cout << "states: " << states << std::endl;
     const auto [action, log_prob, z, mean, std] = actor->forward(states);
 
     // Tune entropy

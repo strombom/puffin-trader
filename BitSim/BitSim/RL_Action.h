@@ -23,6 +23,7 @@ public:
         sell_size(sell_size) {}
     
     static RL_Action random(void);
+    torch::Tensor to_tensor(void) const;
 
     double buy_position;
     double buy_size;

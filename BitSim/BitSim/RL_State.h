@@ -14,7 +14,7 @@ public:
     
     void set_done(void);
     bool is_done(void);
-    torch::Tensor to_tensor(void);
+    torch::Tensor to_tensor(void) const;
 
 private:
     bool done;

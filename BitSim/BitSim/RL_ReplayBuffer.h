@@ -9,17 +9,16 @@
 class RL_ReplayBuffer
 {
 public:
-    RL_ReplayBuffer(void) :
-        idx(0),
-        length(0) {}
+    RL_ReplayBuffer(void);
 
-    void append(RL_State current_state, RL_State next_state, RL_Action action);
+    void append(const RL_State& current_state, const RL_Action& action, double reward, const RL_State& next_state);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
 private:
-    RL_State current_states[BitSim::Trader::buffer_size];
-    RL_State next_states[BitSim::Trader::buffer_size];
-    RL_Action actions[BitSim::Trader::buffer_size];
+    torch::Tensor current_states;
+    torch::Tensor actions;
+    torch::Tensor rewards;
+    torch::Tensor next_states;
 
     int idx;
     int length;
