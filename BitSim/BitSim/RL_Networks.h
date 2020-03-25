@@ -71,13 +71,13 @@ public:
     std::array<double, 5> update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states);
 
 private:
-    torch::Tensor log_alpha;
-    torch::optim::Adam alpha_optim;
     double target_entropy;
-    torch::optim::Adam qf_1_optim;
-    torch::optim::Adam qf_2_optim;
-    torch::optim::Adam vf_optim;
-    torch::optim::Adam actor_optim;
+    torch::Tensor log_alpha;
+    std::unique_ptr<torch::optim::Adam> alpha_optim;
+    std::unique_ptr<torch::optim::Adam> qf_1_optim;
+    std::unique_ptr<torch::optim::Adam> qf_2_optim;
+    std::unique_ptr<torch::optim::Adam> vf_optim;
+    std::unique_ptr<torch::optim::Adam> actor_optim;
 
     TanhGaussianDistParams actor;
     MultilayerPerceptron vf;

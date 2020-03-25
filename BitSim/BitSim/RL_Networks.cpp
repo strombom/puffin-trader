@@ -103,14 +103,13 @@ RL_Networks::RL_Networks(void) :
     qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
     qf_2(FlattenMultilayerPerceptron{ "qf_2", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
     log_alpha(torch::zeros(1)),
-    alpha_optim(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy),
-    target_entropy(-BitSim::Trader::action_dim),
-    qf_1_optim(qf_1->parameters(), BitSim::Trader::learning_rate_qf_1),
-    qf_2_optim(qf_2->parameters(), BitSim::Trader::learning_rate_qf_2),
-    vf_optim(vf->parameters(), BitSim::Trader::learning_rate_vf),
-    actor_optim(actor->parameters(), BitSim::Trader::learning_rate_actor)
+    target_entropy(-BitSim::Trader::action_dim)
 {
-
+    alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy);
+    qf_1_optim = std::make_unique<torch::optim::Adam>(qf_1->parameters(), BitSim::Trader::learning_rate_qf_1);
+    qf_2_optim = std::make_unique<torch::optim::Adam>(qf_2->parameters(), BitSim::Trader::learning_rate_qf_2);
+    vf_optim = std::make_unique<torch::optim::Adam>(vf->parameters(), BitSim::Trader::learning_rate_vf);
+    actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::learning_rate_actor);
 }
 
 RL_Action RL_Networks::get_action(RL_State state)
@@ -130,9 +129,9 @@ std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, 
 
     // Tune entropy
     auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
-    alpha_optim.zero_grad();
+    alpha_optim->zero_grad();
     alpha_loss.backward();
-    alpha_optim.step();
+    alpha_optim->step();
     auto alpha = log_alpha.exp();
 
     // Q loss
@@ -149,18 +148,18 @@ std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, 
     auto vf_loss = torch::mse_loss(v_pred, v_target.detach());
     
     // Train Q
-    qf_1_optim.zero_grad();
+    qf_1_optim->zero_grad();
     qf_1_loss.backward();
-    qf_1_optim.step();
+    qf_1_optim->step();
 
-    qf_2_optim.zero_grad();
+    qf_2_optim->zero_grad();
     qf_2_loss.backward();
-    qf_2_optim.step();
+    qf_2_optim->step();
 
     // Train V
-    vf_optim.zero_grad();
+    vf_optim->zero_grad();
     vf_loss.backward();
-    vf_optim.step();
+    vf_optim->step();
 
     auto losses = std::array<double, 5>{ 0.0, 0.0, 0.0, 0.0, 0.0 };
 
@@ -170,9 +169,9 @@ std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, 
         losses[0] = actor_loss.item().toDouble();
 
         // Train actor
-        actor_optim.zero_grad();
+        actor_optim->zero_grad();
         actor_loss.backward();
-        actor_optim.step();
+        actor_optim->step();
     }
 
     losses[1] = qf_1_loss.item().toDouble();
