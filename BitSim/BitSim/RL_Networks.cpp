@@ -103,7 +103,7 @@ RL_Networks::RL_Networks(void) :
     vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, 1 }),
     qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
     qf_2(FlattenMultilayerPerceptron{ "qf_2", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
-    log_alpha(torch::zeros(1)),
+    log_alpha(torch::zeros(1, torch::requires_grad())),
     target_entropy(-BitSim::Trader::action_dim)
 {
     alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy);
