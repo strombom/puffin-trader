@@ -25,6 +25,7 @@ public:
 
     RL_State reset(void);
     RL_State step(const RL_Action& action);
+    std::tuple<double, double, double> calculate_position_leverage(double mark_price);
 
 private:
     sptrIntervals intervals;

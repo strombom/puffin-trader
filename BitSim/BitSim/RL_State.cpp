@@ -17,11 +17,6 @@ bool RL_State::is_done(void) const
     return done;
 }
 
-void RL_State::set_reward(bool _reward)
-{
-    reward = _reward;
-}
-
 void RL_State::set_state(torch::Tensor features, double leverage)
 {
     state = torch::cat({ features, torch::tensor(leverage) });

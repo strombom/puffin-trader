@@ -94,8 +94,8 @@ RL_State BitmexSimulator::step(const RL_Action& action)
                 log_upnl);
 
     const auto reward = get_reward();
-    const auto leverage = 0.0;
-    auto state = RL_State{ reward, features[intervals_idx], leverage };
+    auto [position_margin, position_leverage, upnl] = calculate_position_leverage(prev_interval.last_price);
+    auto state = RL_State{ reward, features[intervals_idx], position_leverage };
 
     if (is_liquidated()) {
         wallet = 0.0;
@@ -131,13 +131,8 @@ double BitmexSimulator::sigmoid_to_price(double price, double sigmoid) {
     return std::max(0.0, p);
 }
 
-std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double buy_size, double sell_size)
+std::tuple<double, double, double> BitmexSimulator::calculate_position_leverage(double mark_price)
 {
-    if (wallet == 0.0) {
-        return std::make_tuple(0.0, 0.0, 0.0);
-    }
-
-    const auto mark_price = intervals->rows[intervals_idx].last_price;
     auto position_margin = 0.0;
     auto position_leverage = 0.0;
     auto upnl = 0.0;
@@ -146,11 +141,23 @@ std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double 
         const auto sign = pos_contracts / abs(pos_contracts);
         const auto entry_value = std::abs(pos_contracts / pos_price);
         const auto mark_value = std::abs(pos_contracts / mark_price);
-        upnl = sign * (entry_value - mark_value);
 
+        upnl = sign * (entry_value - mark_value);
         position_margin = std::max(0.0, std::abs(pos_contracts / pos_price) - upnl);
         position_leverage = position_margin / wallet;
     }
+
+    return std::make_tuple(position_margin, position_leverage, upnl);
+}
+
+std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double buy_size, double sell_size)
+{
+    if (wallet == 0.0) {
+        return std::make_tuple(0.0, 0.0, 0.0);
+    }
+
+    const auto mark_price = intervals->rows[intervals_idx].last_price;
+    auto [position_margin, position_leverage, upnl] = calculate_position_leverage(mark_price);
 
     const auto max_margin = BitSim::BitMex::max_leverage * wallet;
     const auto available_margin = max_margin - position_margin;
