@@ -5,8 +5,9 @@
 #include "BitmexSimulator.h"
 
 
-BitmexSimulator::BitmexSimulator(sptrIntervals intervals) :
+BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features) :
     intervals(intervals),
+    features(features),
     intervals_idx_start(0), intervals_idx_end(0),
     intervals_idx(0),
     wallet(0.0), pos_price(0.0), pos_contracts(0.0),
@@ -15,10 +16,10 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals) :
     logger = std::make_unique<BitmexSimulatorLogger>("simulation.csv");
 }
 
-void BitmexSimulator::reset(void)
+RL_State BitmexSimulator::reset(void)
 {
     constexpr auto episode_length = ((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
-    intervals_idx = 0; // Utils::random(0, (int)intervals->rows.size() - 1);
+    intervals_idx = 0; // Utils::random(0, (int)intervals->rows.size() - 2); // -2 used for "next step" in training
     intervals_idx_start = intervals_idx;
     intervals_idx_end = intervals_idx + episode_length;
     
@@ -27,6 +28,11 @@ void BitmexSimulator::reset(void)
     pos_contracts = 0.0;
     previous_value = 0.0;
     start_value = wallet * intervals->rows[intervals_idx_start].last_price;
+
+    constexpr auto reward = 0.0;
+    constexpr auto leverage = 0.0;
+    auto state = RL_State{ reward, features[intervals_idx], leverage };
+    return state;
 }
 
 RL_State BitmexSimulator::step(const RL_Action& action)
@@ -88,7 +94,8 @@ RL_State BitmexSimulator::step(const RL_Action& action)
                 log_upnl);
 
     const auto reward = get_reward();
-    auto state = RL_State{ reward };
+    const auto leverage = 0.0;
+    auto state = RL_State{ reward, features[intervals_idx], leverage };
 
     if (is_liquidated()) {
         wallet = 0.0;

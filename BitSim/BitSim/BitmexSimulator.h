@@ -21,13 +21,14 @@ private:
 class BitmexSimulator
 {
 public:
-    BitmexSimulator(sptrIntervals intervals);
+    BitmexSimulator(sptrIntervals intervals, torch::Tensor features);
 
-    void reset(void);
+    RL_State reset(void);
     RL_State step(const RL_Action& action);
 
 private:
     sptrIntervals intervals;
+    torch::Tensor features;
 
     int intervals_idx_start;
     int intervals_idx_end;

@@ -13,13 +13,11 @@
 class RL_Trader
 {
 public:
-    RL_Trader(torch::Tensor features, sptrBitmexSimulator simulator);
+    RL_Trader(sptrBitmexSimulator simulator);
 
     void train(void);
 
-private:
-    torch::Tensor features;
-    
+private:    
     int step_total;
     int step_episode;
 

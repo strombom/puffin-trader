@@ -4,8 +4,7 @@
 #include "BitBotConstants.h"
 
 
-RL_Trader::RL_Trader(torch::Tensor features, sptrBitmexSimulator simulator) :
-    features(features),
+RL_Trader::RL_Trader(sptrBitmexSimulator simulator) :
     environment(RL_Environment{ simulator }),
     step_total(0),
     step_episode(0),
@@ -70,6 +69,6 @@ RL_Action RL_Trader::get_action(RL_State state)
 RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
     auto next_state = environment.step(action);
-    replay_buffer.append(current_state, next_state, action);
+    replay_buffer.append(current_state, action, next_state.get_reward(), next_state);
     return next_state;
 }
