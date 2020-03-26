@@ -104,7 +104,8 @@ RL_Networks::RL_Networks(void) :
     qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
     qf_2(FlattenMultilayerPerceptron{ "qf_2", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
     log_alpha(torch::zeros(1, torch::requires_grad())),
-    target_entropy(-BitSim::Trader::action_dim)
+    target_entropy(-BitSim::Trader::action_dim),
+    update_count(0)
 {
     alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy);
     qf_1_optim = std::make_unique<torch::optim::Adam>(qf_1->parameters(), BitSim::Trader::learning_rate_qf_1);
@@ -124,10 +125,9 @@ RL_Action RL_Networks::get_random_action(void)
     return RL_Action::random();
 }
 
-std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
+std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
 {
-    std::cout << "states: " << states << std::endl;
-    const auto [action, log_prob, z, mean, std] = actor->forward(states);
+    const auto [new_actions, log_prob, z, mean, std] = actor->forward(states);
 
     // Tune entropy
     auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
@@ -145,7 +145,7 @@ std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, 
 
     // V loss
     auto v_pred = vf->forward(states);
-    auto q_pred = torch::min(qf_1->forward(states, next_states), qf_2->forward(states, next_states));
+    auto q_pred = torch::min(qf_1->forward(states, new_actions), qf_2->forward(states, new_actions));
     auto v_target = q_pred - alpha * log_prob;
     auto vf_loss = torch::mse_loss(v_pred, v_target.detach());
     
@@ -165,7 +165,7 @@ std::array<double, 5> RL_Networks::update_model(int step, torch::Tensor states, 
 
     auto losses = std::array<double, 5>{ 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-    if (step % BitSim::Trader::policy_update_freq == 0) {
+    if (update_count++ % BitSim::Trader::policy_update_freq == 0) {
         auto advantage = q_pred - v_pred.detach();
         auto actor_loss = (alpha * log_prob - advantage).mean();
         losses[0] = actor_loss.item().toDouble();

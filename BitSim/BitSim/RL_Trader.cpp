@@ -41,7 +41,7 @@ void RL_Trader::update_model(void)
 {
     auto [states, actions, rewards, next_states] = replay_buffer.sample();
 
-    auto losses = networks.update_model(step_total, states, actions, rewards, next_states);
+    auto losses = networks.update_model(states, actions, rewards, next_states);
 
     // Log
     csv_logger.append_row(losses);

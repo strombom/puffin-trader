@@ -68,7 +68,7 @@ public:
 
     RL_Action get_action(RL_State state);
     RL_Action get_random_action(void);
-    std::array<double, 5> update_model(int step, torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states);
+    std::array<double, 5> update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states);
 
 private:
     double target_entropy;
@@ -84,4 +84,6 @@ private:
     MultilayerPerceptron vf_target;
     FlattenMultilayerPerceptron qf_1;
     FlattenMultilayerPerceptron qf_2;
+
+    int update_count;
 };
