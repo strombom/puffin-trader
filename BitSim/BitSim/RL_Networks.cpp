@@ -48,7 +48,7 @@ torch::Tensor FlattenMultilayerPerceptronImpl::forward(torch::Tensor x, torch::T
 
 GaussianDistImpl::GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
     mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })),
-    mean_layer(register_module(name + "_mean", torch::nn::Sequential{ torch::nn::Linear{input_size, output_size}, torch::nn::ReLU6{} })),
+    mean_layer(register_module(name + "_mean", torch::nn::Sequential{ torch::nn::Linear{input_size, output_size}, torch::nn::Tanh{} })),
     log_std_layer(register_module(name + "_std", torch::nn::Sequential{ torch::nn::Linear{input_size, output_size}, torch::nn::Tanh{} }))
 {
     /*
@@ -67,7 +67,8 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianDistImpl::get_dist_params(torch
 
     constexpr auto log_std_min = -20.0;
     constexpr auto log_std_max = 2.0;
-    const auto std = torch::exp(log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1.0));
+    const auto std = torch::clamp(log_std, log_std_min, log_std_max);
+    //const auto std = torch::exp(log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1.0));
 
     return std::make_tuple(mean, std);
 }
@@ -80,8 +81,8 @@ TanhGaussianDistParamsImpl::TanhGaussianDistParamsImpl(const std::string& name, 
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> TanhGaussianDistParamsImpl::forward(torch::Tensor x)
 {
-    std::cout << "x: " << x << std::endl;
-    const auto [mean, std] = gaussian_dist->get_dist_params(x);
+    const auto [mean, log_std] = gaussian_dist->get_dist_params(x);
+    const auto std = log_std.exp();
 
     // Reparametrization trick
     const auto eps = torch::normal(0.0, 1.0, std.sizes());
@@ -91,7 +92,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
     constexpr auto epsilon = 1e-6;
     const auto action = torch::tanh(z);
     const auto dist_log_prob = -(z - mean).pow(2) / (2 * std.pow(2)) - std.log() - std::log(std::sqrt(2 * M_PI));
-    const auto log_prob = dist_log_prob - (1 - action.pow(2) + epsilon).log().sum(-1, true);
+    const auto log_prob = (dist_log_prob - (1 - action.pow(2) + epsilon).log()).sum(1, true);
 
     return std::make_tuple(action, log_prob, z, mean, std);
 }
