@@ -4,7 +4,7 @@
 
 RL_State::RL_State(double reward, torch::Tensor features, double leverage) : done(false), reward(reward)
 {
-    state = torch::cat({ features, torch::tensor(leverage) });
+    state = torch::cat({ features, torch::tensor({ leverage }) });
 }
 
 void RL_State::set_done(void)
@@ -19,7 +19,7 @@ bool RL_State::is_done(void) const
 
 void RL_State::set_state(torch::Tensor features, double leverage)
 {
-    state = torch::cat({ features, torch::tensor(leverage) });
+    state = torch::cat({ features, torch::tensor({ leverage }) });
 }
 
 double RL_State::get_reward(void) const

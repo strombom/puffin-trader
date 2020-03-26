@@ -31,6 +31,7 @@ MultilayerPerceptronImpl::MultilayerPerceptronImpl(const std::string& name, int 
 
 torch::Tensor MultilayerPerceptronImpl::forward(torch::Tensor x)
 {
+    std::cout << "layers: " << layers << std::endl;
     return layers->forward(x);
 }
 
@@ -61,8 +62,6 @@ GaussianDistImpl::GaussianDistImpl(const std::string& name, int input_size, int 
 
 std::tuple<torch::Tensor, torch::Tensor> GaussianDistImpl::get_dist_params(torch::Tensor x)
 {
-    x = mlp->forward(x);
-
     const auto mean = mean_layer->forward(x);
     const auto log_std = log_std_layer->forward(x);
 
@@ -81,6 +80,7 @@ TanhGaussianDistParamsImpl::TanhGaussianDistParamsImpl(const std::string& name, 
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> TanhGaussianDistParamsImpl::forward(torch::Tensor x)
 {
+    std::cout << "x: " << x << std::endl;
     const auto [mean, std] = gaussian_dist->get_dist_params(x);
 
     // Reparametrization trick

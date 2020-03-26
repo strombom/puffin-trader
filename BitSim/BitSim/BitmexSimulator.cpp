@@ -28,10 +28,10 @@ RL_State BitmexSimulator::reset(void)
     pos_contracts = 0.0;
     previous_value = 0.0;
     start_value = wallet * intervals->rows[intervals_idx_start].last_price;
-
+    
     constexpr auto reward = 0.0;
     constexpr auto leverage = 0.0;
-    auto state = RL_State{ reward, features[intervals_idx], leverage };
+    auto state = RL_State{ reward, features[intervals_idx][0], leverage };
     return state;
 }
 
@@ -95,7 +95,7 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
     const auto reward = get_reward();
     auto [position_margin, position_leverage, upnl] = calculate_position_leverage(prev_interval.last_price);
-    auto state = RL_State{ reward, features[intervals_idx], position_leverage };
+    auto state = RL_State{ reward, features[intervals_idx][0], position_leverage };
 
     if (is_liquidated()) {
         wallet = 0.0;

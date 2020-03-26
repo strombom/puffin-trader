@@ -62,7 +62,7 @@ int main()
         std::cout << "features: " << features.sizes() << std::endl;
         std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
-        auto simulator = std::make_shared<BitmexSimulator>(intervals, features);
+        auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
     }
