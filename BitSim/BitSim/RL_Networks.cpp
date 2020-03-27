@@ -19,14 +19,14 @@ MultilayerPerceptronImpl::MultilayerPerceptronImpl(const std::string& name, int 
 
     // Output layer
     auto output_layer = register_module(name + "_linear_output", torch::nn::Linear{ BitSim::Trader::hidden_size, output_size });
-    auto activation = register_module(name + "_output_activation", torch::nn::ReLU6{});
+    //auto activation = register_module(name + "_output_activation", torch::nn::ReLU6{});
 
     //constexpr auto init_w = 3e-3;
     //torch::nn::init::uniform_(output_layer->weight, -init_w, init_w);
     //torch::nn::init::uniform_(output_layer->bias, -init_w, init_w);
 
     layers->push_back(output_layer);
-    layers->push_back(activation);
+    //layers->push_back(activation);
 }
 
 torch::Tensor MultilayerPerceptronImpl::forward(torch::Tensor x)
@@ -35,15 +35,15 @@ torch::Tensor MultilayerPerceptronImpl::forward(torch::Tensor x)
     return layers->forward(x);
 }
 
-FlattenMultilayerPerceptronImpl::FlattenMultilayerPerceptronImpl(const std::string& name, int input_size, int output_size) :
-    mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size }))
+SoftQNetworkImpl::SoftQNetworkImpl(const std::string& name, int input_size, int action_size) :
+    mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size + action_size, 1 }))
 {
 
 }
 
-torch::Tensor FlattenMultilayerPerceptronImpl::forward(torch::Tensor x, torch::Tensor y)
+torch::Tensor SoftQNetworkImpl::forward(torch::Tensor state, torch::Tensor action)
 {
-    return mlp->forward(torch::cat({ x, y }, -1));
+    return mlp->forward(torch::cat({ state, action }, -1));
 }
 
 GaussianDistImpl::GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
@@ -99,18 +99,19 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
 
 RL_Networks::RL_Networks(void) :
     actor(TanhGaussianDistParams{ "actor", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-    vf(MultilayerPerceptron{ "vf", BitSim::Trader::state_dim, 1 }),
-    vf_target(MultilayerPerceptron{ "vf_target", BitSim::Trader::state_dim, 1 }),
-    qf_1(FlattenMultilayerPerceptron{ "qf_1", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
-    qf_2(FlattenMultilayerPerceptron{ "qf_2", BitSim::Trader::state_dim + BitSim::Trader::action_dim, 1 }),
+    soft_q1(SoftQNetwork{ "soft_q1", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
+    soft_q2(SoftQNetwork{ "soft_q2", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
+    target_soft_q1(SoftQNetwork{ "target_soft_q1", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
+    target_soft_q2(SoftQNetwork{ "target_soft_q2", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
     log_alpha(torch::zeros(1, torch::requires_grad())),
     target_entropy(-BitSim::Trader::action_dim),
     update_count(0)
 {
     alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy);
-    qf_1_optim = std::make_unique<torch::optim::Adam>(qf_1->parameters(), BitSim::Trader::learning_rate_qf_1);
-    qf_2_optim = std::make_unique<torch::optim::Adam>(qf_2->parameters(), BitSim::Trader::learning_rate_qf_2);
-    vf_optim = std::make_unique<torch::optim::Adam>(vf->parameters(), BitSim::Trader::learning_rate_vf);
+    soft_q1_optim = std::make_unique<torch::optim::Adam>(soft_q1->parameters(), BitSim::Trader::learning_rate_qf_1);
+    soft_q2_optim = std::make_unique<torch::optim::Adam>(soft_q2->parameters(), BitSim::Trader::learning_rate_qf_2);
+    target_soft_q1_optim = std::make_unique<torch::optim::Adam>(target_soft_q1->parameters(), BitSim::Trader::learning_rate_vf);
+    target_soft_q2_optim = std::make_unique<torch::optim::Adam>(target_soft_q2->parameters(), BitSim::Trader::learning_rate_vf);
     actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::learning_rate_actor);
 }
 
@@ -127,18 +128,46 @@ RL_Action RL_Networks::get_random_action(void)
 
 std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
 {
+    const auto pred_q1 = soft_q1->forward(states, actions);
+    const auto pred_q2 = soft_q2->forward(states, actions);
     const auto [new_actions, log_prob, z, mean, std] = actor->forward(states);
+    const auto [new_next_actions, next_log_prob, next_z, next_mean, next_std] = actor->forward(next_states);
+    const auto normalized_rewards = BitSim::Trader::reward_scale * (rewards - rewards.mean(0)) / (rewards.std(0) + 1e-6);
 
     // Tune entropy
-    auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
+    const auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
     alpha_optim->zero_grad();
     alpha_loss.backward();
     alpha_optim->step();
-    auto alpha = log_alpha.exp();
+    const auto alpha = log_alpha.exp();
+
+    // Train Q
+    const auto target_q1_ = target_soft_q1->forward(next_states, new_next_actions);
+    const auto target_q2 = target_soft_q2->forward(next_states, new_next_actions);
+    const auto target_q_min = torch::min(target_q1_, target_q2);
+    const auto target_q_value = normalized_rewards + BitSim::Trader::gamma_discount * target_q_min;
+    const auto q1_value_loss = torch::mse_loss(pred_q1, target_q_value.detach());
+    const auto q2_value_loss = torch::mse_loss(pred_q2, target_q_value.detach());
+
+    // Train policy
+    const auto predicted_new_q1_value = soft_q1->forward(states, new_actions);
+    const auto predicted_new_q2_value = soft_q2->forward(states, new_actions);
+    const auto predicted_new_q_value = torch::min(predicted_new_q1_value, predicted_new_q2_value);
+    const auto actor_loss = (alpha * log_prob - predicted_new_q_value).mean();
+    
+    actor_optim->zero_grad();
+    actor_loss.backward();
+    actor_optim->step();
+
+    // Soft update target
+
+
+
+
+    /*
+
 
     // Q loss
-    auto q_1_pred = qf_1->forward(states, actions);
-    auto q_2_pred = qf_2->forward(states, actions);
     auto q_target = rewards + BitSim::Trader::gamma_discount * vf_target->forward(next_states);
     auto qf_1_loss = torch::mse_loss(q_1_pred, q_target.detach());
     auto qf_2_loss = torch::mse_loss(q_2_pred, q_target.detach());
@@ -163,12 +192,14 @@ std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Ten
     vf_loss.backward();
     vf_optim->step();
 
-    auto losses = std::array<double, 5>{ 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     if (update_count++ % BitSim::Trader::policy_update_freq == 0) {
-        auto advantage = q_pred - v_pred.detach();
+        auto advantage = q_pred; // -v_pred.detach();
         auto actor_loss = (alpha * log_prob - advantage).mean();
         losses[0] = actor_loss.item().toDouble();
+
+        std::cout << "advantage: " << advantage << std::endl;
+        std::cout << "actor_loss: " << actor_loss << std::endl;
 
         // Train actor
         actor_optim->zero_grad();
@@ -181,5 +212,7 @@ std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Ten
     losses[3] = vf_loss.item().toDouble();
     losses[4] = alpha_loss.item().toDouble();
 
+    */
+    auto losses = std::array<double, 5>{ 0.0, 0.0, 0.0, 0.0, 0.0 };
     return losses;
 }

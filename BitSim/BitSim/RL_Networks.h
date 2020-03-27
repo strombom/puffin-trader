@@ -19,17 +19,17 @@ private:
 TORCH_MODULE(MultilayerPerceptron);
 
 
-class FlattenMultilayerPerceptronImpl : public torch::nn::Module
+class SoftQNetworkImpl : public torch::nn::Module
 {
 public:
-    FlattenMultilayerPerceptronImpl(const std::string& name, int input_size, int output_size);
+    SoftQNetworkImpl(const std::string& name, int input_size, int action_size);
 
-    torch::Tensor forward(torch::Tensor x, torch::Tensor y);
+    torch::Tensor forward(torch::Tensor state, torch::Tensor action);
 
 private:
     MultilayerPerceptron mlp;
 };
-TORCH_MODULE(FlattenMultilayerPerceptron);
+TORCH_MODULE(SoftQNetwork);
 
 
 class GaussianDistImpl : public torch::nn::Module
@@ -74,16 +74,18 @@ private:
     double target_entropy;
     torch::Tensor log_alpha;
     std::unique_ptr<torch::optim::Adam> alpha_optim;
-    std::unique_ptr<torch::optim::Adam> qf_1_optim;
-    std::unique_ptr<torch::optim::Adam> qf_2_optim;
+    std::unique_ptr<torch::optim::Adam> soft_q1_optim;
+    std::unique_ptr<torch::optim::Adam> soft_q2_optim;
+    std::unique_ptr<torch::optim::Adam> target_soft_q1_optim;
+    std::unique_ptr<torch::optim::Adam> target_soft_q2_optim;
     std::unique_ptr<torch::optim::Adam> vf_optim;
     std::unique_ptr<torch::optim::Adam> actor_optim;
 
     TanhGaussianDistParams actor;
-    MultilayerPerceptron vf;
-    MultilayerPerceptron vf_target;
-    FlattenMultilayerPerceptron qf_1;
-    FlattenMultilayerPerceptron qf_2;
+    SoftQNetwork soft_q1;
+    SoftQNetwork soft_q2;
+    SoftQNetwork target_soft_q1;
+    SoftQNetwork target_soft_q2;
 
     int update_count;
 };
