@@ -73,13 +73,10 @@ public:
 private:
     double target_entropy;
     torch::Tensor log_alpha;
+    std::unique_ptr<torch::optim::Adam> actor_optim;
     std::unique_ptr<torch::optim::Adam> alpha_optim;
     std::unique_ptr<torch::optim::Adam> soft_q1_optim;
     std::unique_ptr<torch::optim::Adam> soft_q2_optim;
-    std::unique_ptr<torch::optim::Adam> target_soft_q1_optim;
-    std::unique_ptr<torch::optim::Adam> target_soft_q2_optim;
-    std::unique_ptr<torch::optim::Adam> vf_optim;
-    std::unique_ptr<torch::optim::Adam> actor_optim;
 
     TanhGaussianDistParams actor;
     SoftQNetwork soft_q1;

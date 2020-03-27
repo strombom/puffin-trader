@@ -110,8 +110,6 @@ RL_Networks::RL_Networks(void) :
     alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy);
     soft_q1_optim = std::make_unique<torch::optim::Adam>(soft_q1->parameters(), BitSim::Trader::learning_rate_qf_1);
     soft_q2_optim = std::make_unique<torch::optim::Adam>(soft_q2->parameters(), BitSim::Trader::learning_rate_qf_2);
-    target_soft_q1_optim = std::make_unique<torch::optim::Adam>(target_soft_q1->parameters(), BitSim::Trader::learning_rate_vf);
-    target_soft_q2_optim = std::make_unique<torch::optim::Adam>(target_soft_q2->parameters(), BitSim::Trader::learning_rate_vf);
     actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::learning_rate_actor);
 }
 
@@ -149,6 +147,14 @@ std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Ten
     const auto q1_value_loss = torch::mse_loss(pred_q1, target_q_value.detach());
     const auto q2_value_loss = torch::mse_loss(pred_q2, target_q_value.detach());
 
+    soft_q1_optim->zero_grad();
+    q1_value_loss.backward();
+    soft_q1_optim->step();
+
+    soft_q2_optim->zero_grad();
+    q2_value_loss.backward();
+    soft_q2_optim->step();
+
     // Train policy
     const auto predicted_new_q1_value = soft_q1->forward(states, new_actions);
     const auto predicted_new_q2_value = soft_q2->forward(states, new_actions);
@@ -160,59 +166,20 @@ std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Ten
     actor_optim->step();
 
     // Soft update target
-
-
-
-
-    /*
-
-
-    // Q loss
-    auto q_target = rewards + BitSim::Trader::gamma_discount * vf_target->forward(next_states);
-    auto qf_1_loss = torch::mse_loss(q_1_pred, q_target.detach());
-    auto qf_2_loss = torch::mse_loss(q_2_pred, q_target.detach());
-
-    // V loss
-    auto v_pred = vf->forward(states);
-    auto q_pred = torch::min(qf_1->forward(states, new_actions), qf_2->forward(states, new_actions));
-    auto v_target = q_pred - alpha * log_prob;
-    auto vf_loss = torch::mse_loss(v_pred, v_target.detach());
-    
-    // Train Q
-    qf_1_optim->zero_grad();
-    qf_1_loss.backward();
-    qf_1_optim->step();
-
-    qf_2_optim->zero_grad();
-    qf_2_loss.backward();
-    qf_2_optim->step();
-
-    // Train V
-    vf_optim->zero_grad();
-    vf_loss.backward();
-    vf_optim->step();
-
-
-    if (update_count++ % BitSim::Trader::policy_update_freq == 0) {
-        auto advantage = q_pred; // -v_pred.detach();
-        auto actor_loss = (alpha * log_prob - advantage).mean();
-        losses[0] = actor_loss.item().toDouble();
-
-        std::cout << "advantage: " << advantage << std::endl;
-        std::cout << "actor_loss: " << actor_loss << std::endl;
-
-        // Train actor
-        actor_optim->zero_grad();
-        actor_loss.backward();
-        actor_optim->step();
+    auto param_q1 = soft_q1->parameters();
+    auto param_q2 = soft_q1->parameters();
+    auto target_param_q1 = target_soft_q1->parameters();
+    auto target_param_q2 = target_soft_q2->parameters();
+    for (auto i = 0; i < param_q1.size(); ++i) {
+        target_param_q1[i].data().copy_(target_param_q1[i].data() * (1.0 - BitSim::Trader::soft_tau) + param_q1[i].data() * BitSim::Trader::soft_tau);
+        target_param_q2[i].data().copy_(target_param_q2[i].data() * (1.0 - BitSim::Trader::soft_tau) + param_q2[i].data() * BitSim::Trader::soft_tau);
     }
 
-    losses[1] = qf_1_loss.item().toDouble();
-    losses[2] = qf_2_loss.item().toDouble();
-    losses[3] = vf_loss.item().toDouble();
-    losses[4] = alpha_loss.item().toDouble();
-
-    */
-    auto losses = std::array<double, 5>{ 0.0, 0.0, 0.0, 0.0, 0.0 };
-    return losses;
+    const auto actor_loss_d = actor_loss.item().toDouble();
+    const auto alpha_loss_d = alpha_loss.item().toDouble();
+    const auto q1_value_loss_d = q1_value_loss.item().toDouble();
+    const auto q2_value_loss_d = q2_value_loss.item().toDouble();
+    const auto total_loss = actor_loss_d + alpha_loss_d + q1_value_loss_d + q2_value_loss_d;
+    
+    return std::array<double, 5>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d };
 }

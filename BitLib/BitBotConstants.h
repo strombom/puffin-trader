@@ -87,17 +87,20 @@ namespace BitSim
     {
         constexpr auto n_episodes = 1;
         constexpr auto save_period = 100;
-        constexpr auto buffer_size = 10 * 10^6;
-        constexpr auto batch_size = 128;
+        constexpr auto buffer_size = 10;
+        constexpr auto batch_size = 4;
         constexpr auto episode_length = 10h; // 2*7*24h;
         constexpr auto gamma_discount = 0.99;
+        constexpr auto soft_tau = 1e-2;
         constexpr auto learning_rate_entropy = 3e-4;
         constexpr auto policy_update_freq = 2;
         constexpr auto learning_rate_qf_1 = 3e-4;
         constexpr auto learning_rate_qf_2 = 3e-4;
         constexpr auto learning_rate_vf = 3e-4;
         constexpr auto learning_rate_actor = 3e-4;
-        
+        constexpr auto reward_scale = 10.0;
+        constexpr auto target_entropy = -2.0;
+
         constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;
 
@@ -112,8 +115,7 @@ namespace BitSim
         constexpr auto log_name_qf2_loss = "qf2 loss";
         constexpr auto log_name_vf_loss = "vf loss";
         constexpr auto log_name_alpha_loss = "alpha loss";
-        constexpr auto log_names = std::array<const char*, 6>{ log_name_actor_loss, log_name_total_loss, log_name_qf1_loss, log_name_qf2_loss, log_name_vf_loss, log_name_alpha_loss };
+        constexpr auto log_names = std::array<const char*, 5>{ log_name_total_loss, log_name_actor_loss, log_name_alpha_loss, log_name_qf1_loss, log_name_qf2_loss };
         constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
-
     }
 }

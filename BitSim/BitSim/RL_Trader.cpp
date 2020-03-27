@@ -43,7 +43,6 @@ void RL_Trader::update_model(void)
 
     auto losses = networks.update_model(states, actions, rewards, next_states);
 
-    // Log
     csv_logger.append_row(losses);
 }
 
