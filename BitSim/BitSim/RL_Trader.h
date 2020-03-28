@@ -13,7 +13,11 @@
 class RL_Trader
 {
 public:
-    RL_Trader(sptrBitmexSimulator simulator);
+    RL_Trader(sptrBitmexSimulator simulator) :
+        environment(RL_Environment{ simulator }),
+        step_total(0),
+        step_episode(0),
+        csv_logger(BitSim::Trader::log_names, BitSim::Trader::log_path) {}
 
     void train(void);
 

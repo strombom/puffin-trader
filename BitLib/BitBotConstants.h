@@ -85,7 +85,7 @@ namespace BitSim
 
     namespace Trader
     {
-        constexpr auto n_episodes = 1;
+        constexpr auto n_episodes = 10;
         constexpr auto save_period = 100;
         constexpr auto buffer_size = 10;
         constexpr auto batch_size = 4;

@@ -4,15 +4,6 @@
 #include "BitBotConstants.h"
 
 
-RL_Trader::RL_Trader(sptrBitmexSimulator simulator) :
-    environment(RL_Environment{ simulator }),
-    step_total(0),
-    step_episode(0),
-    csv_logger(BitSim::Trader::log_names, BitSim::Trader::log_path)
-{
-
-}
-
 void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
@@ -40,9 +31,7 @@ void RL_Trader::train(void)
 void RL_Trader::update_model(void)
 {
     auto [states, actions, rewards, next_states] = replay_buffer.sample();
-
     auto losses = networks.update_model(states, actions, rewards, next_states);
-
     csv_logger.append_row(losses);
 }
 
