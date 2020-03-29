@@ -84,8 +84,6 @@ RL_State BitmexSimulator::step(const RL_Action& action)
         }
     }
 
-    //std::cout << "--- " << std::endl;
-
     logger->log(prev_interval.last_price,
                 log_order_price, 
                 log_order_size,

@@ -115,8 +115,9 @@ RL_Networks::RL_Networks(void) :
 
 RL_Action RL_Networks::get_action(RL_State state)
 {
-    const auto [action, log_prob, z, mean, std] = actor->forward(state.to_tensor());
-    return RL_Action{ action };
+    const auto state_tensor = state.to_tensor().view({ 1, BitSim::Trader::state_dim });
+    const auto [action, log_prob, z, mean, std] = actor->forward(state_tensor);
+    return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
 }
 
 RL_Action RL_Networks::get_random_action(void)
