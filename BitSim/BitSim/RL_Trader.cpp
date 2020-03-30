@@ -7,7 +7,7 @@
 void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
-        auto state = environment.reset();
+        auto state = simulator->reset();
         step_episode = 0;
 
         while (!state.is_done()) {
@@ -56,7 +56,7 @@ RL_Action RL_Trader::get_action(RL_State state)
 
 RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
-    auto next_state = environment.step(action);
+    auto next_state = simulator->step(action);
     replay_buffer.append(current_state, action, next_state.get_reward(), next_state);
     return next_state;
 }
