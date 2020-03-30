@@ -113,12 +113,15 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 double BitmexSimulator::get_reward(void)
 {
     const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
-    const auto taker_fee = BitSim::BitMex::taker_fee * abs(pos_contracts / next_price);
-    const auto position_pnl = (1 / pos_price - 1 / next_price) * pos_contracts - taker_fee;
+    auto position_pnl = 0.0;
+    if (pos_contracts != 0) {
+        const auto taker_fee = BitSim::BitMex::taker_fee * abs(pos_contracts / next_price);
+        position_pnl = pos_contracts * (1 / pos_price - 1 / next_price) - taker_fee;
+    }
     const auto value = (wallet + position_pnl) * next_price / start_value;
     const auto reward = value - previous_value;
-
     previous_value = value;
+
     return reward;
 }
 

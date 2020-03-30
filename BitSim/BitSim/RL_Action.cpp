@@ -6,12 +6,10 @@
 RL_Action RL_Action::random(void)
 {
     // Make actions bottom-heavy - more often close to 0 than 1
-    const auto exponent = 5.0;
-
-    return RL_Action{ std::pow(Utils::random(0.0, 1.0), exponent),
-                      std::pow(Utils::random(0.0, 1.0), exponent),
-                      std::pow(Utils::random(0.0, 1.0), exponent),
-                      std::pow(Utils::random(0.0, 1.0), exponent) };
+    return RL_Action{ std::pow(Utils::random(0.0, 1.0), 1.0),    // buy_position  
+                      std::pow(Utils::random(0.0, 1.0), 10.0),   // buy_size      
+                      std::pow(Utils::random(0.0, 1.0), 1.0),    // sell_position 
+                      std::pow(Utils::random(0.0, 1.0), 10.0) }; // sell_size     
 }
 
 torch::Tensor RL_Action::to_tensor(void) const
