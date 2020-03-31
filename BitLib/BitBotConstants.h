@@ -101,6 +101,9 @@ namespace BitSim
         constexpr auto reward_scale = 10.0;
         constexpr auto target_entropy = -2.0;
 
+        constexpr auto market_order_threshold = 0.97;
+        constexpr auto limit_order_threshold = 0.7;
+
         constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;
 

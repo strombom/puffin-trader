@@ -189,7 +189,6 @@
     <ClCompile Include="RL_ReplayBuffer.cpp" />
     <ClCompile Include="RL_Trader.cpp" />
     <ClCompile Include="RL_State.cpp" />
-    <ClCompile Include="RL_Training.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
@@ -213,7 +212,6 @@
     <ClInclude Include="RL_ReplayBuffer.h" />
     <ClInclude Include="RL_Trader.h" />
     <ClInclude Include="RL_State.h" />
-    <ClInclude Include="RL_Training.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
