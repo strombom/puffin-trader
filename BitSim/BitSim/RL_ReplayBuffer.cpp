@@ -15,8 +15,9 @@ RL_ReplayBuffer::RL_ReplayBuffer(void) :
 void RL_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, double reward, const RL_State& next_state)
 {
     current_states[idx] = current_state.to_tensor();
-    next_states[idx] = next_state.to_tensor();
     actions[idx] = action.to_tensor();
+    rewards[idx] = reward;
+    next_states[idx] = next_state.to_tensor();
 
     idx = (idx + 1) % BitSim::Trader::buffer_size;
     length = std::min(length + 1, BitSim::Trader::buffer_size);

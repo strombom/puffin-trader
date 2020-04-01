@@ -116,7 +116,6 @@ double BitmexSimulator::get_reward(void)
     previous_value = value;
 
     std::cout.precision(3);
-    std::cout.
     std::cout << std::fixed << "PNL(" << position_pnl << ")" << " value(" << value << ")" << " reward(" << reward << ")" << " previous_value(" << previous_value << ")" << " next_price(" << next_price << ")" << " pos_price(" << pos_price << ")" << std::endl;
 
     return reward;
@@ -277,7 +276,7 @@ bool BitmexSimulator::is_liquidated(void)
 BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &&filename)
 {
     file.open(std::string{ BitSim::tmp_path } +"\\" + filename);
-    file << "last_price,order_price,order_size,contracts,wallet,upnl" << std::endl;
+    file << "last_price,order_size,contracts,wallet,upnl" << std::endl;
 }
 
 void BitmexSimulatorLogger::log(double last_price, double order_size, double contracts, double wallet, double upnl)

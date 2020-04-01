@@ -183,6 +183,6 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     const auto total_loss = actor_loss_d + alpha_loss_d + q1_value_loss_d + q2_value_loss_d;
 
     const auto episode_score = rewards.sum().item().toDouble();
-    
+
     return std::array<double, 6>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d, episode_score };
 }
