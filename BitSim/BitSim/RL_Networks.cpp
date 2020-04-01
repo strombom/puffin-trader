@@ -125,7 +125,7 @@ RL_Action RL_Networks::get_random_action(void)
     return RL_Action::random();
 }
 
-std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
+std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
 {
     const auto pred_q1 = soft_q1->forward(states, actions);
     const auto pred_q2 = soft_q2->forward(states, actions);
@@ -181,6 +181,8 @@ std::array<double, 5> RL_Networks::update_model(torch::Tensor states, torch::Ten
     const auto q1_value_loss_d = q1_value_loss.item().toDouble();
     const auto q2_value_loss_d = q2_value_loss.item().toDouble();
     const auto total_loss = actor_loss_d + alpha_loss_d + q1_value_loss_d + q2_value_loss_d;
+
+    const auto episode_score = rewards.sum().item().toDouble();
     
-    return std::array<double, 5>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d };
+    return std::array<double, 6>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d, episode_score };
 }

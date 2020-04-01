@@ -86,6 +86,7 @@ namespace BitSim
     namespace Trader
     {
         constexpr auto n_episodes = 10;
+        constexpr auto n_test_episodes = 2;
         constexpr auto save_period = 100;
         constexpr auto buffer_size = 10;
         constexpr auto batch_size = 4;
@@ -112,13 +113,7 @@ namespace BitSim
         constexpr auto state_dim = feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 4; // buy_position, buy_size, sell_position, sell_size
 
-        constexpr auto log_name_total_loss = "total loss";
-        constexpr auto log_name_actor_loss = "actor loss";
-        constexpr auto log_name_qf1_loss = "qf1 loss";
-        constexpr auto log_name_qf2_loss = "qf2 loss";
-        constexpr auto log_name_vf_loss = "vf loss";
-        constexpr auto log_name_alpha_loss = "alpha loss";
-        constexpr auto log_names = std::array<const char*, 5>{ log_name_total_loss, log_name_actor_loss, log_name_alpha_loss, log_name_qf1_loss, log_name_qf2_loss };
+        constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };
         constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
     }
 }
