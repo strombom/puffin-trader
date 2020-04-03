@@ -70,6 +70,9 @@ public:
     RL_Action get_random_action(void);
     std::array<double, 6> update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states);
 
+    void save(const std::string& filename);
+    void open(const std::string& filename);
+
 private:
     double target_entropy;
     torch::Tensor log_alpha;

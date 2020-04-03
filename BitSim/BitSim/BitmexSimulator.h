@@ -9,12 +9,13 @@
 class BitmexSimulatorLogger
 {
 public:
-    BitmexSimulatorLogger(const std::string &&filename);
+    BitmexSimulatorLogger(const std::string &filename, bool enabled);
 
     void log(double last_price, double order_size, double contracts, double wallet, double upnl);
 
 private:
     std::ofstream file;
+    bool enabled;
 
 };
 
@@ -23,7 +24,7 @@ class BitmexSimulator
 public:
     BitmexSimulator(sptrIntervals intervals, torch::Tensor features);
 
-    RL_State reset(void);
+    RL_State reset(const std::string& log_filename);
     RL_State step(const RL_Action& action);
     std::tuple<double, double, double> calculate_position_leverage(double mark_price);
 

@@ -7,7 +7,9 @@
 void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
-        auto state = simulator->reset();
+        std::cout << "Episode " << idx_episode << std::endl;
+
+        auto state = simulator->reset("simulation_" + std::to_string(idx_episode) + ".csv");
         step_episode = 0;
 
         while (!state.is_done()) {

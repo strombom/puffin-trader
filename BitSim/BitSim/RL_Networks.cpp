@@ -31,7 +31,7 @@ MultilayerPerceptronImpl::MultilayerPerceptronImpl(const std::string& name, int 
 
 torch::Tensor MultilayerPerceptronImpl::forward(torch::Tensor x)
 {
-    std::cout << "layers: " << layers << std::endl;
+    //std::cout << "layers: " << layers << std::endl;
     return layers->forward(x);
 }
 
@@ -185,4 +185,14 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     const auto episode_score = rewards.sum().item().toDouble();
 
     return std::array<double, 6>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d, episode_score };
+}
+
+void RL_Networks::save(const std::string& filename)
+{
+
+}
+
+void RL_Networks::open(const std::string& filename)
+{
+
 }

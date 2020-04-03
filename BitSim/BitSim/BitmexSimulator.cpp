@@ -13,11 +13,13 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
     wallet(0.0), pos_price(0.0), pos_contracts(0.0),
     previous_value(0.0)
 {
-    logger = std::make_unique<BitmexSimulatorLogger>("simulation.csv");
+
 }
 
-RL_State BitmexSimulator::reset(void)
+RL_State BitmexSimulator::reset(const std::string &log_filename)
 {
+    logger = std::make_unique<BitmexSimulatorLogger>(log_filename, true);
+
     constexpr auto episode_length = ((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
     intervals_idx = 0; // Utils::random(0, (int)intervals->rows.size() - 2); // -2 used for "next step" in training
     intervals_idx_start = intervals_idx;
@@ -55,26 +57,23 @@ RL_State BitmexSimulator::step(const RL_Action& action)
 
     if (buy_contracts > 0) {
         if (action.buy_action > BitSim::Trader::market_order_threshold) {
-            std::cout << "Market buy" << std::endl;
+            //std::cout << "Market buy" << std::endl;
             market_order(buy_contracts);
-
         }
         else if (action.buy_action > BitSim::Trader::limit_order_threshold){
-            std::cout << "Limit buy" << std::endl;
+            //std::cout << "Limit buy" << std::endl;
             limit_order(buy_contracts, prev_interval.last_price);
         }
     }
 
     if (sell_contracts > 0) {
         if (action.sell_action > BitSim::Trader::market_order_threshold) {
-            std::cout << "Market sell" << std::endl;
+            //std::cout << "Market sell" << std::endl;
             market_order(-sell_contracts);
-
         }
         else if (action.sell_action > BitSim::Trader::limit_order_threshold)  {
-            std::cout << "Limit sell" << std::endl;
+            //std::cout << "Limit sell" << std::endl;
             limit_order(-sell_contracts, prev_interval.last_price);
-
         }
     }
 
@@ -115,8 +114,8 @@ double BitmexSimulator::get_reward(void)
     const auto reward = value - previous_value;
     previous_value = value;
 
-    std::cout.precision(3);
-    std::cout << std::fixed << "PNL(" << position_pnl << ")" << " value(" << value << ")" << " reward(" << reward << ")" << " previous_value(" << previous_value << ")" << " next_price(" << next_price << ")" << " pos_price(" << pos_price << ")" << std::endl;
+    //std::cout.precision(3);
+    //std::cout << std::fixed << "PNL(" << position_pnl << ")" << " value(" << value << ")" << " reward(" << reward << ")" << " previous_value(" << previous_value << ")" << " next_price(" << next_price << ")" << " pos_price(" << pos_price << ")" << std::endl;
 
     return reward;
 }
@@ -178,7 +177,7 @@ std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double 
 
 void BitmexSimulator::market_order(double contracts)
 {
-    std::cout << "market_order size(" << contracts << ")" << std::endl;
+    //std::cout << "market_order size(" << contracts << ")" << std::endl;
     const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
 
     if (contracts > 0.0) {
@@ -202,7 +201,7 @@ void BitmexSimulator::limit_order(double contracts, double price)
     if ((contracts > 0.0 && next_price < order_price) ||
         (contracts < 0.0 && next_price > order_price)) {
         execute_order(contracts, price, false);
-        std::cout << "limit_order size(" << contracts << ")" << std::endl;
+        //std::cout << "limit_order size(" << contracts << ")" << std::endl;
     }
 }
 
@@ -273,13 +272,17 @@ bool BitmexSimulator::is_liquidated(void)
     return false;
 }
 
-BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &&filename)
+BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &filename, bool enabled) : enabled(enabled)
 {
-    file.open(std::string{ BitSim::tmp_path } +"\\" + filename);
-    file << "last_price,order_size,contracts,wallet,upnl" << std::endl;
+    if (enabled) {
+        file.open(std::string{ BitSim::tmp_path } + "\\log\\" + filename);
+        file << "last_price,order_size,contracts,wallet,upnl" << std::endl;
+    }
 }
 
 void BitmexSimulatorLogger::log(double last_price, double order_size, double contracts, double wallet, double upnl)
 {
-    file << last_price << "," << order_size << "," << contracts << "," << wallet << "," << upnl << std::endl;
+    if (enabled) {
+        file << last_price << "," << order_size << "," << contracts << "," << wallet << "," << upnl << std::endl;
+    }
 }
