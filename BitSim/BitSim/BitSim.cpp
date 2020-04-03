@@ -2,7 +2,8 @@
 
 #include "BitBaseClient.h"
 #include "BitBotConstants.h"
-#include "BitmexSimulator.h"
+//#include "BitmexSimulator.h"
+#include "CartpoleSimulator.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
 #include "FE_Training.h"
@@ -62,7 +63,13 @@ int main()
         std::cout << "features: " << features.sizes() << std::endl;
         std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
-        auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
+        //auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
+        //auto rl_trader = RL_Trader{ simulator };
+        //rl_trader.train();
+
+    }
+    else if (command == "train_cartpole") {
+        auto simulator = std::make_shared<CartpoleSimulator>();
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
     }

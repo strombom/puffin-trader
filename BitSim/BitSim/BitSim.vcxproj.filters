@@ -105,9 +105,6 @@
     <ClCompile Include="RL_State.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
-    <ClCompile Include="BitmexSimulator.cpp">
-      <Filter>Source Files\Simulator</Filter>
-    </ClCompile>
     <ClCompile Include="RL_Trader.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
@@ -116,6 +113,9 @@
     </ClCompile>
     <ClCompile Include="RL_ReplayBuffer.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
+    <ClCompile Include="CartpoleSimulator.cpp">
+      <Filter>Source Files\Simulator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -170,9 +170,6 @@
     <ClInclude Include="RL_State.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
-    <ClInclude Include="BitmexSimulator.h">
-      <Filter>Header Files\Simulator</Filter>
-    </ClInclude>
     <ClInclude Include="RL_Trader.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
@@ -181,6 +178,9 @@
     </ClInclude>
     <ClInclude Include="RL_ReplayBuffer.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="CartpoleSimulator.h">
+      <Filter>Header Files\Simulator</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

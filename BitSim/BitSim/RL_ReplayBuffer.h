@@ -11,7 +11,7 @@ class RL_ReplayBuffer
 public:
     RL_ReplayBuffer(void);
 
-    void append(const RL_State& current_state, const RL_Action& action, double reward, const RL_State& next_state);
+    void append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
 private:

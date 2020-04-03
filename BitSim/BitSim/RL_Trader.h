@@ -6,13 +6,14 @@
 #include "RL_Networks.h"
 #include "RL_ReplayBuffer.h"
 #include "FE_Observations.h"
-#include "BitmexSimulator.h"
+//#include "BitmexSimulator.h"
+#include "CartpoleSimulator.h"
 
 
 class RL_Trader
 {
 public:
-    RL_Trader(sptrBitmexSimulator simulator) :
+    RL_Trader(sptrCartpoleSimulator simulator) :
         simulator(simulator),
         step_total(0),
         step_episode(0),
@@ -25,7 +26,7 @@ private:
     int step_episode;
 
     RL_Networks networks;
-    sptrBitmexSimulator simulator;
+    sptrCartpoleSimulator simulator;
     RL_ReplayBuffer replay_buffer;
     RL_Action get_action(RL_State state);
     RL_State step(RL_State current_state, RL_Action action);

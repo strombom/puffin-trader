@@ -1,6 +1,28 @@
 #pragma once
 #include "pch.h"
 
+
+class RL_Action
+{
+public:
+    RL_Action(void) :
+        move(0.0) {}
+
+    RL_Action(torch::Tensor action) :
+        move(action[0].item().to<double>()) {}
+
+    RL_Action(double move) :
+        move(move) {}
+
+    static RL_Action random(void);
+    torch::Tensor to_tensor(void) const;
+
+    double move;
+
+private:
+};
+
+/*
 class RL_Action
 {
 public:
@@ -32,3 +54,4 @@ public:
 
 private:
 };
+*/

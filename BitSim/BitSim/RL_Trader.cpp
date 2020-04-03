@@ -59,6 +59,6 @@ RL_Action RL_Trader::get_action(RL_State state)
 RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
     auto next_state = simulator->step(action);
-    replay_buffer.append(current_state, action, next_state.get_reward(), next_state);
+    replay_buffer.append(current_state, action, next_state);
     return next_state;
 }
