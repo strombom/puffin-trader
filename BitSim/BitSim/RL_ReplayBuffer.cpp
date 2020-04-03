@@ -25,7 +25,8 @@ void RL_ReplayBuffer::append(const RL_State& current_state, const RL_Action& act
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_ReplayBuffer::sample(void)
 {
-    const auto indices = torch::randint(BitSim::Trader::buffer_size, BitSim::Trader::batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+    auto indices = torch::randint(length, BitSim::Trader::batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+    indices = (indices + BitSim::Trader::buffer_size + idx - length).fmod(BitSim::Trader::buffer_size);
 
     return std::make_tuple(current_states.index(indices), actions.index(indices), rewards.index(indices), next_states.index(indices));
 }

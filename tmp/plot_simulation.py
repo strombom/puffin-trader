@@ -1,13 +1,15 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 import csv
 
+episode_idx = sys.argv[1]
 
 titles = []
 rows = []
 
-with open('C:\\development\\github\\puffin-trader\\tmp\\simulation.csv') as csvfile:
+with open('C:\\development\\github\\puffin-trader\\tmp\\log\\simulation_' + episode_idx + '.csv') as csvfile:
     reader = csv.reader(csvfile)
     is_first = True
     for row in reader:
