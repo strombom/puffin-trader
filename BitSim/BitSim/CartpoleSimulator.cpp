@@ -2,12 +2,6 @@
 #include "CartpoleSimulator.h"
 
 
-CartpoleSimulatorLogger::CartpoleSimulatorLogger(const std::string& filename, bool enabled)
-{
-
-}
-
-
 CartpoleSimulator::CartpoleSimulator(void) : 
     state(RL_State{ 0.0, 0.0, 0.0, 0.0, 0.0 })
 {
@@ -16,17 +10,15 @@ CartpoleSimulator::CartpoleSimulator(void) :
 
 RL_State CartpoleSimulator::reset(const std::string& log_filename)
 {
+    logger = std::make_unique<CartpoleSimulatorLogger>(log_filename, true);
+
     state = RL_State{ 0.0, 0.0, 0.0, 0.0, 0.0 };
     return state;
 }
 
 RL_State CartpoleSimulator::step(const RL_Action& action)
 {
-    const auto move = action.to_tensor()[0].item().toDouble();
-    const auto move_left = move < 0.2;
-    const auto move_right = move > 0.8;
-
-    const auto force = move_left * force_mag - move_right * force_mag;
+    const auto force = force_mag * (action.move - 0.5);
     const auto costheta = std::cos(state.pole_angle);
     const auto sintheta = std::sin(state.pole_angle);
 
@@ -50,6 +42,23 @@ RL_State CartpoleSimulator::step(const RL_Action& action)
     else {
         state.reward = 0.0;
     }
+    
+    logger->log(state.cart_position, state.cart_velocity, state.pole_angle, state.pole_velocity);
 
     return state;
+}
+
+CartpoleSimulatorLogger::CartpoleSimulatorLogger(const std::string& filename, bool enabled) : enabled(enabled)
+{
+    if (enabled) {
+        file.open(std::string{ BitSim::tmp_path } +"\\log\\" + filename);
+        file << "cart_position,cart_velocity,pole_angle,pole_velocity" << std::endl;
+    }
+}
+
+void CartpoleSimulatorLogger::log(double cart_position, double cart_velocity, double pole_angle, double pole_velocity)
+{
+    if (enabled) {
+        file << cart_position << "," << cart_velocity << "," << pole_angle << "," << pole_velocity << std::endl;
+    }
 }

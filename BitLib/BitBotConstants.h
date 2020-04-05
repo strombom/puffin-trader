@@ -110,7 +110,7 @@ namespace BitSim
 
         constexpr auto hidden_count = 2;
         constexpr auto hidden_size = 256;
-        constexpr auto state_dim = 4; // feature_size + 1; // Features, leverage (-1 to +1)
+        constexpr auto state_dim = 4 + 1; // feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 1; // 4; // buy_position, buy_size, sell_position, sell_size
 
         constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };

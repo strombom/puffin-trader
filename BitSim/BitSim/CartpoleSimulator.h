@@ -1,9 +1,10 @@
 #pragma once
 #include "pch.h"
 
+#include "math.h"
 #include "RL_State.h"
 #include "RL_Action.h"
-#include "math.h"
+#include "BitBotConstants.h"
 
 
 class CartpoleSimulatorLogger
@@ -11,7 +12,7 @@ class CartpoleSimulatorLogger
 public:
     CartpoleSimulatorLogger(const std::string& filename, bool enabled);
 
-    void log(double last_price, double order_size, double contracts, double wallet, double upnl);
+    void log(double cart_position, double cart_velocity, double pole_angle, double pole_velocity);
 
 private:
     std::ofstream file;
@@ -46,4 +47,3 @@ private:
 };
 
 using sptrCartpoleSimulator = std::shared_ptr<CartpoleSimulator>;
-
