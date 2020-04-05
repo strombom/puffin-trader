@@ -23,7 +23,7 @@ int main()
     //constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
     //constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
 
-    constexpr auto command = "train_closer";
+    constexpr auto command = "train_cartpole";
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();

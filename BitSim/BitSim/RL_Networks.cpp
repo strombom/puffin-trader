@@ -125,7 +125,7 @@ RL_Action RL_Networks::get_random_action(void)
     return RL_Action::random();
 }
 
-std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
+std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states, torch::Tensor dones)
 {
     const auto pred_q1 = soft_q1->forward(states, actions);
     const auto pred_q2 = soft_q2->forward(states, actions);
@@ -144,7 +144,7 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     const auto target_q1_ = target_soft_q1->forward(next_states, new_next_actions);
     const auto target_q2 = target_soft_q2->forward(next_states, new_next_actions);
     const auto target_q_min = torch::min(target_q1_, target_q2);
-    const auto target_q_value = normalized_rewards + BitSim::Trader::gamma_discount * target_q_min;
+    const auto target_q_value = normalized_rewards + (1 - dones) * BitSim::Trader::gamma_discount * target_q_min;
     const auto q1_value_loss = torch::mse_loss(pred_q1, target_q_value.detach());
     const auto q2_value_loss = torch::mse_loss(pred_q2, target_q_value.detach());
 

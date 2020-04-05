@@ -1,4 +1,36 @@
 
+import numpy as np
+import sys
+import csv
+
+episode_idx = sys.argv[1]
+titles = []
+rows = []
+
+with open('C:\\development\\github\\puffin-trader\\tmp\\log\\cartpole_' + episode_idx + '.csv') as csvfile:
+    reader = csv.reader(csvfile)
+    is_first = True
+    for row in reader:
+        print(row)
+        if is_first:
+            titles = row
+            is_first = False
+        else:
+            rows.append([float(i) for i in row])
+
+
+rows = np.array(rows)
+print(rows)
+
+
+
+quit()
+
+
+
+
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import sys

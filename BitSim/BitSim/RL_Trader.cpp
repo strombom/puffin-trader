@@ -32,8 +32,8 @@ void RL_Trader::train(void)
 
 void RL_Trader::update_model(void)
 {
-    auto [states, actions, rewards, next_states] = replay_buffer.sample();
-    auto losses = networks.update_model(states, actions, rewards, next_states);
+    auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
+    auto losses = networks.update_model(states, actions, rewards, next_states, dones);
     csv_logger.append_row(losses);
 }
 
@@ -59,6 +59,10 @@ RL_Action RL_Trader::get_action(RL_State state)
 RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
     auto next_state = simulator->step(action);
-    replay_buffer.append(current_state, action, next_state);
+    auto done = next_state.done;
+    if (step_episode == BitSim::Trader::max_steps - 1) {
+        done = false;
+    }
+    replay_buffer.append(current_state, action, next_state, done);
     return next_state;
 }

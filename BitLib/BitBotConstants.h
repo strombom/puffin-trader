@@ -107,6 +107,7 @@ namespace BitSim
 
         constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;
+        constexpr auto max_steps = 200;
 
         constexpr auto hidden_count = 2;
         constexpr auto hidden_size = 256;
