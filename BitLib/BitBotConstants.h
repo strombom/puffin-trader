@@ -85,29 +85,29 @@ namespace BitSim
 
     namespace Trader
     {
-        constexpr auto n_episodes = 1000;
+        constexpr auto n_episodes = 5000;
         constexpr auto n_test_episodes = 1;
         constexpr auto save_period = 100;
-        constexpr auto buffer_size = 1000000;
-        constexpr auto batch_size = 128;
+        constexpr auto policy_update_period = 10;
+        constexpr auto initial_random_action = 1000;
+        constexpr auto max_steps = 1000;
+
+        constexpr auto buffer_size = 100000;
+        constexpr auto batch_size = 256;
         constexpr auto episode_length = 10h; // 2*7*24h;
+
         constexpr auto gamma_discount = 0.99;
-        constexpr auto soft_tau = 1e-2;
+        constexpr auto soft_tau = 5e-3;
         constexpr auto learning_rate_entropy = 3e-4;
-        constexpr auto policy_update_freq = 2;
         constexpr auto learning_rate_qf_1 = 3e-4;
         constexpr auto learning_rate_qf_2 = 3e-4;
         constexpr auto learning_rate_vf = 3e-4;
         constexpr auto learning_rate_actor = 3e-4;
-        constexpr auto reward_scale = 10.0;
-        constexpr auto target_entropy = -2.0;
+        constexpr auto reward_scale = 1.0;
 
         constexpr auto market_order_threshold = 0.97;
         constexpr auto limit_order_threshold = 0.7;
-
-        constexpr auto initial_random_action = 10000;
         constexpr auto order_hysteresis = 0.1;
-        constexpr auto max_steps = 200;
 
         constexpr auto hidden_count = 2;
         constexpr auto hidden_size = 256;

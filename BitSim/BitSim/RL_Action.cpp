@@ -5,7 +5,7 @@
 
 RL_Action RL_Action::random(void)
 {
-    return RL_Action{ Utils::random(0.0, 1.0) }; //     
+    return RL_Action{ Utils::random(-1.0, 1.0) }; //     
 }
 
 torch::Tensor RL_Action::to_tensor(void) const

@@ -30,7 +30,7 @@ private:
     RL_ReplayBuffer replay_buffer;
     RL_Action get_action(RL_State state);
     RL_State step(RL_State current_state, RL_Action action);
-    void update_model(void);
+    void update_model(double idx_episode);
     void save_params(int idx_period);
     void interim_test(void);
 

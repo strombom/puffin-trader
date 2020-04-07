@@ -127,24 +127,17 @@ RL_Action RL_Networks::get_random_action(void)
 
 std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states, torch::Tensor dones)
 {
-    const auto pred_q1 = soft_q1->forward(states, actions);
-    const auto pred_q2 = soft_q2->forward(states, actions);
-    const auto [new_actions, log_prob, z, mean, std] = actor->forward(states);
-    const auto [new_next_actions, next_log_prob, next_z, next_mean, next_std] = actor->forward(next_states);
-    const auto normalized_rewards = BitSim::Trader::reward_scale * (rewards - rewards.mean(0)) / (rewards.std(0) + 1e-6);
-
-    // Tune entropy
-    const auto alpha_loss = (-log_alpha * (log_prob - target_entropy).detach()).mean();
-    alpha_optim->zero_grad();
-    alpha_loss.backward();
-    alpha_optim->step();
-    const auto alpha = log_alpha.exp();
+    const auto [new_actions, log_prob, _z, _mean, _std] = actor->forward(states);
+    const auto [new_next_actions, next_log_prob, _next_z, _next_mean, _next_std] = actor->forward(next_states);
 
     // Train Q
     const auto target_q1_ = target_soft_q1->forward(next_states, new_next_actions);
     const auto target_q2 = target_soft_q2->forward(next_states, new_next_actions);
     const auto target_q_min = torch::min(target_q1_, target_q2);
-    const auto target_q_value = normalized_rewards + (1 - dones) * BitSim::Trader::gamma_discount * target_q_min;
+    const auto target_q_value = rewards + (1 - dones) * BitSim::Trader::gamma_discount * target_q_min;
+
+    const auto pred_q1 = soft_q1->forward(states, actions);
+    const auto pred_q2 = soft_q2->forward(states, actions);
     const auto q1_value_loss = torch::mse_loss(pred_q1, target_q_value.detach());
     const auto q2_value_loss = torch::mse_loss(pred_q2, target_q_value.detach());
 
@@ -155,6 +148,13 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     soft_q2_optim->zero_grad();
     q2_value_loss.backward();
     soft_q2_optim->step();
+
+    // Tune entropy
+    const auto alpha_loss = (-log_alpha * (log_prob + target_entropy).detach()).mean();
+    alpha_optim->zero_grad();
+    alpha_loss.backward();
+    alpha_optim->step();
+    const auto alpha = log_alpha.exp().item().toDouble();
 
     // Train policy
     const auto predicted_new_q1_value = soft_q1->forward(states, new_actions);
@@ -182,7 +182,7 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     const auto q2_value_loss_d = q2_value_loss.item().toDouble();
     const auto total_loss = actor_loss_d + alpha_loss_d + q1_value_loss_d + q2_value_loss_d;
 
-    const auto episode_score = rewards.sum().item().toDouble();
+    const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::batch_size;
 
     return std::array<double, 6>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d, episode_score };
 }

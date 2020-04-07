@@ -7,7 +7,6 @@
 void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
-        std::cout << "Episode " << idx_episode << std::endl;
 
         auto state = simulator->reset("cartpole_" + std::to_string(idx_episode) + ".csv");
         step_episode = 0;
@@ -18,9 +17,15 @@ void RL_Trader::train(void)
 
             ++step_total;
             ++step_episode;
+
+            //if (step_total % BitSim::Trader::policy_update_period == 0) {
+            //    update_model(idx_episode);
+            //}
         }
 
-        update_model();
+        update_model(idx_episode);
+
+        std::cout << "Steps: " << step_episode << std::endl;
 
         if (idx_episode % BitSim::Trader::save_period == 0 ||
             idx_episode == BitSim::Trader::n_episodes - 1) {
@@ -30,11 +35,21 @@ void RL_Trader::train(void)
     }
 }
 
-void RL_Trader::update_model(void)
+void RL_Trader::update_model(double idx_episode)
 {
     auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
     auto losses = networks.update_model(states, actions, rewards, next_states, dones);
     csv_logger.append_row(losses);
+
+    std::cout << std::setfill(' ') << std::setw(4);
+    std::cout << std::fixed << std::setprecision(3);
+    std::cout << "Ep(" << idx_episode <<
+        ") TL(" << losses[0] <<
+        ") AcL(" << losses[1] <<
+        ") AlL(" << losses[2] <<
+        ") Q1(" << losses[3] <<
+        ") Q2(" << losses[4] <<
+        ") ES(" << losses[5] << ")" << std::endl;
 }
 
 void RL_Trader::save_params(int idx_period)

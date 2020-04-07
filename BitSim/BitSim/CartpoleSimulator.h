@@ -12,7 +12,7 @@ class CartpoleSimulatorLogger
 public:
     CartpoleSimulatorLogger(const std::string& filename, bool enabled);
 
-    void log(double cart_position, double cart_velocity, double pole_angle, double pole_velocity);
+    void log(double cart_position, double cart_velocity, double pole_angle, double pole_velocity, double reward);
 
 private:
     std::ofstream file;
