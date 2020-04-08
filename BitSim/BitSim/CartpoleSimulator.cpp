@@ -12,11 +12,13 @@ CartpoleSimulator::CartpoleSimulator(void) :
 RL_State CartpoleSimulator::reset(const std::string& log_filename)
 {
     logger = std::make_unique<CartpoleSimulatorLogger>(log_filename, true);
-    state = RL_State{ 0.0, Utils::random(-0.05, 0.05), Utils::random(-0.05, 0.05), Utils::random(-0.05, 0.05), Utils::random(-0.05, 0.05) };
+
+    // cart_position, cart_velocity, pole_angle, pole_velocity
+    state = RL_State{ 0.0, Utils::random(-0.05, 0.05), Utils::random(-0.05, 0.05), Utils::random(3.14-0.05, 3.14+0.05), Utils::random(-0.05, 0.05) };
     return state;
 }
 
-RL_State CartpoleSimulator::step(const RL_Action& action)
+RL_State CartpoleSimulator::step(const RL_Action& action, bool last_step)
 {
     const auto force = force_mag * action.move;
     const auto costheta = std::cos(state.pole_angle);
@@ -30,19 +32,19 @@ RL_State CartpoleSimulator::step(const RL_Action& action)
     state.cart_velocity = state.cart_velocity + tau * cart_acc;
     state.pole_angle = state.pole_angle + tau * state.pole_velocity;
     state.pole_velocity = state.pole_velocity + tau * pole_acc;
-
+    
+    /*
     if (state.cart_position < -x_threshold || state.cart_position > x_threshold ||
         state.pole_angle < -theta_threshold || state.pole_angle > theta_threshold) {
         state.set_done();
-    }
-
-    if (!state.is_done()) {
-        state.reward = 1.0;
-    }
-    else {
         state.reward = 0.0;
     }
-    
+    else {
+    */
+        state.reward = 1.0 - std::abs(state.cart_position)*0.01 - std::abs(std::fmod(state.pole_angle, 3.14159))*0.1;
+    //}
+
+
     logger->log(state.cart_position, state.cart_velocity, state.pole_angle, state.pole_velocity, state.reward);
 
     return state;

@@ -2,8 +2,8 @@
 #include "pch.h"
 
 #include "Logger.h"
+#include "RL_SAC.h"
 #include "RL_State.h"
-#include "RL_Networks.h"
 #include "RL_ReplayBuffer.h"
 #include "FE_Observations.h"
 //#include "BitmexSimulator.h"
@@ -25,7 +25,7 @@ private:
     int step_total;
     int step_episode;
 
-    RL_Networks networks;
+    RL_SAC networks;
     sptrCartpoleSimulator simulator;
     RL_ReplayBuffer replay_buffer;
     RL_Action get_action(RL_State state);

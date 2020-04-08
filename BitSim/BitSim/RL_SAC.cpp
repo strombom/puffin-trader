@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "RL_Networks.h"
+#include "RL_SAC.h"
 #include "BitBotConstants.h"
 
 
@@ -97,7 +97,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
     return std::make_tuple(action, log_prob, z, mean, std);
 }
 
-RL_Networks::RL_Networks(void) :
+RL_SAC::RL_SAC(void) :
     actor(TanhGaussianDistParams{ "actor", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
     soft_q1(SoftQNetwork{ "soft_q1", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
     soft_q2(SoftQNetwork{ "soft_q2", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
@@ -113,19 +113,19 @@ RL_Networks::RL_Networks(void) :
     actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::learning_rate_actor);
 }
 
-RL_Action RL_Networks::get_action(RL_State state)
+RL_Action RL_SAC::get_action(RL_State state)
 {
     const auto state_tensor = state.to_tensor().view({ 1, BitSim::Trader::state_dim });
     const auto [action, log_prob, z, mean, std] = actor->forward(state_tensor);
     return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
 }
 
-RL_Action RL_Networks::get_random_action(void)
+RL_Action RL_SAC::get_random_action(void)
 {
     return RL_Action::random();
 }
 
-std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states, torch::Tensor dones)
+std::array<double, 6> RL_SAC::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
 {
     const auto [new_actions, log_prob, _z, _mean, _std] = actor->forward(states);
     const auto [new_next_actions, next_log_prob, _next_z, _next_mean, _next_std] = actor->forward(next_states);
@@ -134,12 +134,12 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     const auto target_q1_ = target_soft_q1->forward(next_states, new_next_actions);
     const auto target_q2 = target_soft_q2->forward(next_states, new_next_actions);
     const auto target_q_min = torch::min(target_q1_, target_q2);
-    const auto target_q_value = rewards + (1 - dones) * BitSim::Trader::gamma_discount * target_q_min;
+    const auto target_q_value = (rewards + BitSim::Trader::gamma_discount * target_q_min).detach();
 
     const auto pred_q1 = soft_q1->forward(states, actions);
     const auto pred_q2 = soft_q2->forward(states, actions);
-    const auto q1_value_loss = torch::mse_loss(pred_q1, target_q_value.detach());
-    const auto q2_value_loss = torch::mse_loss(pred_q2, target_q_value.detach());
+    const auto q1_value_loss = torch::mse_loss(pred_q1, target_q_value);
+    const auto q2_value_loss = torch::mse_loss(pred_q2, target_q_value);
 
     soft_q1_optim->zero_grad();
     q1_value_loss.backward();
@@ -150,7 +150,7 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     soft_q2_optim->step();
 
     // Tune entropy
-    const auto alpha_loss = (-log_alpha * (log_prob + target_entropy).detach()).mean();
+    const auto alpha_loss = -(log_alpha * (log_prob + target_entropy).detach()).mean();
     alpha_optim->zero_grad();
     alpha_loss.backward();
     alpha_optim->step();
@@ -187,12 +187,12 @@ std::array<double, 6> RL_Networks::update_model(torch::Tensor states, torch::Ten
     return std::array<double, 6>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d, episode_score };
 }
 
-void RL_Networks::save(const std::string& filename)
+void RL_SAC::save(const std::string& filename)
 {
 
 }
 
-void RL_Networks::open(const std::string& filename)
+void RL_SAC::open(const std::string& filename)
 {
 
 }

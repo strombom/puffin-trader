@@ -85,24 +85,25 @@ namespace BitSim
 
     namespace Trader
     {
-        constexpr auto n_episodes = 5000;
+        constexpr auto n_episodes = 10000;
         constexpr auto n_test_episodes = 1;
         constexpr auto save_period = 100;
         constexpr auto policy_update_period = 10;
         constexpr auto initial_random_action = 1000;
-        constexpr auto max_steps = 1000;
+        constexpr auto max_steps = 40;
 
-        constexpr auto buffer_size = 100000;
-        constexpr auto batch_size = 256;
+        constexpr auto batch_size = 512;
+        constexpr auto buffer_size = 500 * batch_size;
         constexpr auto episode_length = 10h; // 2*7*24h;
 
         constexpr auto gamma_discount = 0.99;
         constexpr auto soft_tau = 5e-3;
-        constexpr auto learning_rate_entropy = 3e-4;
-        constexpr auto learning_rate_qf_1 = 3e-4;
-        constexpr auto learning_rate_qf_2 = 3e-4;
-        constexpr auto learning_rate_vf = 3e-4;
-        constexpr auto learning_rate_actor = 3e-4;
+        constexpr auto learning_rate = 5e-2;
+        constexpr auto learning_rate_entropy = learning_rate;
+        constexpr auto learning_rate_qf_1 = 1e-3;
+        constexpr auto learning_rate_qf_2 = 1e-3;
+        constexpr auto learning_rate_vf = learning_rate;
+        constexpr auto learning_rate_actor = 1e-3;
         constexpr auto reward_scale = 1.0;
 
         constexpr auto market_order_threshold = 0.97;
@@ -110,7 +111,7 @@ namespace BitSim
         constexpr auto order_hysteresis = 0.1;
 
         constexpr auto hidden_count = 2;
-        constexpr auto hidden_size = 256;
+        constexpr auto hidden_size = 32;
         constexpr auto state_dim = 4 + 1; // feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 1; // 4; // buy_position, buy_size, sell_position, sell_size
 

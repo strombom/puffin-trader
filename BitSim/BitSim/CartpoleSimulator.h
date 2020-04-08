@@ -26,7 +26,7 @@ public:
     CartpoleSimulator(void);
 
     RL_State reset(const std::string& log_filename);
-    RL_State step(const RL_Action& action);
+    RL_State step(const RL_Action& action, bool last_step);
 
 private:
     RL_State state;
@@ -35,10 +35,10 @@ private:
     const double mass_cart = 1.0;
     const double mass_pole = 0.1;
     const double length = 0.5;
-    const double force_mag = 10.0;
+    const double force_mag = 50.0;
     const double tau = 0.02;
     const double theta_threshold = 12 * 2 * M_PI / 360;
-    const double x_threshold = 2.4;
+    const double x_threshold = 1.0;
 
     const double polemass_length = mass_pole * length;
     const double total_mass = mass_cart + mass_pole;

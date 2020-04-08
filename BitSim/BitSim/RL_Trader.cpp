@@ -11,16 +11,12 @@ void RL_Trader::train(void)
         auto state = simulator->reset("cartpole_" + std::to_string(idx_episode) + ".csv");
         step_episode = 0;
 
-        while (!state.is_done()) {
+        while (!state.is_done() && step_episode < BitSim::Trader::max_steps) {
             const auto action = get_action(state);
             state = step(state, action);
 
             ++step_total;
             ++step_episode;
-
-            //if (step_total % BitSim::Trader::policy_update_period == 0) {
-            //    update_model(idx_episode);
-            //}
         }
 
         update_model(idx_episode);
@@ -37,8 +33,8 @@ void RL_Trader::train(void)
 
 void RL_Trader::update_model(double idx_episode)
 {
-    auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
-    auto losses = networks.update_model(states, actions, rewards, next_states, dones);
+    auto [states, actions, rewards, next_states] = replay_buffer.sample();
+    auto losses = networks.update_model(states, actions, rewards, next_states);
     csv_logger.append_row(losses);
 
     std::cout << std::setfill(' ') << std::setw(4);
@@ -73,11 +69,8 @@ RL_Action RL_Trader::get_action(RL_State state)
 
 RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
-    auto next_state = simulator->step(action);
-    auto done = next_state.done;
-    if (step_episode == BitSim::Trader::max_steps - 1) {
-        done = false;
-    }
-    replay_buffer.append(current_state, action, next_state, done);
+    const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
+    auto next_state = simulator->step(action, last_step);
+    replay_buffer.append(current_state, action, next_state);
     return next_state;
 }
