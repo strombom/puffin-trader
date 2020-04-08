@@ -97,6 +97,35 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
     return std::make_tuple(action, log_prob, z, mean, std);
 }
 
+RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
+    idx(0),
+    length(0)
+{
+    current_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
+    actions = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::action_dim });
+    rewards = torch::zeros({ BitSim::Trader::buffer_size, 1 });
+    next_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
+}
+
+void RL_SAC_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state)
+{
+    current_states[idx] = current_state.to_tensor();
+    actions[idx] = action.to_tensor();
+    rewards[idx] = current_state.reward;
+    next_states[idx] = next_state.to_tensor();
+
+    idx = (idx + 1) % BitSim::Trader::buffer_size;
+    length = std::min(length + 1, BitSim::Trader::buffer_size);
+}
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_SAC_ReplayBuffer::sample(void)
+{
+    auto indices = torch::randint(length, BitSim::Trader::batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+    indices = (indices + BitSim::Trader::buffer_size + idx - length).fmod(BitSim::Trader::buffer_size);
+
+    return std::make_tuple(current_states.index(indices), actions.index(indices), rewards.index(indices), next_states.index(indices), dones.index(indices));
+}
+
 RL_SAC::RL_SAC(void) :
     actor(TanhGaussianDistParams{ "actor", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
     soft_q1(SoftQNetwork{ "soft_q1", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
@@ -125,8 +154,16 @@ RL_Action RL_SAC::get_random_action(void)
     return RL_Action::random();
 }
 
-std::array<double, 6> RL_SAC::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states)
+void RL_SAC::append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state)
 {
+    replay_buffer.append(current_state, action, next_state);
+}
+
+std::array<double, 6> RL_SAC::update_model(void)
+{
+
+    auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
+
     const auto [new_actions, log_prob, _z, _mean, _std] = actor->forward(states);
     const auto [new_next_actions, next_log_prob, _next_z, _next_mean, _next_std] = actor->forward(next_states);
 

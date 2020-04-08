@@ -33,8 +33,7 @@ void RL_Trader::train(void)
 
 void RL_Trader::update_model(double idx_episode)
 {
-    auto [states, actions, rewards, next_states] = replay_buffer.sample();
-    auto losses = networks.update_model(states, actions, rewards, next_states);
+    auto losses = networks.update_model();
     csv_logger.append_row(losses);
 
     std::cout << std::setfill(' ') << std::setw(4);
@@ -71,6 +70,6 @@ RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
     const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
     auto next_state = simulator->step(action, last_step);
-    replay_buffer.append(current_state, action, next_state);
+    networks.append_to_replay_buffer(current_state, action, next_state);
     return next_state;
 }

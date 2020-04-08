@@ -106,6 +106,8 @@ namespace BitSim
         constexpr auto learning_rate_actor = 1e-3;
         constexpr auto reward_scale = 1.0;
 
+        constexpr auto ppo_action_std = 0.5;
+
         constexpr auto market_order_threshold = 0.97;
         constexpr auto limit_order_threshold = 0.7;
         constexpr auto order_hysteresis = 0.1;
