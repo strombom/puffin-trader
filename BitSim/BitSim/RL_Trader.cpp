@@ -70,6 +70,6 @@ RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
     const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
     auto next_state = simulator->step(action, last_step);
-    networks.append_to_replay_buffer(current_state, action, next_state);
+    networks.append_to_replay_buffer(current_state, action, next_state, current_state.done);
     return next_state;
 }

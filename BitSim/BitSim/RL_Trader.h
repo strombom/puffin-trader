@@ -3,6 +3,7 @@
 
 #include "Logger.h"
 #include "RL_SAC.h"
+#include "RL_PPO.h"
 #include "RL_State.h"
 #include "FE_Observations.h"
 //#include "BitmexSimulator.h"
@@ -24,7 +25,7 @@ private:
     int step_total;
     int step_episode;
 
-    RL_SAC networks;
+    RL_PPO networks;
     sptrCartpoleSimulator simulator;
     RL_Action get_action(RL_State state);
     RL_State step(RL_State current_state, RL_Action action);

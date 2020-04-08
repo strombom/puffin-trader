@@ -34,32 +34,34 @@ torch::Tensor RL_PPO_ActorCriticImpl::evaluate(torch::Tensor x)
 }
 
 RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
-    idx(0),
     length(0)
 {
-    current_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
-    actions = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::action_dim });
-    rewards = torch::zeros({ BitSim::Trader::buffer_size, 1 });
-    next_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
+    current_states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
+    actions = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::action_dim });
+    rewards = torch::zeros({ BitSim::Trader::max_steps, 1 });
+    next_states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
+    dones = torch::zeros({ BitSim::Trader::max_steps, 1 });
 }
 
-void RL_PPO_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state)
+void RL_PPO_ReplayBuffer::clear(void)
 {
-    current_states[idx] = current_state.to_tensor();
-    actions[idx] = action.to_tensor();
-    rewards[idx] = current_state.reward;
-    next_states[idx] = next_state.to_tensor();
-
-    idx = (idx + 1) % BitSim::Trader::buffer_size;
-    length = std::min(length + 1, BitSim::Trader::buffer_size);
+    length = 0;
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ReplayBuffer::sample(void)
+void RL_PPO_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
 {
-    auto indices = torch::randint(length, BitSim::Trader::batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
-    indices = (indices + BitSim::Trader::buffer_size + idx - length).fmod(BitSim::Trader::buffer_size);
+    current_states[length] = current_state.to_tensor();
+    actions[length] = action.to_tensor();
+    rewards[length] = current_state.reward;
+    next_states[length] = next_state.to_tensor();
+    dones[length] = done;
 
-    return std::make_tuple(current_states.index(indices), actions.index(indices), rewards.index(indices), next_states.index(indices));
+    length++;
+}
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ReplayBuffer::sample(void)
+{
+    return std::make_tuple(current_states.view({length}), actions.view({ length }), rewards.view({ length }), next_states.view({ length }), dones.view({ length }));
 }
 
 RL_PPO::RL_PPO(void) :
@@ -67,6 +69,11 @@ RL_PPO::RL_PPO(void) :
     policy_old(RL_PPO_ActorCritic{ "policy_old" })
 {
 
+}
+
+void RL_PPO::append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
+{
+    replay_buffer.append(current_state, action, next_state, done);
 }
 
 RL_Action RL_PPO::get_action(RL_State state)
@@ -85,17 +92,21 @@ RL_Action RL_PPO::get_random_action(void)
     return RL_Action::random();
 }
 
-std::array<double, 6> RL_PPO::update_model(torch::Tensor states, torch::Tensor actions, torch::Tensor rewards, torch::Tensor next_states, torch::Tensor dones)
+std::array<double, 6> RL_PPO::update_model(void)
 {
 
     //auto discounted_rewards = rewards + (BitSim::Trader::gamma_discount);
 
     auto discounted_reward = 0.0;
-    auto discounted_rewards = torch::zeros({ rewards.size(0) });
+    //auto discounted_rewards = torch::zeros({ rewards.size(0) });
 
-    for (auto idx = 0; idx < rewards.size(0); ++idx) {
+    //for (auto idx = 0; idx < rewards.size(0); ++idx) {
 
-    }
+    //}
+
+    replay_buffer.clear();
+
+    return std::array<double, 6>{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     /*
     # Monte Carlo estimate of rewards :

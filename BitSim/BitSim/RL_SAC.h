@@ -66,7 +66,7 @@ class RL_SAC_ReplayBuffer
 public:
     RL_SAC_ReplayBuffer(void);
 
-    void append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state);
+    void append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
 private:
@@ -89,7 +89,7 @@ public:
     RL_Action get_action(RL_State state);
     RL_Action get_random_action(void);
     std::array<double, 6> update_model(void);
-    void append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state);
+    void append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done);
 
     void save(const std::string& filename);
     void open(const std::string& filename);

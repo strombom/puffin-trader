@@ -105,14 +105,16 @@ RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
     actions = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::action_dim });
     rewards = torch::zeros({ BitSim::Trader::buffer_size, 1 });
     next_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
+    dones = torch::zeros({ BitSim::Trader::buffer_size, 1 });
 }
 
-void RL_SAC_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state)
+void RL_SAC_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
 {
     current_states[idx] = current_state.to_tensor();
     actions[idx] = action.to_tensor();
     rewards[idx] = current_state.reward;
     next_states[idx] = next_state.to_tensor();
+    dones[idx] = done;
 
     idx = (idx + 1) % BitSim::Trader::buffer_size;
     length = std::min(length + 1, BitSim::Trader::buffer_size);
@@ -154,9 +156,9 @@ RL_Action RL_SAC::get_random_action(void)
     return RL_Action::random();
 }
 
-void RL_SAC::append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state)
+void RL_SAC::append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
 {
-    replay_buffer.append(current_state, action, next_state);
+    replay_buffer.append(current_state, action, next_state, done);
 }
 
 std::array<double, 6> RL_SAC::update_model(void)
