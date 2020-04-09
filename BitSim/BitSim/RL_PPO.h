@@ -3,6 +3,8 @@
 
 #include "RL_State.h"
 #include "RL_Action.h"
+#include "RL_Algorithm.h"
+
 
 // https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO_continuous.py
 
@@ -43,7 +45,7 @@ private:
 };
 
 
-class RL_PPO
+class RL_PPO : public RL_Algorithm
 {
 public:
     RL_PPO(void);

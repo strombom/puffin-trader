@@ -3,6 +3,7 @@
 
 #include "RL_State.h"
 #include "RL_Action.h"
+#include "RL_Algorithm.h"
 #include "BitBotConstants.h"
 
 
@@ -81,7 +82,7 @@ private:
 };
 
 
-class RL_SAC
+class RL_SAC : public RL_Algorithm
 {
 public:
     RL_SAC(void);

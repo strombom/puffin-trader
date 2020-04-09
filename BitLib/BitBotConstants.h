@@ -85,12 +85,14 @@ namespace BitSim
 
     namespace Trader
     {
+        constexpr auto algorithm = "PPO";
+
         constexpr auto n_episodes = 10000;
         constexpr auto n_test_episodes = 1;
         constexpr auto save_period = 100;
-        constexpr auto policy_update_period = 10;
         constexpr auto initial_random_action = 1000;
         constexpr auto max_steps = 40;
+        constexpr auto timesteps_per_update = 3 * max_steps;
 
         constexpr auto batch_size = 512;
         constexpr auto buffer_size = 500 * batch_size;

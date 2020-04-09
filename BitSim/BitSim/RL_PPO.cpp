@@ -38,14 +38,9 @@ RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
 {
     current_states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
     actions = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::action_dim });
-    rewards = torch::zeros({ BitSim::Trader::max_steps, 1 });
+    rewards = torch::zeros({ BitSim::Trader::max_steps });
     next_states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
-    dones = torch::zeros({ BitSim::Trader::max_steps, 1 });
-}
-
-void RL_PPO_ReplayBuffer::clear(void)
-{
-    length = 0;
+    dones = torch::zeros({ BitSim::Trader::max_steps });
 }
 
 void RL_PPO_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
@@ -59,9 +54,20 @@ void RL_PPO_ReplayBuffer::append(const RL_State& current_state, const RL_Action&
     length++;
 }
 
+void RL_PPO_ReplayBuffer::clear(void)
+{
+    length = 0;
+}
+
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ReplayBuffer::sample(void)
 {
-    return std::make_tuple(current_states.view({length}), actions.view({ length }), rewards.view({ length }), next_states.view({ length }), dones.view({ length }));
+    return std::make_tuple(
+        current_states.narrow(0, 0, length), 
+        actions.narrow(0, 0, length),
+        rewards.narrow(0, 0, length),
+        next_states.narrow(0, 0, length),
+        dones.narrow(0, 0, length)
+    );
 }
 
 RL_PPO::RL_PPO(void) :
@@ -79,6 +85,8 @@ void RL_PPO::append_to_replay_buffer(const RL_State& current_state, const RL_Act
 RL_Action RL_PPO::get_action(RL_State state)
 {
     const auto action = policy_old->act(state.to_tensor());
+    std::cout << "action " << action.view({ BitSim::Trader::action_dim }) << std::endl;
+
     return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
     /*
     const auto state_tensor = state.to_tensor().view({ 1, BitSim::Trader::state_dim });
@@ -94,17 +102,20 @@ RL_Action RL_PPO::get_random_action(void)
 
 std::array<double, 6> RL_PPO::update_model(void)
 {
+    auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
+    replay_buffer.clear();
 
     //auto discounted_rewards = rewards + (BitSim::Trader::gamma_discount);
 
+    std::cout << "rewards " << rewards << std::endl;
+
     auto discounted_reward = 0.0;
-    //auto discounted_rewards = torch::zeros({ rewards.size(0) });
+    auto discounted_rewards = torch::zeros({ rewards.size(0) });
 
     //for (auto idx = 0; idx < rewards.size(0); ++idx) {
 
     //}
 
-    replay_buffer.clear();
 
     return std::array<double, 6>{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 

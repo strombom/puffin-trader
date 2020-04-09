@@ -4,6 +4,20 @@
 #include "BitBotConstants.h"
 
 
+RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
+    simulator(simulator),
+    step_total(0),
+    step_episode(0),
+    csv_logger(BitSim::Trader::log_names, BitSim::Trader::log_path)
+{
+    if (BitSim::Trader::algorithm == "PPO") {
+        rl_algorithm = std::make_unique<RL_PPO>();
+    }
+    else if (BitSim::Trader::algorithm == "SAC") {
+        rl_algorithm = std::make_unique<RL_SAC>();
+    }
+}
+
 void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
@@ -17,9 +31,15 @@ void RL_Trader::train(void)
 
             ++step_total;
             ++step_episode;
+
+            if (BitSim::Trader::algorithm == "PPO" && step_total % BitSim::Trader::timesteps_per_update == 0) {
+                update_model(idx_episode);
+            }
         }
 
-        update_model(idx_episode);
+        if (BitSim::Trader::algorithm == "SAC") {
+            update_model(idx_episode);
+        }
 
         std::cout << "Steps: " << step_episode << std::endl;
 
@@ -33,7 +53,7 @@ void RL_Trader::train(void)
 
 void RL_Trader::update_model(double idx_episode)
 {
-    auto losses = networks.update_model();
+    auto losses = rl_algorithm->update_model();
     csv_logger.append_row(losses);
 
     std::cout << std::setfill(' ') << std::setw(4);
@@ -60,16 +80,16 @@ void RL_Trader::interim_test(void)
 RL_Action RL_Trader::get_action(RL_State state)
 {
     if (step_total < BitSim::Trader::initial_random_action) {
-        return networks.get_random_action();
+        return rl_algorithm->get_random_action();
     }
 
-    return networks.get_action(state);
+    return rl_algorithm->get_action(state);
 }
 
 RL_State RL_Trader::step(RL_State current_state, RL_Action action)
 {
     const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
     auto next_state = simulator->step(action, last_step);
-    networks.append_to_replay_buffer(current_state, action, next_state, current_state.done);
+    rl_algorithm->append_to_replay_buffer(current_state, action, next_state, next_state.done);
     return next_state;
 }
