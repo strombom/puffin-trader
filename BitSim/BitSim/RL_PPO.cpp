@@ -28,9 +28,10 @@ torch::Tensor RL_PPO_ActorCriticImpl::act(torch::Tensor x)
     return actor->forward(x);
 }
 
-torch::Tensor RL_PPO_ActorCriticImpl::evaluate(torch::Tensor x)
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ActorCriticImpl::evaluate(torch::Tensor states, torch::Tensor actions)
 {
-    return critic->forward(x);
+    auto t = critic->forward(states);
+    return std::make_tuple(t, t ,t);
 }
 
 RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
@@ -109,30 +110,47 @@ std::array<double, 6> RL_PPO::update_model(void)
 
     std::cout << "rewards " << rewards << std::endl;
 
+    const auto length = rewards.size(0);
     auto discounted_reward = 0.0;
     auto discounted_rewards = torch::zeros({ rewards.size(0) });
 
-    //for (auto idx = 0; idx < rewards.size(0); ++idx) {
+    for (auto idx = length - 1; idx >= 0; --idx) {
+        if (dones[idx].item().toInt() == 1) {
+            discounted_reward = 0.0;
+        }
+        discounted_reward = rewards[idx].item().toDouble() + BitSim::Trader::gamma_discount * discounted_reward;
+        discounted_rewards[idx] = discounted_reward;
 
-    //}
+    }
 
+    discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-5);
 
-    return std::array<double, 6>{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    constexpr auto update_loop_count = 80;
+
+    for (auto idx = 0; idx < update_loop_count; ++idx) {
+        auto [logprobs, state_values, dist_entropy] = policy->evaluate(states, actions);
+    }
 
     /*
-    # Monte Carlo estimate of rewards :
-    rewards = []
-        discounted_reward = 0
-        for reward, is_terminal in zip(reversed(memory.rewards), reversed(memory.is_terminals)) :
-            if is_terminal :
-                discounted_reward = 0
-            discounted_reward = reward + (self.gamma * discounted_reward)
-            rewards.insert(0, discounted_reward)
+    # Evaluating old actions and values :
+    logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
+            
+    # Finding the ratio (pi_theta / pi_theta__old):
+    ratios = torch.exp(logprobs - old_logprobs.detach())
 
-    # Normalizing the rewards :
-    rewards = torch.tensor(rewards).to(device)
-    rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
+    # Finding Surrogate Loss:
+    advantages = rewards - state_values.detach()   
+    surr1 = ratios * advantages
+    surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
+    loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(state_values, rewards) - 0.01*dist_entropy
+            
+    # take gradient step
+    self.optimizer.zero_grad()
+    loss.mean().backward()
+    self.optimizer.step()
     */
+
+    return std::array<double, 6>{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     /*
     const auto [new_actions, log_prob, _z, _mean, _std] = actor->forward(states);

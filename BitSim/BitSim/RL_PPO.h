@@ -15,7 +15,7 @@ public:
     RL_PPO_ActorCriticImpl(const std::string& name);
 
     torch::Tensor act(torch::Tensor x);
-    torch::Tensor evaluate(torch::Tensor x);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluate(torch::Tensor states, torch::Tensor actions);
 
 private:
     torch::nn::Sequential actor;
