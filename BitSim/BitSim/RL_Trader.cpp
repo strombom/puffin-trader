@@ -79,8 +79,8 @@ void RL_Trader::interim_test(void)
 
 RL_Action RL_Trader::get_action(RL_State state)
 {
-    if (step_total < BitSim::Trader::initial_random_action) {
-        return rl_algorithm->get_random_action();
+    if (BitSim::Trader::algorithm == "SAC" && step_total < BitSim::Trader::initial_random_action) {
+        return rl_algorithm->get_random_action(state);
     }
 
     return rl_algorithm->get_action(state);

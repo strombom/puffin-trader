@@ -14,7 +14,7 @@ class RL_PPO_ActorCriticImpl : public torch::nn::Module
 public:
     RL_PPO_ActorCriticImpl(const std::string& name);
 
-    torch::Tensor act(torch::Tensor x);
+    torch::Tensor act(torch::Tensor state);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluate(torch::Tensor states, torch::Tensor actions);
 
 private:
@@ -30,15 +30,14 @@ class RL_PPO_ReplayBuffer
 public:
     RL_PPO_ReplayBuffer(void);
 
-    void append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done);
     void clear(void);
+    void append_state(const RL_State& state);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
-private:
-    torch::Tensor current_states;
+    torch::Tensor states;
     torch::Tensor actions;
+    torch::Tensor logprobs;
     torch::Tensor rewards;
-    torch::Tensor next_states;
     torch::Tensor dones;
 
     int length;
@@ -50,8 +49,8 @@ class RL_PPO : public RL_Algorithm
 public:
     RL_PPO(void);
 
-    RL_Action get_action(RL_State state);
-    RL_Action get_random_action(void);
+    RL_Action get_action(const RL_State& state);
+    RL_Action get_random_action(const RL_State& state);
     void append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done);
 
     std::array<double, 6> update_model(void);

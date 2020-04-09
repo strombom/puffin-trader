@@ -144,14 +144,14 @@ RL_SAC::RL_SAC(void) :
     actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::learning_rate_actor);
 }
 
-RL_Action RL_SAC::get_action(RL_State state)
+RL_Action RL_SAC::get_action(const RL_State& state)
 {
     const auto state_tensor = state.to_tensor().view({ 1, BitSim::Trader::state_dim });
     const auto [action, log_prob, z, mean, std] = actor->forward(state_tensor);
     return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
 }
 
-RL_Action RL_SAC::get_random_action(void)
+RL_Action RL_SAC::get_random_action(const RL_State& state)
 {
     return RL_Action::random();
 }
