@@ -4,45 +4,29 @@
 #include "BitBotConstants.h"
 
 
-RL_PPO_ActorCriticImpl::RL_PPO_ActorCriticImpl(const std::string& name)
+RL_PPO_ModelImpl::RL_PPO_ModelImpl(const std::string& name)
 {
-    actor->push_back(register_module(name + "_actor_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, 64 }));
-    actor->push_back(register_module(name + "_actor_tanh_1", torch::nn::Tanh{}));
-    actor->push_back(register_module(name + "_actor_linear_2", torch::nn::Linear{ 64, 32 }));
-    actor->push_back(register_module(name + "_actor_tanh_2", torch::nn::Tanh{}));
-    actor->push_back(register_module(name + "_actor_linear_3", torch::nn::Linear{ 32, BitSim::Trader::action_dim }));
-    actor->push_back(register_module(name + "_actor_tanh_3", torch::nn::Tanh{}));
+    network->push_back(register_module(name + "_actor_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, hidden_dim }));
+    network->push_back(register_module(name + "_actor_dropout_1", torch::nn::Dropout{}));
+    network->push_back(register_module(name + "_actor_tanh_1", torch::nn::Tanh{}));
+    network->push_back(register_module(name + "_actor_linear_2", torch::nn::Linear{ hidden_dim, hidden_dim }));
+    network->push_back(register_module(name + "_actor_dropout_2", torch::nn::Dropout{}));
+    network->push_back(register_module(name + "_actor_tanh_2", torch::nn::Tanh{}));
 
-    critic->push_back(register_module(name + "_critic_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, 64 }));
-    critic->push_back(register_module(name + "_critic_tanh_1", torch::nn::Tanh{}));
-    critic->push_back(register_module(name + "_critic_linear_2", torch::nn::Linear{ 64, 32 }));
-    critic->push_back(register_module(name + "_critic_tanh_2", torch::nn::Tanh{}));
-    critic->push_back(register_module(name + "_critic_linear_3", torch::nn::Linear{ 32, 1 }));
-    critic->push_back(register_module(name + "_critic_tanh_3", torch::nn::Tanh{}));
-
-    action_var = torch::full({ BitSim::Trader::action_dim }, BitSim::Trader::ppo_action_std);
+    policy_head.register_module(name + "_policy", torch::nn::Linear{ hidden_dim, BitSim::Trader::action_dim });
+    value_head.register_module(name + "_value", torch::nn::Linear{ hidden_dim, 1 });
 }
 
-torch::Tensor RL_PPO_ActorCriticImpl::act(torch::Tensor state)
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ModelImpl::forward(torch::Tensor states)
 {
-    auto action_mean = actor->forward(state);
-
-    /*
-    action_mean = self.actor(state)
-    cov_mat = torch.diag(self.action_var).to(device)
-
-    dist = MultivariateNormal(action_mean, cov_mat)
-    action = dist.sample()
-    action_logprob = dist.log_prob(action)
-    */
-
-    return actor->forward(state);
+    auto t = torch::zeros(1);
+    return std::make_tuple(t, t, t, t);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ActorCriticImpl::evaluate(torch::Tensor states, torch::Tensor actions)
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ModelImpl::loss(torch::Tensor reward, torch::Tensor value_f, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantages, torch::Tensor old_value_f, torch::Tensor old_neg_log_prob)
 {
-    auto t = critic->forward(states);
-    return std::make_tuple(t, t ,t);
+    auto t = torch::zeros(1);
+    return std::make_tuple(t, t ,t, t, t);
 }
 
 RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
@@ -77,8 +61,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
 }
 
 RL_PPO::RL_PPO(void) :
-    policy(RL_PPO_ActorCritic{ "policy" }),
-    policy_old(RL_PPO_ActorCritic{ "policy_old" })
+    policy(RL_PPO_Model{ "policy" })
 {
 
 }
@@ -92,7 +75,7 @@ void RL_PPO::append_to_replay_buffer(const RL_State& current_state, const RL_Act
 
 RL_Action RL_PPO::get_action(const RL_State& state)
 {
-    const auto action = policy_old->act(state.to_tensor());
+    const auto [value_f, action, neg_log_prob, entropy] = policy->forward(state.to_tensor());
     std::cout << "action " << action.view({ BitSim::Trader::action_dim }) << std::endl;
 
     return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
@@ -136,7 +119,7 @@ std::array<double, 6> RL_PPO::update_model(void)
     constexpr auto update_loop_count = 80;
 
     for (auto idx = 0; idx < update_loop_count; ++idx) {
-        auto [logprobs, state_values, dist_entropy] = policy->evaluate(states, actions);
+        //auto [logprobs, state_values, dist_entropy] = policy->evaluate(states, actions);
 
         //auto ratios = torch::exp(logprobs - old_logprobs.detach());
     }

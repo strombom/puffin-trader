@@ -9,20 +9,22 @@
 // https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO_continuous.py
 
 
-class RL_PPO_ActorCriticImpl : public torch::nn::Module
+class RL_PPO_ModelImpl : public torch::nn::Module
 {
 public:
-    RL_PPO_ActorCriticImpl(const std::string& name);
+    RL_PPO_ModelImpl(const std::string& name);
 
-    torch::Tensor act(torch::Tensor state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluate(torch::Tensor states, torch::Tensor actions);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> loss(torch::Tensor reward, torch::Tensor value_f, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantages, torch::Tensor old_value_f, torch::Tensor old_neg_log_prob);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor states);
 
 private:
-    torch::nn::Sequential actor;
-    torch::nn::Sequential critic;
-    torch::Tensor action_var;
+    const int hidden_dim = 64;
+
+    torch::nn::Sequential network;
+    torch::nn::Module policy_head;
+    torch::nn::Module value_head;
 };
-TORCH_MODULE(RL_PPO_ActorCritic);
+TORCH_MODULE(RL_PPO_Model);
 
 
 class RL_PPO_ReplayBuffer
@@ -61,7 +63,6 @@ private:
 
     std::unique_ptr<torch::optim::Adam> policy_optim;
 
-    RL_PPO_ActorCritic policy;
-    RL_PPO_ActorCritic policy_old;
+    RL_PPO_Model policy;
 
 };
