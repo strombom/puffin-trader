@@ -18,6 +18,8 @@ public:
     double reward;
 };
 
+using sptrRL_State = std::shared_ptr<RL_State>;
+
 /*
 class RL_State
 {

@@ -25,11 +25,11 @@ class CartpoleSimulator
 public:
     CartpoleSimulator(void);
 
-    RL_State reset(const std::string& log_filename);
-    RL_State step(const RL_Action& action, bool last_step);
+    sptrRL_State reset(const std::string& log_filename);
+    sptrRL_State step(sptrRL_Action action, bool last_step);
 
 private:
-    RL_State state;
+    sptrRL_State state;
 
     const double gravity = 9.8;
     const double mass_cart = 1.0;

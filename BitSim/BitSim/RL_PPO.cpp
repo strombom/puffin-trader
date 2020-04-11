@@ -100,19 +100,21 @@ RL_PPO::RL_PPO(void) :
 
 }
 
-void RL_PPO::append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
+void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
 {
-    replay_buffer.states[replay_buffer.length] = current_state.to_tensor();
-    replay_buffer.actions[replay_buffer.length] = action.to_tensor();
+    replay_buffer.states[replay_buffer.length] = current_state->to_tensor();
+    replay_buffer.actions[replay_buffer.length] = action->to_tensor();
     replay_buffer.dones[replay_buffer.length] = done;
 }
 
-RL_Action RL_PPO::get_action(const RL_State& state)
+sptrRL_Action RL_PPO::get_action(sptrRL_State state)
 {
-    const auto [value_f, action, neg_log_prob, entropy] = policy->forward(state.to_tensor());
+    const auto [value_f, action, neg_log_prob, entropy] = policy->forward(state->to_tensor());
     std::cout << "action " << action.view({ BitSim::Trader::action_dim }) << std::endl;
 
-    return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
+
+
+    return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
     /*
     const auto state_tensor = state.to_tensor().view({ 1, BitSim::Trader::state_dim });
     const auto [action, log_prob, z, mean, std] = actor->forward(state_tensor);
@@ -120,10 +122,10 @@ RL_Action RL_PPO::get_action(const RL_State& state)
     */
 }
 
-RL_Action RL_PPO::get_random_action(const RL_State& state)
+sptrRL_Action RL_PPO::get_random_action(sptrRL_State state)
 {
     // Not used
-    return RL_Action{};
+    return std::make_shared<RL_Action>();
 }
 
 std::array<double, 6> RL_PPO::update_model(void)

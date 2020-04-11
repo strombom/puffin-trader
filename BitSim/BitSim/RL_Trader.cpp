@@ -25,9 +25,8 @@ void RL_Trader::train(void)
         auto state = simulator->reset("cartpole_" + std::to_string(idx_episode) + ".csv");
         step_episode = 0;
 
-        while (!state.is_done() && step_episode < BitSim::Trader::max_steps) {
-            const auto action = get_action(state);
-            state = step(state, action);
+        while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
+            step(state);
 
             ++step_total;
             ++step_episode;
@@ -77,19 +76,17 @@ void RL_Trader::interim_test(void)
 
 }
 
-RL_Action RL_Trader::get_action(RL_State state)
+void RL_Trader::step(sptrRL_State state)
 {
+    auto action = sptrRL_Action{ nullptr };
     if (BitSim::Trader::algorithm == "SAC" && step_total < BitSim::Trader::initial_random_action) {
-        return rl_algorithm->get_random_action(state);
+        action = rl_algorithm->get_random_action(state);
+    }
+    else {
+        action = rl_algorithm->get_action(state);
     }
 
-    return rl_algorithm->get_action(state);
-}
-
-RL_State RL_Trader::step(RL_State current_state, RL_Action action)
-{
     const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
     auto next_state = simulator->step(action, last_step);
-    rl_algorithm->append_to_replay_buffer(current_state, action, next_state, next_state.done);
-    return next_state;
+    rl_algorithm->append_to_replay_buffer(state, action, next_state, next_state->done);
 }

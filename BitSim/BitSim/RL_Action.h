@@ -14,13 +14,15 @@ public:
     RL_Action(double move) :
         move(move) {}
 
-    static RL_Action random(void);
+    static std::shared_ptr<RL_Action> random(void);
     torch::Tensor to_tensor(void) const;
 
     double move;
 
 private:
 };
+
+using sptrRL_Action = std::shared_ptr<RL_Action>;
 
 /*
 class RL_Action

@@ -3,9 +3,9 @@
 #include "Utils.h"
 
 
-RL_Action RL_Action::random(void)
+sptrRL_Action RL_Action::random(void)
 {
-    return RL_Action{ Utils::random(-1.0, 1.0) }; //     
+    return std::make_shared<RL_Action>(Utils::random(-1.0, 1.0)); //     
 }
 
 torch::Tensor RL_Action::to_tensor(void) const

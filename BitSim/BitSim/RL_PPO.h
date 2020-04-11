@@ -56,9 +56,9 @@ class RL_PPO : public RL_Algorithm
 public:
     RL_PPO(void);
 
-    RL_Action get_action(const RL_State& state);
-    RL_Action get_random_action(const RL_State& state);
-    void append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done);
+    sptrRL_Action get_action(sptrRL_State state);
+    sptrRL_Action get_random_action(sptrRL_State state);
+    void append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done);
 
     std::array<double, 6> update_model(void);
 

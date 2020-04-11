@@ -108,12 +108,12 @@ RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
     dones = torch::zeros({ BitSim::Trader::buffer_size, 1 });
 }
 
-void RL_SAC_ReplayBuffer::append(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
+void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
 {
-    current_states[idx] = current_state.to_tensor();
-    actions[idx] = action.to_tensor();
-    rewards[idx] = current_state.reward;
-    next_states[idx] = next_state.to_tensor();
+    current_states[idx] = current_state->to_tensor();
+    actions[idx] = action->to_tensor();
+    rewards[idx] = current_state->reward;
+    next_states[idx] = next_state->to_tensor();
     dones[idx] = done;
 
     idx = (idx + 1) % BitSim::Trader::buffer_size;
@@ -144,19 +144,19 @@ RL_SAC::RL_SAC(void) :
     actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::learning_rate_actor);
 }
 
-RL_Action RL_SAC::get_action(const RL_State& state)
+sptrRL_Action RL_SAC::get_action(sptrRL_State state)
 {
-    const auto state_tensor = state.to_tensor().view({ 1, BitSim::Trader::state_dim });
+    const auto state_tensor = state->to_tensor().view({ 1, BitSim::Trader::state_dim });
     const auto [action, log_prob, z, mean, std] = actor->forward(state_tensor);
-    return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
+    return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
 }
 
-RL_Action RL_SAC::get_random_action(const RL_State& state)
+sptrRL_Action RL_SAC::get_random_action(sptrRL_State state)
 {
     return RL_Action::random();
 }
 
-void RL_SAC::append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done)
+void RL_SAC::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
 {
     replay_buffer.append(current_state, action, next_state, done);
 }

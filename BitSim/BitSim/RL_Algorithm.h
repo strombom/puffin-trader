@@ -7,10 +7,10 @@
 class RL_Algorithm
 {
 public:
-    virtual RL_Action get_action(const RL_State& state) = 0;
-    virtual RL_Action get_random_action(const RL_State& state) = 0;
+    virtual std::shared_ptr<RL_Action> get_action(sptrRL_State state) = 0;
+    virtual std::shared_ptr<RL_Action> get_random_action(sptrRL_State state) = 0;
     virtual std::array<double, 6> update_model(void) = 0;
-    virtual void append_to_replay_buffer(const RL_State& current_state, const RL_Action& action, const RL_State& next_state, bool done) = 0;
+    virtual void append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done) = 0;
 
     //virtual void save(const std::string& filename) = 0;
     //virtual void open(const std::string& filename) = 0;
