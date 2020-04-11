@@ -44,8 +44,27 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_Mo
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ModelImpl::loss(torch::Tensor reward, torch::Tensor value_f, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantages, torch::Tensor old_value_f, torch::Tensor old_neg_log_prob)
 {
-    auto t = torch::zeros(1);
-    return std::make_tuple(t, t ,t, t, t);
+    constexpr auto clip_range = 0.2;
+    constexpr auto ent_coef = 0.0;
+    constexpr auto vf_coef = 0.5;
+
+    const auto entropy_mean = entropy.mean();
+    const auto value_f_clip = old_value_f + torch::clamp(value_f - old_value_f, -clip_range, clip_range);
+
+    const auto value_loss1 = (value_f - reward).pow(2);
+    const auto value_loss2 = (value_f_clip - reward).pow(2);
+
+    const auto value_loss = 0.5 * torch::max(value_loss1, value_loss2).mean();
+    const auto ratio = (old_neg_log_prob - neg_log_prob).exp();
+
+    const auto pg_losses1 = -advantages * ratio;
+    const auto pg_losses2 = -advantages * torch::clamp(ratio, 1.0 - clip_range, 1.0 + clip_range);
+    const auto pg_loss = torch::max(pg_losses1, pg_losses2).mean();
+    const auto approx_kl = 0.5 * (neg_log_prob - old_neg_log_prob).pow(2).mean();
+
+    const auto loss = pg_loss - (entropy_mean * ent_coef) + (value_loss * vf_coef);
+
+    return std::make_tuple(loss, pg_loss, value_loss, entropy_mean, approx_kl);
 }
 
 RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
