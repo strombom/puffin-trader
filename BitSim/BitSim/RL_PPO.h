@@ -38,14 +38,15 @@ public:
     RL_PPO_ReplayBuffer(void);
 
     void clear(void);
-    void append_state(const RL_State& state);
+    void append_state(sptrRL_State state);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
     torch::Tensor states;
     torch::Tensor actions;
-    torch::Tensor logprobs;
-    torch::Tensor rewards;
+    torch::Tensor values;
+    torch::Tensor neglogprobs;
     torch::Tensor dones;
+    torch::Tensor rewards;
 
     int length;
 };

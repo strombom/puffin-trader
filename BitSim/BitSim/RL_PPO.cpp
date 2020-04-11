@@ -68,9 +68,10 @@ RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
 {
     states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
     actions = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::action_dim });
-    rewards = torch::zeros({ BitSim::Trader::max_steps });
-    logprobs = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
+    values = torch::zeros({ BitSim::Trader::max_steps });
+    neglogprobs = torch::zeros({ BitSim::Trader::max_steps });
     dones = torch::zeros({ BitSim::Trader::max_steps });
+    rewards = torch::zeros({ BitSim::Trader::max_steps });
 }
 
 void RL_PPO_ReplayBuffer::clear(void)
@@ -89,7 +90,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
         states.narrow(0, 0, length), 
         actions.narrow(0, 0, length),
         rewards.narrow(0, 0, length),
-        logprobs.narrow(0, 0, length),
+        neglogprobs.narrow(0, 0, length),
         dones.narrow(0, 0, length)
     );
 }
@@ -102,9 +103,9 @@ RL_PPO::RL_PPO(void) :
 
 void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
 {
-    replay_buffer.states[replay_buffer.length] = current_state->to_tensor();
-    replay_buffer.actions[replay_buffer.length] = action->to_tensor();
-    replay_buffer.dones[replay_buffer.length] = done;
+    replay_buffer.dones[replay_buffer.length] = next_state->done;
+    replay_buffer.rewards[replay_buffer.length] = next_state->reward;
+    ++replay_buffer.length;
 }
 
 sptrRL_Action RL_PPO::get_action(sptrRL_State state)
@@ -112,14 +113,12 @@ sptrRL_Action RL_PPO::get_action(sptrRL_State state)
     const auto [value_f, action, neg_log_prob, entropy] = policy->forward(state->to_tensor());
     std::cout << "action " << action.view({ BitSim::Trader::action_dim }) << std::endl;
 
-
+    replay_buffer.states[replay_buffer.length] = state->to_tensor();
+    replay_buffer.actions[replay_buffer.length] = action;
+    replay_buffer.values[replay_buffer.length] = value_f;
+    replay_buffer.neglogprobs[replay_buffer.length] = neg_log_prob;
 
     return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
-    /*
-    const auto state_tensor = state.to_tensor().view({ 1, BitSim::Trader::state_dim });
-    const auto [action, log_prob, z, mean, std] = actor->forward(state_tensor);
-    return RL_Action{ action.view({ BitSim::Trader::action_dim }) };
-    */
 }
 
 sptrRL_Action RL_PPO::get_random_action(sptrRL_State state)
