@@ -10,10 +10,10 @@ RL_PPO_ModelImpl::RL_PPO_ModelImpl(const std::string& name) :
     value(register_module(name + "_value", torch::nn::Linear{ hidden_dim, 1 }))
 {
     network->push_back(register_module(name + "_actor_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, hidden_dim }));
-    network->push_back(register_module(name + "_actor_dropout_1", torch::nn::Dropout{}));
+    network->push_back(register_module(name + "_actor_dropout_1", torch::nn::Dropout{ dropout }));
     network->push_back(register_module(name + "_actor_tanh_1", torch::nn::Tanh{}));
     network->push_back(register_module(name + "_actor_linear_2", torch::nn::Linear{ hidden_dim, hidden_dim }));
-    network->push_back(register_module(name + "_actor_dropout_2", torch::nn::Dropout{}));
+    network->push_back(register_module(name + "_actor_dropout_2", torch::nn::Dropout{ dropout }));
     network->push_back(register_module(name + "_actor_tanh_2", torch::nn::Tanh{}));
 }
 
@@ -44,10 +44,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_Mo
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ModelImpl::loss(torch::Tensor reward, torch::Tensor value_f, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantages, torch::Tensor old_value_f, torch::Tensor old_neg_log_prob)
 {
-    constexpr auto clip_range = 0.2;
-    constexpr auto ent_coef = 0.0;
-    constexpr auto vf_coef = 0.5;
-
     const auto entropy_mean = entropy.mean();
     const auto value_f_clip = old_value_f + torch::clamp(value_f - old_value_f, -clip_range, clip_range);
 

@@ -18,6 +18,10 @@ public:
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor states);
 
 private:
+    const double dropout = 0.0;
+    const double clip_range = 0.2;
+    const double ent_coef = 0.0;
+    const double vf_coef = 0.5;
     const int hidden_dim = 64;
 
     torch::nn::Sequential network;
