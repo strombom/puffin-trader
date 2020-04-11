@@ -4,7 +4,10 @@
 #include "BitBotConstants.h"
 
 
-RL_PPO_ModelImpl::RL_PPO_ModelImpl(const std::string& name)
+RL_PPO_ModelImpl::RL_PPO_ModelImpl(const std::string& name) :
+    policy_mean(register_module(name + "_policy_mean", torch::nn::Linear{ hidden_dim, BitSim::Trader::action_dim })),
+    policy_log_std(register_module(name + "_policy_log_std", torch::nn::Linear{ hidden_dim, BitSim::Trader::action_dim })),
+    value(register_module(name + "_value", torch::nn::Linear{ hidden_dim, 1 }))
 {
     network->push_back(register_module(name + "_actor_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, hidden_dim }));
     network->push_back(register_module(name + "_actor_dropout_1", torch::nn::Dropout{}));
@@ -12,15 +15,31 @@ RL_PPO_ModelImpl::RL_PPO_ModelImpl(const std::string& name)
     network->push_back(register_module(name + "_actor_linear_2", torch::nn::Linear{ hidden_dim, hidden_dim }));
     network->push_back(register_module(name + "_actor_dropout_2", torch::nn::Dropout{}));
     network->push_back(register_module(name + "_actor_tanh_2", torch::nn::Tanh{}));
-
-    policy_head.register_module(name + "_policy", torch::nn::Linear{ hidden_dim, BitSim::Trader::action_dim });
-    value_head.register_module(name + "_value", torch::nn::Linear{ hidden_dim, 1 });
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ModelImpl::forward(torch::Tensor states)
 {
-    auto t = torch::zeros(1);
-    return std::make_tuple(t, t, t, t);
+    const auto latent_state = network->forward(states);
+    const auto value_f = value->forward(latent_state);
+    const auto action_mean = policy_mean->forward(latent_state);
+    const auto action_log_std = policy_log_std->forward(latent_state);
+    const auto action_std = action_log_std.exp();
+
+    // Reparametrization trick
+    const auto eps = torch::normal(0.0, 1.0, action_std.sizes());
+    const auto action_z = action_mean + eps * action_std;
+
+    // Normalize action and log_prob
+    constexpr auto epsilon = 1e-6;
+    const auto action = torch::tanh(action_z);
+    const auto dist_log_prob = -(action_z - action_mean).pow(2) / (2 * action_std.pow(2)) - action_std.log() - std::log(std::sqrt(2 * M_PI));
+    const auto log_prob = (dist_log_prob - (1 - action.pow(2) + epsilon).log()).sum(1, true);
+    const auto neg_log_prob = -log_prob;
+
+    // Entropy
+    const auto entropy = 0.5 + 0.5 * std::log(2 * M_PI) + torch::log(action_std);
+
+    return std::make_tuple(value_f, action, neg_log_prob, entropy);
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ModelImpl::loss(torch::Tensor reward, torch::Tensor value_f, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantages, torch::Tensor old_value_f, torch::Tensor old_neg_log_prob)

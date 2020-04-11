@@ -21,8 +21,9 @@ private:
     const int hidden_dim = 64;
 
     torch::nn::Sequential network;
-    torch::nn::Module policy_head;
-    torch::nn::Module value_head;
+    torch::nn::Linear policy_mean;
+    torch::nn::Linear policy_log_std;
+    torch::nn::Linear value;
 };
 TORCH_MODULE(RL_PPO_Model);
 
