@@ -22,19 +22,15 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_Mo
     const auto latent_state = network->forward(state);
     const auto value_f = state_value->forward(latent_state);
     const auto action_mean = policy_mean->forward(latent_state);
-    const auto action_log_std = policy_log_std->forward(latent_state);
-    const auto action_std = action_log_std.exp();
+    const auto action_std = policy_log_std->forward(latent_state).exp();
 
-    // Reparametrization trick
+    // Sample with reparametrization trick
     const auto eps = torch::normal(0.0, 1.0, action_std.sizes());
-    const auto action_z = action_mean + eps * action_std;
+    const auto action = torch::tanh(action_mean + eps * action_std);
 
     // Normalize action and log_prob
     constexpr auto epsilon = 1e-6;
-    const auto action = torch::tanh(action_z);
-    const auto log_prob = -((action - action_mean).pow(2)) / (2 * action_std.pow(2)) - action_std.log() - std::log(std::sqrt(2 * M_PI));
-    //const auto dist_log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_std.log() - std::log(std::sqrt(2 * M_PI));
-    //const auto log_prob = (dist_log_prob - (1 - action.pow(2) + epsilon).log()).sum(1, true);
+    const auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_std.log() - std::log(std::sqrt(2 * M_PI));
     const auto neg_log_prob = -log_prob;
 
     // Entropy
@@ -50,8 +46,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_Mo
 
     // Normalize action and log_prob
     constexpr auto epsilon = 1e-6;
-    const auto dist_log_prob = -(action - action.mean()).pow(2) / (2 * action.std().pow(2)) - action.std().log() - std::log(std::sqrt(2 * M_PI));
-    const auto log_prob = (dist_log_prob - (1 - action.pow(2) + epsilon).log()).sum(1, true);
+    const auto log_prob = -(action - action.mean()).pow(2) / (2 * action.std().pow(2)) - action.std().log() - std::log(std::sqrt(2 * M_PI));
     const auto neg_log_prob = -log_prob;
 
     // Entropy
