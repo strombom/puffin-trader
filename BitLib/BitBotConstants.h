@@ -112,6 +112,7 @@ namespace BitSim
         constexpr auto ppo_n_updates = 4;
         constexpr auto ppo_n_batches = 4;
         constexpr auto ppo_batch_size = max_steps / ppo_n_batches;
+        constexpr auto ppo_policy_learning_rate = 3e-4;
 
         constexpr auto market_order_threshold = 0.97;
         constexpr auto limit_order_threshold = 0.7;

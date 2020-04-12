@@ -14,9 +14,9 @@ class RL_PPO_ModelImpl : public torch::nn::Module
 public:
     RL_PPO_ModelImpl(const std::string& name);
 
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> loss(torch::Tensor reward, torch::Tensor value, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantage, torch::Tensor old_value, torch::Tensor old_neg_log_prob);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state);
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state, torch::Tensor action);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> loss(torch::Tensor reward, torch::Tensor value, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantage, torch::Tensor old_value, torch::Tensor old_neg_log_prob);
 
 private:
     const double dropout = 0.0;
@@ -65,6 +65,8 @@ public:
 
 
 private:
+    const double max_grad_norm = 0.5;
+
     RL_PPO_ReplayBuffer replay_buffer;
     sptrRL_State last_state;
 

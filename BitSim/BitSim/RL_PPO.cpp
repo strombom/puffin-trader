@@ -107,7 +107,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
 RL_PPO::RL_PPO(void) :
     policy(RL_PPO_Model{ "policy" })
 {
-
+    policy_optim = std::make_unique<torch::optim::Adam>(policy->parameters(), BitSim::Trader::ppo_policy_learning_rate);
 }
 
 void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
@@ -142,8 +142,6 @@ std::array<double, 6> RL_PPO::update_model(void)
     auto [states, actions, values, neglogprobs, dones, rewards] = replay_buffer.sample();
     replay_buffer.clear();
 
-    //auto discounted_rewards = rewards + (BitSim::Trader::gamma_discount);
-
     std::cout << "rewards " << rewards << std::endl;
 
     const auto [last_value, _action, _neg_log_prob, _entropy] = policy->forward(last_state->to_tensor());
@@ -167,10 +165,15 @@ std::array<double, 6> RL_PPO::update_model(void)
 
     auto returns = advs + values;
 
-    // states, returns, dones, actions, values, neg_log_prb, ep_infos 
-    // states.index(indices),actions.index(indices),values.index(indices),neglogprobs.index(indices),dones.index(indices),rewards.index(indices)
+    auto loss = 0.0;
+    auto pg_loss = 0.0;
+    auto value_loss = 0.0;
+    auto entropy_mean = 0.0;
+    auto approx_kl = 0.0;
 
-    for (auto idx_batch = 0; idx_batch < BitSim::Trader::ppo_n_updates * BitSim::Trader::ppo_n_batches; ++idx_batch) {
+    const auto n_batches = BitSim::Trader::ppo_n_updates * BitSim::Trader::ppo_n_batches;
+
+    for (auto idx_batch = 0; idx_batch < n_batches; ++idx_batch) {
         auto [old_states, old_actions, old_values, old_neglogprobs, dones, rewards] = replay_buffer.sample();
 
         auto advantages = torch::empty_like(returns);
@@ -184,61 +187,25 @@ std::array<double, 6> RL_PPO::update_model(void)
         policy->zero_grad();
 
         auto [values, actions, neg_log_prob, entropy] = policy->forward(states, old_actions);
+        auto [s_loss, s_pg_loss, s_value_loss, s_entropy_mean, s_approx_kl] = policy->loss(rewards, values, neg_log_prob, entropy, advantages, old_values, old_neglogprobs);
 
-        auto [loss, pg_loss, value_loss, entropy_mean, approx_kl] = policy->loss(rewards, values, neg_log_prob, entropy, advantages, old_values, old_neglogprobs);
+        s_loss.backward();
 
-        //loss(torch::Tensor reward, torch::Tensor value_f, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantages, torch::Tensor old_value_f, torch::Tensor old_neg_log_prob)
+        loss += s_loss.item().toDouble();
+        pg_loss += s_pg_loss.item().toDouble();
+        value_loss += s_value_loss.item().toDouble();
+        entropy_mean += s_entropy_mean.item().toDouble();
+        approx_kl += s_approx_kl.item().toDouble();
         
-        /*
-
-        train_model.train()
-        with torch.set_grad_enabled(True) :
-        train_model.zero_grad()
-
-        value_f, actions, neg_log_probs, entropy = train_model(obs, action = old_actions)
-
-        assert(actions.sum().item() == old_actions.sum().item())
-
-        loss, pg_loss, value_loss, entropy_mean, approx_kl = train_model.loss(returns, value_f, neg_log_probs, entropy, advantages,
-            old_values, old_neg_log_prbs,
-            args.clip_range, args.ent_coef, args.vf_coef)
-        loss.backward()
-
-        torch.nn.utils.clip_grad_norm_(train_model.parameters(), args.max_grad_norm)
-        optimizer.step()
-
-        return list(map(lambda x : x.detach().item(), [loss, pg_loss, value_loss, entropy_mean, approx_kl]))
-
-        */
+        torch::nn::utils::clip_grad_norm_(policy->parameters(), max_grad_norm);
+        policy_optim->step();
     }
 
-    /*
-    # Index of each element of batch_size
-    # Create the indices array
-    inds = np.arange(n_batch)
-    for _ in range(args.number_train_epoch):
-        # Randomize the indexes
-        np.random.shuffle(inds)
-        # 0 to batch_size with batch_train_size step
-        for start in range(0, n_batch, n_batch_train):
-            end = start + n_batch_train
-            mbinds = inds[start:end]
-            slices = (arr[mbinds] for arr in (obs, returns, dones, actions, values, neg_log_prb))
-            loss, pg_loss, value_loss, entropy, approx_kl = train_fn(*slices)
-            mb_loss_vals.append([loss, pg_loss, value_loss, entropy, approx_kl])
+    loss /= n_batches;
+    pg_loss /= n_batches;
+    value_loss /= n_batches;
+    entropy_mean /= n_batches;
+    approx_kl /= n_batches;
 
-    */
-
-
-    constexpr auto update_loop_count = 80;
-
-    for (auto idx = 0; idx < update_loop_count; ++idx) {
-        //auto [logprobs, state_values, dist_entropy] = policy->evaluate(states, actions);
-
-        //auto ratios = torch::exp(logprobs - old_logprobs.detach());
-    }
-
-
-
-    return std::array<double, 6>{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    return std::array<double, 6>{ loss, pg_loss, value_loss, entropy_mean, approx_kl };
 }
