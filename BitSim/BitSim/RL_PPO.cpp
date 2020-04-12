@@ -79,8 +79,8 @@ RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
 {
     states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
     actions = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::action_dim });
-    values = torch::zeros({ BitSim::Trader::max_steps });
-    neglogprobs = torch::zeros({ BitSim::Trader::max_steps });
+    values = torch::zeros({ BitSim::Trader::max_steps, 1 });
+    neglogprobs = torch::zeros({ BitSim::Trader::max_steps, 1 });
     dones = torch::zeros({ BitSim::Trader::max_steps });
     rewards = torch::zeros({ BitSim::Trader::max_steps });
 }
@@ -92,15 +92,13 @@ void RL_PPO_ReplayBuffer::clear(void)
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ReplayBuffer::sample(void)
 {
-    auto indices = torch::randint(length, BitSim::Trader::ppo_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
-
     return std::make_tuple(
-        states.index(indices),
-        actions.index(indices),
-        values.index(indices),
-        neglogprobs.index(indices),
-        dones.index(indices),
-        rewards.index(indices)
+        states.narrow(0, 0, length),
+        actions.narrow(0, 0, length),
+        values.narrow(0, 0, length),
+        neglogprobs.narrow(0, 0, length),
+        dones.narrow(0, 0, length),
+        rewards.narrow(0, 0, length)
     );
 }
 
@@ -121,7 +119,6 @@ void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action a
 sptrRL_Action RL_PPO::get_action(sptrRL_State state)
 {
     const auto [value_f, action, neg_log_prob, entropy] = policy->forward(state->to_tensor());
-    std::cout << "action " << action.view({ BitSim::Trader::action_dim }) << std::endl;
 
     replay_buffer.states[replay_buffer.length] = state->to_tensor();
     replay_buffer.actions[replay_buffer.length] = action;
@@ -142,6 +139,11 @@ std::array<double, 6> RL_PPO::update_model(void)
     auto [states, actions, values, neglogprobs, dones, rewards] = replay_buffer.sample();
     replay_buffer.clear();
 
+    std::cout << "states " << states << std::endl;
+    std::cout << "actions " << actions << std::endl;
+    std::cout << "values " << values << std::endl;
+    std::cout << "neglogprobs " << neglogprobs << std::endl;
+    std::cout << "dones " << dones << std::endl;
     std::cout << "rewards " << rewards << std::endl;
 
     const auto [last_value, _action, _neg_log_prob, _entropy] = policy->forward(last_state->to_tensor());
@@ -174,6 +176,23 @@ std::array<double, 6> RL_PPO::update_model(void)
     const auto n_batches = BitSim::Trader::ppo_n_updates * BitSim::Trader::ppo_n_batches;
 
     for (auto idx_batch = 0; idx_batch < n_batches; ++idx_batch) {
+        auto indices = torch::randint(length, BitSim::Trader::ppo_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+
+        auto s_states = states.index(indices);
+        auto s_actions = actions.index(indices);
+        auto s_values = values.index(indices);
+        auto s_neglogprobs = neglogprobs.index(indices);
+        auto s_dones = dones.index(indices);
+        auto s_rewards = rewards.index(indices);
+
+        std::cout << "s_states " << s_states << std::endl;
+        std::cout << "s_actions " << s_actions << std::endl;
+        std::cout << "s_values " << s_values << std::endl;
+        std::cout << "s_neglogprobs " << s_neglogprobs << std::endl;
+        std::cout << "s_dones " << s_dones << std::endl;
+        std::cout << "s_rewards " << s_rewards << std::endl;
+
+
         auto [old_states, old_actions, old_values, old_neglogprobs, dones, rewards] = replay_buffer.sample();
 
         auto advantages = torch::empty_like(returns);
