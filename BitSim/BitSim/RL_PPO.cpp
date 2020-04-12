@@ -29,7 +29,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_Mo
     const auto action = torch::tanh(action_mean + eps * action_std);
 
     // Normalize action and log_prob
-    constexpr auto epsilon = 1e-6;
     const auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_std.log() - std::log(std::sqrt(2 * M_PI));
     const auto neg_log_prob = -log_prob;
 
@@ -45,7 +44,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_Mo
     const auto value = state_value->forward(latent_state);
 
     // Normalize action and log_prob
-    constexpr auto epsilon = 1e-6;
     const auto log_prob = -(action - action.mean()).pow(2) / (2 * action.std().pow(2)) - action.std().log() - std::log(std::sqrt(2 * M_PI));
     const auto neg_log_prob = -log_prob;
 
