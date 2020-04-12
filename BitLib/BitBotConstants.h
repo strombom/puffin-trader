@@ -92,13 +92,13 @@ namespace BitSim
         constexpr auto save_period = 100;
         constexpr auto initial_random_action = 1000;
         constexpr auto max_steps = 40;
-        constexpr auto timesteps_per_update = 3 * max_steps;
 
         constexpr auto batch_size = 512;
         constexpr auto buffer_size = 500 * batch_size;
         constexpr auto episode_length = 10h; // 2*7*24h;
 
-        constexpr auto gamma_discount = 0.99;
+        constexpr auto gamma_discount = 0.95;
+        constexpr auto lam_discount = 0.99;
         constexpr auto soft_tau = 5e-3;
         constexpr auto learning_rate = 5e-2;
         constexpr auto learning_rate_entropy = learning_rate;
@@ -109,6 +109,9 @@ namespace BitSim
         constexpr auto reward_scale = 1.0;
 
         constexpr auto ppo_action_std = 0.5;
+        constexpr auto ppo_n_updates = 4;
+        constexpr auto ppo_n_batches = 4;
+        constexpr auto ppo_batch_size = max_steps / ppo_n_batches;
 
         constexpr auto market_order_threshold = 0.97;
         constexpr auto limit_order_threshold = 0.7;

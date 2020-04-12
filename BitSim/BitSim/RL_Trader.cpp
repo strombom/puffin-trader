@@ -30,15 +30,9 @@ void RL_Trader::train(void)
 
             ++step_total;
             ++step_episode;
-
-            if (BitSim::Trader::algorithm == "PPO" && step_total % BitSim::Trader::timesteps_per_update == 0) {
-                update_model(idx_episode);
-            }
         }
 
-        if (BitSim::Trader::algorithm == "SAC") {
-            update_model(idx_episode);
-        }
+        update_model(idx_episode);
 
         std::cout << "Steps: " << step_episode << std::endl;
 

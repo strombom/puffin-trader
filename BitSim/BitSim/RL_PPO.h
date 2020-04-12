@@ -14,8 +14,9 @@ class RL_PPO_ModelImpl : public torch::nn::Module
 public:
     RL_PPO_ModelImpl(const std::string& name);
 
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> loss(torch::Tensor reward, torch::Tensor value_f, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantages, torch::Tensor old_value_f, torch::Tensor old_neg_log_prob);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor states);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> loss(torch::Tensor reward, torch::Tensor value, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantage, torch::Tensor old_value, torch::Tensor old_neg_log_prob);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state, torch::Tensor action);
 
 private:
     const double dropout = 0.0;
@@ -27,7 +28,7 @@ private:
     torch::nn::Sequential network;
     torch::nn::Linear policy_mean;
     torch::nn::Linear policy_log_std;
-    torch::nn::Linear value;
+    torch::nn::Linear state_value;
 };
 TORCH_MODULE(RL_PPO_Model);
 
@@ -38,8 +39,7 @@ public:
     RL_PPO_ReplayBuffer(void);
 
     void clear(void);
-    void append_state(sptrRL_State state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
     torch::Tensor states;
     torch::Tensor actions;
@@ -66,6 +66,7 @@ public:
 
 private:
     RL_PPO_ReplayBuffer replay_buffer;
+    sptrRL_State last_state;
 
     std::unique_ptr<torch::optim::Adam> policy_optim;
 
