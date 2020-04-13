@@ -82,7 +82,7 @@ RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
     values = torch::zeros({ BitSim::Trader::max_steps, 1 });
     neglogprobs = torch::zeros({ BitSim::Trader::max_steps, 1 });
     dones = torch::zeros({ BitSim::Trader::max_steps });
-    rewards = torch::zeros({ BitSim::Trader::max_steps });
+    rewards = torch::zeros({ BitSim::Trader::max_steps, 1 });
 }
 
 void RL_PPO_ReplayBuffer::clear(void)
@@ -165,7 +165,12 @@ std::array<double, 6> RL_PPO::update_model(void)
         advs[idx] = lastgaelam;
     }
 
+    std::cout << "advs " << advs << std::endl;
+    std::cout << "values " << values << std::endl;
+
+
     auto returns = advs + values;
+    std::cout << "returns " << returns << std::endl;
 
     auto loss = 0.0;
     auto pg_loss = 0.0;
@@ -178,36 +183,48 @@ std::array<double, 6> RL_PPO::update_model(void)
     for (auto idx_batch = 0; idx_batch < n_batches; ++idx_batch) {
         auto indices = torch::randint(length, BitSim::Trader::ppo_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
 
-        auto s_states = states.index(indices);
-        auto s_old_actions = actions.index(indices);
-        auto s_old_values = values.index(indices);
-        auto s_old_neglogprobs = neglogprobs.index(indices);
-        auto s_dones = dones.index(indices);
-        auto s_returns = returns.index(indices);
+        auto s_states = states.index(indices).detach();
+        auto s_old_actions = actions.index(indices).detach();
+        auto s_old_values = values.index(indices).detach();
+        auto s_old_neglogprobs = neglogprobs.index(indices).detach();
+        auto s_dones = dones.index(indices).detach();
+        auto s_returns = returns.index(indices).detach();
 
-        auto advantages = torch::empty_like(returns);
+        auto advantages = torch::empty_like(returns).detach();
         {
-            torch::NoGradGuard no_grad;
-            advantages = returns - s_old_values;
+            auto no_grad = torch::NoGradGuard{};
+            std::cout << "returns " << s_returns << std::endl;
+            std::cout << "s_old_values " << s_old_values << std::endl;
+            advantages = s_returns - s_old_values;
+            std::cout << "advantages " << advantages << std::endl;
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8);
         }
 
         policy->train();
-        policy->zero_grad();
+        {
+            auto auto_grad = torch::AutoGradMode{ true };
+            policy->zero_grad();
 
-        auto [values, actions, neg_log_prob, entropy] = policy->forward(s_states, s_old_actions);
-        auto [s_loss, s_pg_loss, s_value_loss, s_entropy_mean, s_approx_kl] = policy->loss(s_returns, values, neg_log_prob, entropy, advantages, s_old_values, s_old_neglogprobs);
+            auto [values, actions, neg_log_prob, entropy] = policy->forward(s_states, s_old_actions);
 
-        s_loss.backward();
+            std::cout << "s_old_actions " << s_old_actions << std::endl;
+            std::cout << "actions " << actions << std::endl;
 
-        loss += s_loss.item().toDouble();
-        pg_loss += s_pg_loss.item().toDouble();
-        value_loss += s_value_loss.item().toDouble();
-        entropy_mean += s_entropy_mean.item().toDouble();
-        approx_kl += s_approx_kl.item().toDouble();
-        
-        torch::nn::utils::clip_grad_norm_(policy->parameters(), max_grad_norm);
-        policy_optim->step();
+
+            auto [s_loss, s_pg_loss, s_value_loss, s_entropy_mean, s_approx_kl] = policy->loss(s_returns, values, neg_log_prob, entropy, advantages, s_old_values, s_old_neglogprobs);
+
+            std::cout << "s_loss " << s_loss << std::endl;
+            s_loss.backward();
+
+            loss += s_loss.item().toDouble();
+            pg_loss += s_pg_loss.item().toDouble();
+            value_loss += s_value_loss.item().toDouble();
+            entropy_mean += s_entropy_mean.item().toDouble();
+            approx_kl += s_approx_kl.item().toDouble();
+
+            torch::nn::utils::clip_grad_norm_(policy->parameters(), max_grad_norm);
+            policy_optim->step();
+        }
     }
 
     loss /= n_batches;
