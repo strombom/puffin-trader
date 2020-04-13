@@ -179,34 +179,24 @@ std::array<double, 6> RL_PPO::update_model(void)
         auto indices = torch::randint(length, BitSim::Trader::ppo_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
 
         auto s_states = states.index(indices);
-        auto s_actions = actions.index(indices);
-        auto s_values = values.index(indices);
-        auto s_neglogprobs = neglogprobs.index(indices);
+        auto s_old_actions = actions.index(indices);
+        auto s_old_values = values.index(indices);
+        auto s_old_neglogprobs = neglogprobs.index(indices);
         auto s_dones = dones.index(indices);
-        auto s_rewards = rewards.index(indices);
-
-        std::cout << "s_states " << s_states << std::endl;
-        std::cout << "s_actions " << s_actions << std::endl;
-        std::cout << "s_values " << s_values << std::endl;
-        std::cout << "s_neglogprobs " << s_neglogprobs << std::endl;
-        std::cout << "s_dones " << s_dones << std::endl;
-        std::cout << "s_rewards " << s_rewards << std::endl;
-
-
-        auto [old_states, old_actions, old_values, old_neglogprobs, dones, rewards] = replay_buffer.sample();
+        auto s_returns = returns.index(indices);
 
         auto advantages = torch::empty_like(returns);
         {
             torch::NoGradGuard no_grad;
-            advantages = returns - values;
+            advantages = returns - s_old_values;
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8);
         }
 
         policy->train();
         policy->zero_grad();
 
-        auto [values, actions, neg_log_prob, entropy] = policy->forward(states, old_actions);
-        auto [s_loss, s_pg_loss, s_value_loss, s_entropy_mean, s_approx_kl] = policy->loss(rewards, values, neg_log_prob, entropy, advantages, old_values, old_neglogprobs);
+        auto [values, actions, neg_log_prob, entropy] = policy->forward(s_states, s_old_actions);
+        auto [s_loss, s_pg_loss, s_value_loss, s_entropy_mean, s_approx_kl] = policy->loss(s_returns, values, neg_log_prob, entropy, advantages, s_old_values, s_old_neglogprobs);
 
         s_loss.backward();
 
