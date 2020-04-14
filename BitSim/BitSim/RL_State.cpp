@@ -25,7 +25,7 @@ bool RL_State::is_done(void) const
 
 torch::Tensor RL_State::to_tensor(void) const
 {
-    return torch::tensor({ reward, cart_position, cart_velocity, pole_angle, pole_velocity });
+    return torch::tensor({ reward, cart_position, cart_velocity, pole_angle, pole_velocity }).view({ 1, 5 });
 }
 
 /*

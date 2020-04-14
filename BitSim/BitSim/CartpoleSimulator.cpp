@@ -13,8 +13,13 @@ sptrRL_State CartpoleSimulator::reset(const std::string& log_filename)
 {
     logger = std::make_unique<CartpoleSimulatorLogger>(log_filename, true);
 
-    // cart_position, cart_velocity, pole_angle, pole_velocity
-    return std::make_shared<RL_State>(0.0, Utils::random(-0.05, 0.05), Utils::random(-0.05, 0.05), Utils::random(3.14-0.05, 3.14+0.05), Utils::random(-0.05, 0.05));
+    state = std::make_shared<RL_State>(
+        0.0,                                        // reward
+        Utils::random(-0.05, 0.05),                 // cart_position
+        Utils::random(-0.05, 0.05),                 // cart_velocity
+        Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
+        Utils::random(-0.05, 0.05));                // pole_velocity
+    return state;
 }
 
 sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)

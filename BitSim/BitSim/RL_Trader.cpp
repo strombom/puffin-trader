@@ -51,13 +51,24 @@ void RL_Trader::update_model(double idx_episode)
 
     std::cout << std::setfill(' ') << std::setw(4);
     std::cout << std::fixed << std::setprecision(3);
-    std::cout << "Ep(" << idx_episode <<
-        ") TL(" << losses[0] <<
-        ") AcL(" << losses[1] <<
-        ") AlL(" << losses[2] <<
-        ") Q1(" << losses[3] <<
-        ") Q2(" << losses[4] <<
-        ") ES(" << losses[5] << ")" << std::endl;
+    
+    if (BitSim::Trader::algorithm == "SAC") {
+        std::cout << "Ep(" << idx_episode <<
+            ") TL(" << losses[0] <<
+            ") AcL(" << losses[1] <<
+            ") AlL(" << losses[2] <<
+            ") Q1(" << losses[3] <<
+            ") Q2(" << losses[4] <<
+            ") ES(" << losses[5] << ")" << std::endl;
+    }
+    else if (BitSim::Trader::algorithm == "PPO") {
+        std::cout << "Ep(" << idx_episode <<
+            ") TL(" << losses[0] <<
+            ") PGL(" << losses[1] <<
+            ") VL(" << losses[2] <<
+            ") EM(" << losses[3] <<
+            ") KL(" << losses[4] << ")" << std::endl;
+    }
 }
 
 void RL_Trader::save_params(int idx_period)

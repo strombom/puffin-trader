@@ -91,7 +91,7 @@ namespace BitSim
         constexpr auto n_test_episodes = 1;
         constexpr auto save_period = 100;
         constexpr auto initial_random_action = 1000;
-        constexpr auto max_steps = 40;
+        constexpr auto max_steps = 50;
 
         constexpr auto batch_size = 512;
         constexpr auto buffer_size = 500 * batch_size;
@@ -109,9 +109,8 @@ namespace BitSim
         constexpr auto reward_scale = 1.0;
 
         constexpr auto ppo_action_std = 0.5;
-        constexpr auto ppo_n_updates = 4;
-        constexpr auto ppo_n_batches = 4;
-        constexpr auto ppo_batch_size = max_steps / ppo_n_batches;
+        constexpr auto ppo_update_epochs = 4;
+        constexpr auto ppo_batch_size = 20;
         constexpr auto ppo_policy_learning_rate = 3e-4;
 
         constexpr auto market_order_threshold = 0.97;
@@ -123,7 +122,8 @@ namespace BitSim
         constexpr auto state_dim = 4 + 1; // feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 1; // 4; // buy_position, buy_size, sell_position, sell_size
 
-        constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };
+        //constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };
+        constexpr auto log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };
         constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
     }
 }
