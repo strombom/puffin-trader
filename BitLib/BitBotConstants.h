@@ -91,7 +91,7 @@ namespace BitSim
         constexpr auto n_test_episodes = 1;
         constexpr auto save_period = 100;
         constexpr auto initial_random_action = 1000;
-        constexpr auto max_steps = 50;
+        constexpr auto max_steps = 150;
 
         constexpr auto batch_size = 512;
         constexpr auto buffer_size = 500 * batch_size;
@@ -108,10 +108,11 @@ namespace BitSim
         constexpr auto learning_rate_actor = 1e-3;
         constexpr auto reward_scale = 1.0;
 
-        constexpr auto ppo_action_std = 0.5;
-        constexpr auto ppo_update_epochs = 4;
-        constexpr auto ppo_batch_size = 20;
+        constexpr auto ppo_action_std = 0.0005;
+        constexpr auto ppo_update_epochs = 10;
+        constexpr auto ppo_batch_size = 40;
         constexpr auto ppo_policy_learning_rate = 3e-4;
+        constexpr auto ppo_eps_clip = 0.2;
 
         constexpr auto market_order_threshold = 0.97;
         constexpr auto limit_order_threshold = 0.7;

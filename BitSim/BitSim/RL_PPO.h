@@ -32,8 +32,8 @@ class RL_PPO_ActorCriticImpl : public torch::nn::Module
 public:
     RL_PPO_ActorCriticImpl(const std::string& name);
 
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> act(torch::Tensor state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> evaluate(torch::Tensor state, torch::Tensor action);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> act(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluate(torch::Tensor state, torch::Tensor action);
     //std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> loss(torch::Tensor reward, torch::Tensor value, torch::Tensor neg_log_prob, torch::Tensor entropy, torch::Tensor advantage, torch::Tensor old_value, torch::Tensor old_neg_log_prob);
 
 private:
@@ -65,12 +65,7 @@ public:
     std::array<double, 6> update_model(void);
 
 private:
-    const double eps_clip = 0.2;
-    const double max_grad_norm = 0.5;
-
     RL_PPO_ReplayBuffer replay_buffer;
-    //sptrRL_State last_state;
-
     RL_PPO_ActorCritic policy;
     RL_PPO_ActorCritic policy_old;
     std::unique_ptr<torch::optim::Adam> optimizer;

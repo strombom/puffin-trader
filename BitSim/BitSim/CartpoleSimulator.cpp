@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include "CartpoleSimulator.h"
 
+// https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
 
 CartpoleSimulator::CartpoleSimulator(void) : 
     state(std::make_shared<RL_State>(0.0, 0.0, 0.0, 0.0, 0.0))
@@ -17,7 +18,8 @@ sptrRL_State CartpoleSimulator::reset(const std::string& log_filename)
         0.0,                                        // reward
         Utils::random(-0.05, 0.05),                 // cart_position
         Utils::random(-0.05, 0.05),                 // cart_velocity
-        Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
+        Utils::random(-0.05, 0.05),    // pole_angle
+        //Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
         Utils::random(-0.05, 0.05));                // pole_velocity
     return state;
 }
@@ -37,17 +39,18 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
     state->pole_angle = state->pole_angle + tau * state->pole_velocity;
     state->pole_velocity = state->pole_velocity + tau * pole_acc;
     
-    /*
-    if (state.cart_position < -x_threshold || state.cart_position > x_threshold ||
-        state.pole_angle < -theta_threshold || state.pole_angle > theta_threshold) {
-        state.set_done();
-        state.reward = 0.0;
+    if (state->cart_position < -x_threshold || state->cart_position > x_threshold ||
+        state->pole_angle < -theta_threshold || state->pole_angle > theta_threshold) {
+        state->set_done();
+        state->reward = 0.0;
     }
     else {
-    */
-        state->reward = 1.0 - std::abs(state->cart_position)*0.01 - std::abs(std::fmod(state->pole_angle, 3.14159))*0.1;
-    //}
+        state->reward = 1.0;
+    }
 
+    //state->reward = 1.0 - std::abs(state->cart_position) * 0.01 - std::abs(std::fmod(state->pole_angle, 3.14159)) * 0.1;
+    //auto norm_angle = std::fmod(state->pole_angle + 2.0 * M_PI, M_PI);
+    //state->reward = 1.0 - 0.01 * std::pow(norm_angle, 2.0) - 0.001 * std::pow(state->pole_velocity, 2.0) - 0.00001 * std::pow(force * 0.1, 2.0);
 
     logger->log(state->cart_position, state->cart_velocity, state->pole_angle, state->pole_velocity, state->reward);
 
@@ -58,7 +61,7 @@ CartpoleSimulatorLogger::CartpoleSimulatorLogger(const std::string& filename, bo
 {
     if (enabled) {
         file.open(std::string{ BitSim::tmp_path } +"\\log\\" + filename);
-        file << "cart_position,cart_velocity,pole_angle,pole_velocity" << std::endl;
+        file << "cart_position,cart_velocity,pole_angle,pole_velocity,reward" << std::endl;
     }
 }
 
