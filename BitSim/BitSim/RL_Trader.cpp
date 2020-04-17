@@ -93,6 +93,6 @@ sptrRL_State RL_Trader::step(sptrRL_State state)
 
     const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
     auto next_state = simulator->step(action, last_step);
-    rl_algorithm->append_to_replay_buffer(state, action, next_state, next_state->done);
+    rl_algorithm->append_to_replay_buffer(state, action, next_state);
     return next_state;
 }

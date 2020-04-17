@@ -7,18 +7,18 @@ MultilayerPerceptronImpl::MultilayerPerceptronImpl(const std::string& name, int 
 {
     // Hidden layers
     auto next_size = input_size;
-    for (auto idx = 0; idx < BitSim::Trader::hidden_count; ++idx) {
-        auto hidden_layer = register_module(name + "_linear_" + std::to_string(idx), torch::nn::Linear{ next_size, BitSim::Trader::hidden_size });
+    for (auto idx = 0; idx < BitSim::Trader::SAC::hidden_count; ++idx) {
+        auto hidden_layer = register_module(name + "_linear_" + std::to_string(idx), torch::nn::Linear{ next_size, BitSim::Trader::SAC::hidden_dim });
         auto activation = register_module(name + "_activation_" + std::to_string(idx), torch::nn::ReLU6{});
 
         layers->push_back(hidden_layer);
         layers->push_back(activation);
         
-        next_size = BitSim::Trader::hidden_size;
+        next_size = BitSim::Trader::SAC::hidden_dim;
     }
 
     // Output layer
-    auto output_layer = register_module(name + "_linear_output", torch::nn::Linear{ BitSim::Trader::hidden_size, output_size });
+    auto output_layer = register_module(name + "_linear_output", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, output_size });
     //auto activation = register_module(name + "_output_activation", torch::nn::ReLU6{});
 
     //constexpr auto init_w = 3e-3;
@@ -108,13 +108,13 @@ RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
     dones = torch::zeros({ BitSim::Trader::buffer_size, 1 });
 }
 
-void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
+void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
 {
     current_states[idx] = current_state->to_tensor();
     actions[idx] = action->to_tensor();
     rewards[idx] = current_state->reward;
     next_states[idx] = next_state->to_tensor();
-    dones[idx] = done;
+    dones[idx] = next_state->done;
 
     idx = (idx + 1) % BitSim::Trader::buffer_size;
     length = std::min(length + 1, BitSim::Trader::buffer_size);
@@ -156,9 +156,9 @@ sptrRL_Action RL_SAC::get_random_action(sptrRL_State state)
     return RL_Action::random();
 }
 
-void RL_SAC::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
+void RL_SAC::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
 {
-    replay_buffer.append(current_state, action, next_state, done);
+    replay_buffer.append(current_state, action, next_state);
 }
 
 std::array<double, 6> RL_SAC::update_model(void)

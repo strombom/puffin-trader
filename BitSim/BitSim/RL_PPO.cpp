@@ -3,6 +3,8 @@
 #include "RL_PPO.h"
 #include "BitBotConstants.h"
 
+// https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO_continuous.py
+
 
 RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
     length(0)
@@ -11,7 +13,7 @@ RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
     states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
     log_probs = torch::zeros({ BitSim::Trader::max_steps, 1 });
     rewards = torch::zeros({ BitSim::Trader::max_steps, 1 });
-    dones = torch::zeros({ BitSim::Trader::max_steps });
+    next_states = torch::zeros({ BitSim::Trader::max_steps, BitSim::Trader::state_dim });
 }
 
 void RL_PPO_ReplayBuffer::clear(void)
@@ -26,84 +28,101 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
         actions.narrow(0, 0, length),
         log_probs.narrow(0, 0, length),
         rewards.narrow(0, 0, length),
-        dones.narrow(0, 0, length)
+        next_states.narrow(0, 0, length)
     );
 }
 
-RL_PPO_ActorCriticImpl::RL_PPO_ActorCriticImpl(const std::string& name)
+RL_PPO_ActorImpl::RL_PPO_ActorImpl(const std::string& name)
 {
-    actor->push_back(register_module(name + "_actor_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, hidden_dim }));
-    actor->push_back(register_module(name + "_actor_tanh_1", torch::nn::Tanh{}));
-    actor->push_back(register_module(name + "_actor_linear_2", torch::nn::Linear{ hidden_dim, hidden_dim / 2 }));
-    actor->push_back(register_module(name + "_actor_tanh_2", torch::nn::Tanh{}));
+    actor->push_back(register_module(name + "_actor_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, BitSim::Trader::PPO::hidden_dim }));
+    actor->push_back(register_module(name + "_actor_tanh_1", torch::nn::ReLU6{}));
+    actor->push_back(register_module(name + "_actor_linear_2", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim, BitSim::Trader::PPO::hidden_dim / 2 }));
+    actor->push_back(register_module(name + "_actor_tanh_2", torch::nn::ReLU6{}));
 
-    actor_mean->push_back(register_module(name + "_actor_mean_linear_1", torch::nn::Linear{ hidden_dim / 2, BitSim::Trader::action_dim }));
+    actor_mean->push_back(register_module(name + "_actor_mean_linear_1", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim / 2, BitSim::Trader::action_dim }));
     actor_mean->push_back(register_module(name + "_actor_mean_tanh_1", torch::nn::Tanh{}));
 
-    actor_log_std->push_back(register_module(name + "_actor_log_std_linear_1", torch::nn::Linear{ hidden_dim / 2, BitSim::Trader::action_dim }));
-    actor_log_std->push_back(register_module(name + "_actor_log_std_tanh_1", torch::nn::Tanh{}));
-
-    critic->push_back(register_module(name + "_critic_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, hidden_dim }));
-    critic->push_back(register_module(name + "_critic_tanh_1", torch::nn::Tanh{}));
-    critic->push_back(register_module(name + "_critic_linear_2", torch::nn::Linear{ hidden_dim, hidden_dim / 2 }));
-    critic->push_back(register_module(name + "_critic_tanh_2", torch::nn::Tanh{}));
-    critic->push_back(register_module(name + "_critic_linear_3", torch::nn::Linear{ hidden_dim / 2, 1 }));
+    actor_log_std->push_back(register_module(name + "_actor_log_std_linear_1", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim / 2, BitSim::Trader::action_dim }));
+    actor_log_std->push_back(register_module(name + "_actor_log_std_softplus_1", torch::nn::Softplus{}));
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ActorCriticImpl::act(torch::Tensor state)
+std::tuple< torch::Tensor, torch::Tensor> RL_PPO_ActorImpl::action(torch::Tensor state)
 {
-    const auto actor_latent = actor->forward(state);
-    const auto state_value = critic->forward(state);
-    const auto action_mean = actor_mean->forward(actor_latent);
-    const auto action_log_std = torch::ones({ 1, 1 }) * BitSim::Trader::ppo_action_std; // actor_log_std->forward(actor_latent);
-    const auto action_std = action_log_std.exp();
+    auto action = torch::Tensor{};
+    auto action_mean = torch::Tensor{};
+    auto action_log_std = torch::Tensor{};
+    auto action_std = torch::Tensor{};
+    {
+        const auto no_grad_guard = torch::NoGradGuard{};
+        const auto latent = actor->forward(state);
+        action_mean = 2.0 * actor_mean->forward(latent);
+        action_log_std = actor_log_std->forward(latent);
+        action_std = action_log_std.exp();
+    }
 
     // Sample with reparametrization trick
     const auto eps = torch::normal(0.0, 1.0, action_std.sizes());
-    const auto action = action_mean + eps * action_std;
+    action = action_mean + eps * action_std;
+    action = action.clamp(-BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
 
     // Log prob and entropy
-    const auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
-
-    return std::make_tuple(state_value, action.detach(), log_prob);
+    auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
+    return std::make_tuple(action, log_prob);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ActorCriticImpl::evaluate(torch::Tensor state, torch::Tensor action)
+torch::Tensor RL_PPO_ActorImpl::log_prob(torch::Tensor state, torch::Tensor action)
 {
-    const auto actor_latent = actor->forward(state);
-    const auto state_value = critic->forward(state);
-    const auto action_mean = actor_mean->forward(actor_latent);
-    const auto action_log_std = torch::ones({ 1, 1 }) * BitSim::Trader::ppo_action_std; // actor_log_std->forward(actor_latent);
-    const auto action_std = action_log_std.exp();
+    auto action_mean = torch::Tensor{};
+    auto action_log_std = torch::Tensor{};
+    auto action_std = torch::Tensor{};
+
+    const auto latent = actor->forward(state);
+    action_mean = 2.0 * actor_mean->forward(latent);
+    action_log_std = actor_log_std->forward(latent);
+    action_std = action_log_std.exp();
 
     // Log prob and entropy
-    const auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
-    const auto entropy = 0.5 + 0.5 * std::log(2 * M_PI) + torch::log(action_std);
+    auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
+    return log_prob;
+}
 
-    return std::make_tuple(state_value, log_prob, entropy);
+RL_PPO_CriticImpl::RL_PPO_CriticImpl(const std::string& name)
+{
+    critic->push_back(register_module(name + "_critic_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, BitSim::Trader::PPO::hidden_dim }));
+    critic->push_back(register_module(name + "_critic_tanh_1", torch::nn::ReLU6{}));
+    critic->push_back(register_module(name + "_critic_linear_2", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim, BitSim::Trader::PPO::hidden_dim / 2 }));
+    critic->push_back(register_module(name + "_critic_tanh_2", torch::nn::ReLU6{}));
+    critic->push_back(register_module(name + "_critic_linear_3", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim / 2, 1 }));
+}
+
+torch::Tensor RL_PPO_CriticImpl::forward(torch::Tensor state)
+{
+    auto state_value = critic->forward(state);
+    return state_value;
 }
 
 RL_PPO::RL_PPO(void) :
-    policy(RL_PPO_ActorCritic{ "policy" }),
-    policy_old(RL_PPO_ActorCritic{ "policy_old" })
+    actor(RL_PPO_Actor{ "actor" }),
+    critic(RL_PPO_Critic{ "critic" })
 {
-    optimizer = std::make_unique<torch::optim::Adam>(policy->parameters(), BitSim::Trader::ppo_policy_learning_rate);
+    optimizer_actor = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::PPO::actor_learning_rate);
+    optimizer_critic = std::make_unique<torch::optim::Adam>(critic->parameters(), BitSim::Trader::PPO::critic_learning_rate);
 }
 
-void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state, bool done)
+void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
 {
     replay_buffer.rewards[replay_buffer.length] = next_state->reward;
-    replay_buffer.dones[replay_buffer.length] = next_state->done;
+    replay_buffer.next_states[replay_buffer.length] = next_state->to_tensor()[0].detach();
     ++replay_buffer.length;
 }
 
 sptrRL_Action RL_PPO::get_action(sptrRL_State state)
 {
-    const auto [_state_value, action, log_prob] = policy_old->act(state->to_tensor());
+    const auto [action, log_prob] = actor->action(state->to_tensor());
 
-    replay_buffer.states[replay_buffer.length] = state->to_tensor()[0];
-    replay_buffer.actions[replay_buffer.length] = action[0];
-    replay_buffer.log_probs[replay_buffer.length] = log_prob[0];
+    replay_buffer.states[replay_buffer.length] = state->to_tensor()[0].detach();
+    replay_buffer.actions[replay_buffer.length] = action[0].detach();
+    replay_buffer.log_probs[replay_buffer.length] = log_prob[0].detach();
 
     return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
 }
@@ -116,8 +135,78 @@ sptrRL_Action RL_PPO::get_random_action(sptrRL_State state)
 
 std::array<double, 6> RL_PPO::update_model(void)
 {
-    auto [states, actions, log_probs, rewards, dones] = replay_buffer.sample();
+    auto [states, actions, log_probs, rewards, next_states] = replay_buffer.sample();
+    const auto buffer_length = replay_buffer.length;
     replay_buffer.clear();
+
+    rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
+
+    auto target_values = torch::Tensor{};
+    {
+        const auto no_grad_guard = torch::NoGradGuard{};
+        target_values = rewards + BitSim::Trader::gamma_discount * critic->forward(next_states);
+    }
+    const auto advantages = (target_values - critic->forward(states)).detach();
+
+    auto total_loss = 0.0;
+    auto pg_loss = 0.0;
+    auto value_loss = 0.0;
+    auto entropy_mean = 0.0;
+    auto approx_kl = 0.0;
+
+    for (auto idx_epoch = 0; idx_epoch < BitSim::Trader::PPO::update_epochs; ++idx_epoch) {
+        const auto indices = torch::randint(buffer_length, BitSim::Trader::PPO::update_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+
+        const auto batch_actions = actions.index(indices).detach();
+        const auto batch_states = states.index(indices).detach();
+        const auto batch_log_probs = log_probs.index(indices).detach();
+        const auto batch_advantages = advantages.index(indices).detach();
+        const auto batch_target_values = target_values.index(indices).detach();
+        
+        //actor->train();
+        //critic->train();
+
+        {
+            //auto auto_grad_guard = torch::AutoGradMode{ true };
+
+            const auto new_log_probs = actor->log_prob(batch_states, batch_actions);
+
+            std::cout << "new_log_probs " << new_log_probs << std::endl;
+            std::cout << "batch_log_probs " << batch_log_probs << std::endl;
+
+            const auto action_loss = torch::mse_loss(new_log_probs, batch_log_probs.detach()); // = -torch::min(surr1, surr2).mean();
+            std::cout << "action_loss " << action_loss << std::endl;
+            optimizer_actor->zero_grad();
+            action_loss.backward();
+            torch::nn::utils::clip_grad_norm_(actor->parameters(), BitSim::Trader::PPO::max_grad_norm);
+            optimizer_actor->step();
+
+            /*
+            const auto ratio = (new_log_probs - batch_log_probs.detach()).exp();
+            const auto surr1 = batch_advantages * ratio;
+            const auto surr2 = batch_advantages * torch::clamp(ratio, 1.0 - BitSim::Trader::PPO::clip_param, 1.0 + BitSim::Trader::PPO::clip_param);
+
+            const auto action_loss = torch::mse_loss(new_log_probs, batch_log_probs.detach()); // = -torch::min(surr1, surr2).mean();
+            std::cout << "action_loss " << action_loss << std::endl;
+            optimizer_actor->zero_grad();
+            action_loss.backward();
+            torch::nn::utils::clip_grad_norm_(actor->parameters(), BitSim::Trader::PPO::max_grad_norm);
+            optimizer_actor->step();
+
+            const auto value_loss = torch::smooth_l1_loss(critic->forward(batch_states), batch_target_values);
+            std::cout << "value_loss " << value_loss << std::endl;
+            optimizer_critic->zero_grad();
+            value_loss.backward();
+            torch::nn::utils::clip_grad_norm_(critic->parameters(), BitSim::Trader::PPO::max_grad_norm);
+            optimizer_critic->step();
+            */
+        }
+    }
+
+    return std::array<double, 6>{ total_loss, pg_loss, value_loss, entropy_mean, approx_kl };
+
+    /*
+
 
     // Rewards
     const auto length = rewards.size(0);
@@ -171,4 +260,60 @@ std::array<double, 6> RL_PPO::update_model(void)
     }
 
     return std::array<double, 6>{ total_loss, pg_loss, value_loss, entropy_mean, approx_kl };
+    */
 }
+
+/*
+
+const auto actor_latent = actor->forward(state);
+const auto state_value = critic->forward(state);
+const auto action_mean = actor_mean->forward(actor_latent);
+const auto action_log_std = torch::ones({ 1, 1 }) * BitSim::Trader::ppo_action_std; // actor_log_std->forward(actor_latent);
+const auto action_std = action_log_std.exp();
+
+// Sample with reparametrization trick
+const auto eps = torch::normal(0.0, 1.0, action_std.sizes());
+const auto action = action_mean + eps * action_std;
+
+// Log prob and entropy
+const auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
+
+return std::make_tuple(state_value, action.detach(), log_prob);
+
+
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ActorCriticImpl::act(torch::Tensor state)
+{
+    const auto actor_latent = actor->forward(state);
+    const auto state_value = critic->forward(state);
+    const auto action_mean = actor_mean->forward(actor_latent);
+    const auto action_log_std = torch::ones({ 1, 1 }) * BitSim::Trader::ppo_action_std; // actor_log_std->forward(actor_latent);
+    const auto action_std = action_log_std.exp();
+
+    // Sample with reparametrization trick
+    const auto eps = torch::normal(0.0, 1.0, action_std.sizes());
+    const auto action = action_mean + eps * action_std;
+
+    // Log prob and entropy
+    const auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
+
+    return std::make_tuple(state_value, action.detach(), log_prob);
+}
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ActorCriticImpl::evaluate(torch::Tensor state, torch::Tensor action)
+{
+    const auto actor_latent = actor->forward(state);
+    const auto state_value = critic->forward(state);
+    const auto action_mean = actor_mean->forward(actor_latent);
+    const auto action_log_std = torch::ones({ 1, 1 }) * BitSim::Trader::ppo_action_std; // actor_log_std->forward(actor_latent);
+    const auto action_std = action_log_std.exp();
+
+    // Log prob and entropy
+    const auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
+    const auto entropy = 0.5 + 0.5 * std::log(2 * M_PI) + torch::log(action_std);
+
+    return std::make_tuple(state_value, log_prob, entropy);
+}
+
+
+*/

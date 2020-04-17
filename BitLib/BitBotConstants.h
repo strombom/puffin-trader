@@ -108,18 +108,34 @@ namespace BitSim
         constexpr auto learning_rate_actor = 1e-3;
         constexpr auto reward_scale = 1.0;
 
-        constexpr auto ppo_action_std = 0.0005;
-        constexpr auto ppo_update_epochs = 10;
-        constexpr auto ppo_batch_size = 40;
-        constexpr auto ppo_policy_learning_rate = 3e-4;
-        constexpr auto ppo_eps_clip = 0.2;
+        //constexpr auto ppo_action_std = 0.0005;
+        //constexpr auto ppo_update_epochs = 10;
+        //constexpr auto ppo_batch_size = 40;
+        //constexpr auto ppo_policy_learning_rate = 3e-4;
 
         constexpr auto market_order_threshold = 0.97;
         constexpr auto limit_order_threshold = 0.7;
         constexpr auto order_hysteresis = 0.1;
 
-        constexpr auto hidden_count = 2;
-        constexpr auto hidden_size = 32;
+        namespace SAC
+        {
+            constexpr auto hidden_count = 3;
+            constexpr auto hidden_dim = 64;
+        }
+
+        namespace PPO
+        {
+            constexpr auto update_epochs = 10;
+            constexpr auto update_batch_size = 32;
+
+            constexpr auto hidden_dim = 64;
+            constexpr auto clip_param = 0.2;
+            constexpr auto max_grad_norm = 0.5;
+            constexpr auto actor_learning_rate = 1e-4;
+            constexpr auto critic_learning_rate = 3e-4;
+            constexpr auto action_clamp = 2.0;
+        }
+
         constexpr auto state_dim = 4 + 1; // feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 1; // 4; // buy_position, buy_size, sell_position, sell_size
 
