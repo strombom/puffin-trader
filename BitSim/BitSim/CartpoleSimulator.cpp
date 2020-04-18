@@ -18,8 +18,8 @@ sptrRL_State CartpoleSimulator::reset(const std::string& log_filename)
         0.0,                                        // reward
         Utils::random(-0.05, 0.05),                 // cart_position
         Utils::random(-0.05, 0.05),                 // cart_velocity
-        Utils::random(-0.05, 0.05),    // pole_angle
-        //Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
+        //Utils::random(-0.05, 0.05),    // pole_angle
+        Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
         Utils::random(-0.05, 0.05));                // pole_velocity
     return state;
 }
@@ -39,6 +39,7 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
     state->pole_angle = state->pole_angle + tau * state->pole_velocity;
     state->pole_velocity = state->pole_velocity + tau * pole_acc;
     
+    /*
     if (state->cart_position < -x_threshold || state->cart_position > x_threshold ||
         state->pole_angle < -theta_threshold || state->pole_angle > theta_threshold) {
         state->set_done();
@@ -47,8 +48,17 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
     else {
         state->reward = 1.0;
     }
+    */
 
-    //state->reward = 1.0 - std::abs(state->cart_position) * 0.01 - std::abs(std::fmod(state->pole_angle, 3.14159)) * 0.1;
+    auto out_of_bound = 0;
+    if (state->cart_position < -x_threshold || state->cart_position > x_threshold ||
+        state->pole_angle < -theta_threshold || state->pole_angle > theta_threshold) {
+        out_of_bound = 1;
+    }
+
+    state->reward = cos(state->pole_angle) - 1.0 - 0.001 * std::pow(state->pole_velocity, 2.0) - 0.0001 * std::pow(force, 2.0) - 0.01 * std::pow(state->cart_position, 2.0);
+
+    //state->reward = 0.0 - std::abs(state->cart_position) * 0.1 - std::abs(std::fmod(state->pole_angle, 3.14159)) * 1;
     //auto norm_angle = std::fmod(state->pole_angle + 2.0 * M_PI, M_PI);
     //state->reward = 1.0 - 0.01 * std::pow(norm_angle, 2.0) - 0.001 * std::pow(state->pole_velocity, 2.0) - 0.00001 * std::pow(force * 0.1, 2.0);
 

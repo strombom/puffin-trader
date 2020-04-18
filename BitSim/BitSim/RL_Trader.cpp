@@ -64,10 +64,8 @@ void RL_Trader::update_model(double idx_episode)
     else if (BitSim::Trader::algorithm == "PPO") {
         std::cout << "Ep(" << idx_episode <<
             ") TL(" << losses[0] <<
-            ") PGL(" << losses[1] <<
-            ") VL(" << losses[2] <<
-            ") EM(" << losses[3] <<
-            ") KL(" << losses[4] << ")" << std::endl;
+            ") AL(" << losses[1] <<
+            ") VL(" << losses[2] << ")" << std::endl;
     }
 }
 

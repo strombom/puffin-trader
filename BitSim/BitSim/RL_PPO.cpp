@@ -55,7 +55,7 @@ std::tuple<torch::Tensor, torch::Tensor> RL_PPO_ActorImpl::action(torch::Tensor 
     {
         const auto no_grad_guard = torch::NoGradGuard{};
         const auto latent = actor->forward(state);
-        action_mean = 2.0 * actor_mean->forward(latent);
+        action_mean = actor_mean->forward(latent);
         action_log_std = actor_log_std->forward(latent);
         action_std = action_log_std.exp();
     }
@@ -63,9 +63,10 @@ std::tuple<torch::Tensor, torch::Tensor> RL_PPO_ActorImpl::action(torch::Tensor 
     // Sample with reparametrization trick
     const auto eps = torch::normal(0.0, 1.0, action_std.sizes());
     action = action_mean + eps * action_std;
-    action = action.clamp(-BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
 
     auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
+    action = action.clamp(-BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
+
     return std::make_tuple(action, log_prob);
 }
 
@@ -76,7 +77,7 @@ torch::Tensor RL_PPO_ActorImpl::log_prob(torch::Tensor state, torch::Tensor acti
     auto action_std = torch::Tensor{};
 
     const auto latent = actor->forward(state);
-    action_mean = 2.0 * actor_mean->forward(latent);
+    action_mean = actor_mean->forward(latent);
     action_log_std = actor_log_std->forward(latent);
     action_std = action_log_std.exp();
 
@@ -145,19 +146,17 @@ std::array<double, 6> RL_PPO::update_model(void)
     const auto advantages = (target_values - critic->forward(states)).detach();
 
     auto total_loss = 0.0;
-    auto pg_loss = 0.0;
-    auto value_loss = 0.0;
-    auto entropy_mean = 0.0;
-    auto approx_kl = 0.0;
+    auto total_action_loss = 0.0;
+    auto total_value_loss = 0.0;
 
     for (auto idx_epoch = 0; idx_epoch < BitSim::Trader::PPO::update_epochs; ++idx_epoch) {
         const auto indices = torch::randint(replay_buffer.length, BitSim::Trader::PPO::update_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
 
-        const auto batch_actions = actions.index(indices);
-        const auto batch_states = states.index(indices);
-        const auto batch_log_probs = log_probs.index(indices);
-        const auto batch_advantages = advantages.index(indices);
-        const auto batch_target_values = target_values.index(indices);
+        const auto batch_actions = actions.index(indices).detach();
+        const auto batch_states = states.index(indices).detach();
+        const auto batch_log_probs = log_probs.index(indices).detach();
+        const auto batch_advantages = advantages.index(indices).detach();
+        const auto batch_target_values = target_values.index(indices).detach();
         
         const auto new_log_probs = actor->log_prob(batch_states, batch_actions);
         const auto ratio = (new_log_probs - batch_log_probs.detach()).exp();
@@ -176,12 +175,14 @@ std::array<double, 6> RL_PPO::update_model(void)
         torch::nn::utils::clip_grad_norm_(critic->parameters(), BitSim::Trader::PPO::max_grad_norm);
         optimizer_critic->step();
 
-        
+        total_action_loss += action_loss.item().toDouble();
+        total_value_loss += value_loss.item().toDouble();
     }
 
     replay_buffer.clear();
 
-    return std::array<double, 6>{ total_loss, pg_loss, value_loss, entropy_mean, approx_kl };
+    total_loss = total_action_loss + total_value_loss;
+    return std::array<double, 6>{ total_loss, total_action_loss, total_value_loss };
 }
 
 

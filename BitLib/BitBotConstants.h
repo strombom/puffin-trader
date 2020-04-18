@@ -131,8 +131,8 @@ namespace BitSim
             constexpr auto hidden_dim = 64;
             constexpr auto clip_param = 0.2;
             constexpr auto max_grad_norm = 0.5;
-            constexpr auto actor_learning_rate = 1e-4;
-            constexpr auto critic_learning_rate = 3e-4;
+            constexpr auto actor_learning_rate = 5e-5;
+            constexpr auto critic_learning_rate = 2e-4;
             constexpr auto action_clamp = 2.0;
         }
 
