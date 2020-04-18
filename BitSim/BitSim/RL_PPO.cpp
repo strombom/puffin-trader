@@ -46,7 +46,7 @@ RL_PPO_ActorImpl::RL_PPO_ActorImpl(const std::string& name)
     actor_log_std->push_back(register_module(name + "_actor_log_std_softplus_1", torch::nn::Softplus{}));
 }
 
-std::tuple< torch::Tensor, torch::Tensor> RL_PPO_ActorImpl::action(torch::Tensor state)
+std::tuple<torch::Tensor, torch::Tensor> RL_PPO_ActorImpl::action(torch::Tensor state)
 {
     auto action = torch::Tensor{};
     auto action_mean = torch::Tensor{};
@@ -65,7 +65,6 @@ std::tuple< torch::Tensor, torch::Tensor> RL_PPO_ActorImpl::action(torch::Tensor
     action = action_mean + eps * action_std;
     action = action.clamp(-BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
 
-    // Log prob and entropy
     auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
     return std::make_tuple(action, log_prob);
 }
@@ -81,7 +80,6 @@ torch::Tensor RL_PPO_ActorImpl::log_prob(torch::Tensor state, torch::Tensor acti
     action_log_std = actor_log_std->forward(latent);
     action_std = action_log_std.exp();
 
-    // Log prob and entropy
     auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
     return log_prob;
 }
@@ -112,7 +110,7 @@ RL_PPO::RL_PPO(void) :
 void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
 {
     replay_buffer.rewards[replay_buffer.length] = next_state->reward;
-    replay_buffer.next_states[replay_buffer.length] = next_state->to_tensor()[0].detach();
+    replay_buffer.next_states[replay_buffer.length] = next_state->to_tensor()[0];
     ++replay_buffer.length;
 }
 
@@ -120,9 +118,9 @@ sptrRL_Action RL_PPO::get_action(sptrRL_State state)
 {
     const auto [action, log_prob] = actor->action(state->to_tensor());
 
-    replay_buffer.states[replay_buffer.length] = state->to_tensor()[0].detach();
-    replay_buffer.actions[replay_buffer.length] = action[0].detach();
-    replay_buffer.log_probs[replay_buffer.length] = log_prob[0].detach();
+    replay_buffer.states[replay_buffer.length] = state->to_tensor()[0];
+    replay_buffer.actions[replay_buffer.length] = action[0];
+    replay_buffer.log_probs[replay_buffer.length] = log_prob[0];
 
     return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
 }
@@ -136,8 +134,6 @@ sptrRL_Action RL_PPO::get_random_action(sptrRL_State state)
 std::array<double, 6> RL_PPO::update_model(void)
 {
     auto [states, actions, log_probs, rewards, next_states] = replay_buffer.sample();
-    const auto buffer_length = replay_buffer.length;
-    replay_buffer.clear();
 
     rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
 
@@ -155,113 +151,94 @@ std::array<double, 6> RL_PPO::update_model(void)
     auto approx_kl = 0.0;
 
     for (auto idx_epoch = 0; idx_epoch < BitSim::Trader::PPO::update_epochs; ++idx_epoch) {
-        const auto indices = torch::randint(buffer_length, BitSim::Trader::PPO::update_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+        const auto indices = torch::randint(replay_buffer.length, BitSim::Trader::PPO::update_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
 
-        const auto batch_actions = actions.index(indices).detach();
-        const auto batch_states = states.index(indices).detach();
-        const auto batch_log_probs = log_probs.index(indices).detach();
-        const auto batch_advantages = advantages.index(indices).detach();
-        const auto batch_target_values = target_values.index(indices).detach();
+        const auto batch_actions = actions.index(indices);
+        const auto batch_states = states.index(indices);
+        const auto batch_log_probs = log_probs.index(indices);
+        const auto batch_advantages = advantages.index(indices);
+        const auto batch_target_values = target_values.index(indices);
         
-        //actor->train();
-        //critic->train();
+        const auto new_log_probs = actor->log_prob(batch_states, batch_actions);
+        const auto ratio = (new_log_probs - batch_log_probs.detach()).exp();
+        const auto surr1 = batch_advantages * ratio;
+        const auto surr2 = batch_advantages * torch::clamp(ratio, 1.0 - BitSim::Trader::PPO::clip_param, 1.0 + BitSim::Trader::PPO::clip_param);
+        
+        const auto action_loss = -torch::min(surr1, surr2).mean();
+        optimizer_actor->zero_grad();
+        action_loss.backward();
+        torch::nn::utils::clip_grad_norm_(actor->parameters(), BitSim::Trader::PPO::max_grad_norm);
+        optimizer_actor->step();
 
-        {
-            //auto auto_grad_guard = torch::AutoGradMode{ true };
+        const auto value_loss = torch::smooth_l1_loss(critic->forward(batch_states), batch_target_values);
+        optimizer_critic->zero_grad();
+        value_loss.backward();
+        torch::nn::utils::clip_grad_norm_(critic->parameters(), BitSim::Trader::PPO::max_grad_norm);
+        optimizer_critic->step();
 
-            const auto new_log_probs = actor->log_prob(batch_states, batch_actions);
-
-            std::cout << "new_log_probs " << new_log_probs << std::endl;
-            std::cout << "batch_log_probs " << batch_log_probs << std::endl;
-
-            const auto action_loss = torch::mse_loss(new_log_probs, batch_log_probs.detach()); // = -torch::min(surr1, surr2).mean();
-            std::cout << "action_loss " << action_loss << std::endl;
-            optimizer_actor->zero_grad();
-            action_loss.backward();
-            torch::nn::utils::clip_grad_norm_(actor->parameters(), BitSim::Trader::PPO::max_grad_norm);
-            optimizer_actor->step();
-
-            /*
-            const auto ratio = (new_log_probs - batch_log_probs.detach()).exp();
-            const auto surr1 = batch_advantages * ratio;
-            const auto surr2 = batch_advantages * torch::clamp(ratio, 1.0 - BitSim::Trader::PPO::clip_param, 1.0 + BitSim::Trader::PPO::clip_param);
-
-            const auto action_loss = torch::mse_loss(new_log_probs, batch_log_probs.detach()); // = -torch::min(surr1, surr2).mean();
-            std::cout << "action_loss " << action_loss << std::endl;
-            optimizer_actor->zero_grad();
-            action_loss.backward();
-            torch::nn::utils::clip_grad_norm_(actor->parameters(), BitSim::Trader::PPO::max_grad_norm);
-            optimizer_actor->step();
-
-            const auto value_loss = torch::smooth_l1_loss(critic->forward(batch_states), batch_target_values);
-            std::cout << "value_loss " << value_loss << std::endl;
-            optimizer_critic->zero_grad();
-            value_loss.backward();
-            torch::nn::utils::clip_grad_norm_(critic->parameters(), BitSim::Trader::PPO::max_grad_norm);
-            optimizer_critic->step();
-            */
-        }
+        
     }
+
+    replay_buffer.clear();
 
     return std::array<double, 6>{ total_loss, pg_loss, value_loss, entropy_mean, approx_kl };
-
-    /*
-
-
-    // Rewards
-    const auto length = rewards.size(0);
-    
-    auto norm_rewards = torch::empty_like(rewards);
-    auto discounted_reward = 0.0;
-    for (auto idx = length - 1; idx >= 0; --idx) {
-        if (dones[idx].item().toBool()) {
-            discounted_reward = 0.0;
-        }
-        discounted_reward = rewards[idx].item().toDouble() + BitSim::Trader::gamma_discount * discounted_reward;
-        norm_rewards[idx] = discounted_reward;
-    }
-    norm_rewards = (norm_rewards - norm_rewards.mean()) / (norm_rewards.std() + 1e-5);
-
-    auto total_loss = 0.0;
-    auto pg_loss = 0.0;
-    auto value_loss = 0.0;
-    auto entropy_mean = 0.0;
-    auto approx_kl = 0.0;
-
-    for (auto idx_epoch = 0; idx_epoch < BitSim::Trader::ppo_update_epochs; ++idx_epoch) {
-        auto b_old_states = states.narrow(0, 0, length).detach();
-        auto b_old_actions = actions.narrow(0, 0, length).detach();
-        auto b_old_log_probs = log_probs.narrow(0, 0, length).detach();
-
-        policy->train();
-        {
-            auto auto_grad_guard = torch::AutoGradMode{ true };
-            auto [state_values, log_probs, entropies] = policy->evaluate(b_old_states, b_old_actions);
-
-            auto ratios = torch::exp(log_probs - b_old_log_probs.detach());
-            auto advantages = norm_rewards - state_values.detach();
-            auto surr1 = ratios * advantages;
-            auto surr2 = torch::clamp(ratios, 1.0 - BitSim::Trader::ppo_eps_clip, 1.0 + BitSim::Trader::ppo_eps_clip) * advantages;
-            auto loss = -torch::min(surr1, surr2) + 0.5 * torch::mse_loss(state_values, norm_rewards) - 0.01 * entropies;
-
-            optimizer->zero_grad();
-            loss.mean().backward();
-            optimizer->step();
-
-            total_loss += loss.mean().item().toDouble();
-            entropy_mean += entropies.mean().item().toDouble();
-        }
-    }
-
-    auto policy_params = policy->parameters();
-    auto policy_old_params = policy_old->parameters();
-    for (auto i = 0; i < policy_params.size(); ++i) {
-        policy_old_params[i].data().copy_(policy_params[i].data());
-    }
-
-    return std::array<double, 6>{ total_loss, pg_loss, value_loss, entropy_mean, approx_kl };
-    */
 }
+
+
+/*
+// Rewards
+const auto length = rewards.size(0);
+
+auto norm_rewards = torch::empty_like(rewards);
+auto discounted_reward = 0.0;
+for (auto idx = length - 1; idx >= 0; --idx) {
+    if (dones[idx].item().toBool()) {
+        discounted_reward = 0.0;
+    }
+    discounted_reward = rewards[idx].item().toDouble() + BitSim::Trader::gamma_discount * discounted_reward;
+    norm_rewards[idx] = discounted_reward;
+}
+norm_rewards = (norm_rewards - norm_rewards.mean()) / (norm_rewards.std() + 1e-5);
+
+auto total_loss = 0.0;
+auto pg_loss = 0.0;
+auto value_loss = 0.0;
+auto entropy_mean = 0.0;
+auto approx_kl = 0.0;
+
+for (auto idx_epoch = 0; idx_epoch < BitSim::Trader::ppo_update_epochs; ++idx_epoch) {
+    auto b_old_states = states.narrow(0, 0, length).detach();
+    auto b_old_actions = actions.narrow(0, 0, length).detach();
+    auto b_old_log_probs = log_probs.narrow(0, 0, length).detach();
+
+    policy->train();
+    {
+        auto auto_grad_guard = torch::AutoGradMode{ true };
+        auto [state_values, log_probs, entropies] = policy->evaluate(b_old_states, b_old_actions);
+
+        auto ratios = torch::exp(log_probs - b_old_log_probs.detach());
+        auto advantages = norm_rewards - state_values.detach();
+        auto surr1 = ratios * advantages;
+        auto surr2 = torch::clamp(ratios, 1.0 - BitSim::Trader::ppo_eps_clip, 1.0 + BitSim::Trader::ppo_eps_clip) * advantages;
+        auto loss = -torch::min(surr1, surr2) + 0.5 * torch::mse_loss(state_values, norm_rewards) - 0.01 * entropies;
+
+        optimizer->zero_grad();
+        loss.mean().backward();
+        optimizer->step();
+
+        total_loss += loss.mean().item().toDouble();
+        entropy_mean += entropies.mean().item().toDouble();
+    }
+}
+
+auto policy_params = policy->parameters();
+auto policy_old_params = policy_old->parameters();
+for (auto i = 0; i < policy_params.size(); ++i) {
+    policy_old_params[i].data().copy_(policy_params[i].data());
+}
+
+return std::array<double, 6>{ total_loss, pg_loss, value_loss, entropy_mean, approx_kl };
+*/
 
 /*
 
@@ -314,6 +291,4 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RL_PPO_ActorCriticImpl::
 
     return std::make_tuple(state_value, log_prob, entropy);
 }
-
-
 */
