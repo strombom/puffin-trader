@@ -65,7 +65,7 @@ std::tuple<torch::Tensor, torch::Tensor> RL_PPO_ActorImpl::action(torch::Tensor 
     action = action_mean + eps * action_std;
 
     auto log_prob = -(action - action_mean).pow(2) / (2 * action_std.pow(2)) - action_log_std - std::log(std::sqrt(2 * M_PI));
-    action = action.clamp(-BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
+    //action = action.clamp(-BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
 
     return std::make_tuple(action, log_prob);
 }

@@ -4,7 +4,7 @@
 #include "BitBotConstants.h"
 
 
-RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
+RL_Trader::RL_Trader(sptrPendulumSimulator simulator) :
     simulator(simulator),
     step_total(0),
     step_episode(0),
