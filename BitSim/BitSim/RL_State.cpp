@@ -25,7 +25,7 @@ bool RL_State::is_done(void) const
 
 torch::Tensor RL_State::to_tensor(void) const
 {
-    return torch::tensor({ reward, angle, velocity }).view({ 1, 5 });
+    return torch::tensor({ reward, angle, velocity }).view({ 1, 3 });
 }
 
 /*
