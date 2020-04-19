@@ -22,7 +22,7 @@ void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
 
-        auto state = simulator->reset("cartpole_" + std::to_string(idx_episode) + ".csv");
+        auto state = simulator->reset("pendulum_" + std::to_string(idx_episode) + ".csv");
         step_episode = 0;
 
         while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
@@ -32,9 +32,11 @@ void RL_Trader::train(void)
             ++step_episode;
         }
 
-        update_model(idx_episode);
+        if (step_total >= BitSim::Trader::buffer_size) {
+            update_model(idx_episode);
+        }
 
-        std::cout << "Steps: " << step_episode << std::endl;
+        //std::cout << "Steps: " << step_episode << std::endl;
 
         if (idx_episode % BitSim::Trader::save_period == 0 ||
             idx_episode == BitSim::Trader::n_episodes - 1) {
@@ -65,7 +67,8 @@ void RL_Trader::update_model(double idx_episode)
         std::cout << "Ep(" << idx_episode <<
             ") TL(" << losses[0] <<
             ") AL(" << losses[1] <<
-            ") VL(" << losses[2] << ")" << std::endl;
+            ") VL(" << losses[2] <<
+            ") R("  << losses[3] << ")" << std::endl;
     }
 }
 

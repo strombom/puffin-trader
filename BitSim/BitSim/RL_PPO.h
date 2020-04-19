@@ -36,7 +36,7 @@ public:
     torch::Tensor log_prob(torch::Tensor state, torch::Tensor action);
 
 private:
-    const int hidden_dim = 64;
+    const int hidden_dim = 100;
 
     torch::nn::Sequential actor;
     torch::nn::Sequential actor_mean;
@@ -53,7 +53,7 @@ public:
     torch::Tensor forward(torch::Tensor x);
 
 private:
-    const int hidden_dim = 64;
+    const int hidden_dim = 100;
 
     torch::nn::Sequential critic;
 };

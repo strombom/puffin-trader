@@ -22,18 +22,14 @@ sptrRL_State PendulumSimulator::reset(const std::string& log_filename)
     return state;
 }
 
-double angle_normalize(double x)
-{
-    return std::fmod(x + M_PI, 2.0 * M_PI) - M_PI;
-}
-
 sptrRL_State PendulumSimulator::step(sptrRL_Action action, bool last_step)
 {
     const auto torque = std::clamp(action->move, -max_torque, max_torque);
 
-    const auto cost = std::pow(angle_normalize(state->angle), 2.0) + 0.1 * std::pow(state->velocity, 2.0) + 0.001 * std::pow(torque, 2.0);
+    const auto normalized_angle = std::fmod(state->angle + M_PI, 2.0 * M_PI) - M_PI;
+    const auto cost = std::pow(normalized_angle, 2.0) + 0.1 * std::pow(state->velocity, 2.0) + 0.001 * std::pow(torque, 2.0);
 
-    const auto new_velocity = state->velocity + (-3.0 * gravity / (2.0 * length) * std::sin(state->angle + M_PI) + 3.0 / (mass * std::pow(length , 2.0)) * torque) * delta_time;
+    const auto new_velocity = state->velocity + (-3.0 * gravity / (2.0 * length) * std::sin(state->angle + M_PI) + 3.0 * torque / (mass * std::pow(length , 2.0))) * delta_time;
     const auto new_angle = state->angle + new_velocity * delta_time;
 
     state->velocity = std::clamp(new_velocity, -max_speed, max_speed);

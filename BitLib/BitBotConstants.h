@@ -93,8 +93,8 @@ namespace BitSim
         constexpr auto initial_random_action = 1000;
         constexpr auto max_steps = 150;
 
-        constexpr auto batch_size = 512;
-        constexpr auto buffer_size = 500 * batch_size;
+        constexpr auto batch_size = 32;
+        constexpr auto buffer_size = 30 * batch_size;
         constexpr auto episode_length = 10h; // 2*7*24h;
 
         constexpr auto gamma_discount = 0.95;
@@ -131,8 +131,8 @@ namespace BitSim
             constexpr auto hidden_dim = 64;
             constexpr auto clip_param = 0.2;
             constexpr auto max_grad_norm = 0.5;
-            constexpr auto actor_learning_rate = 1e-5;
-            constexpr auto critic_learning_rate = 2e-5;
+            constexpr auto actor_learning_rate = 1e-4;
+            constexpr auto critic_learning_rate = 3e-4;
             constexpr auto action_clamp = 2.0;
         }
 
