@@ -10,7 +10,7 @@
 class PendulumSimulatorLogger
 {
 public:
-    PendulumSimulatorLogger(const std::string& filename, bool enabled);
+    PendulumSimulatorLogger(const std::string& log_filename, bool enabled);
 
     void log(double angle, double velocity, double reward);
 
@@ -25,7 +25,7 @@ class PendulumSimulator
 public:
     PendulumSimulator(void);
 
-    sptrRL_State reset(const std::string& log_filename);
+    sptrRL_State reset(int idx_episode);
     sptrRL_State step(sptrRL_Action action, bool last_step);
 
 private:

@@ -10,7 +10,7 @@
 class CartpoleSimulatorLogger
 {
 public:
-    CartpoleSimulatorLogger(const std::string& filename, bool enabled);
+    CartpoleSimulatorLogger(const std::string& log_filename, bool enabled);
 
     void log(double cart_position, double cart_velocity, double pole_angle, double pole_velocity, double reward);
 
@@ -25,7 +25,7 @@ class CartpoleSimulator
 public:
     CartpoleSimulator(void);
 
-    sptrRL_State reset(const std::string& log_filename);
+    sptrRL_State reset(int idx_episode);
     sptrRL_State step(sptrRL_Action action, bool last_step);
 
 private:
@@ -35,7 +35,7 @@ private:
     const double mass_cart = 1.0;
     const double mass_pole = 0.1;
     const double length = 0.5;
-    const double force_mag = 30;
+    const double force_mag = 10;
     const double tau = 0.02;
     const double theta_threshold = 12 * 2 * M_PI / 360;
     const double x_threshold = 1.0;

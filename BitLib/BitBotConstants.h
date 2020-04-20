@@ -91,10 +91,10 @@ namespace BitSim
         constexpr auto n_test_episodes = 1;
         constexpr auto save_period = 100;
         constexpr auto initial_random_action = 1000;
-        constexpr auto max_steps = 150;
+        constexpr auto max_steps = 200;
 
         constexpr auto batch_size = 32;
-        constexpr auto buffer_size = 30 * batch_size;
+        constexpr auto buffer_size = 10 * max_steps;
         constexpr auto episode_length = 10h; // 2*7*24h;
 
         constexpr auto gamma_discount = 0.95;
@@ -125,18 +125,18 @@ namespace BitSim
 
         namespace PPO
         {
-            constexpr auto update_epochs = 10;
-            constexpr auto update_batch_size = 32;
+            constexpr auto update_epochs = 5;
+            constexpr auto update_batch_size = 200;
 
-            constexpr auto hidden_dim = 64;
+            constexpr auto hidden_dim = 128;
             constexpr auto clip_param = 0.2;
             constexpr auto max_grad_norm = 0.5;
             constexpr auto actor_learning_rate = 1e-4;
             constexpr auto critic_learning_rate = 3e-4;
-            constexpr auto action_clamp = 2.0;
+            constexpr auto action_clamp = 5.0;
         }
 
-        constexpr auto state_dim = 2 + 1; // feature_size + 1; // Features, leverage (-1 to +1)
+        constexpr auto state_dim = 5; // feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 1; // 4; // buy_position, buy_size, sell_position, sell_size
 
         //constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };

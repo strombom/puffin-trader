@@ -10,15 +10,15 @@ CartpoleSimulator::CartpoleSimulator(void) :
 
 }
 
-sptrRL_State CartpoleSimulator::reset(const std::string& log_filename)
+sptrRL_State CartpoleSimulator::reset(int idx_episode)
 {
-    logger = std::make_unique<CartpoleSimulatorLogger>(log_filename, true);
+    logger = std::make_unique<CartpoleSimulatorLogger>("cartpole_" + std::to_string(idx_episode) + ".csv", true);
 
     state = std::make_shared<RL_State>(
         0.0,                                        // reward
         Utils::random(-0.05, 0.05),                 // cart_position
         Utils::random(-0.05, 0.05),                 // cart_velocity
-        //Utils::random(-0.05, 0.05),    // pole_angle
+        //Utils::random(-0.05, 0.05),                 // pole_angle
         Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
         Utils::random(-0.05, 0.05));                // pole_velocity
     return state;
@@ -26,7 +26,7 @@ sptrRL_State CartpoleSimulator::reset(const std::string& log_filename)
 
 sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
 {
-    const auto force = force_mag * action->move;
+    const auto force = force_mag * action->move; // std::clamp(action->move, -BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
     const auto costheta = std::cos(state->pole_angle);
     const auto sintheta = std::sin(state->pole_angle);
 
@@ -48,15 +48,21 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
     else {
         state->reward = 1.0;
     }
-    */
 
     auto out_of_bound = 0;
     if (state->cart_position < -x_threshold || state->cart_position > x_threshold ||
         state->pole_angle < -theta_threshold || state->pole_angle > theta_threshold) {
         out_of_bound = 1;
     }
+    */
 
-    state->reward = cos(state->pole_angle) - 1.0 - 0.001 * std::pow(state->pole_velocity, 2.0) - 0.0001 * std::pow(force, 2.0) - 0.01 * std::pow(state->cart_position, 2.0);
+    const auto normalized_angle = std::fmod(state->pole_angle + M_PI, 2 * M_PI) - M_PI;
+
+    state->reward = 1.0 * std::pow(normalized_angle, 2.0) + 0.005 * std::pow(state->pole_velocity, 2.0) + 0.0001 * std::pow(force, 2.0);
+    state->reward += 0.1 * std::pow(state->cart_position, 2.0); // +0.01 * std::pow(state->cart_velocity, 2.0);
+    state->reward = -state->reward;
+
+    //state->reward = cos(state->pole_angle) - 1.0 - 0.001 * std::pow(state->pole_velocity, 2.0) - 0.0001 * std::pow(force, 2.0) - 0.01 * std::pow(state->cart_position, 2.0);
 
     //state->reward = 0.0 - std::abs(state->cart_position) * 0.1 - std::abs(std::fmod(state->pole_angle, 3.14159)) * 1;
     //auto norm_angle = std::fmod(state->pole_angle + 2.0 * M_PI, M_PI);
@@ -67,10 +73,10 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
     return state;
 }
 
-CartpoleSimulatorLogger::CartpoleSimulatorLogger(const std::string& filename, bool enabled) : enabled(enabled)
+CartpoleSimulatorLogger::CartpoleSimulatorLogger(const std::string& log_filename, bool enabled) : enabled(enabled)
 {
     if (enabled) {
-        file.open(std::string{ BitSim::tmp_path } +"\\log\\" + filename);
+        file.open(std::string{ BitSim::tmp_path } +"\\log\\" + log_filename);
         file << "cart_position,cart_velocity,pole_angle,pole_velocity,reward" << std::endl;
     }
 }

@@ -175,6 +175,7 @@
     <ClCompile Include="..\..\BitLib\Utils.cpp" />
     <ClCompile Include="BitBaseClient.cpp" />
     <ClCompile Include="BitSim.cpp" />
+    <ClCompile Include="CartpoleSimulator.cpp" />
     <ClCompile Include="FE_DataLoader.cpp" />
     <ClCompile Include="FE_Inference.cpp" />
     <ClCompile Include="FE_Model.cpp" />
@@ -185,7 +186,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="PendulumSimulator.cpp" />
     <ClCompile Include="RL_Action.cpp" />
     <ClCompile Include="RL_Algorithm.cpp" />
     <ClCompile Include="RL_PPO.cpp" />
@@ -202,6 +202,7 @@
     <ClInclude Include="..\..\BitLib\Logger.h" />
     <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
+    <ClInclude Include="CartpoleSimulator.h" />
     <ClInclude Include="FE_DataLoader.h" />
     <ClInclude Include="FE_Inference.h" />
     <ClInclude Include="FE_Model.h" />

@@ -4,7 +4,7 @@
 #include "BitBotConstants.h"
 
 
-RL_Trader::RL_Trader(sptrPendulumSimulator simulator) :
+RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
     simulator(simulator),
     step_total(0),
     step_episode(0),
@@ -22,7 +22,7 @@ void RL_Trader::train(void)
 {
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
 
-        auto state = simulator->reset("pendulum_" + std::to_string(idx_episode) + ".csv");
+        auto state = simulator->reset(idx_episode);
         step_episode = 0;
 
         while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {

@@ -10,9 +10,9 @@ PendulumSimulator::PendulumSimulator(void) :
 
 }
 
-sptrRL_State PendulumSimulator::reset(const std::string& log_filename)
+sptrRL_State PendulumSimulator::reset(int idx_episode)
 {
-    logger = std::make_unique<PendulumSimulatorLogger>(log_filename, true);
+    logger = std::make_unique<PendulumSimulatorLogger>("pendulum_" + std::to_string(idx_episode) + ".csv", true);
 
     state = std::make_shared<RL_State>(
         0.0,                                        // reward

@@ -69,7 +69,7 @@ int main()
 
     }
     else if (command == "train_cartpole") {
-        auto simulator = std::make_shared<PendulumSimulator>();
+        auto simulator = std::make_shared<CartpoleSimulator>();
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
     }
