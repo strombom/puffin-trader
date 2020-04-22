@@ -85,33 +85,13 @@ namespace BitSim
 
     namespace Trader
     {
-        constexpr auto algorithm = "PPO";
+        constexpr auto algorithm = "SAC";
 
         constexpr auto n_episodes = 10000;
-        constexpr auto n_test_episodes = 1;
         constexpr auto save_period = 100;
-        constexpr auto initial_random_action = 1000;
+
         constexpr auto max_steps = 200;
-
-        constexpr auto batch_size = 32;
-        constexpr auto buffer_size = 10 * max_steps;
         constexpr auto episode_length = 10h; // 2*7*24h;
-
-        constexpr auto gamma_discount = 0.95;
-        constexpr auto lam_discount = 0.99;
-        constexpr auto soft_tau = 5e-3;
-        constexpr auto learning_rate = 5e-2;
-        constexpr auto learning_rate_entropy = learning_rate;
-        constexpr auto learning_rate_qf_1 = 1e-3;
-        constexpr auto learning_rate_qf_2 = 1e-3;
-        constexpr auto learning_rate_vf = learning_rate;
-        constexpr auto learning_rate_actor = 1e-3;
-        constexpr auto reward_scale = 1.0;
-
-        //constexpr auto ppo_action_std = 0.0005;
-        //constexpr auto ppo_update_epochs = 10;
-        //constexpr auto ppo_batch_size = 40;
-        //constexpr auto ppo_policy_learning_rate = 3e-4;
 
         constexpr auto market_order_threshold = 0.97;
         constexpr auto limit_order_threshold = 0.7;
@@ -119,12 +99,29 @@ namespace BitSim
 
         namespace SAC
         {
+            constexpr auto initial_random_action = 1000;
+            constexpr auto batch_size = 32;
+            constexpr auto buffer_size = 10 * max_steps;
+
             constexpr auto hidden_count = 3;
             constexpr auto hidden_dim = 64;
+
+            constexpr auto gamma_discount = 0.95;
+            constexpr auto lam_discount = 0.99;
+            constexpr auto soft_tau = 5e-3;
+            constexpr auto learning_rate = 5e-2;
+            constexpr auto learning_rate_entropy = learning_rate;
+            constexpr auto learning_rate_qf_1 = 1e-3;
+            constexpr auto learning_rate_qf_2 = 1e-3;
+            constexpr auto learning_rate_vf = learning_rate;
+            constexpr auto learning_rate_actor = 1e-3;
+            constexpr auto reward_scale = 1.0;
         }
 
         namespace PPO
         {
+            constexpr auto batch_size = 32;
+            constexpr auto buffer_size = 10 * max_steps;
             constexpr auto update_epochs = 5;
             constexpr auto update_batch_size = 200;
 
@@ -134,6 +131,7 @@ namespace BitSim
             constexpr auto actor_learning_rate = 1e-4;
             constexpr auto critic_learning_rate = 3e-4;
             constexpr auto action_clamp = 5.0;
+            constexpr auto gamma_discount = 0.95;
         }
 
         constexpr auto state_dim = 5; // feature_size + 1; // Features, leverage (-1 to +1)

@@ -32,7 +32,10 @@ void RL_Trader::train(void)
             ++step_episode;
         }
 
-        if (step_total >= BitSim::Trader::buffer_size) {
+        if (BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
+            update_model(idx_episode);
+        }
+        else if (BitSim::Trader::algorithm == "SAC") {
             update_model(idx_episode);
         }
 
@@ -85,7 +88,7 @@ void RL_Trader::interim_test(void)
 sptrRL_State RL_Trader::step(sptrRL_State state)
 {
     auto action = sptrRL_Action{ nullptr };
-    if (BitSim::Trader::algorithm == "SAC" && step_total < BitSim::Trader::initial_random_action) {
+    if (BitSim::Trader::algorithm == "SAC" && step_total < BitSim::Trader::SAC::initial_random_action) {
         action = rl_algorithm->get_random_action(state);
     }
     else {

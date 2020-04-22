@@ -9,11 +9,11 @@
 RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
     length(0)
 {
-    actions = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::action_dim });
-    states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
-    log_probs = torch::zeros({ BitSim::Trader::buffer_size, 1 });
-    rewards = torch::zeros({ BitSim::Trader::buffer_size, 1 });
-    next_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
+    actions = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::action_dim });
+    states = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::state_dim });
+    log_probs = torch::zeros({ BitSim::Trader::PPO::buffer_size, 1 });
+    rewards = torch::zeros({ BitSim::Trader::PPO::buffer_size, 1 });
+    next_states = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::state_dim });
 }
 
 void RL_PPO_ReplayBuffer::clear(void)
@@ -112,7 +112,7 @@ void RL_PPO::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action a
 {
     replay_buffer.rewards[replay_buffer.length] = (next_state->reward + 8) / 8;
     replay_buffer.next_states[replay_buffer.length] = next_state->to_tensor()[0];
-    replay_buffer.length = (replay_buffer.length + 1) % BitSim::Trader::buffer_size;
+    replay_buffer.length = (replay_buffer.length + 1) % BitSim::Trader::PPO::buffer_size;
 }
 
 sptrRL_Action RL_PPO::get_action(sptrRL_State state)
@@ -136,16 +136,16 @@ std::array<double, 6> RL_PPO::update_model(void)
 {
     auto [states, actions, log_probs, rewards, next_states] = replay_buffer.sample();
 
-    static auto running_reward = 0.0;
-    running_reward = running_reward * 0.9 + rewards.sum().item().toDouble() * 0.1;
-    //const auto rewards_sum = rewards.sum().item().toDouble();
+    //static auto running_reward = 0.0;
+    //running_reward = running_reward * 0.9 + rewards.sum().item().toDouble() * 0.1;
+    const auto rewards_sum = rewards.sum().item().toDouble() / rewards.size(0);
 
     rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
 
     auto target_values = torch::Tensor{};
     {
         const auto no_grad_guard = torch::NoGradGuard{};
-        target_values = rewards + BitSim::Trader::gamma_discount * critic->forward(next_states);
+        target_values = rewards + BitSim::Trader::PPO::gamma_discount * critic->forward(next_states);
     }
     const auto advantages = (target_values - critic->forward(states)).detach();
 
@@ -154,7 +154,7 @@ std::array<double, 6> RL_PPO::update_model(void)
     auto total_value_loss = 0.0;
 
     for (auto idx_epoch = 0; idx_epoch < BitSim::Trader::PPO::update_epochs; ++idx_epoch) {
-        const auto indices = torch::randint(BitSim::Trader::buffer_size, BitSim::Trader::PPO::update_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+        const auto indices = torch::randint(BitSim::Trader::SAC::buffer_size, BitSim::Trader::PPO::update_batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
 
         const auto batch_actions = actions.index(indices).detach();
         const auto batch_states = states.index(indices).detach();
@@ -186,7 +186,7 @@ std::array<double, 6> RL_PPO::update_model(void)
     replay_buffer.clear();
 
     total_loss = total_action_loss + total_value_loss;
-    return std::array<double, 6>{ total_loss, total_action_loss, total_value_loss, running_reward };
+    return std::array<double, 6>{ total_loss, total_action_loss, total_value_loss, rewards_sum };
 }
 
 

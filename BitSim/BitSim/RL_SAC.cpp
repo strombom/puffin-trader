@@ -101,11 +101,11 @@ RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
     idx(0),
     length(0)
 {
-    current_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
-    actions = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::action_dim });
-    rewards = torch::zeros({ BitSim::Trader::buffer_size, 1 });
-    next_states = torch::zeros({ BitSim::Trader::buffer_size, BitSim::Trader::state_dim });
-    dones = torch::zeros({ BitSim::Trader::buffer_size, 1 });
+    current_states = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::state_dim });
+    actions = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::action_dim });
+    rewards = torch::zeros({ BitSim::Trader::SAC::buffer_size, 1 });
+    next_states = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::state_dim });
+    dones = torch::zeros({ BitSim::Trader::SAC::buffer_size, 1 });
 }
 
 void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
@@ -116,14 +116,14 @@ void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action actio
     next_states[idx] = next_state->to_tensor();
     dones[idx] = next_state->done;
 
-    idx = (idx + 1) % BitSim::Trader::buffer_size;
-    length = std::min(length + 1, BitSim::Trader::buffer_size);
+    idx = (idx + 1) % BitSim::Trader::SAC::buffer_size;
+    length = std::min(length + 1, BitSim::Trader::SAC::buffer_size);
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> RL_SAC_ReplayBuffer::sample(void)
 {
-    auto indices = torch::randint(length, BitSim::Trader::batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
-    indices = (indices + BitSim::Trader::buffer_size + idx - length).fmod(BitSim::Trader::buffer_size);
+    auto indices = torch::randint(length, BitSim::Trader::SAC::batch_size, torch::TensorOptions{}.dtype(torch::ScalarType::Long));
+    indices = (indices + BitSim::Trader::SAC::buffer_size + idx - length).fmod(BitSim::Trader::SAC::buffer_size);
 
     return std::make_tuple(current_states.index(indices), actions.index(indices), rewards.index(indices), next_states.index(indices), dones.index(indices));
 }
@@ -138,10 +138,10 @@ RL_SAC::RL_SAC(void) :
     target_entropy(-BitSim::Trader::action_dim),
     update_count(0)
 {
-    alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::learning_rate_entropy);
-    soft_q1_optim = std::make_unique<torch::optim::Adam>(soft_q1->parameters(), BitSim::Trader::learning_rate_qf_1);
-    soft_q2_optim = std::make_unique<torch::optim::Adam>(soft_q2->parameters(), BitSim::Trader::learning_rate_qf_2);
-    actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::learning_rate_actor);
+    alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::SAC::learning_rate_entropy);
+    soft_q1_optim = std::make_unique<torch::optim::Adam>(soft_q1->parameters(), BitSim::Trader::SAC::learning_rate_qf_1);
+    soft_q2_optim = std::make_unique<torch::optim::Adam>(soft_q2->parameters(), BitSim::Trader::SAC::learning_rate_qf_2);
+    actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::SAC::learning_rate_actor);
 }
 
 sptrRL_Action RL_SAC::get_action(sptrRL_State state)
@@ -173,7 +173,7 @@ std::array<double, 6> RL_SAC::update_model(void)
     const auto target_q1_ = target_soft_q1->forward(next_states, new_next_actions);
     const auto target_q2 = target_soft_q2->forward(next_states, new_next_actions);
     const auto target_q_min = torch::min(target_q1_, target_q2);
-    const auto target_q_value = (rewards + BitSim::Trader::gamma_discount * target_q_min).detach();
+    const auto target_q_value = (rewards + BitSim::Trader::SAC::gamma_discount * target_q_min).detach();
 
     const auto pred_q1 = soft_q1->forward(states, actions);
     const auto pred_q2 = soft_q2->forward(states, actions);
@@ -211,8 +211,8 @@ std::array<double, 6> RL_SAC::update_model(void)
     auto target_param_q1 = target_soft_q1->parameters();
     auto target_param_q2 = target_soft_q2->parameters();
     for (auto i = 0; i < param_q1.size(); ++i) {
-        target_param_q1[i].data().copy_(target_param_q1[i].data() * (1.0 - BitSim::Trader::soft_tau) + param_q1[i].data() * BitSim::Trader::soft_tau);
-        target_param_q2[i].data().copy_(target_param_q2[i].data() * (1.0 - BitSim::Trader::soft_tau) + param_q2[i].data() * BitSim::Trader::soft_tau);
+        target_param_q1[i].data().copy_(target_param_q1[i].data() * (1.0 - BitSim::Trader::SAC::soft_tau) + param_q1[i].data() * BitSim::Trader::SAC::soft_tau);
+        target_param_q2[i].data().copy_(target_param_q2[i].data() * (1.0 - BitSim::Trader::SAC::soft_tau) + param_q2[i].data() * BitSim::Trader::SAC::soft_tau);
     }
 
     const auto actor_loss_d = actor_loss.item().toDouble();
@@ -221,7 +221,7 @@ std::array<double, 6> RL_SAC::update_model(void)
     const auto q2_value_loss_d = q2_value_loss.item().toDouble();
     const auto total_loss = actor_loss_d + alpha_loss_d + q1_value_loss_d + q2_value_loss_d;
 
-    const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::batch_size;
+    const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::SAC::batch_size;
 
     return std::array<double, 6>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d, episode_score };
 }

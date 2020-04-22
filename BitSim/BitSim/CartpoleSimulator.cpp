@@ -18,8 +18,8 @@ sptrRL_State CartpoleSimulator::reset(int idx_episode)
         0.0,                                        // reward
         Utils::random(-0.05, 0.05),                 // cart_position
         Utils::random(-0.05, 0.05),                 // cart_velocity
-        //Utils::random(-0.05, 0.05),                 // pole_angle
-        Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
+        Utils::random(-0.05, 0.05),                 // pole_angle
+        //Utils::random(3.14 - 0.05, 3.14 + 0.05),    // pole_angle
         Utils::random(-0.05, 0.05));                // pole_velocity
     return state;
 }
@@ -49,18 +49,21 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
         state->reward = 1.0;
     }
 
+    */
+
     auto out_of_bound = 0;
     if (state->cart_position < -x_threshold || state->cart_position > x_threshold ||
         state->pole_angle < -theta_threshold || state->pole_angle > theta_threshold) {
         out_of_bound = 1;
     }
-    */
 
     const auto normalized_angle = std::fmod(state->pole_angle + M_PI, 2 * M_PI) - M_PI;
 
-    state->reward = 1.0 * std::pow(normalized_angle, 2.0) + 0.005 * std::pow(state->pole_velocity, 2.0) + 0.0001 * std::pow(force, 2.0);
-    state->reward += 0.1 * std::pow(state->cart_position, 2.0); // +0.01 * std::pow(state->cart_velocity, 2.0);
-    state->reward = -state->reward;
+    state->reward = -1.0 * std::pow(normalized_angle, 2.0) - 0.05 * std::pow(state->pole_velocity, 2.0) - 0.0001 * std::pow(force, 2.0);
+    state->reward += -0.1 * std::pow(state->cart_position, 2.0); // +0.01 * std::pow(state->cart_velocity, 2.0);
+
+    state->reward += -10.0 * out_of_bound;
+
 
     //state->reward = cos(state->pole_angle) - 1.0 - 0.001 * std::pow(state->pole_velocity, 2.0) - 0.0001 * std::pow(force, 2.0) - 0.01 * std::pow(state->cart_position, 2.0);
 
