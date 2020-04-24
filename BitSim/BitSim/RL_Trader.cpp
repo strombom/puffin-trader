@@ -63,12 +63,11 @@ void RL_Trader::update_model(int idx_episode)
     if (BitSim::Trader::algorithm == "SAC" && last_idx_episode != idx_episode) {
         last_idx_episode = idx_episode;
         std::cout << "Ep(" << idx_episode <<
-            ") TL(" << losses[0] <<
-            ") AcL(" << losses[1] <<
-            ") AlL(" << losses[2] <<
-            ") Q1(" << losses[3] <<
-            ") Q2(" << losses[4] <<
-            ") ES(" << losses[5] << ")" << std::endl;
+            ") Q1(" << losses[0] <<
+            ") Q2(" << losses[1] <<
+            ") PL(" << losses[2] <<
+            ") AL(" << losses[3] <<
+            ") R(" << losses[4] << ")" << std::endl;
     }
     else if (BitSim::Trader::algorithm == "PPO") {
         std::cout << "Ep(" << idx_episode <<

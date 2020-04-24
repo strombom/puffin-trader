@@ -21,7 +21,7 @@ torch::Tensor QNetworkImpl::forward(torch::Tensor state, torch::Tensor action)
 
 PolicyNetworkImpl::PolicyNetworkImpl(const std::string& name)
 {
-    policy->push_back(register_module(name + "_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim + BitSim::Trader::action_dim, BitSim::Trader::SAC::hidden_dim }));
+    policy->push_back(register_module(name + "_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim, BitSim::Trader::SAC::hidden_dim }));
     policy->push_back(register_module(name + "_relu_1", torch::nn::ReLU6{}));
     policy->push_back(register_module(name + "_linear_2", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim }));
     policy->push_back(register_module(name + "_relu_2", torch::nn::ReLU6{}));
@@ -149,7 +149,7 @@ std::array<double, 6> RL_SAC::update_model(void)
     const auto q1_policy = q1->forward(states, new_actions);
     const auto q2_policy = q2->forward(states, new_actions);
     const auto q_policy = torch::min(q1_policy, q2_policy);
-    const auto policy_loss = ((alpha * new_log_probs) - q_policy).mean();
+    const auto policy_loss = ((alpha * new_log_probs) - q_policy.detach()).mean();
 
     const auto alpha_loss = -(log_alpha * (new_log_probs + target_entropy).detach()).mean();
 
@@ -171,7 +171,15 @@ std::array<double, 6> RL_SAC::update_model(void)
 
     alpha = log_alpha.exp();
 
-    return std::array<double, 6>{ 0.0 };
+    const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::SAC::batch_size;
+
+    return std::array<double, 6>{
+        q1_loss.item().toDouble(),
+        q2_loss.item().toDouble(),
+        policy_loss.item().toDouble(),
+        alpha_loss.item().toDouble(),
+        episode_score
+    };
 
     /*
     const auto [new_actions, log_prob, _z, _mean, _std] = actor->forward(states);
