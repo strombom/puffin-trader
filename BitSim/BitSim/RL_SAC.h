@@ -26,7 +26,7 @@ public:
     PolicyNetworkImpl(const std::string& name);
 
     std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
 
 private:
     torch::nn::Sequential policy;
@@ -74,6 +74,7 @@ private:
     RL_SAC_ReplayBuffer replay_buffer;
 
     double target_entropy;
+    torch::Tensor alpha;
     torch::Tensor log_alpha;
     std::unique_ptr<torch::optim::Adam> policy_optim;
     std::unique_ptr<torch::optim::Adam> q1_optim;

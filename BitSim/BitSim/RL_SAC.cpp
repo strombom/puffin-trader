@@ -2,6 +2,8 @@
 #include "RL_SAC.h"
 #include "BitBotConstants.h"
 
+// https://github.com/ajaysub110/RLin200Lines
+
 
 QNetworkImpl::QNetworkImpl(const std::string& name)
 {
@@ -41,7 +43,7 @@ std::tuple<torch::Tensor, torch::Tensor> PolicyNetworkImpl::forward(torch::Tenso
     return std::make_tuple(mean, log_std);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> PolicyNetworkImpl::sample_action(torch::Tensor state)
+std::tuple<torch::Tensor, torch::Tensor> PolicyNetworkImpl::sample_action(torch::Tensor state)
 {
     const auto [mean, log_std] = forward(state);
     const auto std = log_std.exp();
@@ -56,7 +58,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> PolicyNetworkImpl::sampl
     log_prob = -(1 - action.pow(2) + 1e-6).log();
     log_prob = log_prob.sum(1, true);
 
-    return std::make_tuple(action, log_prob, mean);
+    return std::make_tuple(action, log_prob);
 }
 
 RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
@@ -96,7 +98,8 @@ RL_SAC::RL_SAC(void) :
     q2(QNetwork{ "q1" }),
     target_q1(QNetwork{ "target_q1" }),
     target_q2(QNetwork{ "target_q2" }),
-    log_alpha(BitSim::Trader::SAC::alpha * torch::ones(1, torch::requires_grad())),
+    alpha(BitSim::Trader::SAC::alpha * torch::ones(1)),
+    log_alpha(torch::zeros(1, torch::requires_grad())),
     target_entropy(-BitSim::Trader::action_dim),
     update_count(0)
 {
@@ -109,7 +112,7 @@ RL_SAC::RL_SAC(void) :
 sptrRL_Action RL_SAC::get_action(sptrRL_State state)
 {
     const auto state_tensor = state->to_tensor().view({ 1, BitSim::Trader::state_dim });
-    const auto [action, _log_prob, _mean] = policy->sample_action(state_tensor);
+    const auto [action, _log_prob] = policy->sample_action(state_tensor);
     return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
 }
 
@@ -127,6 +130,46 @@ std::array<double, 6> RL_SAC::update_model(void)
 {
     auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
 
+    auto next_q = torch::Tensor{};
+    {
+        auto no_grad_guard = torch::NoGradGuard{};
+        const auto [next_actions, next_log_probs] = policy->sample_action(next_states);
+        const auto next_target_q1 = q1->forward(next_states, next_actions);
+        const auto next_target_q2 = q2->forward(next_states, next_actions);
+        const auto next_target_q = torch::min(next_target_q1, next_target_q2) - alpha * next_log_probs;
+        next_q = rewards + BitSim::Trader::SAC::gamma_discount * next_target_q;
+    }
+
+    const auto q1_value = q1->forward(states, actions);
+    const auto q2_value = q2->forward(states, actions);
+    const auto q1_loss = torch::mse_loss(q1_value, next_q);
+    const auto q2_loss = torch::mse_loss(q2_value, next_q);
+
+    const auto [new_actions, new_log_probs] = policy->sample_action(states);
+    const auto q1_policy = q1->forward(states, new_actions);
+    const auto q2_policy = q2->forward(states, new_actions);
+    const auto q_policy = torch::min(q1_policy, q2_policy);
+    const auto policy_loss = ((alpha * new_log_probs) - q_policy).mean();
+
+    const auto alpha_loss = -(log_alpha * (new_log_probs + target_entropy).detach()).mean();
+
+    q1_optim->zero_grad();
+    q1_loss.backward();
+    q1_optim->step();
+
+    q2_optim->zero_grad();
+    q2_loss.backward();
+    q2_optim->step();
+
+    policy_optim->zero_grad();
+    policy_loss.backward();
+    policy_optim->step();
+
+    alpha_optim->zero_grad();
+    alpha_loss.backward();
+    alpha_optim->step();
+
+    alpha = log_alpha.exp();
 
     return std::array<double, 6>{ 0.0 };
 
