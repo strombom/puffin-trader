@@ -7,59 +7,34 @@
 #include "BitBotConstants.h"
 
 
-class MultilayerPerceptronImpl : public torch::nn::Module
+class QNetworkImpl : public torch::nn::Module
 {
 public:
-    MultilayerPerceptronImpl(const std::string& name, int input_size, int output_size);
-
-    torch::Tensor forward(torch::Tensor x);
-
-private:
-    torch::nn::Sequential layers;
-};
-TORCH_MODULE(MultilayerPerceptron);
-
-
-class SoftQNetworkImpl : public torch::nn::Module
-{
-public:
-    SoftQNetworkImpl(const std::string& name, int input_size, int action_size);
+    QNetworkImpl(const std::string& name);
 
     torch::Tensor forward(torch::Tensor state, torch::Tensor action);
 
 private:
-    MultilayerPerceptron mlp;
+    torch::nn::Sequential layers;
 };
-TORCH_MODULE(SoftQNetwork);
+TORCH_MODULE(QNetwork);
 
 
-class GaussianDistImpl : public torch::nn::Module
+class PolicyNetworkImpl : public torch::nn::Module
 {
 public:
-    GaussianDistImpl(const std::string& name, int input_size, int output_size);
+    PolicyNetworkImpl(const std::string& name);
 
-    std::tuple<torch::Tensor, torch::Tensor> get_dist_params(torch::Tensor x);
-
-private:
-    MultilayerPerceptron mlp;
-    torch::nn::Sequential mean_layer;
-    torch::nn::Sequential log_std_layer;
-};
-TORCH_MODULE(GaussianDist);
-
-
-class TanhGaussianDistParamsImpl : public torch::nn::Module
-{
-public:
-    TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size);
-
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor x);
+    std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
 
 private:
-    GaussianDist gaussian_dist;
+    torch::nn::Sequential policy;
+    torch::nn::Sequential policy_mean;
+    torch::nn::Sequential policy_log_std;
 
 };
-TORCH_MODULE(TanhGaussianDistParams);
+TORCH_MODULE(PolicyNetwork);
 
 
 class RL_SAC_ReplayBuffer
@@ -100,16 +75,16 @@ private:
 
     double target_entropy;
     torch::Tensor log_alpha;
-    std::unique_ptr<torch::optim::Adam> actor_optim;
+    std::unique_ptr<torch::optim::Adam> policy_optim;
+    std::unique_ptr<torch::optim::Adam> q1_optim;
+    std::unique_ptr<torch::optim::Adam> q2_optim;
     std::unique_ptr<torch::optim::Adam> alpha_optim;
-    std::unique_ptr<torch::optim::Adam> soft_q1_optim;
-    std::unique_ptr<torch::optim::Adam> soft_q2_optim;
 
-    TanhGaussianDistParams actor;
-    SoftQNetwork soft_q1;
-    SoftQNetwork soft_q2;
-    SoftQNetwork target_soft_q1;
-    SoftQNetwork target_soft_q2;
+    PolicyNetwork policy;
+    QNetwork q1;
+    QNetwork q2;
+    QNetwork target_q1;
+    QNetwork target_q2;
 
     int update_count;
 };

@@ -59,10 +59,12 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
 
     const auto normalized_angle = std::fmod(state->pole_angle + M_PI, 2 * M_PI) - M_PI;
 
-    state->reward = -1.0 * std::pow(normalized_angle, 2.0) - 0.05 * std::pow(state->pole_velocity, 2.0) - 0.0001 * std::pow(force, 2.0);
-    state->reward += -0.1 * std::pow(state->cart_position, 2.0); // +0.01 * std::pow(state->cart_velocity, 2.0);
+    auto cost = 1.0 * std::pow(normalized_angle, 2.0) + 0.02 * std::pow(state->pole_velocity, 2.0) + 0.0001 * std::pow(force, 2.0);
+    cost += 1.0 * std::pow(state->cart_position, 2.0); // +0.01 * std::pow(state->cart_velocity, 2.0);
 
-    state->reward += -10.0 * out_of_bound;
+
+    state->reward = 1.0 - 0.001 * cost;
+
 
 
     //state->reward = cos(state->pole_angle) - 1.0 - 0.001 * std::pow(state->pole_velocity, 2.0) - 0.0001 * std::pow(force, 2.0) - 0.01 * std::pow(state->cart_position, 2.0);

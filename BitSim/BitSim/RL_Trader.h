@@ -25,7 +25,7 @@ private:
     uptrRL_Algorithm rl_algorithm;
     sptrCartpoleSimulator simulator;
     sptrRL_State step(sptrRL_State state);
-    void update_model(double idx_episode);
+    void update_model(int idx_episode);
     void save_params(int idx_period);
     void interim_test(void);
 

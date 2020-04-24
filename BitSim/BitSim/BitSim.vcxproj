@@ -210,7 +210,6 @@
     <ClInclude Include="FE_Scheduler.h" />
     <ClInclude Include="FE_Training.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PendulumSimulator.h" />
     <ClInclude Include="RL_Action.h" />
     <ClInclude Include="RL_Algorithm.h" />
     <ClInclude Include="RL_PPO.h" />

@@ -28,14 +28,15 @@ void RL_Trader::train(void)
         while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
             state = step(state);
 
+            if (BitSim::Trader::algorithm == "SAC" && idx_episode % BitSim::Trader::SAC::update_interval == 0) {
+                update_model(idx_episode);
+            }
+
             ++step_total;
             ++step_episode;
         }
 
         if (BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
-            update_model(idx_episode);
-        }
-        else if (BitSim::Trader::algorithm == "SAC") {
             update_model(idx_episode);
         }
 
@@ -49,15 +50,18 @@ void RL_Trader::train(void)
     }
 }
 
-void RL_Trader::update_model(double idx_episode)
+void RL_Trader::update_model(int idx_episode)
 {
     auto losses = rl_algorithm->update_model();
     csv_logger.append_row(losses);
 
     std::cout << std::setfill(' ') << std::setw(4);
     std::cout << std::fixed << std::setprecision(3);
-    
-    if (BitSim::Trader::algorithm == "SAC") {
+
+    static auto last_idx_episode = 0;
+
+    if (BitSim::Trader::algorithm == "SAC" && last_idx_episode != idx_episode) {
+        last_idx_episode = idx_episode;
         std::cout << "Ep(" << idx_episode <<
             ") TL(" << losses[0] <<
             ") AcL(" << losses[1] <<

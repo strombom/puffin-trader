@@ -99,22 +99,23 @@ namespace BitSim
 
         namespace SAC
         {
-            constexpr auto initial_random_action = 1000;
-            constexpr auto batch_size = 32;
-            constexpr auto buffer_size = 10 * max_steps;
+            constexpr auto update_interval = 10;
 
-            constexpr auto hidden_count = 3;
+            constexpr auto batch_size = 128;
+            constexpr auto buffer_size = 50 * max_steps;
+            constexpr auto initial_random_action = 1000;
+
+            constexpr auto hidden_count = 2;
             constexpr auto hidden_dim = 64;
 
-            constexpr auto gamma_discount = 0.95;
-            constexpr auto lam_discount = 0.99;
+            constexpr auto alpha = 0.2;
+            constexpr auto gamma_discount = 0.99;
             constexpr auto soft_tau = 5e-3;
-            constexpr auto learning_rate = 5e-2;
+            constexpr auto learning_rate = 1e-4;
             constexpr auto learning_rate_entropy = learning_rate;
-            constexpr auto learning_rate_qf_1 = 1e-3;
-            constexpr auto learning_rate_qf_2 = 1e-3;
-            constexpr auto learning_rate_vf = learning_rate;
-            constexpr auto learning_rate_actor = 1e-3;
+            constexpr auto learning_rate_qf_1 = learning_rate;
+            constexpr auto learning_rate_qf_2 = learning_rate;
+            constexpr auto learning_rate_actor = learning_rate;
             constexpr auto reward_scale = 1.0;
         }
 

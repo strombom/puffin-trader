@@ -3,98 +3,60 @@
 #include "BitBotConstants.h"
 
 
-MultilayerPerceptronImpl::MultilayerPerceptronImpl(const std::string& name, int input_size, int output_size)
+QNetworkImpl::QNetworkImpl(const std::string& name)
 {
-    // Hidden layers
-    auto next_size = input_size;
-    for (auto idx = 0; idx < BitSim::Trader::SAC::hidden_count; ++idx) {
-        auto hidden_layer = register_module(name + "_linear_" + std::to_string(idx), torch::nn::Linear{ next_size, BitSim::Trader::SAC::hidden_dim });
-        auto activation = register_module(name + "_activation_" + std::to_string(idx), torch::nn::ReLU6{});
-
-        layers->push_back(hidden_layer);
-        layers->push_back(activation);
-        
-        next_size = BitSim::Trader::SAC::hidden_dim;
-    }
-
-    // Output layer
-    auto output_layer = register_module(name + "_linear_output", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, output_size });
-    //auto activation = register_module(name + "_output_activation", torch::nn::ReLU6{});
-
-    //constexpr auto init_w = 3e-3;
-    //torch::nn::init::uniform_(output_layer->weight, -init_w, init_w);
-    //torch::nn::init::uniform_(output_layer->bias, -init_w, init_w);
-
-    layers->push_back(output_layer);
-    //layers->push_back(activation);
+    layers->push_back(register_module(name + "_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim + BitSim::Trader::action_dim, BitSim::Trader::SAC::hidden_dim }));
+    layers->push_back(register_module(name + "_relu_1", torch::nn::ReLU6{}));
+    layers->push_back(register_module(name + "_linear_2", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim }));
+    layers->push_back(register_module(name + "_relu_2", torch::nn::ReLU6{}));
+    layers->push_back(register_module(name + "_linear_3", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, 1 }));
 }
 
-torch::Tensor MultilayerPerceptronImpl::forward(torch::Tensor x)
+torch::Tensor QNetworkImpl::forward(torch::Tensor state, torch::Tensor action)
 {
-    //std::cout << "layers: " << layers << std::endl;
-    return layers->forward(x);
+    return layers->forward(torch::cat({ state, action }, 1));
 }
 
-SoftQNetworkImpl::SoftQNetworkImpl(const std::string& name, int input_size, int action_size) :
-    mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size + action_size, 1 }))
+PolicyNetworkImpl::PolicyNetworkImpl(const std::string& name)
 {
+    policy->push_back(register_module(name + "_linear_1", torch::nn::Linear{ BitSim::Trader::state_dim + BitSim::Trader::action_dim, BitSim::Trader::SAC::hidden_dim }));
+    policy->push_back(register_module(name + "_relu_1", torch::nn::ReLU6{}));
+    policy->push_back(register_module(name + "_linear_2", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim }));
+    policy->push_back(register_module(name + "_relu_2", torch::nn::ReLU6{}));
 
+    policy_mean->push_back(register_module(name + "_linear_mean", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim }));
+    policy_log_std->push_back(register_module(name + "_linear_log_std", torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim }));
 }
 
-torch::Tensor SoftQNetworkImpl::forward(torch::Tensor state, torch::Tensor action)
+std::tuple<torch::Tensor, torch::Tensor> PolicyNetworkImpl::forward(torch::Tensor state)
 {
-    return mlp->forward(torch::cat({ state, action }, -1));
-}
-
-GaussianDistImpl::GaussianDistImpl(const std::string& name, int input_size, int output_size) : 
-    mlp(register_module(name, MultilayerPerceptron{ name + "_mlp", input_size, output_size })),
-    mean_layer(register_module(name + "_mean", torch::nn::Sequential{ torch::nn::Linear{input_size, output_size}, torch::nn::Tanh{} })),
-    log_std_layer(register_module(name + "_std", torch::nn::Sequential{ torch::nn::Linear{input_size, output_size}, torch::nn::Tanh{} }))
-{
-    /*
-    constexpr auto init_w = 3e-3;    
-    torch::nn::init::uniform_(mean->weight, -init_w, init_w);
-    torch::nn::init::uniform_(mean->bias, -init_w, init_w);
-    torch::nn::init::uniform_(std->weight, -init_w, init_w);
-    torch::nn::init::uniform_(std->bias, -init_w, init_w);
-    */
-}
-
-std::tuple<torch::Tensor, torch::Tensor> GaussianDistImpl::get_dist_params(torch::Tensor x)
-{
-    const auto mean = mean_layer->forward(x);
-    const auto log_std = log_std_layer->forward(x);
+    const auto latent = policy->forward(state);
+    auto mean = policy_mean->forward(latent);
+    auto log_std = policy_log_std->forward(latent);
 
     constexpr auto log_std_min = -20.0;
     constexpr auto log_std_max = 2.0;
-    const auto std = torch::clamp(log_std, log_std_min, log_std_max);
-    //const auto std = torch::exp(log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1.0));
+    log_std = torch::clamp(log_std, log_std_min, log_std_max);
 
-    return std::make_tuple(mean, std);
+    return std::make_tuple(mean, log_std);
 }
 
-TanhGaussianDistParamsImpl::TanhGaussianDistParamsImpl(const std::string& name, int input_size, int output_size) :
-    gaussian_dist(register_module(name, GaussianDist{ name + "_gauss", input_size, output_size }))
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> PolicyNetworkImpl::sample_action(torch::Tensor state)
 {
-
-}
-
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> TanhGaussianDistParamsImpl::forward(torch::Tensor x)
-{
-    const auto [mean, log_std] = gaussian_dist->get_dist_params(x);
+    const auto [mean, log_std] = forward(state);
     const auto std = log_std.exp();
 
     // Reparametrization trick
     const auto eps = torch::normal(0.0, 1.0, std.sizes());
     const auto z = mean + eps * std;
-
-    // Normalize action and log_prob. Appendix C https://arxiv.org/pdf/1812.05905.pdf
-    constexpr auto epsilon = 1e-6;
     const auto action = torch::tanh(z);
-    const auto dist_log_prob = -(z - mean).pow(2) / (2 * std.pow(2)) - std.log() - std::log(std::sqrt(2 * M_PI));
-    const auto log_prob = (dist_log_prob - (1 - action.pow(2) + epsilon).log()).sum(1, true);
+    auto log_prob = -(z - mean).pow(2) / (2 * std.pow(2)) - log_std - std::log(std::sqrt(2 * M_PI));
+    
+    // Enforce action bound
+    log_prob = -(1 - action.pow(2) + 1e-6).log();
+    log_prob = log_prob.sum(1, true);
 
-    return std::make_tuple(action, log_prob, z, mean, std);
+    return std::make_tuple(action, log_prob, mean);
 }
 
 RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
@@ -110,10 +72,10 @@ RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
 
 void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
 {
-    current_states[idx] = current_state->to_tensor();
+    current_states[idx] = current_state->to_tensor().squeeze();
     actions[idx] = action->to_tensor();
     rewards[idx] = current_state->reward;
-    next_states[idx] = next_state->to_tensor();
+    next_states[idx] = next_state->to_tensor().squeeze();
     dones[idx] = next_state->done;
 
     idx = (idx + 1) % BitSim::Trader::SAC::buffer_size;
@@ -129,25 +91,25 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
 }
 
 RL_SAC::RL_SAC(void) :
-    actor(TanhGaussianDistParams{ "actor", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-    soft_q1(SoftQNetwork{ "soft_q1", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-    soft_q2(SoftQNetwork{ "soft_q2", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-    target_soft_q1(SoftQNetwork{ "target_soft_q1", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-    target_soft_q2(SoftQNetwork{ "target_soft_q2", BitSim::Trader::state_dim, BitSim::Trader::action_dim }),
-    log_alpha(torch::zeros(1, torch::requires_grad())),
+    policy(PolicyNetwork{ "policy" }),
+    q1(QNetwork{ "q1" }),
+    q2(QNetwork{ "q1" }),
+    target_q1(QNetwork{ "target_q1" }),
+    target_q2(QNetwork{ "target_q2" }),
+    log_alpha(BitSim::Trader::SAC::alpha * torch::ones(1, torch::requires_grad())),
     target_entropy(-BitSim::Trader::action_dim),
     update_count(0)
 {
+    policy_optim = std::make_unique<torch::optim::Adam>(policy->parameters(), BitSim::Trader::SAC::learning_rate_actor);
+    q1_optim = std::make_unique<torch::optim::Adam>(q1->parameters(), BitSim::Trader::SAC::learning_rate_qf_1);
+    q2_optim = std::make_unique<torch::optim::Adam>(q2->parameters(), BitSim::Trader::SAC::learning_rate_qf_2);
     alpha_optim = std::make_unique<torch::optim::Adam>(std::vector{ log_alpha }, BitSim::Trader::SAC::learning_rate_entropy);
-    soft_q1_optim = std::make_unique<torch::optim::Adam>(soft_q1->parameters(), BitSim::Trader::SAC::learning_rate_qf_1);
-    soft_q2_optim = std::make_unique<torch::optim::Adam>(soft_q2->parameters(), BitSim::Trader::SAC::learning_rate_qf_2);
-    actor_optim = std::make_unique<torch::optim::Adam>(actor->parameters(), BitSim::Trader::SAC::learning_rate_actor);
 }
 
 sptrRL_Action RL_SAC::get_action(sptrRL_State state)
 {
     const auto state_tensor = state->to_tensor().view({ 1, BitSim::Trader::state_dim });
-    const auto [action, log_prob, z, mean, std] = actor->forward(state_tensor);
+    const auto [action, _log_prob, _mean] = policy->sample_action(state_tensor);
     return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
 }
 
@@ -163,9 +125,12 @@ void RL_SAC::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action a
 
 std::array<double, 6> RL_SAC::update_model(void)
 {
-
     auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
 
+
+    return std::array<double, 6>{ 0.0 };
+
+    /*
     const auto [new_actions, log_prob, _z, _mean, _std] = actor->forward(states);
     const auto [new_next_actions, next_log_prob, _next_z, _next_mean, _next_std] = actor->forward(next_states);
 
@@ -224,6 +189,7 @@ std::array<double, 6> RL_SAC::update_model(void)
     const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::SAC::batch_size;
 
     return std::array<double, 6>{ total_loss, actor_loss_d, alpha_loss_d, q1_value_loss_d, q2_value_loss_d, episode_score };
+    */
 }
 
 void RL_SAC::save(const std::string& filename)

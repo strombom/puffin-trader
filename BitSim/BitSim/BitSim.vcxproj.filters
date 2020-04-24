@@ -185,9 +185,6 @@
     <ClInclude Include="RL_Algorithm.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
-    <ClInclude Include="PendulumSimulator.h">
-      <Filter>Header Files\Simulator</Filter>
-    </ClInclude>
     <ClInclude Include="CartpoleSimulator.h">
       <Filter>Header Files\Simulator</Filter>
     </ClInclude>
