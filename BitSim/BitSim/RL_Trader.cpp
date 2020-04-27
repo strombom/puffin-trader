@@ -4,7 +4,8 @@
 #include "BitBotConstants.h"
 
 
-RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
+//RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
+RL_Trader::RL_Trader(sptrPendulumSimulator simulator) :
     simulator(simulator),
     step_total(0),
     step_episode(0),
@@ -28,7 +29,7 @@ void RL_Trader::train(void)
         while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
             state = step(state);
 
-            if (BitSim::Trader::algorithm == "SAC" && idx_episode % BitSim::Trader::SAC::update_interval == 0) {
+            if (BitSim::Trader::algorithm == "SAC" && step_total % BitSim::Trader::SAC::update_interval == 0) {
                 update_model(idx_episode);
             }
 
@@ -67,7 +68,8 @@ void RL_Trader::update_model(int idx_episode)
             ") Q2(" << losses[1] <<
             ") PL(" << losses[2] <<
             ") AL(" << losses[3] <<
-            ") R(" << losses[4] << ")" << std::endl;
+            ") A("  << losses[4] <<
+            ") R("  << losses[5] << ")" << std::endl;
     }
     else if (BitSim::Trader::algorithm == "PPO") {
         std::cout << "Ep(" << idx_episode <<

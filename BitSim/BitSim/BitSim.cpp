@@ -3,7 +3,8 @@
 #include "BitBaseClient.h"
 #include "BitBotConstants.h"
 //#include "BitmexSimulator.h"
-#include "CartpoleSimulator.h"
+//#include "CartpoleSimulator.h"
+#include "PendulumSimulator.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
 #include "FE_Training.h"
@@ -69,7 +70,8 @@ int main()
 
     }
     else if (command == "train_cartpole") {
-        auto simulator = std::make_shared<CartpoleSimulator>();
+        //auto simulator = std::make_shared<CartpoleSimulator>();
+        auto simulator = std::make_shared<PendulumSimulator>();
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
     }

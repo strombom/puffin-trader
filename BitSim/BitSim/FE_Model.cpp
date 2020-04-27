@@ -29,7 +29,7 @@ torch::Tensor FeaturePredictorImpl::forward(torch::Tensor observed_features)
     // TODO: Attention? https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
     const auto initial_hidden = torch::zeros({ 1, BitSim::batch_size, BitSim::feature_size }).cuda();
     auto gru_result = gru->forward(observed_features, initial_hidden);
-    auto prediction = gru_result.output;                       // BxNxC
+    auto prediction = std::get<0>(gru_result); //.output;                       // BxNxC
     prediction = prediction.select(1, prediction.size(1) - 1); // BxC
     prediction = prediction.reshape({ prediction.size(0), 1, prediction.size(1) }); // Bx1xC
     prediction = sigmoid(prediction);

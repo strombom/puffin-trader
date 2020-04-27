@@ -50,7 +50,7 @@ void FE_Training::train(void)
         torch::data::DataLoaderOptions{}.batch_size(BitSim::batch_size).workers(10));
     timer.print_elapsed("DataLoader");
 
-    auto optimizer = torch::optim::SGD{ model->parameters(), torch::optim::SGDOptions{0.01}.momentum(0.9) };
+    auto optimizer = torch::optim::SGD{ model->parameters(), torch::optim::SGDOptions{ 0.01 }.momentum(0.9) };
 
     const auto start_iteration = 0;    
     auto scheduler = uptrFE_Scheduler{};
@@ -82,8 +82,13 @@ void FE_Training::train(void)
         //timer.print_elapsed("Step");
 
         const auto [learning_rate, momentum] = scheduler->calc(info_nce_loss.item().to<double>());
-        optimizer.options.learning_rate(learning_rate);
-        optimizer.options.momentum(momentum);
+
+        for (auto& param_group : optimizer.param_groups()) {
+            auto& options = static_cast<torch::optim::SGDOptions&>(param_group.options());
+            options.lr(learning_rate);
+            options.momentum(momentum);
+        }
+
         logger.info("step loss(%f) lr(%f) mom(%f)", info_nce_loss.item().to<double>(), learning_rate, momentum);
         
         train_csv.append_row({ info_nce_loss.item().to<double>(), learning_rate, momentum });

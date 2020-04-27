@@ -42,7 +42,7 @@ struct FeaturePredictorImpl : public torch::nn::Module
         gru(register_module(name,
             torch::nn::GRU{
                 torch::nn::GRUOptions{ BitSim::feature_size, BitSim::feature_size }
-                    .layers(1)
+                    .num_layers(1)
                     .bidirectional(false)
                     .batch_first(true)
             }

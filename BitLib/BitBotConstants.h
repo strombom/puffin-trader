@@ -87,7 +87,7 @@ namespace BitSim
     {
         constexpr auto algorithm = "SAC";
 
-        constexpr auto n_episodes = 10000;
+        constexpr auto n_episodes = 250;
         constexpr auto save_period = 100;
 
         constexpr auto max_steps = 200;
@@ -99,24 +99,22 @@ namespace BitSim
 
         namespace SAC
         {
-            constexpr auto update_interval = 10;
+            constexpr auto update_interval = 1;
 
-            constexpr auto batch_size = 128;
-            constexpr auto buffer_size = 50 * max_steps;
+            constexpr auto batch_size = 256;
+            constexpr auto buffer_size = 50000;
             constexpr auto initial_random_action = 1000;
 
-            constexpr auto hidden_count = 2;
-            constexpr auto hidden_dim = 64;
+            constexpr auto hidden_dim = 256;
 
             constexpr auto alpha = 0.2;
             constexpr auto gamma_discount = 0.99;
-            constexpr auto soft_tau = 5e-3;
-            constexpr auto learning_rate = 1e-4;
+            constexpr auto soft_tau = 0.005;
+            constexpr auto learning_rate = 3e-4;
             constexpr auto learning_rate_entropy = learning_rate;
             constexpr auto learning_rate_qf_1 = learning_rate;
             constexpr auto learning_rate_qf_2 = learning_rate;
             constexpr auto learning_rate_actor = learning_rate;
-            constexpr auto reward_scale = 1.0;
         }
 
         namespace PPO
@@ -135,7 +133,7 @@ namespace BitSim
             constexpr auto gamma_discount = 0.95;
         }
 
-        constexpr auto state_dim = 5; // feature_size + 1; // Features, leverage (-1 to +1)
+        constexpr auto state_dim = 3; // 5; // feature_size + 1; // Features, leverage (-1 to +1)
         constexpr auto action_dim = 1; // 4; // buy_position, buy_size, sell_position, sell_size
 
         //constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };

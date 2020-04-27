@@ -74,7 +74,7 @@ private:
     RL_SAC_ReplayBuffer replay_buffer;
 
     double target_entropy;
-    torch::Tensor alpha;
+    double alpha;
     torch::Tensor log_alpha;
     std::unique_ptr<torch::optim::Adam> policy_optim;
     std::unique_ptr<torch::optim::Adam> q1_optim;
