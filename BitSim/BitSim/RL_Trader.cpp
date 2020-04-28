@@ -27,11 +27,14 @@ void RL_Trader::train(void)
         step_episode = 0;
 
         while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
-            state = step(state);
 
-            if (BitSim::Trader::algorithm == "SAC" && step_total % BitSim::Trader::SAC::update_interval == 0) {
+            if (BitSim::Trader::algorithm == "SAC" && 
+                step_total % BitSim::Trader::SAC::update_interval == 0 &&
+                step_total >= BitSim::Trader::SAC::batch_size) {
                 update_model(idx_episode);
             }
+
+            state = step(state);
 
             ++step_total;
             ++step_episode;
