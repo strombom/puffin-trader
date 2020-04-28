@@ -160,7 +160,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>c10.lib;c10_cuda.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;clog.lib;cpuinfo.lib;libprotobufd.lib;libprotobuf-lited.lib;libprotocd.lib;torch.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>c10.lib;c10_cuda.lib;caffe2_detectron_ops_gpu.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;clog.lib;cpuinfo.lib;fbgemm.lib;libprotobufd.lib;libprotobuf-lited.lib;libprotocd.lib;mkldnn.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\development\libraries\libtorch-1.5.0-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
