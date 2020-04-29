@@ -160,8 +160,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>c10.lib;c10_cuda.lib;caffe2_detectron_ops_gpu.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;clog.lib;cpuinfo.lib;fbgemm.lib;libprotobufd.lib;libprotobuf-lited.lib;libprotocd.lib;mkldnn.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\development\libraries\libtorch-1.5.0-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>c10.lib;c10_cuda.lib;caffe2_detectron_ops_gpu.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;clog.lib;cpuinfo.lib;fbgemm.lib;libprotobuf.lib;libprotobuf-lite.lib;libprotoc.lib;mkldnn.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\development\libraries\libtorch-1.5.0-release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -175,6 +175,7 @@
     <ClCompile Include="..\..\BitLib\Utils.cpp" />
     <ClCompile Include="BitBaseClient.cpp" />
     <ClCompile Include="BitSim.cpp" />
+    <ClCompile Include="CartpoleSimulator.cpp" />
     <ClCompile Include="FE_DataLoader.cpp" />
     <ClCompile Include="FE_Inference.cpp" />
     <ClCompile Include="FE_Model.cpp" />
@@ -185,7 +186,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="PendulumSimulator.cpp" />
     <ClCompile Include="RL_Action.cpp" />
     <ClCompile Include="RL_Algorithm.cpp" />
     <ClCompile Include="RL_PPO.cpp" />
@@ -202,6 +202,7 @@
     <ClInclude Include="..\..\BitLib\Logger.h" />
     <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
+    <ClInclude Include="CartpoleSimulator.h" />
     <ClInclude Include="FE_DataLoader.h" />
     <ClInclude Include="FE_Inference.h" />
     <ClInclude Include="FE_Model.h" />
@@ -209,7 +210,6 @@
     <ClInclude Include="FE_Scheduler.h" />
     <ClInclude Include="FE_Training.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PendulumSimulator.h" />
     <ClInclude Include="RL_Action.h" />
     <ClInclude Include="RL_Algorithm.h" />
     <ClInclude Include="RL_PPO.h" />

@@ -8,15 +8,15 @@
 #include "RL_Algorithm.h"
 #include "FE_Observations.h"
 //#include "BitmexSimulator.h"
-//#include "CartpoleSimulator.h"
-#include "PendulumSimulator.h"
+#include "CartpoleSimulator.h"
+//#include "PendulumSimulator.h"
 
 
 class RL_Trader
 {
 public:
-    //RL_Trader(sptrCartpoleSimulator simulator);
-    RL_Trader(sptrPendulumSimulator simulator);
+    RL_Trader(sptrCartpoleSimulator simulator);
+    //RL_Trader(sptrPendulumSimulator simulator);
 
     void train(void);
 
@@ -25,8 +25,8 @@ private:
     int step_episode;
 
     uptrRL_Algorithm rl_algorithm;
-    //sptrCartpoleSimulator simulator;
-    sptrPendulumSimulator simulator;
+    sptrCartpoleSimulator simulator;
+    //sptrPendulumSimulator simulator;
     sptrRL_State step(sptrRL_State state);
     void update_model(int idx_episode);
     void save_params(int idx_period);

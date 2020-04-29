@@ -4,8 +4,8 @@
 class RL_State
 {
 public:
-    //RL_State(double reward, double cart_position, double cart_velocity, double pole_angle, double pole_velocity);
-    RL_State(double reward, double angle, double velocity);
+    RL_State(double reward, double cart_position, double cart_velocity, double pole_angle, double pole_velocity);
+    //RL_State(double reward, double angle, double velocity);
     RL_State(std::shared_ptr<RL_State> state);
 
     void set_done(void);
@@ -13,12 +13,12 @@ public:
     torch::Tensor to_tensor(void) const;
 
     bool done;
-    double angle;
-    double velocity;
-    //double pole_angle;
-    //double pole_velocity;
-    //double cart_position;
-    //double cart_velocity;
+    //double angle;
+    //double velocity;
+    double pole_angle;
+    double pole_velocity;
+    double cart_position;
+    double cart_velocity;
     double reward;
 };
 

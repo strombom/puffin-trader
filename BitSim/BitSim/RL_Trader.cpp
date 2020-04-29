@@ -4,8 +4,8 @@
 #include "BitBotConstants.h"
 
 
-//RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
-RL_Trader::RL_Trader(sptrPendulumSimulator simulator) :
+RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
+//RL_Trader::RL_Trader(sptrPendulumSimulator simulator) :
     simulator(simulator),
     step_total(0),
     step_episode(0),
@@ -21,6 +21,8 @@ RL_Trader::RL_Trader(sptrPendulumSimulator simulator) :
 
 void RL_Trader::train(void)
 {
+    auto timer = Timer{};
+
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
 
         auto state = simulator->reset(idx_episode);
@@ -28,15 +30,21 @@ void RL_Trader::train(void)
         
         auto episode_reward = 0.0;
 
-        while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
+        auto update_time = 0.0;
+        auto step_time = 0.0;
 
+        while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
             if (BitSim::Trader::algorithm == "SAC" && 
                 step_total % BitSim::Trader::SAC::update_interval == 0 &&
                 step_total >= BitSim::Trader::SAC::batch_size) {
+                timer.restart();
                 update_model(idx_episode);
+                update_time += timer.elapsed().count();
             }
 
+            timer.restart();
             state = step(state);
+            step_time += timer.elapsed().count();
             episode_reward += state->reward;
 
             ++step_total;
@@ -44,6 +52,8 @@ void RL_Trader::train(void)
         }
 
         std::cout << "Episode reward: " << episode_reward << "  -  "; // std::endl;
+        std::cout << "u(" << update_time << ") ";
+        std::cout << "s(" << step_time << ") ";
 
         if (BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
             update_model(idx_episode);
