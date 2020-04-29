@@ -86,6 +86,4 @@ private:
     QNetwork q2;
     QNetwork target_q1;
     QNetwork target_q2;
-
-    int update_count;
 };

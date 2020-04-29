@@ -12,6 +12,12 @@ RL_State::RL_State(double reward, double angle, double velocity) :
 
 }
 
+RL_State::RL_State(std::shared_ptr<RL_State> state) :
+    done(state->done), reward(state->reward), angle(state->angle), velocity(state->velocity)
+{
+
+}
+
 void RL_State::set_done(void)
 {
     done = true;

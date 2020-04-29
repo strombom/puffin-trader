@@ -136,8 +136,7 @@ RL_SAC::RL_SAC(void) :
     target_q2(QNetwork{ "target_q2" }),
     alpha(BitSim::Trader::SAC::alpha),
     log_alpha(torch::zeros(1, torch::requires_grad(true))),
-    target_entropy(-BitSim::Trader::action_dim),
-    update_count(0)
+    target_entropy(-BitSim::Trader::action_dim)
 {
     policy_optim = std::make_unique<torch::optim::Adam>(policy->parameters(), BitSim::Trader::SAC::learning_rate_actor);
     q1_optim = std::make_unique<torch::optim::Adam>(q1->parameters(), BitSim::Trader::SAC::learning_rate_qf_1);
@@ -176,26 +175,38 @@ std::array<double, 6> RL_SAC::update_model(void)
 {
     const auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
 
-    auto next_q = torch::Tensor{};
+    const auto [new_actions, new_log_probs] = policy->sample_action(states);
+
+    const auto q1_pred = q1->forward(states, actions);
+    const auto q2_pred = q2->forward(states, actions);
+
+    const auto alpha_loss = -((new_log_probs + target_entropy).detach() * log_alpha).mean();
+    alpha_optim->zero_grad();
+    alpha_loss.backward();
+    alpha_optim->step();
+    alpha = log_alpha.exp().item().toDouble();
+
+    auto q_target = torch::Tensor{};
     {
         auto no_grad_guard = torch::NoGradGuard{};
         const auto [next_actions, next_log_probs] = policy->sample_action(next_states);
         const auto next_target_q1 = target_q1->forward(next_states, next_actions);
         const auto next_target_q2 = target_q2->forward(next_states, next_actions);
         const auto next_target_q = torch::min(next_target_q1, next_target_q2) - alpha * next_log_probs;
-        next_q = rewards + BitSim::Trader::SAC::gamma_discount * next_target_q;
+        q_target = rewards + BitSim::Trader::SAC::gamma_discount * next_target_q;
     }
 
-    const auto q1_value = q1->forward(states, actions);
-    const auto q2_value = q2->forward(states, actions);
-    const auto q1_loss = torch::mse_loss(q1_value, next_q);
-    const auto q2_loss = torch::mse_loss(q2_value, next_q);
+    const auto q1_loss = torch::mse_loss(q1_pred, q_target.detach());
+    const auto q2_loss = torch::mse_loss(q2_pred, q_target.detach());
 
-    const auto [new_actions, new_log_probs] = policy->sample_action(states);
-    const auto q1_policy = q1->forward(states, new_actions);
-    const auto q2_policy = q2->forward(states, new_actions);
-    const auto q_policy = torch::min(q1_policy, q2_policy);
-    const auto policy_loss = ((alpha * new_log_probs) - q_policy.detach()).mean();
+    const auto new_q1_value = q1->forward(states, new_actions);
+    const auto new_q2_value = q2->forward(states, new_actions);
+    const auto new_q_value = torch::min(new_q1_value, new_q2_value);
+    const auto policy_loss = ((alpha * new_log_probs) - new_q_value).mean();
+
+    policy_optim->zero_grad();
+    policy_loss.backward();
+    policy_optim->step();
 
     q1_optim->zero_grad();
     q1_loss.backward();
@@ -204,16 +215,6 @@ std::array<double, 6> RL_SAC::update_model(void)
     q2_optim->zero_grad();
     q2_loss.backward();
     q2_optim->step();
-
-    policy_optim->zero_grad();
-    policy_loss.backward();
-    policy_optim->step();
-
-    const auto alpha_loss = -(log_alpha * (new_log_probs + target_entropy).detach()).mean();
-    alpha_optim->zero_grad();
-    alpha_loss.backward();
-    alpha_optim->step();
-    alpha = log_alpha.exp().item().toDouble();
 
     // Soft update target
     auto param_q1 = q1->parameters();
@@ -225,7 +226,7 @@ std::array<double, 6> RL_SAC::update_model(void)
         target_param_q2[i].data().copy_(target_param_q2[i].data() * (1.0 - BitSim::Trader::SAC::soft_tau) + param_q2[i].data() * BitSim::Trader::SAC::soft_tau);
     }
 
-    const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::SAC::batch_size * BitSim::Trader::max_steps / 2;
+    const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::SAC::batch_size * BitSim::Trader::max_steps;
 
     const auto losses = std::array<double, 6>{
         q1_loss.item().toDouble(),

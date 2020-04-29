@@ -25,6 +25,8 @@ void RL_Trader::train(void)
 
         auto state = simulator->reset(idx_episode);
         step_episode = 0;
+        
+        auto episode_reward = 0.0;
 
         while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
 
@@ -35,10 +37,13 @@ void RL_Trader::train(void)
             }
 
             state = step(state);
+            episode_reward += state->reward;
 
             ++step_total;
             ++step_episode;
         }
+
+        std::cout << "Episode reward: " << episode_reward << "  -  "; // std::endl;
 
         if (BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
             update_model(idx_episode);
@@ -100,11 +105,13 @@ sptrRL_State RL_Trader::step(sptrRL_State state)
         action = rl_algorithm->get_random_action(state);
     }
     else {
+        auto no_grad_guard = torch::NoGradGuard{};
         action = rl_algorithm->get_action(state);
     }
 
     const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
+    const auto last_state = std::make_shared<RL_State>( RL_State{ state } );
     auto next_state = simulator->step(action, last_step);
-    rl_algorithm->append_to_replay_buffer(state, action, next_state);
+    rl_algorithm->append_to_replay_buffer(last_state, action, next_state);
     return next_state;
 }
