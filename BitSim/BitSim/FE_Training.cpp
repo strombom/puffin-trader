@@ -83,11 +83,13 @@ void FE_Training::train(void)
 
         const auto [learning_rate, momentum] = scheduler->calc(info_nce_loss.item().to<double>());
 
+        /*
         for (auto& param_group : optimizer.param_groups()) {
             auto& options = static_cast<torch::optim::SGDOptions&>(param_group.options());
             options.lr(learning_rate);
             options.momentum(momentum);
         }
+        */
 
         logger.info("step loss(%f) lr(%f) mom(%f)", info_nce_loss.item().to<double>(), learning_rate, momentum);
         
