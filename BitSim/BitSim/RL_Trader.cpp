@@ -52,7 +52,7 @@ void RL_Trader::train(void)
         }
         
         std::cout << "Episode reward: " << episode_reward << "  -  "; // std::endl;
-        std::cout << "u(" << update_time << ") s(" << step_time << ") ";
+        //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
 
         if (BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
             update_model(idx_episode);

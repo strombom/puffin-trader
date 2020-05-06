@@ -5,12 +5,19 @@
 
 sptrRL_Action RL_Action::random(void)
 {
-    return std::make_shared<RL_Action>(Utils::random(-2.0, 2.0)); //     
+    const auto discrete_action = Utils::random(0, 2);
+    return std::make_shared<RL_Action>(Utils::random(-2.0, 2.0),
+        discrete_action == 0, discrete_action == 1, discrete_action == 2);
 }
 
 torch::Tensor RL_Action::to_tensor(void) const
 {
-    return torch::tensor({ move });
+    return torch::tensor({ 
+        move_side,
+        move_not ? 1.0 : 0.0,
+        move_up ? 1.0 : 0.0,
+        move_down ? 1.0 : 0.0
+    });
 }
 
 /*

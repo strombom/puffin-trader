@@ -35,7 +35,7 @@ double normalize_angle(double angle)
 
 sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
 {
-    const auto force = force_mag * action->move; // std::clamp(action->move, -BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
+    const auto force = force_mag * action->move_side; // std::clamp(action->move, -BitSim::Trader::PPO::action_clamp, BitSim::Trader::PPO::action_clamp);
     const auto costheta = std::cos(state->pole_angle);
     const auto sintheta = std::sin(state->pole_angle);
 

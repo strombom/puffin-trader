@@ -15,19 +15,23 @@ void initialize_weights(torch::nn::Module& module) {
 
 QNetworkImpl::QNetworkImpl(const std::string& name)
 {
-    auto linear_1 = torch::nn::Linear{ BitSim::Trader::state_dim + BitSim::Trader::action_dim, BitSim::Trader::SAC::hidden_dim };
+    auto linear_1 = torch::nn::Linear{ BitSim::Trader::state_dim + BitSim::Trader::action_dim_continuous + BitSim::Trader::action_dim_discrete, BitSim::Trader::SAC::hidden_dim };
     auto linear_2 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim };
-    auto linear_3 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, 1 };
+    auto linear_3 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim };
+    auto linear_4 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, 1 };
 
     layers->push_back(register_module(name + "_linear_1", linear_1));
     layers->push_back(register_module(name + "_relu_1", torch::nn::ReLU{}));
     layers->push_back(register_module(name + "_linear_2", linear_2));
     layers->push_back(register_module(name + "_relu_2", torch::nn::ReLU{}));
     layers->push_back(register_module(name + "_linear_3", linear_3));
+    layers->push_back(register_module(name + "_relu_3", torch::nn::ReLU{}));
+    layers->push_back(register_module(name + "_linear_4", linear_4));
 
     linear_1->apply(initialize_weights);
     linear_2->apply(initialize_weights);
     linear_3->apply(initialize_weights);
+    linear_4->apply(initialize_weights);
 }
 
 torch::Tensor QNetworkImpl::forward(torch::Tensor state, torch::Tensor action)
@@ -39,66 +43,87 @@ PolicyNetworkImpl::PolicyNetworkImpl(const std::string& name)
 {
     auto linear_1 = torch::nn::Linear{ BitSim::Trader::state_dim, BitSim::Trader::SAC::hidden_dim };
     auto linear_2 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim };
-    auto linear_mean = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim };
-    auto linear_log_std = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim };
+    auto linear_3 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim };
+    auto linear_mean = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim_continuous };
+    auto linear_log_std = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim_continuous };
+    auto linear_discrete = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim_discrete };
 
     policy->push_back(register_module(name + "_linear_1", linear_1));
     policy->push_back(register_module(name + "_relu_1", torch::nn::ReLU{}));
     policy->push_back(register_module(name + "_linear_2", linear_2));
     policy->push_back(register_module(name + "_relu_2", torch::nn::ReLU{}));
+    policy->push_back(register_module(name + "_linear_3", linear_3));
+    policy->push_back(register_module(name + "_relu_3", torch::nn::ReLU{}));
 
     policy_mean->push_back(register_module(name + "_linear_mean", linear_mean));
     policy_log_std->push_back(register_module(name + "_linear_log_std", linear_log_std));
+    policy_discrete->push_back(register_module(name + "_linear_discrete", linear_discrete));
+    policy_discrete->push_back(register_module(name + "_softmax_discrete", torch::nn::Softmax{ 1 }));
 
     linear_1->apply(initialize_weights);
     linear_2->apply(initialize_weights);
+    linear_3->apply(initialize_weights);
     linear_mean->apply(initialize_weights);
     linear_log_std->apply(initialize_weights);
+    linear_discrete->apply(initialize_weights);
 }
 
-std::tuple<torch::Tensor, torch::Tensor> PolicyNetworkImpl::forward(torch::Tensor state)
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> PolicyNetworkImpl::forward(torch::Tensor state)
 {
     const auto latent = policy->forward(state);
-    const auto mean = policy_mean->forward(latent);
-    auto log_std = policy_log_std->forward(latent);
+    const auto disc_action_prob = policy_discrete->forward(latent);
+    const auto cont_mean = policy_mean->forward(latent);
+    auto cont_log_std = policy_log_std->forward(latent);
 
     constexpr auto log_std_min = -20.0;
     constexpr auto log_std_max = 2.0;
-    log_std = torch::clamp(log_std, log_std_min, log_std_max);
+    cont_log_std = torch::clamp(cont_log_std, log_std_min, log_std_max);
 
-    return std::make_tuple(mean, log_std);
+    return std::make_tuple(cont_mean, cont_log_std, disc_action_prob);
 }
 
-std::tuple<torch::Tensor, torch::Tensor> PolicyNetworkImpl::sample_action(torch::Tensor state)
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> PolicyNetworkImpl::sample_action(torch::Tensor state)
 {
+    // Discrete: https://medium.com/@kengz/soft-actor-critic-for-continuous-and-discrete-actions-eeff6f651954
+
     const auto action_scale = 2.0;
 
-    const auto [mean, log_std] = forward(state);
+    const auto [mean, log_std, disc_prob] = forward(state);
     const auto std = log_std.exp();
 
     // Reparametrization trick
     const auto eps = torch::normal(0.0, 1.0, std.sizes()).to(BitSim::Trader::device);
     const auto z = mean + eps * std;
     const auto z_tanh = torch::tanh(z);
-    const auto action = action_scale * z_tanh;
-    auto log_prob = -(z - mean).pow(2) / (2 * std.pow(2)) - log_std - std::log(std::sqrt(2 * M_PI));
+    const auto cont_action = action_scale * z_tanh;
+    auto cont_log_prob = -(z - mean).pow(2) / (2 * std.pow(2)) - log_std - std::log(std::sqrt(2 * M_PI));
+    auto cont_prob = torch::ones(cont_log_prob.sizes()).to(BitSim::Trader::device);
 
     // Enforce action bound
-    log_prob = log_prob - (action_scale * (1 - z_tanh.pow(2)) + 1e-6).log();
-    log_prob = log_prob.sum(1, true);
+    cont_log_prob = cont_log_prob - (action_scale * (1 - z_tanh.pow(2)) + 1e-6).log();
+    cont_log_prob = cont_log_prob.sum(1, true);
 
-    return std::make_tuple(action, log_prob);
+    // Discrete actions
+    auto disc_action_idx = disc_prob.multinomial(1);
+    auto disc_action = torch::zeros(disc_prob.sizes()).to(BitSim::Trader::device).scatter_(-1, disc_action_idx, 1);
+    auto disc_log_prob = torch::log(disc_prob + 1e-8);
+
+    const auto action = torch::cat({ cont_action, disc_action }, 1);
+    const auto prob = torch::cat({ cont_prob, disc_prob }, 1);
+    const auto log_prob = torch::cat({ cont_log_prob, disc_log_prob }, 1); ;
+
+    return std::make_tuple(action, prob, log_prob);
 }
 
 RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
     idx(0),
     length(0)
 {
-    current_states = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::state_dim });
-    actions = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::action_dim });
-    rewards = torch::zeros({ BitSim::Trader::SAC::buffer_size, 1 });
-    next_states = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::state_dim });
-    dones = torch::zeros({ BitSim::Trader::SAC::buffer_size, 1 });
+    current_states = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::state_dim }).to(BitSim::Trader::device);
+    actions = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::action_dim_continuous + BitSim::Trader::action_dim_discrete }).to(BitSim::Trader::device);
+    rewards = torch::zeros({ BitSim::Trader::SAC::buffer_size, 1 }).to(BitSim::Trader::device);
+    next_states = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::state_dim }).to(BitSim::Trader::device);
+    dones = torch::zeros({ BitSim::Trader::SAC::buffer_size, 1 }).to(BitSim::Trader::device);
 }
 
 void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
@@ -119,11 +144,11 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Te
     //indices = (indices + BitSim::Trader::SAC::buffer_size + idx - length).fmod(BitSim::Trader::SAC::buffer_size);
 
     return std::make_tuple(
-        current_states.index(indices).detach().to(BitSim::Trader::device), 
-        actions.index(indices).detach().to(BitSim::Trader::device),
-        rewards.index(indices).detach().to(BitSim::Trader::device),
-        next_states.index(indices).detach().to(BitSim::Trader::device),
-        dones.index(indices).detach().to(BitSim::Trader::device)
+        current_states.index(indices).detach(), 
+        actions.index(indices).detach(),
+        rewards.index(indices).detach(),
+        next_states.index(indices).detach(),
+        dones.index(indices).detach()
     );
 }
 
@@ -135,7 +160,7 @@ RL_SAC::RL_SAC(void) :
     target_q2(QNetwork{ "target_q2" }),
     alpha(BitSim::Trader::SAC::alpha),
     log_alpha(torch::zeros(1)),
-    target_entropy(-BitSim::Trader::action_dim)
+    target_entropy(-BitSim::Trader::action_dim_continuous)
 {
     policy->to(BitSim::Trader::device);
     q1->to(BitSim::Trader::device);
@@ -164,8 +189,8 @@ RL_SAC::RL_SAC(void) :
 sptrRL_Action RL_SAC::get_action(sptrRL_State state)
 {
     const auto state_tensor = state->to_tensor().view({ 1, BitSim::Trader::state_dim }).to(BitSim::Trader::device);
-    const auto [action, _log_prob] = policy->sample_action(state_tensor);
-    return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
+    const auto [action, _prob, _log_prob] = policy->sample_action(state_tensor);
+    return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim_continuous }));
 }
 
 sptrRL_Action RL_SAC::get_random_action(sptrRL_State state)
@@ -180,58 +205,37 @@ void RL_SAC::append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action a
 
 std::array<double, 6> RL_SAC::update_model(void)
 {
-    auto timer = Timer{};
-
-    auto time_sample_1 = 0.0;
-    auto time_sample_2 = 0.0;
-    auto time_alpha = 0.0;
-    auto time_q_target = 0.0;
-    auto time_policy = 0.0;
-    auto time_backward = 0.0;
-    auto time_soft_update = 0.0;
-    
     auto [states, actions, rewards, next_states, dones] = replay_buffer.sample();
 
-    timer.restart();
-    const auto [new_actions, new_log_probs] = policy->sample_action(states);
-    time_sample_1 = (double) timer.elapsed().count() * 0.000001;
+    const auto [new_actions, new_probs, new_log_probs] = policy->sample_action(states);
 
-    timer.restart();
     const auto q1_pred = q1->forward(states, actions);
     const auto q2_pred = q2->forward(states, actions);
-    time_sample_2 = (double) timer.elapsed().count() * 0.000001;
 
-    timer.restart();
     const auto alpha_loss = -((new_log_probs + target_entropy).detach() * log_alpha).mean();
     alpha_optim->zero_grad();
     alpha_loss.backward();
     alpha_optim->step();
     alpha = log_alpha.exp().item().toDouble();
-    time_alpha = (double) timer.elapsed().count() * 0.000001;
 
-    timer.restart();
     auto q_target = torch::Tensor{};
     {
         auto no_grad_guard = torch::NoGradGuard{};
-        const auto [next_actions, next_log_probs] = policy->sample_action(next_states);
+        const auto [next_actions, next_probs, next_log_probs] = policy->sample_action(next_states);
         const auto next_target_q1 = target_q1->forward(next_states, next_actions);
         const auto next_target_q2 = target_q2->forward(next_states, next_actions);
-        const auto next_target_q = torch::min(next_target_q1, next_target_q2) - alpha * next_log_probs;
+        const auto next_target_q = next_probs * (torch::min(next_target_q1, next_target_q2) - alpha * next_log_probs);
         q_target = rewards + BitSim::Trader::SAC::gamma_discount * next_target_q;
     }
-    time_q_target = (double) timer.elapsed().count() * 0.000001;
 
-    timer.restart();
     const auto q1_loss = torch::mse_loss(q1_pred, q_target.detach());
     const auto q2_loss = torch::mse_loss(q2_pred, q_target.detach());
 
     const auto new_q1_value = q1->forward(states, new_actions);
     const auto new_q2_value = q2->forward(states, new_actions);
     const auto new_q_value = torch::min(new_q1_value, new_q2_value);
-    const auto policy_loss = ((alpha * new_log_probs) - new_q_value).mean();
-    time_policy = (double) timer.elapsed().count() * 0.000001;
+    const auto policy_loss = (new_probs * ((alpha * new_log_probs) - new_q_value)).mean();
 
-    timer.restart();
     policy_optim->zero_grad();
     policy_loss.backward();
     policy_optim->step();
@@ -243,9 +247,7 @@ std::array<double, 6> RL_SAC::update_model(void)
     q2_optim->zero_grad();
     q2_loss.backward();
     q2_optim->step();
-    time_backward = (double)timer.elapsed().count() * 0.000001;
 
-    timer.restart();
     // Soft update target
     auto param_q1 = q1->parameters();
     auto param_q2 = q1->parameters();
@@ -255,7 +257,6 @@ std::array<double, 6> RL_SAC::update_model(void)
         target_param_q1[i].data().copy_(target_param_q1[i].data() * (1.0 - BitSim::Trader::SAC::soft_tau) + param_q1[i].data() * BitSim::Trader::SAC::soft_tau);
         target_param_q2[i].data().copy_(target_param_q2[i].data() * (1.0 - BitSim::Trader::SAC::soft_tau) + param_q2[i].data() * BitSim::Trader::SAC::soft_tau);
     }
-    time_soft_update = (double) timer.elapsed().count() * 0.000001;
 
     const auto episode_score = rewards.sum().item().toDouble() / BitSim::Trader::SAC::batch_size * BitSim::Trader::max_steps;
 

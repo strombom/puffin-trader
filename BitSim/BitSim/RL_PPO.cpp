@@ -9,8 +9,8 @@
 RL_PPO_ReplayBuffer::RL_PPO_ReplayBuffer(void) :
     length(0)
 {
-    actions = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::action_dim });
-    states = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::state_dim });
+    actions = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::action_dim_continuous });
+    states = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::action_dim_continuous });
     log_probs = torch::zeros({ BitSim::Trader::PPO::buffer_size, 1 });
     rewards = torch::zeros({ BitSim::Trader::PPO::buffer_size, 1 });
     next_states = torch::zeros({ BitSim::Trader::PPO::buffer_size, BitSim::Trader::state_dim });
@@ -39,10 +39,10 @@ RL_PPO_ActorImpl::RL_PPO_ActorImpl(const std::string& name)
     //actor->push_back(register_module(name + "_actor_linear_2", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim, BitSim::Trader::PPO::hidden_dim / 2 }));
     //actor->push_back(register_module(name + "_actor_tanh_2", torch::nn::ReLU6{}));
 
-    actor_mean->push_back(register_module(name + "_actor_mean_linear_1", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim, BitSim::Trader::action_dim }));
+    actor_mean->push_back(register_module(name + "_actor_mean_linear_1", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim, BitSim::Trader::action_dim_continuous }));
     actor_mean->push_back(register_module(name + "_actor_mean_tanh_1", torch::nn::Tanh{}));
 
-    actor_log_std->push_back(register_module(name + "_actor_log_std_linear_1", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim, BitSim::Trader::action_dim }));
+    actor_log_std->push_back(register_module(name + "_actor_log_std_linear_1", torch::nn::Linear{ BitSim::Trader::PPO::hidden_dim, BitSim::Trader::action_dim_continuous }));
     actor_log_std->push_back(register_module(name + "_actor_log_std_softplus_1", torch::nn::Softplus{}));
 }
 
@@ -123,7 +123,7 @@ sptrRL_Action RL_PPO::get_action(sptrRL_State state)
     replay_buffer.actions[replay_buffer.length] = action[0];
     replay_buffer.log_probs[replay_buffer.length] = log_prob[0];
 
-    return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim }));
+    return std::make_shared<RL_Action>(action.view({ BitSim::Trader::action_dim_continuous }));
 }
 
 sptrRL_Action RL_PPO::get_random_action(sptrRL_State state)

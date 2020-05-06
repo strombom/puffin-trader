@@ -25,13 +25,14 @@ class PolicyNetworkImpl : public torch::nn::Module
 public:
     PolicyNetworkImpl(const std::string& name);
 
-    std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor state);
-    std::tuple<torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
 
 private:
     torch::nn::Sequential policy;
     torch::nn::Sequential policy_mean;
     torch::nn::Sequential policy_log_std;
+    torch::nn::Sequential policy_discrete;
 
 };
 TORCH_MODULE(PolicyNetwork);
