@@ -100,8 +100,10 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> PolicyNetworkImpl::sampl
     auto cont_prob = torch::ones(cont_log_prob.sizes()).to(BitSim::Trader::device);
 
     // Enforce action bound
-    cont_log_prob = cont_log_prob - (action_scale * (1 - z_tanh.pow(2)) + 1e-6).log();
-    cont_log_prob = cont_log_prob.sum(1, true);
+    if (BitSim::Trader::action_dim_continuous > 0) {
+        cont_log_prob = cont_log_prob - (action_scale * (1 - z_tanh.pow(2)) + 1e-6).log();
+        cont_log_prob = cont_log_prob.sum(1, true);
+    }
 
     // Discrete actions
     auto disc_action_idx = disc_prob.multinomial(1);
