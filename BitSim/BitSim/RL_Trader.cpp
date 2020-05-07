@@ -73,8 +73,8 @@ void RL_Trader::update_model(int idx_episode)
     auto losses = rl_algorithm->update_model();
     csv_logger.append_row(losses);
 
-    std::cout << std::setfill(' ') << std::setw(4);
-    std::cout << std::fixed << std::setprecision(3);
+    std::cout << std::setfill(' ') << std::setw(5);
+    std::cout << std::fixed << std::setprecision(4);
 
     static auto last_idx_episode = 0;
 

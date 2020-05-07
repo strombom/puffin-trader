@@ -10,18 +10,23 @@ public:
         move_not(true), move_up(false), move_down(false)
     {}
 
-    RL_Action(torch::Tensor action) :
+    RL_Action(torch::Tensor cont_action)// :
+        //move_side(action[0].item().to<double>())
+    {}
+
+    RL_Action(torch::Tensor cont_action, torch::Tensor disc_action) :
         //move_side(action[0].item().to<double>()),
-        move_not(action[1].item().toBool()),
-        move_up(action[2].item().toBool()),
-        move_down(action[3].item().toBool()) {}
+        move_not(disc_action[0].item().toLong() == 0),
+        move_up(disc_action[0].item().toLong() == 1),
+        move_down(disc_action[0].item().toLong() == 2) {}
 
     RL_Action(bool move_not, bool move_up, bool move_down) :
         //move_side(move_side),
         move_not(move_not), move_up(move_up), move_down(move_down) {}
 
     static std::shared_ptr<RL_Action> random(void);
-    torch::Tensor to_tensor(void) const;
+    torch::Tensor to_tensor_cont(void) const;
+    torch::Tensor to_tensor_disc(void) const;
 
     //double move_side;
     bool move_not;

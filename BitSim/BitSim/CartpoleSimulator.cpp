@@ -39,7 +39,7 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
     if (action->move_up) {
         force = -force_mag;
     }
-    else {
+    else if (action->move_down) {
         force = force_mag;
     }
     
@@ -82,7 +82,7 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
         + 0.5 * std::pow(state->cart_position, 2.0); // +0.01 * std::pow(state->cart_velocity, 2.0);
 
 
-    state->reward = 0.0 - 0.2 * cost;
+    state->reward = 1.0 - 0.05 * cost;
 
 
 

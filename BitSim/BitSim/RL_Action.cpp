@@ -14,14 +14,20 @@ sptrRL_Action RL_Action::random(void)
         );
 }
 
-torch::Tensor RL_Action::to_tensor(void) const
+torch::Tensor RL_Action::to_tensor_cont(void) const
+{
+    return torch::tensor({
+        //move_side,
+        });
+}
+
+torch::Tensor RL_Action::to_tensor_disc(void) const
 {
     return torch::tensor({ 
-        //move_side,
-        move_not ? 1.0 : 0.0,
-        move_up ? 1.0 : 0.0,
-        move_down ? 1.0 : 0.0
-    });
+        1 * move_up + 2 * move_down
+        },
+        c10::TensorOptions{}.dtype( c10::ScalarType::Long )
+    );
 }
 
 /*

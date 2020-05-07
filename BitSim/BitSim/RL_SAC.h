@@ -26,7 +26,7 @@ public:
     PolicyNetworkImpl(const std::string& name);
 
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
 
 private:
     torch::nn::Sequential policy;
@@ -44,11 +44,12 @@ public:
     RL_SAC_ReplayBuffer(void);
 
     void append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
 private:
     torch::Tensor current_states;
-    torch::Tensor actions;
+    torch::Tensor cont_actions;
+    torch::Tensor disc_actions_idx;
     torch::Tensor rewards;
     torch::Tensor next_states;
     torch::Tensor dones;
