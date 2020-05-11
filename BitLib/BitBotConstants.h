@@ -86,7 +86,7 @@ namespace BitSim
     namespace Trader
     {
         constexpr auto algorithm = "SAC";
-        const auto device = torch::Device{ torch::kCPU };
+        const auto device = torch::Device{ torch::kCUDA };
 
         constexpr auto n_episodes = 250;
         constexpr auto save_period = 100;
@@ -102,16 +102,16 @@ namespace BitSim
         {
             constexpr auto update_interval = 1;
 
-            constexpr auto batch_size = 4;
+            constexpr auto batch_size = 512;
             constexpr auto buffer_size = 50000;
             constexpr auto initial_random_action = 1000;
 
-            constexpr auto hidden_dim = 256;
+            constexpr auto hidden_dim = 512;
 
-            constexpr auto alpha = 0.2;
+            constexpr auto alpha = 1.0;
             constexpr auto gamma_discount = 0.99;
             constexpr auto soft_tau = 0.005;
-            constexpr auto learning_rate = 3e-4;
+            constexpr auto learning_rate = 1e-4;
             constexpr auto learning_rate_entropy = learning_rate;
             constexpr auto learning_rate_qf_1 = learning_rate;
             constexpr auto learning_rate_qf_2 = learning_rate;

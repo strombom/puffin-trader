@@ -16,7 +16,7 @@ void initialize_weights(torch::nn::Module& module) {
 QNetworkImpl::QNetworkImpl(const std::string& name)
 {
     //+BitSim::Trader::action_dim_continuous + BitSim::Trader::action_dim_discrete
-    auto linear_1 = torch::nn::Linear{ BitSim::Trader::state_dim, BitSim::Trader::SAC::hidden_dim };
+    auto linear_1 = torch::nn::Linear{ BitSim::Trader::state_dim + BitSim::Trader::action_dim_continuous, BitSim::Trader::SAC::hidden_dim };
     auto linear_2 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim };
     auto linear_3 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::SAC::hidden_dim };
     auto linear_4 = torch::nn::Linear{ BitSim::Trader::SAC::hidden_dim, BitSim::Trader::action_dim_discrete };
@@ -37,7 +37,7 @@ QNetworkImpl::QNetworkImpl(const std::string& name)
 
 torch::Tensor QNetworkImpl::forward(torch::Tensor state, torch::Tensor action)
 {
-    return layers->forward(torch::cat({ state }, 1)); //, action
+    return layers->forward(torch::cat({ state, action }, 1)); //, 
 }
 
 PolicyNetworkImpl::PolicyNetworkImpl(const std::string& name)
@@ -213,34 +213,37 @@ std::array<double, 6> RL_SAC::update_model(void)
 {
     auto [states, cont_actions, disc_actions_idx, rewards, next_states, dones] = replay_buffer.sample();
 
-    const auto [new_cont_actions, new_disc_actions_idx, new_probs, new_log_probs] = policy->sample_action(states);
-
-    const auto alpha_loss = -((new_log_probs * new_probs + target_entropy).detach() * log_alpha).mean();
-    alpha_optim->zero_grad();
-    alpha_loss.backward();
-    alpha_optim->step();
-    alpha = log_alpha.exp().item().toDouble();
-
+    // Critic
     auto q_target = torch::Tensor{};
     {
         auto no_grad_guard = torch::NoGradGuard{};
         const auto [next_cont_actions, _next_disc_actions_idx, next_probs, next_log_probs] = policy->sample_action(next_states);
-        const auto next_target_q1 = target_q1->forward(next_states, next_cont_actions);
-        const auto next_target_q2 = target_q2->forward(next_states, next_cont_actions);
-        const auto next_target_q = next_probs * (torch::min(next_target_q1, next_target_q2) - alpha * next_log_probs);
-        q_target = rewards + BitSim::Trader::SAC::gamma_discount * next_target_q;
+        const auto next_q1_target = target_q1->forward(next_states, next_cont_actions);
+        const auto next_q2_target = target_q2->forward(next_states, next_cont_actions);
+        auto next_q_target = next_probs * (torch::min(next_q1_target, next_q2_target) - alpha * next_log_probs);
+        next_q_target = next_q_target.sum(1).unsqueeze(-1);
+        q_target = rewards + BitSim::Trader::SAC::gamma_discount * next_q_target;
     }
 
     const auto q1_pred = q1->forward(states, cont_actions).gather(1, disc_actions_idx); // .argmax(1).view({ BitSim::Trader::SAC::batch_size, 1 }));
     const auto q2_pred = q2->forward(states, cont_actions).gather(1, disc_actions_idx); //.argmax(1).view({ BitSim::Trader::SAC::batch_size, 1 }));
     const auto q1_loss = torch::mse_loss(q1_pred, q_target);
     const auto q2_loss = torch::mse_loss(q2_pred, q_target);
+    //std::cout << std::endl << "---" << std::endl;
+    //std::cout << q1_loss << std::endl;
 
+    // Policy
+    const auto [new_cont_actions, new_disc_actions_idx, new_probs, new_log_probs] = policy->sample_action(states);
     const auto new_q1_value = q1->forward(states, new_cont_actions);
     const auto new_q2_value = q2->forward(states, new_cont_actions);
-    const auto new_q_value = torch::min(new_q1_value, new_q2_value);
+    const auto new_q_value = torch::min(new_q1_value, new_q2_value);    
     const auto policy_loss = (new_probs * ((alpha * new_log_probs) - new_q_value)).mean();
 
+    // Alpha
+    const auto log_action_probabilities = (new_log_probs * new_probs).sum(1);
+    const auto alpha_loss = -((log_action_probabilities + target_entropy).detach() * log_alpha).mean();
+
+    // Optimize
     policy_optim->zero_grad();
     policy_loss.backward();
     policy_optim->step();
@@ -252,6 +255,13 @@ std::array<double, 6> RL_SAC::update_model(void)
     q2_optim->zero_grad();
     q2_loss.backward();
     q2_optim->step();
+
+    alpha_optim->zero_grad();
+    alpha_loss.backward();
+    alpha_optim->step();
+
+    // Update alpha
+    alpha = log_alpha.exp().item().toDouble();
 
     // Soft update target
     auto param_q1 = q1->parameters();
