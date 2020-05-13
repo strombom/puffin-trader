@@ -6,32 +6,31 @@ class RL_Action
 {
 public:
     RL_Action(void) :
-        //move_side(0.0),
-        move_not(true), move_up(false), move_down(false)
-    {}
-
-    RL_Action(torch::Tensor cont_action)// :
-        //move_side(action[0].item().to<double>())
+        x_move_not(true), x_move_left(false), x_move_right(false),
+        y_move(0.0)
     {}
 
     RL_Action(torch::Tensor cont_action, torch::Tensor disc_action) :
-        //move_side(action[0].item().to<double>()),
-        move_not(disc_action[0].item().toLong() == 0),
-        move_up(disc_action[0].item().toLong() == 1),
-        move_down(disc_action[0].item().toLong() == 2) {}
+        y_move(cont_action[0].item().to<double>()),
+        x_move_not(true), //x_move_not(disc_action[0].item().toLong() == 0),
+        x_move_left(false), //x_move_left(disc_action[0].item().toLong() == 1),
+        x_move_right(false) //x_move_right(disc_action[0].item().toLong() == 2)
+    {}
 
-    RL_Action(bool move_not, bool move_up, bool move_down) :
+    RL_Action(bool x_move_not, bool x_move_left, bool x_move_right, double y_move) :
         //move_side(move_side),
-        move_not(move_not), move_up(move_up), move_down(move_down) {}
+        x_move_not(x_move_not), x_move_left(x_move_left), x_move_right(x_move_right),
+        y_move(y_move) {}
 
     static std::shared_ptr<RL_Action> random(void);
     torch::Tensor to_tensor_cont(void) const;
     torch::Tensor to_tensor_disc(void) const;
 
     //double move_side;
-    bool move_not;
-    bool move_up;
-    bool move_down;
+    bool x_move_not;
+    bool x_move_left;
+    bool x_move_right;
+    double y_move;
 
 private:
 };

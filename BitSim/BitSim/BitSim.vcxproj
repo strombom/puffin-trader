@@ -190,7 +190,6 @@
     </ClCompile>
     <ClCompile Include="RL_Action.cpp" />
     <ClCompile Include="RL_Algorithm.cpp" />
-    <ClCompile Include="RL_PPO.cpp" />
     <ClCompile Include="RL_SAC.cpp" />
     <ClCompile Include="RL_Trader.cpp" />
     <ClCompile Include="RL_State.cpp" />
@@ -214,7 +213,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="RL_Action.h" />
     <ClInclude Include="RL_Algorithm.h" />
-    <ClInclude Include="RL_PPO.h" />
     <ClInclude Include="RL_SAC.h" />
     <ClInclude Include="RL_Trader.h" />
     <ClInclude Include="RL_State.h" />

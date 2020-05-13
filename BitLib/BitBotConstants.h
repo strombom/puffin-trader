@@ -86,7 +86,7 @@ namespace BitSim
     namespace Trader
     {
         constexpr auto algorithm = "SAC";
-        const auto device = torch::Device{ torch::kCUDA };
+        const auto device = torch::Device{ torch::kCPU };
 
         constexpr auto n_episodes = 250;
         constexpr auto save_period = 100;
@@ -106,7 +106,7 @@ namespace BitSim
             constexpr auto buffer_size = 50000;
             constexpr auto initial_random_action = 1000;
 
-            constexpr auto hidden_dim = 512;
+            constexpr auto hidden_dim = 64;
 
             constexpr auto alpha = 1.0;
             constexpr auto gamma_discount = 0.99;
@@ -134,9 +134,9 @@ namespace BitSim
             constexpr auto gamma_discount = 0.95;
         }
 
-        constexpr auto state_dim = 5; // 5; // feature_size + 1; // Features, leverage (-1 to +1)
-        constexpr auto action_dim_discrete = 3;
-        constexpr auto action_dim_continuous = 0;
+        constexpr auto state_dim = 7; // 5; // feature_size + 1; // Features, leverage (-1 to +1)
+        constexpr auto action_dim_discrete = 0;
+        constexpr auto action_dim_continuous = 1;
 
         //constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };
         constexpr auto log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };

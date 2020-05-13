@@ -4,7 +4,15 @@
 class RL_State
 {
 public:
-    RL_State(double reward, double cart_position, double cart_velocity, double pole_angle, double pole_velocity);
+    RL_State(
+        double reward, 
+        double cart_x_position, 
+        double cart_x_velocity, 
+        double cart_y_position, 
+        double cart_y_velocity, 
+        double pole_angle, 
+        double pole_velocity
+    );
     //RL_State(double reward, double angle, double velocity);
     RL_State(std::shared_ptr<RL_State> state);
 
@@ -17,8 +25,10 @@ public:
     //double velocity;
     double pole_angle;
     double pole_velocity;
-    double cart_position;
-    double cart_velocity;
+    double cart_x_position;
+    double cart_x_velocity;
+    double cart_y_position;
+    double cart_y_velocity;
     double reward;
 };
 

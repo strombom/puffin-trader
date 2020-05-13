@@ -12,7 +12,7 @@ RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
     csv_logger(BitSim::Trader::log_names, BitSim::Trader::log_path)
 {
     if (BitSim::Trader::algorithm == "PPO") {
-        rl_algorithm = std::make_unique<RL_PPO>();
+        //rl_algorithm = std::make_unique<RL_PPO>();
     }
     else if (BitSim::Trader::algorithm == "SAC") {
         rl_algorithm = std::make_unique<RL_SAC>();
