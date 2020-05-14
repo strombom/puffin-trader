@@ -52,8 +52,8 @@ sptrRL_State CartpoleSimulator::step(sptrRL_Action action, bool last_step)
     const auto cart_x_acc = force_x / total_mass;
     const auto cart_y_acc = force_y / total_mass;
 
-    state->cart_x_position = 0.0; // state->cart_x_position + tau * state->cart_x_velocity;
-    state->cart_x_velocity = 0.0; //state->cart_x_velocity + tau * cart_x_acc;
+    state->cart_x_position = state->cart_x_position + tau * state->cart_x_velocity;
+    state->cart_x_velocity = state->cart_x_velocity + tau * cart_x_acc;
     state->cart_y_position = state->cart_y_position + tau * state->cart_y_velocity;
     state->cart_y_velocity = state->cart_y_velocity + tau * cart_y_acc;
 

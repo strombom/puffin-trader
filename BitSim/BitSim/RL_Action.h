@@ -11,14 +11,13 @@ public:
     {}
 
     RL_Action(torch::Tensor cont_action, torch::Tensor disc_action) :
-        y_move(cont_action[0].item().to<double>()),
-        x_move_not(true), //x_move_not(disc_action[0].item().toLong() == 0),
-        x_move_left(false), //x_move_left(disc_action[0].item().toLong() == 1),
-        x_move_right(false) //x_move_right(disc_action[0].item().toLong() == 2)
+        y_move(cont_action[0].item().to<double>()), 
+        x_move_not(disc_action[0].item().toLong() == 0), //x_move_not(true), //
+        x_move_left(disc_action[0].item().toLong() == 1),
+        x_move_right(disc_action[0].item().toLong() == 2)
     {}
 
     RL_Action(bool x_move_not, bool x_move_left, bool x_move_right, double y_move) :
-        //move_side(move_side),
         x_move_not(x_move_not), x_move_left(x_move_left), x_move_right(x_move_right),
         y_move(y_move) {}
 

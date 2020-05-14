@@ -224,26 +224,38 @@ std::array<double, 6> RL_SAC::update_model(void)
         const auto [next_cont_actions, _next_disc_actions_idx, next_probs, next_log_probs] = policy->sample_action(next_states);
         const auto next_q1_target = target_q1->forward(next_states, next_cont_actions);
         const auto next_q2_target = target_q2->forward(next_states, next_cont_actions);
-        const auto next_q_target = (next_probs * (torch::min(next_q1_target, next_q2_target) - alpha * next_log_probs)).sum(1).unsqueeze(-1);
+        auto next_q_target_split = (next_probs * (torch::min(next_q1_target, next_q2_target) - alpha * next_log_probs)).split_with_sizes({ 1, 3 }, 1);
+        auto next_q_target_cont = next_q_target_split.at(0);
+        auto next_q_target_disc = next_q_target_split.at(1).sum(1).unsqueeze(-1);
+        auto next_q_target = torch::cat({ next_q_target_cont, next_q_target_disc }, 1);
         q_target = rewards + BitSim::Trader::SAC::gamma_discount * next_q_target;
     }
 
     auto q1_pred = q1->forward(states, cont_actions);
     auto q2_pred = q2->forward(states, cont_actions);
+
     if (BitSim::Trader::action_dim_discrete > 0) {
-        q1_pred = q1_pred.gather(1, disc_actions_idx);
-        q2_pred = q2_pred.gather(1, disc_actions_idx);
+        if (BitSim::Trader::action_dim_continuous > 0) {
+            auto q1_split = q1_pred.split_with_sizes({ 1, 3 }, 1);
+            auto q2_split = q2_pred.split_with_sizes({ 1, 3 }, 1);
+            q1_split.at(1) = q1_split.at(1).gather(1, disc_actions_idx).sum(1).unsqueeze(-1);
+            q2_split.at(1) = q2_split.at(1).gather(1, disc_actions_idx).sum(1).unsqueeze(-1);
+            q1_pred = torch::cat(q1_split, 1);
+            q2_pred = torch::cat(q2_split, 1);
+        }
+        else {
+            q1_pred = q1_pred.gather(1, disc_actions_idx);
+            q2_pred = q1_pred.gather(1, disc_actions_idx);
+        }
     }
     const auto q1_loss = torch::mse_loss(q1_pred, q_target);
     const auto q2_loss = torch::mse_loss(q2_pred, q_target);
-    //std::cout << std::endl << "---" << std::endl;
-    //std::cout << q1_loss << std::endl;
 
     // Policy
-    const auto [new_cont_actions, new_disc_actions_idx, new_probs, new_log_probs] = policy->sample_action(states);
+    const auto [new_cont_actions, _new_disc_actions_idx, new_probs, new_log_probs] = policy->sample_action(states);
     const auto new_q1_value = q1->forward(states, new_cont_actions);
     const auto new_q2_value = q2->forward(states, new_cont_actions);
-    const auto new_q_value = torch::min(new_q1_value, new_q2_value);    
+    const auto new_q_value = torch::min(new_q1_value, new_q2_value);
     const auto policy_loss = (new_probs * ((alpha * new_log_probs) - new_q_value)).mean();
 
     // Alpha

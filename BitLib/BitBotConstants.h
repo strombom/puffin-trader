@@ -135,7 +135,7 @@ namespace BitSim
         }
 
         constexpr auto state_dim = 7; // 5; // feature_size + 1; // Features, leverage (-1 to +1)
-        constexpr auto action_dim_discrete = 0;
+        constexpr auto action_dim_discrete = 3;
         constexpr auto action_dim_continuous = 1;
 
         //constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };
