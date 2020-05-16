@@ -33,9 +33,9 @@ private:
 
     const double gravity = 9.8;
     const double mass_cart = 1.0;
-    const double mass_pole = 0.1;
+    const double mass_pole = 0.3;
     const double length = 0.5;
-    const double force_mag = 12;
+    const double force_mag = 20;
     const double tau = 0.02;
     const double theta_threshold = 12 * 2 * M_PI / 360;
     const double x_threshold = 1.0;

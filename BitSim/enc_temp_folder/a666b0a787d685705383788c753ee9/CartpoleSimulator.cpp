@@ -2,7 +2,6 @@
 #include "Utils.h"
 #include "CartpoleSimulator.h"
 
-// http://www.matthewpeterkelly.com/tutorials/cartPole/index.html
 // https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
 
 CartpoleSimulator::CartpoleSimulator(void) : 
