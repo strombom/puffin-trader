@@ -16,9 +16,9 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
 
 }
 
-RL_State BitmexSimulator::reset(const std::string &log_filename)
+sptrRL_State BitmexSimulator::reset(int idx_episode)
 {
-    logger = std::make_unique<BitmexSimulatorLogger>(log_filename, true);
+    logger = std::make_unique<BitmexSimulatorLogger>("bitmex_sim_" + std::to_string(idx_episode) + ".csv", true);
 
     constexpr auto episode_length = ((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
     intervals_idx = Utils::random(0, (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1); // -2 used for "next step" in training
@@ -33,70 +33,81 @@ RL_State BitmexSimulator::reset(const std::string &log_filename)
     
     constexpr auto reward = 0.0;
     constexpr auto leverage = 0.0;
-    auto state = RL_State{ reward, features[intervals_idx][0], leverage };
+    auto state = std::make_shared<RL_State>(reward, features[intervals_idx][0], leverage);
     return state;
 }
 
-RL_State BitmexSimulator::step(const RL_Action& action)
+sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
 {
     const auto prev_interval = intervals->rows[intervals_idx];
 
-    const auto [buy_contracts, sell_contracts, log_upnl] = calculate_order_size(action.buy_size, action.sell_size);
+    //action->leverage;
+    //action->limit_order;
+    //action->market_order;
 
-    //std::cout << "--- " << std::endl;
-    //std::cout << "action.buy_size: " << action.buy_size << std::endl;
-    //std::cout << "action.sell_size: " << action.sell_size << std::endl;
-    //std::cout << "buy_n_contracts: " << buy_contracts << std::endl;
-    //std::cout << "sell_n_contracts: " << sell_contracts << std::endl;
-    //std::cout << "--- " << std::endl;
+    auto log_order_size = 0.0;
 
-    auto log_order_size = buy_contracts;
-    if (sell_contracts > buy_contracts) {
-        log_order_size = -sell_contracts;
+    if (!action->idle) {
+
+        const auto [buy_contracts, sell_contracts] = calculate_order_size(action->leverage);
+
+        //std::cout << "--- " << std::endl;
+        //std::cout << "action.buy_size: " << action.buy_size << std::endl;
+        //std::cout << "action.sell_size: " << action.sell_size << std::endl;
+        //std::cout << "buy_n_contracts: " << buy_contracts << std::endl;
+        //std::cout << "sell_n_contracts: " << sell_contracts << std::endl;
+        //std::cout << "--- " << std::endl;
+
+        log_order_size = buy_contracts;
+        if (sell_contracts > buy_contracts) {
+            log_order_size = -sell_contracts;
+        }
+
+        if (buy_contracts > 0) {
+            if (action->market_order) {
+                //std::cout << "Market buy" << std::endl;
+                market_order(buy_contracts);
+            }
+            else if (action->limit_order) {
+                //std::cout << "Limit buy" << std::endl;
+                limit_order(buy_contracts, prev_interval.last_price);
+            }
+        }
+
+        if (sell_contracts > 0) {
+            if (action->market_order) {
+                //std::cout << "Market sell" << std::endl;
+                market_order(-sell_contracts);
+            }
+            else if (action->limit_order) {
+                //std::cout << "Limit sell" << std::endl;
+                limit_order(-sell_contracts, prev_interval.last_price);
+            }
+        }
+
+
     }
-
-    if (buy_contracts > 0) {
-        if (action.buy_action > BitSim::Trader::market_order_threshold) {
-            //std::cout << "Market buy" << std::endl;
-            market_order(buy_contracts);
-        }
-        else if (action.buy_action > BitSim::Trader::limit_order_threshold){
-            //std::cout << "Limit buy" << std::endl;
-            limit_order(buy_contracts, prev_interval.last_price);
-        }
-    }
-
-    if (sell_contracts > 0) {
-        if (action.sell_action > BitSim::Trader::market_order_threshold) {
-            //std::cout << "Market sell" << std::endl;
-            market_order(-sell_contracts);
-        }
-        else if (action.sell_action > BitSim::Trader::limit_order_threshold)  {
-            //std::cout << "Limit sell" << std::endl;
-            limit_order(-sell_contracts, prev_interval.last_price);
-        }
-    }
-
-    logger->log(prev_interval.last_price,
-                log_order_size,
-                pos_contracts,
-                wallet,
-                log_upnl);
 
     const auto reward = get_reward();
-    auto [position_margin, position_leverage, upnl] = calculate_position_leverage(prev_interval.last_price);
-    auto state = RL_State{ reward, features[intervals_idx][0], position_leverage };
+    auto [_position_margin, position_leverage, upnl] = calculate_position_leverage(prev_interval.last_price);
+    auto state = std::make_shared<RL_State>(reward, features[intervals_idx][0], position_leverage);
+
+    logger->log(prev_interval.last_price,
+        log_order_size,
+        pos_contracts,
+        wallet,
+        upnl);
 
     if (is_liquidated()) {
         wallet = 0.0;
         pos_price = 0.0;
         pos_contracts = 0.0;
-        state.set_done();
+        state->set_done();
     }
 
     ++intervals_idx;
     if (intervals_idx == intervals_idx_end - 1) {
-        state.set_done();
+        state->set_done();
     }
 
     return state;
@@ -139,14 +150,17 @@ std::tuple<double, double, double> BitmexSimulator::calculate_position_leverage(
     return std::make_tuple(position_margin, position_leverage, upnl);
 }
 
-std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double buy_size, double sell_size)
+std::tuple<double, double> BitmexSimulator::calculate_order_size(double leverage)
 {
+    auto buy_size = 0.0;
+    auto sell_size = 0.0;
+
     if (wallet == 0.0) {
-        return std::make_tuple(0.0, 0.0, 0.0);
+        return std::make_tuple(0.0, 0.0);
     }
 
     const auto mark_price = intervals->rows[intervals_idx].last_price;
-    auto [position_margin, position_leverage, upnl] = calculate_position_leverage(mark_price);
+    auto [position_margin, _position_leverage, upnl] = calculate_position_leverage(mark_price);
 
     const auto max_margin = BitSim::BitMex::max_leverage * wallet;
     const auto available_margin = max_margin - position_margin;
@@ -172,7 +186,7 @@ std::tuple<double, double, double> BitmexSimulator::calculate_order_size(double 
     const auto buy_contracts = std::min(max_buy_contracts, max_contracts * buy_fraction);
     const auto sell_contracts = std::min(max_sell_contracts, max_contracts * sell_fraction);
 
-    return std::make_tuple(buy_contracts, sell_contracts, upnl);
+    return std::make_tuple(buy_contracts, sell_contracts);
 }
 
 void BitmexSimulator::market_order(double contracts)

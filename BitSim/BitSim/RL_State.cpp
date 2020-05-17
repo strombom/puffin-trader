@@ -3,6 +3,40 @@
 #include "BitBotConstants.h"
 
 
+RL_State::RL_State(double reward, torch::Tensor features, double leverage) : 
+    reward(0.0), features(features), leverage(leverage), done(false)
+{
+
+}
+
+RL_State::RL_State(std::shared_ptr<RL_State> state) :
+    reward(0.0), features(state->features), leverage(state->leverage), done(false)
+{
+
+}
+
+void RL_State::set_done(void)
+{
+    done = true;
+}
+
+bool RL_State::is_done(void) const
+{
+    return done;
+}
+
+torch::Tensor RL_State::to_tensor(void) const
+{
+    
+    return torch::cat({ features, torch::tensor({leverage}) }).view({ 1, BitSim::Trader::state_dim });
+
+    //return torch::tensor({ std::sin(pole_ang), std::cos(pole_ang), pole_vel, cart_x_pos, cart_x_vel, cart_y_pos, cart_y_vel }).view({ 1, BitSim::Trader::state_dim });
+    //return torch::tensor({ std::sin(angle), std::cos(angle), velocity }).view({ 1, BitSim::Trader::state_dim });
+}
+
+/*
+// Cartpole
+
 RL_State::RL_State(
     double reward,
     double cart_x_pos,
@@ -47,3 +81,4 @@ torch::Tensor RL_State::to_tensor(void) const
     return torch::tensor({ std::sin(pole_ang), std::cos(pole_ang), pole_vel, cart_x_pos, cart_x_vel, cart_y_pos, cart_y_vel }).view({ 1, BitSim::Trader::state_dim });
     //return torch::tensor({ std::sin(angle), std::cos(angle), velocity }).view({ 1, BitSim::Trader::state_dim });
 }
+*/

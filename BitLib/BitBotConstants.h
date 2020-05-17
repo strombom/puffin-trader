@@ -94,8 +94,6 @@ namespace BitSim
         constexpr auto max_steps = 200;
         constexpr auto episode_length = 10h; // 2*7*24h;
 
-        constexpr auto market_order_threshold = 0.97;
-        constexpr auto limit_order_threshold = 0.7;
         constexpr auto order_hysteresis = 0.1;
 
         namespace SAC
@@ -134,7 +132,7 @@ namespace BitSim
             constexpr auto gamma_discount = 0.95;
         }
 
-        constexpr auto state_dim = 7; // 5; // feature_size + 1; // Features, leverage (-1 to +1)
+        constexpr auto state_dim = feature_size + 1; //7;  //  // Features, leverage (-1 to +1)
         constexpr auto action_dim_discrete = 3;
         constexpr auto action_dim_continuous = 1;
 

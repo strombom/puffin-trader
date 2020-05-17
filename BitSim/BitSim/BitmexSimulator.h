@@ -23,9 +23,9 @@ class BitmexSimulator
 {
 public:
     BitmexSimulator(sptrIntervals intervals, torch::Tensor features);
-
-    RL_State reset(const std::string& log_filename);
-    RL_State step(const RL_Action& action);
+    
+    sptrRL_State reset(int idx_episode);
+    sptrRL_State step(sptrRL_Action action, bool last_step);
     std::tuple<double, double, double> calculate_position_leverage(double mark_price);
 
 private:
@@ -48,7 +48,7 @@ private:
     bool is_liquidated(void);
     double get_reward(void);
     double liquidation_price(void);
-    std::tuple<double, double, double> calculate_order_size(double buy_size, double sell_size);
+    std::tuple<double, double> calculate_order_size(double leverage);
 
     std::unique_ptr<BitmexSimulatorLogger> logger;
 };

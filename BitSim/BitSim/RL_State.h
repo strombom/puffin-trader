@@ -4,6 +4,27 @@
 class RL_State
 {
 public:
+    RL_State(double reward, torch::Tensor features, double leverage);
+    RL_State(std::shared_ptr<RL_State> state);
+
+    void set_done(void);
+    bool is_done(void) const;
+    torch::Tensor to_tensor(void) const;
+
+    bool done;
+    double reward;
+    torch::Tensor features;
+    double leverage;
+};
+
+using sptrRL_State = std::shared_ptr<RL_State>;
+
+/*
+// Cartpole
+
+class RL_State
+{
+public:
     RL_State(
         double reward,
         double cart_x_pos,
@@ -13,7 +34,7 @@ public:
         double pole_ang,
         double pole_vel
     );
-    //RL_State(double reward, double angle, double velocity);
+
     RL_State(std::shared_ptr<RL_State> state);
 
     void set_done(void);
@@ -31,5 +52,4 @@ public:
     double cart_y_vel;
     double reward;
 };
-
-using sptrRL_State = std::shared_ptr<RL_State>;
+*/

@@ -2,9 +2,9 @@
 
 #include "BitBaseClient.h"
 #include "BitBotConstants.h"
-//#include "BitmexSimulator.h"
+#include "BitmexSimulator.h"
 //#include "CartpoleSimulator.h"
-#include "PendulumSimulator.h"
+//#include "PendulumSimulator.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
 #include "FE_Training.h"
@@ -24,7 +24,7 @@ int main()
     //constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
     //constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + std::chrono::hours{ 0 } +std::chrono::minutes{ 0 } +std::chrono::seconds{ 0 };
 
-    constexpr auto command = "train_cartpole";
+    constexpr auto command = "train_bitmex";
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -56,7 +56,7 @@ int main()
 
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
-    else if (command == "train_closer") {
+    else if (command == "train_bitmex") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
         auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
@@ -64,16 +64,16 @@ int main()
         std::cout << "features: " << features.sizes() << std::endl;
         std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
-        //auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
-        //auto rl_trader = RL_Trader{ simulator };
-        //rl_trader.train();
+        auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
+        auto rl_trader = RL_Trader{ simulator };
+        rl_trader.train();
 
     }
     else if (command == "train_cartpole") {
-        auto simulator = std::make_shared<CartpoleSimulator>();
+        //auto simulator = std::make_shared<CartpoleSimulator>();
         //auto simulator = std::make_shared<PendulumSimulator>();
-        auto rl_trader = RL_Trader{ simulator };
-        rl_trader.train();
+        //auto rl_trader = RL_Trader{ simulator };
+        //rl_trader.train();
     }
     
     logger.info("BitSim exit");

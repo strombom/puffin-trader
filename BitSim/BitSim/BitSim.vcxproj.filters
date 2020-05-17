@@ -114,7 +114,7 @@
     <ClCompile Include="RL_Algorithm.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
-    <ClCompile Include="CartpoleSimulator.cpp">
+    <ClCompile Include="BitmexSimulator.cpp">
       <Filter>Source Files\Simulator</Filter>
     </ClCompile>
   </ItemGroup>
@@ -179,7 +179,7 @@
     <ClInclude Include="RL_Algorithm.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
-    <ClInclude Include="CartpoleSimulator.h">
+    <ClInclude Include="BitmexSimulator.h">
       <Filter>Header Files\Simulator</Filter>
     </ClInclude>
   </ItemGroup>
