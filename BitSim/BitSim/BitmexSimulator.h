@@ -48,7 +48,7 @@ private:
     bool is_liquidated(void);
     double get_reward(void);
     double liquidation_price(void);
-    std::tuple<double, double> calculate_order_size(double leverage);
+    double calculate_order_size(double leverage);
 
     std::unique_ptr<BitmexSimulatorLogger> logger;
 };
