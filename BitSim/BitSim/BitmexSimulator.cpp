@@ -22,6 +22,10 @@ sptrRL_State BitmexSimulator::reset(int idx_episode)
 
     constexpr auto episode_length = ((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
     intervals_idx = Utils::random(0, (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1); // -2 used for "next step" in training
+
+    // REMOVE
+    intervals_idx = 0;
+
     intervals_idx_start = intervals_idx;
     intervals_idx_end = intervals_idx + episode_length;
     
@@ -39,6 +43,8 @@ sptrRL_State BitmexSimulator::reset(int idx_episode)
 
 sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
 {
+    auto timer = Timer{};
+
     const auto prev_interval = intervals->rows[intervals_idx];
 
     //action->leverage;
@@ -129,7 +135,7 @@ std::tuple<double, double, double> BitmexSimulator::calculate_position_leverage(
 
         upnl = sign * (entry_value - mark_value);
         position_margin = std::max(0.0, std::abs(pos_contracts / pos_price) - upnl);
-        position_leverage = position_margin / wallet;
+        position_leverage = sign * position_margin / wallet;
     }
 
     return std::make_tuple(position_margin, position_leverage, upnl);
@@ -285,7 +291,16 @@ BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &filename, bool e
 {
     if (enabled) {
         file.open(std::string{ BitSim::tmp_path } + "\\log\\" + filename);
-        file << "last_price,order_size,contracts,wallet,upnl" << std::endl;
+        file << "last_price,"
+            << "wallet,"
+            << "upnl,"
+            << "position_contracts,"
+            << "position_leverage,"
+            << "order_contracts,"
+            << "order_leverage,"
+            << "order_idle,"
+            << "order_limit,"
+            << "order_market" << "\n";
     }
 }
 

@@ -1,12 +1,13 @@
 #include "pch.h"
 #include "RL_Action.h"
 #include "Utils.h"
+#include "BitBotConstants.h"
 
 
 sptrRL_Action RL_Action::random(void)
 {
     const auto disc_action = Utils::random(0, 2);
-    const auto cont_action = Utils::random(-1.0, 1.0);
+    const auto cont_action = Utils::random(-BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
     return std::make_shared<RL_Action>(
         cont_action,
         disc_action == 0,
