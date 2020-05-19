@@ -73,10 +73,15 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
     auto state = std::make_shared<RL_State>(reward, features[intervals_idx][0], position_leverage);
 
     logger->log(prev_interval.last_price,
-        order_contracts,
-        pos_contracts,
         wallet,
-        upnl);
+        upnl,
+        pos_contracts,
+        position_leverage,
+        order_contracts,
+        action->leverage,
+        action->idle,
+        action->limit_order,
+        action->market_order);
 
     if (is_liquidated()) {
         wallet = 0.0;
@@ -284,9 +289,29 @@ BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &filename, bool e
     }
 }
 
-void BitmexSimulatorLogger::log(double last_price, double order_size, double contracts, double wallet, double upnl)
+void BitmexSimulatorLogger::log(
+    double last_price, 
+    double wallet, 
+    double upnl,
+    double position_contracts,
+    double position_leverage,
+    double order_contracts,
+    double order_leverage,
+    int order_idle,
+    int order_limit,
+    int order_market
+)
 {
     if (enabled) {
-        file << last_price << "," << order_size << "," << contracts << "," << wallet << "," << upnl << std::endl;
+        file << last_price << ","
+            << wallet << "," 
+            << upnl << ","
+            << position_contracts << ","
+            << position_leverage << ","
+            << order_contracts << ","
+            << order_leverage << ","
+            << order_idle << ","
+            << order_limit << ","
+            << order_market << std::endl;
     }
 }

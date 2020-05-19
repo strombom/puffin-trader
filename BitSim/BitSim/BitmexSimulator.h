@@ -11,7 +11,18 @@ class BitmexSimulatorLogger
 public:
     BitmexSimulatorLogger(const std::string &filename, bool enabled);
 
-    void log(double last_price, double order_size, double contracts, double wallet, double upnl);
+    void log(
+        double last_price,
+        double wallet,
+        double upnl,
+        double position_contracts,
+        double position_leverage,
+        double order_contracts,
+        double order_leverage,
+        int order_idle,
+        int order_limit,
+        int order_market
+    );
 
 private:
     std::ofstream file;
