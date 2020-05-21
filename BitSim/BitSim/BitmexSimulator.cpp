@@ -11,7 +11,7 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
     intervals_idx_start(0), intervals_idx_end(0),
     intervals_idx(0),
     wallet(0.0), pos_price(0.0), pos_contracts(0.0),
-    previous_value(0.0)
+    get_reward_previous_value(0.0)
 {
 
 }
@@ -32,8 +32,8 @@ sptrRL_State BitmexSimulator::reset(int idx_episode)
     wallet = 1.0;
     pos_price = 0.0;
     pos_contracts = 0.0;
-    previous_value = 0.0;
     start_value = wallet * intervals->rows[intervals_idx_start].last_price;
+    get_reward_previous_value = 0.0;
     
     constexpr auto reward = 0.0;
     constexpr auto leverage = 0.0;
@@ -87,7 +87,8 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
         action->leverage,
         action->idle,
         action->limit_order,
-        action->market_order);
+        action->market_order,
+        reward);
 
     if (is_liquidated()) {
         wallet = 0.0;
@@ -113,8 +114,11 @@ double BitmexSimulator::get_reward(void)
         position_pnl = pos_contracts * (1 / pos_price - 1 / next_price) - taker_fee;
     }
     const auto value = (wallet + position_pnl) * next_price / start_value;
-    const auto reward = std::log(value / previous_value);
-    previous_value = value;
+    if (get_reward_previous_value == 0.0) {
+        get_reward_previous_value = value;
+    }
+    const auto reward = std::log(value / get_reward_previous_value);
+    get_reward_previous_value = value;
 
     //std::cout.precision(3);
     //std::cout << std::fixed << "PNL(" << position_pnl << ")" << " value(" << value << ")" << " reward(" << reward << ")" << " previous_value(" << previous_value << ")" << " next_price(" << next_price << ")" << " pos_price(" << pos_price << ")" << std::endl;
@@ -300,7 +304,8 @@ BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &filename, bool e
             << "order_leverage,"
             << "order_idle,"
             << "order_limit,"
-            << "order_market" << "\n";
+            << "order_market,"
+            << "reward" << "\n";
     }
 }
 
@@ -314,7 +319,8 @@ void BitmexSimulatorLogger::log(
     double order_leverage,
     int order_idle,
     int order_limit,
-    int order_market
+    int order_market,
+    double reward
 )
 {
     if (enabled) {
@@ -327,6 +333,7 @@ void BitmexSimulatorLogger::log(
             << order_leverage << ","
             << order_idle << ","
             << order_limit << ","
-            << order_market << std::endl;
+            << order_market << ","
+            << reward << "\n";
     }
 }

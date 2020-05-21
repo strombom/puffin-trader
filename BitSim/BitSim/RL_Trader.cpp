@@ -51,7 +51,7 @@ void RL_Trader::train(void)
             ++step_total;
             ++step_episode;
         }
-        
+
         std::cout << "Episode reward: " << episode_reward << "  -  "; // std::endl;
         //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
 
@@ -111,6 +111,41 @@ void RL_Trader::interim_test(void)
 sptrRL_State RL_Trader::step(sptrRL_State state)
 {
     auto action = sptrRL_Action{ nullptr };
+
+    /*
+    action = std::make_shared<RL_Action>();
+    if (step_episode > 15 && step_episode < 35) {
+        action->idle = false;
+        action->limit_order = true;
+        action->leverage = -5.0;
+    }
+    if (step_episode > 90 && step_episode < 110) {
+        action->idle = false;
+        action->limit_order = true;
+        action->leverage = -10.0;
+    }
+    if (step_episode > 140 && step_episode < 160) {
+        action->idle = false;
+        action->limit_order = true;
+        action->leverage = 0.0;
+    }
+    if (step_episode > 170 && step_episode < 190) {
+        action->idle = false;
+        action->limit_order = true;
+        action->leverage = 5.0;
+    }
+    if (step_episode > 220 && step_episode < 240) {
+        action->idle = false;
+        action->limit_order = true;
+        action->leverage = 10.0;
+    }
+    if (step_episode > 300 && step_episode < 320) {
+        action->idle = false;
+        action->limit_order = true;
+        action->leverage = 0.0;
+    }
+    */
+
     if (BitSim::Trader::algorithm == "SAC" && step_total < BitSim::Trader::SAC::initial_random_action) {
         action = rl_algorithm->get_random_action(state);
     }

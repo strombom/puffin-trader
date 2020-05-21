@@ -91,14 +91,14 @@ namespace BitSim
         constexpr auto n_episodes = 2000;
         constexpr auto save_period = 100;
 
-        constexpr auto max_steps = 200;
+        constexpr auto max_steps = 400; // 1000000; // 200;
         constexpr auto episode_length = 10h; // 2*7*24h;
 
         constexpr auto order_hysteresis = 0.1;
 
         namespace SAC
         {
-            constexpr auto update_interval = 1;
+            constexpr auto update_interval = n_episodes / 200;
 
             constexpr auto batch_size = 512;
             constexpr auto buffer_size = 50000;

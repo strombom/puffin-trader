@@ -21,7 +21,8 @@ public:
         double order_leverage,
         int order_idle,
         int order_limit,
-        int order_market
+        int order_market,
+        double reward
     );
 
 private:
@@ -51,7 +52,8 @@ private:
     double wallet;
     double pos_price;
     double pos_contracts;
-    double previous_value;
+
+    double get_reward_previous_value;
 
     void market_order(double contracts);
     void limit_order(double contracts, double price);

@@ -4,7 +4,7 @@
 
 
 RL_State::RL_State(double reward, torch::Tensor features, double leverage) : 
-    reward(0.0), features(features), leverage(leverage), done(false)
+    reward(reward), features(features), leverage(leverage), done(false)
 {
 
 }
