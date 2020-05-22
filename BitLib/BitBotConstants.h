@@ -104,7 +104,7 @@ namespace BitSim
             constexpr auto buffer_size = 50000;
             constexpr auto initial_random_action = 1000;
 
-            constexpr auto hidden_dim = 512;
+            constexpr auto hidden_dim = 4096;
 
             constexpr auto alpha = 1.0;
             constexpr auto gamma_discount = 0.99;

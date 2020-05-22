@@ -24,7 +24,9 @@ sptrRL_State BitmexSimulator::reset(int idx_episode)
     intervals_idx = Utils::random(0, (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1); // -2 used for "next step" in training
 
     // REMOVE
-    intervals_idx = 0;
+    //intervals_idx = 0;
+    const auto intervals_idx_max = std::min((int)intervals->rows.size(), 10 * 60 * 24);
+    intervals_idx = Utils::random(0, intervals_idx_max - BitSim::observation_length - episode_length - 1);
 
     intervals_idx_start = intervals_idx;
     intervals_idx_end = intervals_idx + episode_length;
@@ -117,7 +119,7 @@ double BitmexSimulator::get_reward(void)
     if (get_reward_previous_value == 0.0) {
         get_reward_previous_value = value;
     }
-    const auto reward = std::log(value / get_reward_previous_value);
+    const auto reward = std::log(value / get_reward_previous_value) * 1000 - 1; // (*1000-1 to get a suitable reward range, between -1000 and -300)
     get_reward_previous_value = value;
 
     //std::cout.precision(3);
