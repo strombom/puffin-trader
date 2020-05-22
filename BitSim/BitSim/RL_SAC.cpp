@@ -87,7 +87,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> PolicyNet
 {
     // Discrete: https://medium.com/@kengz/soft-actor-critic-for-continuous-and-discrete-actions-eeff6f651954
 
-    const auto action_scale = 2.0;
+    const auto action_scale = BitSim::BitMex::max_leverage;
 
     const auto [mean, log_std, disc_prob] = forward(state);
     const auto std = log_std.exp();
