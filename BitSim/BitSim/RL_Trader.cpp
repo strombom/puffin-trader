@@ -47,6 +47,15 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
     if (!validation && BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
         update_model(idx_episode);
     }
+
+    if (validation) {
+        std::cout << "val reward: " << episode_reward << " - "; // std::endl;
+    } else {
+        std::cout << "train reward: " << episode_reward << " - "; // std::endl;
+    }
+
+    //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
+    //std::cout << "Steps: " << step_episode << std::endl;
 }
 
 void RL_Trader::train(void)
@@ -61,14 +70,9 @@ void RL_Trader::train(void)
         // Validation episode
         run_episode(idx_episode, true);
 
-        std::cout << "Episode reward: " << episode_reward << "  -  "; // std::endl;
-        //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
-        //std::cout << "Steps: " << step_episode << std::endl;
-
         if (idx_episode % BitSim::Trader::save_period == 0 ||
             idx_episode == BitSim::Trader::n_episodes - 1) {
             save_params(idx_episode);
-            interim_test();
         }
     }
 }
@@ -103,11 +107,6 @@ void RL_Trader::update_model(int idx_episode)
 }
 
 void RL_Trader::save_params(int idx_period)
-{
-
-}
-
-void RL_Trader::interim_test(void)
 {
 
 }
