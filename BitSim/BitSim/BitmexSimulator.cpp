@@ -18,7 +18,7 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
 
 sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
 {
-    logger = std::make_unique<BitmexSimulatorLogger>("bitmex_sim_" + std::to_string(idx_episode) + ".csv", true);
+    logger = std::make_unique<BitmexSimulatorLogger>("bitmex_sim_" + std::to_string(idx_episode) + ".csv", validation);
 
     constexpr auto episode_length = (int)(((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count());
 

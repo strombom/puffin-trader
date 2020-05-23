@@ -28,7 +28,6 @@ public:
 private:
     std::ofstream file;
     bool enabled;
-
 };
 
 class BitmexSimulator
