@@ -33,6 +33,7 @@ private:
     void update_model(int idx_episode);
     void save_params(int idx_period);
     void interim_test(void);
+    void run_episode(int idx_episode, bool validation);
 
     CSVLogger csv_logger;
 };

@@ -36,7 +36,7 @@ class BitmexSimulator
 public:
     BitmexSimulator(sptrIntervals intervals, torch::Tensor features);
     
-    sptrRL_State reset(int idx_episode);
+    sptrRL_State reset(int idx_episode, bool validation);
     sptrRL_State step(sptrRL_Action action, bool last_step);
     std::tuple<double, double, double> calculate_position_leverage(double mark_price);
 

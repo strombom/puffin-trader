@@ -16,7 +16,7 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
 
 }
 
-sptrRL_State BitmexSimulator::reset(int idx_episode)
+sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
 {
     logger = std::make_unique<BitmexSimulatorLogger>("bitmex_sim_" + std::to_string(idx_episode) + ".csv", true);
 
@@ -237,6 +237,7 @@ void BitmexSimulator::execute_order(double order_contracts, double price, bool t
     }
     
     // Realised profit and loss
+    // Wallet only changes when abs(contracts) decrease
     if (pos_contracts > 0 && order_contracts < 0) {
         wallet += (1 / pos_price - 1 / price) * std::min(-order_contracts, pos_contracts);
     }

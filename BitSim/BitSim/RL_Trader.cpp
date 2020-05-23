@@ -20,45 +20,49 @@ RL_Trader::RL_Trader(sptrBitmexSimulator simulator) :
     }
 }
 
-void RL_Trader::train(void)
+void RL_Trader::run_episode(int idx_episode, bool validation)
 {
-    auto timer = Timer{};
+    auto state = simulator->reset(idx_episode, validation);
+    step_episode = 0;
 
-    for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
+    auto episode_reward = 0.0;
 
-        auto state = simulator->reset(idx_episode);
-        step_episode = 0;
-        
-        auto episode_reward = 0.0;
+    auto update_time = 0.0;
+    auto step_time = 0.0;
 
-        auto update_time = 0.0;
-        auto step_time = 0.0;
-
-        while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
-            if (BitSim::Trader::algorithm == "SAC" && 
-                step_total % BitSim::Trader::SAC::update_interval == 0 &&
-                step_total >= BitSim::Trader::SAC::batch_size) {
-                timer.restart();
-                update_model(idx_episode);
-                update_time += timer.elapsed().count();
-            }
-
-            timer.restart();
-            state = step(state);
-            step_time += timer.elapsed().count();
-            episode_reward += state->reward;
-
-            ++step_total;
-            ++step_episode;
-        }
-
-        std::cout << "Episode reward: " << episode_reward << "  -  "; // std::endl;
-        //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
-
-        if (BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
+    while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
+        if (!validation && BitSim::Trader::algorithm == "SAC" &&
+            step_total % BitSim::Trader::SAC::update_interval == 0 &&
+            step_total >= BitSim::Trader::SAC::batch_size) {
             update_model(idx_episode);
         }
 
+        state = step(state);
+        episode_reward += state->reward;
+
+        ++step_total;
+        ++step_episode;
+    }
+
+    if (!validation && BitSim::Trader::algorithm == "PPO" && step_total >= BitSim::Trader::PPO::buffer_size) {
+        update_model(idx_episode);
+    }
+}
+
+void RL_Trader::train(void)
+{
+    //auto timer = Timer{};
+
+    for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
+
+        // Training episode
+        run_episode(idx_episode, false);
+
+        // Validation episode
+        run_episode(idx_episode, true);
+
+        std::cout << "Episode reward: " << episode_reward << "  -  "; // std::endl;
+        //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
         //std::cout << "Steps: " << step_episode << std::endl;
 
         if (idx_episode % BitSim::Trader::save_period == 0 ||
