@@ -60,8 +60,6 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
 
 void RL_Trader::train(void)
 {
-    //auto timer = Timer{};
-
     for (auto idx_episode = 0; idx_episode < BitSim::Trader::n_episodes; ++idx_episode) {
 
         // Training episode

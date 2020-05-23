@@ -20,13 +20,20 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
 {
     logger = std::make_unique<BitmexSimulatorLogger>("bitmex_sim_" + std::to_string(idx_episode) + ".csv", true);
 
-    constexpr auto episode_length = ((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count();
-    intervals_idx = Utils::random(0, (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1); // -2 used for "next step" in training
+    constexpr auto episode_length = (int)(((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count());
 
-    // REMOVE
-    //intervals_idx = 0;
-    const auto intervals_idx_max = std::min((int)intervals->rows.size(), 10 * 60 * 24);
-    intervals_idx = Utils::random(0, intervals_idx_max - BitSim::observation_length - episode_length - 1);
+    const auto validation_start_idx = 0;
+    const auto training_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
+    
+    const auto validation_end_idx = training_end_idx / 4;
+    const auto training_start_idx = validation_end_idx + 1;
+
+    if (validation) {
+        intervals_idx = Utils::random(validation_start_idx, validation_end_idx);
+    }
+    else {
+        intervals_idx = Utils::random(training_start_idx, training_end_idx);
+    }
 
     intervals_idx_start = intervals_idx;
     intervals_idx_end = intervals_idx + episode_length;
