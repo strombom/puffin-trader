@@ -56,7 +56,7 @@ namespace BitSim
     constexpr auto interval = std::chrono::seconds{ 10s };
     constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + 0h + 0min + 0s;
     //constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 06 / 02) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 07 / 01) + 0h + 0min + 0s;
 
     constexpr auto n_batches = 20000;
     constexpr auto batch_size = 500;
@@ -85,8 +85,11 @@ namespace BitSim
 
     namespace Trader
     {
-        constexpr auto algorithm = "SAC";
+#ifdef TORCH_API
         const auto device = torch::Device{ torch::kCUDA };
+#endif
+
+        constexpr auto algorithm = "SAC";
 
         constexpr auto n_episodes = 2000;
         constexpr auto save_period = 100;
