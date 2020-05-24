@@ -49,6 +49,18 @@
     <Filter Include="Header Files\Data">
       <UniqueIdentifier>{484dea19-f135-421a-92bf-9e3d7f0c1417}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Libraries\BitmexAPI">
+      <UniqueIdentifier>{941db167-0a5e-4b44-a6b2-69a6b763d62f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries\BitmexAPI">
+      <UniqueIdentifier>{3fb5d0e0-79e9-4254-8543-c05982a1aa1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries\BitmexAPI\api">
+      <UniqueIdentifier>{df054857-db3d-44c3-a683-6985fcec470d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries\BitmexAPI\model">
+      <UniqueIdentifier>{2ffb622b-f4d9-4336-8601-85cb9319e429}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -95,6 +107,207 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\ApiClient.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\ApiConfiguration.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\ApiException.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\HttpContent.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\JsonBody.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\ModelBase.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\MultipartFormData.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\Object.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\LiquidationApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\OrderApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\OrderBookApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\PositionApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\QuoteApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\SchemaApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\SettlementApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\StatsApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\TradeApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\UserApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\UserEventApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\AnnouncementApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\APIKeyApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\ChatApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\ExecutionApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\FundingApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\GlobalNotificationApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\InstrumentApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\InsuranceApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\api\LeaderboardApi.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\StatsUSD.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Trade.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\TradeBin.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Transaction.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\User.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\UserCommissionsBySymbol.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\UserEvent.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\UserPreferences.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Wallet.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\X-any.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\AccessToken.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Affiliate.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Announcement.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\APIKey.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Chat.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\ChatChannel.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\CommunicationToken.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\ConnectedUsers.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Error.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Error_error.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Execution.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Funding.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\GlobalNotification.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\IndexComposite.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Inline_response_200.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Instrument.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\InstrumentInterval.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Insurance.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Leaderboard.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Liquidation.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Margin.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Order.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\OrderBookL2.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Position.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Quote.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\QuoteFillRatio.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Settlement.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\Stats.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\BitmexAPI\model\StatsHistory.cpp">
+      <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -148,6 +361,9 @@
     </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\ApiClient.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

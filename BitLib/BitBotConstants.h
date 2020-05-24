@@ -21,6 +21,11 @@ namespace BitBase
             constexpr auto url_date_format = "%Y%m%d";
             constexpr auto active_downloads_max = 5;
         }
+
+        namespace Live
+        {
+
+        }
     }
 
     namespace Interval
@@ -55,11 +60,10 @@ namespace BitSim
     constexpr auto exchange = "BITMEX";
     constexpr auto interval = std::chrono::seconds{ 10s };
     constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + 0h + 0min + 0s;
-    //constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 02 / 01) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2019 } / 07 / 01) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 05 / 01) + 0h + 0min + 0s;
 
     constexpr auto n_batches = 20000;
-    constexpr auto batch_size = 500;
+    constexpr auto batch_size = 1024;
     constexpr auto observation_length = 128;
     constexpr auto n_channels = 3;
     constexpr auto n_observations = 10;
@@ -135,11 +139,10 @@ namespace BitSim
             constexpr auto gamma_discount = 0.95;
         }
 
-        constexpr auto state_dim = feature_size + 1; //7;  //  // Features, leverage (-1 to +1)
+        constexpr auto state_dim = feature_size + 1;
         constexpr auto action_dim_discrete = 3;
         constexpr auto action_dim_continuous = 1;
 
-        //constexpr auto log_names = std::array<const char*, 6>{ "total loss", "actor loss", "alpha loss", "qf1 loss", "qf2 loss", "episode score" };
         constexpr auto log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };
         constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
     }
