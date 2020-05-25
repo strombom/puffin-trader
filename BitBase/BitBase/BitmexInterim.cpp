@@ -1,18 +1,18 @@
 #include "pch.h"
 
 #include "BitBotConstants.h"
-#include "BitmexDaily.h"
+#include "BitmexInterim.h"
 #include "DateTime.h"
 #include "Logger.h"
 
-#include <array>
 #include <regex>
 #include <string>
+#include <array>
 
 
-BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_manager, tick_data_updated_callback_t tick_data_updated_callback) :
-    database(database), download_manager(download_manager), tick_data_updated_callback(tick_data_updated_callback),
-    state(BitmexDailyState::idle), tick_data_thread_running(true)
+BitmexInterim::BitmexInterim(sptrDatabase database, tick_data_updated_callback_t tick_data_updated_callback) :
+    database(database), tick_data_updated_callback(tick_data_updated_callback),
+    state(BitmexInterimState::idle), tick_data_thread_running(true)
 {
     // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
     timestamp_next = database->get_attribute(BitBase::Bitmex::exchange_name, "XBTUSD", "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
@@ -20,28 +20,28 @@ BitmexDaily::BitmexDaily(sptrDatabase database, sptrDownloadManager download_man
         timestamp_next = date::floor<date::days>(timestamp_next) + date::days{ 1 };
     }
 
-    tick_data_worker_thread = std::make_unique<std::thread>(&BitmexDaily::tick_data_worker, this);
+    tick_data_worker_thread = std::make_unique<std::thread>(&BitmexInterim::tick_data_worker, this);
 }
 
-BitmexDailyState BitmexDaily::get_state(void)
+BitmexInterimState BitmexInterim::get_state(void)
 {
     return state;
 }
 
-void BitmexDaily::shutdown(void)
+void BitmexInterim::shutdown(void)
 {
     logger.info("BitmexDaily::shutdown");
 
     {
         // Will not start new downloads after this section
         auto slock = std::scoped_lock{ start_download_mutex };
-        state = BitmexDailyState::idle;
+        state = BitmexInterimState::idle;
     }
 
     tick_data_thread_running = false;
     tick_data_condition.notify_all();
 
-    download_manager->abort_client(BitBase::Bitmex::Daily::downloader_client_id);
+    //download_manager->abort_client(BitBase::Bitmex::Daily::downloader_client_id);
 
     try {
         tick_data_worker_thread->join();
@@ -49,18 +49,19 @@ void BitmexDaily::shutdown(void)
     catch (...) {}
 }
 
-void BitmexDaily::start(void)
+void BitmexInterim::start(void)
 {
-    assert(state == BitmexDailyState::idle);
+    assert(state == BitmexInterimState::idle);
     
-    state = BitmexDailyState::downloading;
+    state = BitmexInterimState::downloading;
 
     for (int i = 0; i < BitBase::Bitmex::Daily::active_downloads_max; ++i) {
-        start_next_download();
+        //start_next_download();
     }
 }
 
-void BitmexDaily::download_done_callback(sptr_download_data_t payload)
+/*
+void BitmexInterim::download_done_callback(sptr_download_data_t payload)
 {
     auto compressed = boost::iostreams::array_source{ payload->data(), payload->size() };
     auto out = boost::iostreams::filtering_streambuf<boost::iostreams::input>{};
@@ -101,8 +102,9 @@ void BitmexDaily::start_next_download(void)
     download_manager->download(url, BitBase::Bitmex::Daily::downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
     timestamp_next += date::days{ 1 };
 }
+*/
 
-void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
+void BitmexInterim::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
 {
     auto symbol_names = database->get_attribute(BitBase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
     for (auto&& symbol_name : new_symbol_names) {
@@ -111,7 +113,7 @@ void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new
     database->set_attribute(BitBase::Bitmex::exchange_name, "symbols", symbol_names);
 }
 
-void BitmexDaily::tick_data_worker(void)
+void BitmexInterim::tick_data_worker(void)
 {
     while (tick_data_thread_running) {
         {
@@ -148,7 +150,7 @@ void BitmexDaily::tick_data_worker(void)
     logger.info("BitmexDaily::tick_data_worker exit");
 }
 
-BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_data)
+BitmexInterim::uptrTickData BitmexInterim::parse_raw(const std::stringstream& raw_data)
 {
     auto timer = Timer{};
 
@@ -229,87 +231,4 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
     logger.info("BitmexDaily::parse_raw end (%d ms)", timer.elapsed().count() / 1000);
 
     return tick_data;
-
-    /*
-    const std::regex fieldsregx(",");
-    const std::regex linesregx("\\n");
-
-    std::string indata = raw_data.str();
-    std::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
-    std::sregex_token_iterator row_end;
-
-    ++row_it; // Skip table headers
-    while (row_it != row_end) {
-        const std::string row = row_it->str();
-        ++row_it;
-        
-        std::sregex_token_iterator col_it(row.begin(), row.end(), fieldsregx, -1);
-        std::sregex_token_iterator col_end;
-
-        time_point_us timestamp;
-        std::string symbol;
-        float price;
-        float volume;
-        bool buy;
-        bool valid = false;
-
-        timer.start();
-        int idx = 0;
-        while (col_it != col_end) {
-            std::string token = col_it->str();
-            ++col_it;
-            if (idx == 0) {
-                std::istringstream ss{ token };
-                ss >> date::parse("%FD%T", timestamp);
-                if (ss.fail()) {
-                    break;
-                }
-            }
-            else if (idx == 1) {
-                symbol = token;
-            }
-            else if (idx == 2) {
-                if (token == "Buy") {
-                    buy = true;
-                }
-                else if (token == "Sell") {
-                    buy = false;
-                }
-                else if (token == "") {
-                    buy = true;
-                }
-                else {
-                    break;
-                }
-            }
-            else if (idx == 3) {
-                try {
-                    volume = std::stof(token);
-                }
-                catch (...) {
-                    break; // Invalid volume format
-                }
-            }
-            else if (idx == 4) {
-                try {
-                    price = std::stof(token);
-                    valid = true;
-                    break;
-                }
-                catch (...) {
-                    break; // Invalid price format
-                }
-            }
-            ++idx;
-        }
-
-        if (!valid) {
-            return nullptr;
-        }
-        if ((*tick_data)[symbol] == nullptr) {
-            (*tick_data)[symbol] = std::make_unique<DatabaseTicks>();
-        }
-        (*tick_data)[symbol]->append(timestamp, price, volume, buy);
-    }
-    */
 }

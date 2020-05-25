@@ -61,6 +61,12 @@
     <Filter Include="Source Files\Libraries\BitmexAPI\model">
       <UniqueIdentifier>{2ffb622b-f4d9-4336-8601-85cb9319e429}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Libraries\BitmexAPI\api">
+      <UniqueIdentifier>{bfa80a88-0a02-4420-b7df-f1c7ca301c82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Libraries\BitmexAPI\model">
+      <UniqueIdentifier>{92e43da8-d1af-4255-9788-6af7d009bce9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -309,6 +315,12 @@
     <ClCompile Include="..\..\BitLib\BitmexAPI\model\StatsHistory.cpp">
       <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
     </ClCompile>
+    <ClCompile Include="BitmexLive.cpp">
+      <Filter>Source Files\DownloadManager</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmexInterim.cpp">
+      <Filter>Source Files\DownloadManager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DownloadManager.h">
@@ -364,6 +376,213 @@
     </ClInclude>
     <ClInclude Include="..\..\BitLib\BitmexAPI\ApiClient.h">
       <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\APIKeyApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\ChatApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\ExecutionApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\FundingApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\GlobalNotificationApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\InstrumentApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\InsuranceApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\LeaderboardApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\LiquidationApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\OrderApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\OrderBookApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\PositionApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\QuoteApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\SchemaApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\SettlementApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\StatsApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\TradeApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\UserApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\UserEventApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\api\AnnouncementApi.h">
+      <Filter>Header Files\Libraries\BitmexAPI\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Transaction.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\User.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\UserCommissionsBySymbol.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\UserEvent.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\UserPreferences.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Wallet.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\X-any.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\AccessToken.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Affiliate.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Announcement.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\APIKey.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Chat.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\ChatChannel.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\CommunicationToken.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\ConnectedUsers.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Error.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Error_error.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Execution.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Funding.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\GlobalNotification.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\IndexComposite.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Inline_response_200.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Instrument.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\InstrumentInterval.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Insurance.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Leaderboard.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Liquidation.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Margin.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Order.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\OrderBookL2.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Position.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Quote.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\QuoteFillRatio.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Settlement.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Stats.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\StatsHistory.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\StatsUSD.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\Trade.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\model\TradeBin.h">
+      <Filter>Header Files\Libraries\BitmexAPI\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\IHttpBody.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\JsonBody.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\ModelBase.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\MultipartFormData.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\Object.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\ApiConfiguration.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\ApiException.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitmexAPI\HttpContent.h">
+      <Filter>Header Files\Libraries\BitmexAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexLive.h">
+      <Filter>Header Files\Bitmex</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexInterim.h">
+      <Filter>Header Files\Bitmex</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

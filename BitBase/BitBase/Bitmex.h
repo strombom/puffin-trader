@@ -7,14 +7,18 @@
 #include <future>
 
 #include "Database.h"
+#include "BitmexLive.h"
 #include "BitmexDaily.h"
+#include "BitmexInterim.h"
 #include "BitmexInterval.h"
 #include "DownloadManager.h"
 
 
 enum class BitmexState { 
-    idle, 
+    idle,
     downloading_daily,
+    downloading_interim,
+    downloading_live,
     shutdown
 };
 
@@ -29,7 +33,9 @@ public:
 private:
     sptrDatabase database;
     sptrDownloadManager download_manager;
+    uptrBitmexLive bitmex_live;
     uptrBitmexDaily bitmex_daily;
+    uptrBitmexInterim bitmex_interim;
     uptrBitmexInterval bitmex_interval;
 
     std::mutex state_mutex;
