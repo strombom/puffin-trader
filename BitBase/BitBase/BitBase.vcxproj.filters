@@ -315,11 +315,11 @@
     <ClCompile Include="..\..\BitLib\BitmexAPI\model\StatsHistory.cpp">
       <Filter>Source Files\Libraries\BitmexAPI\model</Filter>
     </ClCompile>
-    <ClCompile Include="BitmexLive.cpp">
-      <Filter>Source Files\DownloadManager</Filter>
-    </ClCompile>
     <ClCompile Include="BitmexInterim.cpp">
-      <Filter>Source Files\DownloadManager</Filter>
+      <Filter>Source Files\Bitmex</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmexLive.cpp">
+      <Filter>Source Files\Bitmex</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
