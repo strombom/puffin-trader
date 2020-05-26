@@ -93,20 +93,11 @@ void BitmexInterim::tick_data_worker(void)
                 const auto trade_symbol = utility::conversions::to_utf16string(symbol);
                 const auto trade_count = 50;
                 const auto trade_start_time = utility::datetime::from_string(DateTime::to_string_iso_8601(timestamps_next[symbol]), utility::datetime::date_format::ISO_8601);
-
-                auto trade = trade_api->trade_get(
-                    trade_symbol,
-                    boost::none,
-                    boost::none,
-                    trade_count,
-                    boost::none,
-                    boost::none,
-                    trade_start_time,
-                    boost::none
-                );
-
+                auto trade = trade_api->trade_get(trade_symbol, boost::none, boost::none, trade_count, boost::none, boost::none, trade_start_time, boost::none);
                 auto results = trade.get();
 
+
+                auto tick_data = std::make_unique<Ticks>();
                 for (auto result : results) {
                     std::wcout <<
                         "Result: " << result->getTimestamp().to_string(utility::datetime::date_format::ISO_8601).c_str() <<
@@ -114,8 +105,18 @@ void BitmexInterim::tick_data_worker(void)
                         "  " << result->getSize() <<
                         std::endl;
 
-                    //(*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
+                    const auto timestamp_string = utility::conversions::to_utf8string(result->getTimestamp().to_string(utility::datetime::date_format::ISO_8601));
+                    const auto timestamp = DateTime::to_time_point_ms(timestamp_string, "%FT%TZ");
+                    
+                    std::cout << "timestamp: " << timestamp.time_since_epoch().count() << std::endl;
 
+
+                    const auto direction = result->getTickDirection();
+
+                    std::wcout << "direction: " << direction << std::endl;
+                    //const time_point_ms timestamp, const float price, const float volume, const bool buy
+                    //tick_data->rows.push_back({ timestamp, price, volume, buy });
+                    std::cout << std::endl;
                 }
 
                 std::cout << "Count: " << results.size() << std::endl;
@@ -124,12 +125,11 @@ void BitmexInterim::tick_data_worker(void)
                 std::cout << "First s: " << DateTime::to_string(timestamps_next[symbol]) << std::endl;
 
 
-
-
-
+                database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol, std::move(tick_data), BitBase::Bitmex::first_timestamp);
+                tick_data_updated_callback();
             }
 
-            auto tick_data = uptrTickData{};
+            /*
             {
                 auto slock = std::scoped_lock{ tick_data_mutex };
                 if (!tick_data_queue.empty()) {
@@ -153,6 +153,7 @@ void BitmexInterim::tick_data_worker(void)
 
             logger.info("BitmexDaily::tick_data_worker tick_data appended to database (%d ms)", timer.elapsed().count() / 1000);
 
+            */
 
         }
     }
