@@ -25,7 +25,6 @@ namespace BitBase
 
         namespace Interim
         {
-            constexpr auto symbol_w = L"XBTUSD";
             constexpr auto api_key_id = L"ynOrYOWoC1knanjDld9RtPhC";
             constexpr auto api_key_secret = L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
             constexpr auto base_url = L"https://www.bitmex.com/api/v1";
