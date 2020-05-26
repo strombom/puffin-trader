@@ -8,7 +8,7 @@
 #include <vector>
 
 
-using step_prices_t = std::array<float, BitBase::Interval::steps.size()>;
+using step_prices_t = std::array<float, BitBase::Bitmex::Interval::steps.size()>;
 
 class Interval
 {

@@ -12,6 +12,7 @@ namespace BitBase
     {
         constexpr auto exchange_name = "BITMEX"; 
         constexpr auto first_timestamp = time_point_s{ date::sys_days(date::year{2020} / 05 / 25) };
+        constexpr auto symbols = std::array<const char*, 1>{ "XBTUSD" };
 
         namespace Daily
         {
@@ -24,7 +25,6 @@ namespace BitBase
 
         namespace Interim
         {
-            constexpr auto symbol = "XBTUSD";
             constexpr auto symbol_w = L"XBTUSD";
             constexpr auto api_key_id = L"ynOrYOWoC1knanjDld9RtPhC";
             constexpr auto api_key_secret = L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
@@ -35,15 +35,14 @@ namespace BitBase
         {
 
         }
-    }
-
-    namespace Interval
-    {
-        constexpr auto enabled_symbols = std::array<const char*, 1>{ "XBTUSD" };
-        constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
-        constexpr auto batch_timeout = 1s;
-        constexpr auto batch_size = 10000;
-        constexpr auto intervals = std::array<std::chrono::seconds, 1>{ 10s };
+        
+        namespace Interval
+        {
+            constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
+            constexpr auto batch_timeout = 1s;
+            constexpr auto batch_size = 10000;
+            constexpr auto intervals = std::array<std::chrono::seconds, 1>{ 10s };
+        }
     }
 
     namespace Database

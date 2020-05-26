@@ -42,11 +42,11 @@ void BitmexInterval::interval_data_worker(void)
 
         const auto symbols = database->get_attribute(BitBase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
         for (auto&& symbol : symbols) {
-            if (std::find(BitBase::Interval::enabled_symbols.begin(), BitBase::Interval::enabled_symbols.end(), symbol) == BitBase::Interval::enabled_symbols.end()) {
+            if (std::find(BitBase::Bitmex::symbols.begin(), BitBase::Bitmex::symbols.end(), symbol) == BitBase::Bitmex::symbols.end()) {
                 // Symbol is not enabled, continue with next symbol
                 continue;
             }
-            for (auto&& interval : BitBase::Interval::intervals) {
+            for (auto&& interval : BitBase::Bitmex::Interval::intervals) {
                 make_interval(symbol, interval);
             }
         }
@@ -57,7 +57,7 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
 {
     const auto interval_name = std::to_string(interval.count());
     auto timestamp = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_timestamp", BitBase::Bitmex::first_timestamp);
-    const auto last_timestamp = timestamp + interval * (BitBase::Interval::batch_size - 1);
+    const auto last_timestamp = timestamp + interval * (BitBase::Bitmex::Interval::batch_size - 1);
     auto next_tick_idx = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_tick_idx", 0);
     auto tick_table = database->open_tick_table_read(BitBase::Bitmex::exchange_name, symbol);
     const auto last_tick = tick_table->get_tick(max(0, next_tick_idx - 1));
@@ -72,7 +72,7 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
     auto intervals_data = Intervals{ timestamp, interval };
     const auto timer = Timer{};
 
-    while (timestamp <= last_timestamp && timer.elapsed() < BitBase::Interval::batch_timeout) {
+    while (timestamp <= last_timestamp && timer.elapsed() < BitBase::Bitmex::Interval::batch_timeout) {
         auto buys = std::vector<std::pair<float, float>>{};
         auto sells = std::vector<std::pair<float, float>>{};
 
@@ -110,7 +110,7 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
         auto step_idx = 0;
         for (auto&& buy : buys) {
             accum_vol_buy += buy.second;
-            while (step_idx < BitBase::Interval::steps.size() && accum_vol_buy > BitBase::Interval::steps[step_idx]) {
+            while (step_idx < BitBase::Bitmex::Interval::steps.size() && accum_vol_buy > BitBase::Bitmex::Interval::steps[step_idx]) {
                 prices_buy[step_idx] = buy.first;
                 ++step_idx;
             }
@@ -119,7 +119,7 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::secon
         step_idx = 0;
         for (auto&& sell : sells) {
             accum_vol_sell += sell.second;
-            while (step_idx < BitBase::Interval::steps.size() && accum_vol_sell > BitBase::Interval::steps[step_idx]) {
+            while (step_idx < BitBase::Bitmex::Interval::steps.size() && accum_vol_sell > BitBase::Bitmex::Interval::steps[step_idx]) {
                 prices_sell[step_idx] = sell.first;
                 ++step_idx;
             }

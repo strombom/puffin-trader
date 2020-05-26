@@ -36,7 +36,7 @@ private:
     std::atomic<BitmexInterimState> state;
 
     sptrDatabase database;
-    time_point_ms timestamp_next;
+    std::map<std::string, time_point_ms> timestamps_next;
 
     std::mutex tick_data_mutex;
     std::unique_ptr<std::thread> tick_data_worker_thread;
