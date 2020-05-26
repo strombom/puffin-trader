@@ -9,7 +9,6 @@
 class Tick
 {
 public:
-
     Tick(void) : price(0), volume(0), buy(0) {}
 
     Tick(const time_point_ms timestamp, const float price, const float volume, const bool buy) :
@@ -29,7 +28,6 @@ public:
 class Ticks
 {
 public:
-
     std::vector<Tick> rows;
 };
 

@@ -29,6 +29,7 @@ private:
 class DateTime {
 public:
     static const time_point_ms to_time_point_ms(const std::string& string);
+    static const time_point_ms to_time_point_ms(const std::string& string, const std::string& time_format);
     static const std::string to_string(const time_point_ms);
     static const std::wstring to_string_iso_8601(const time_point_ms);
     static const time_point_s random_timestamp(const time_point_s timestamp_start, const time_point_s timestamp_end, const std::chrono::seconds interval);

@@ -29,6 +29,11 @@ void Timer::print_elapsed(const std::string& message) const
 
 const time_point_ms DateTime::to_time_point_ms(const std::string& string)
 {
+    return to_time_point_ms(string, time_format);
+}
+
+const time_point_ms DateTime::to_time_point_ms(const std::string& string, const std::string& time_format)
+{
     auto value = std::istringstream{ string };
     auto time_point = time_point_ms{};
     value >> date::parse(time_format, time_point);

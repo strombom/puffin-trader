@@ -1,8 +1,8 @@
 #pragma once
 #include "pch.h"
 
-#include "DateTime.h"
 #include "Ticks.h"
+#include "DateTime.h"
 #include "Intervals.h"
 
 #include <mutex>
