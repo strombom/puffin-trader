@@ -144,7 +144,7 @@ BitmexLive::uptrTickData BitmexLive::parse_raw(const std::stringstream& raw_data
             return nullptr;
         }
 
-        auto timestamp = time_point_us{};
+        auto timestamp = time_point_ms{};
         auto ss = std::istringstream{ row.substr(0, 29) };
         ss >> date::parse("%FD%T", timestamp);
         if (ss.fail()) {

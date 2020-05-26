@@ -27,17 +27,23 @@ void Timer::print_elapsed(const std::string& message) const
     std::cout << message << " elapsed: " << elapsed().count() / 1000.0f << "ms" << std::endl;
 }
 
-const time_point_us DateTime::to_time_point_us(const std::string& string)
+const time_point_ms DateTime::to_time_point_ms(const std::string& string)
 {
     auto value = std::istringstream{ string };
-    auto time_point = time_point_us{};
+    auto time_point = time_point_ms{};
     value >> date::parse(time_format, time_point);
     return time_point;
 }
 
-const std::string DateTime::to_string(const time_point_us timestamp)
+const std::string DateTime::to_string(const time_point_ms timestamp)
 {
     return date::format(time_format, timestamp);
+}
+
+const std::wstring DateTime::to_string_iso_8601(const time_point_ms timestamp)
+{
+    const auto string = date::format("%FT%TZ", timestamp);
+    return std::wstring{string.begin(), string.end()};
 }
 
 const time_point_s DateTime::random_timestamp(const time_point_s timestamp_start, const time_point_s timestamp_end, const std::chrono::seconds interval)

@@ -47,6 +47,14 @@ const int Database::get_attribute(const std::string& key, int default_value)
     return return_value;
 }
 
+#include <iostream>
+
+template <class charT, charT sep>
+class punct_facet : public std::numpunct<charT> {
+protected:
+    charT do_decimal_point() const { return sep; }
+};
+
 const time_point_s Database::get_attribute(const std::string& key, const time_point_s& default_date_time)
 {
     const auto attribute = get_attribute(key, date::format(BitBase::Database::time_format, default_date_time));
@@ -56,11 +64,11 @@ const time_point_s Database::get_attribute(const std::string& key, const time_po
     return time_point;
 }
 
-const time_point_us Database::get_attribute(const std::string& key, const time_point_us& default_date_time)
+const time_point_ms Database::get_attribute(const std::string& key, const time_point_ms& default_date_time)
 {
     const auto attribute = get_attribute(key, date::format(BitBase::Database::time_format, default_date_time));
     auto value = std::istringstream{ attribute };
-    auto time_point = time_point_us{};
+    auto time_point = time_point_ms{};
     value >> date::parse(BitBase::Database::time_format, time_point);
     return time_point;
 }
@@ -98,7 +106,7 @@ void Database::set_attribute(const std::string& key, int value)
     set_attribute(key, std::to_string(value));
 }
 
-void Database::set_attribute(const std::string& key, const time_point_us& date_time)
+void Database::set_attribute(const std::string& key, const time_point_ms& date_time)
 {
     set_attribute(key, date::format(BitBase::Database::time_format, date_time));
 }
@@ -162,7 +170,7 @@ std::unique_ptr<Tick> TickTableRead::_get_tick(void)
     }
 }
 
-void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp)
+void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_ms& first_timestamp)
 {
     auto slock = std::scoped_lock{ file_mutex };
 
@@ -185,7 +193,7 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
-void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const Intervals& intervals_data, const time_point_us& next_timestamp, int next_tick_idx)
+void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const Intervals& intervals_data, const time_point_ms& next_timestamp, int next_tick_idx)
 {
     if (!intervals_data.rows.size()) {
         return;
@@ -203,7 +211,7 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
     set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_tick_idx", next_tick_idx);
 }
 
-std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_us& timestamp_start, const time_point_us& timestamp_end, const std::chrono::seconds interval)
+std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::seconds interval)
 {
     const auto interval_name = std::to_string(interval.count());
     const auto interval_offset = (timestamp_start - BitBase::Bitmex::first_timestamp) / interval;

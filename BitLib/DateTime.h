@@ -3,7 +3,7 @@
 
 
 using time_point_s = std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>;
-using time_point_us = std::chrono::time_point<std::chrono::system_clock, std::chrono::microseconds>;
+using time_point_ms = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 
 #define system_clock_us_now() std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now())
 
@@ -28,8 +28,9 @@ private:
 
 class DateTime {
 public:
-    static const time_point_us to_time_point_us(const std::string& string);
-    static const std::string to_string(const time_point_us);
+    static const time_point_ms to_time_point_ms(const std::string& string);
+    static const std::string to_string(const time_point_ms);
+    static const std::wstring to_string_iso_8601(const time_point_ms);
     static const time_point_s random_timestamp(const time_point_s timestamp_start, const time_point_s timestamp_end, const std::chrono::seconds interval);
 
 private:

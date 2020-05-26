@@ -9,16 +9,74 @@
 #include <string>
 #include <array>
 
+/*
+logger.info("start");
+
+auto bitmex_config = std::make_shared<io::swagger::client::api::ApiConfiguration>(io::swagger::client::api::ApiConfiguration{});
+
+auto api_key_id = utility::string_t{ L"ynOrYOWoC1knanjDld9RtPhC" };
+auto api_key_secret = utility::string_t{ L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW" };
+auto base_url = utility::string_t{ L"https://www.bitmex.com/api/v1" };
+auto http_config = web::http::client::http_client_config{};
+auto user_agent = utility::string_t{ L"abc" };
+
+bitmex_config->setApiKey(api_key_id, api_key_secret);
+bitmex_config->setBaseUrl(base_url);
+bitmex_config->setHttpConfig(http_config);
+bitmex_config->setUserAgent(user_agent);
+
+auto bitmex_api = std::make_shared< io::swagger::client::api::ApiClient>(bitmex_config);
+
+auto trade_api = io::swagger::client::api::TradeApi{ bitmex_api };
+
+const auto symbol = utility::string_t{ L"XBTUSD" };
+const auto count = 1000;
+const auto start_time = utility::datetime::from_string(L"2020-05-24T00:00:00Z", utility::datetime::date_format::ISO_8601);
+const auto end_time = utility::datetime::from_string(L"2020-05-25T00:00:00Z", utility::datetime::date_format::ISO_8601);
+auto trade = trade_api.trade_get(
+    symbol,
+    boost::none,
+    boost::none,
+    count,
+    boost::none,
+    boost::none,
+    start_time,
+    end_time
+);
+
+auto results = trade.get();
+
+for (auto result : results) {
+    std::wcout <<
+        "Result: " << result->getTimestamp().to_string(utility::datetime::date_format::ISO_8601).c_str() <<
+        "  " << result->getPrice() <<
+        "  " << result->getSize() <<
+        std::endl;
+    break;
+}
+
+std::cout << "Count: " << results.size() << std::endl;
+
+return 1;
+*/
+
+#include <chrono>
 
 BitmexInterim::BitmexInterim(sptrDatabase database, tick_data_updated_callback_t tick_data_updated_callback) :
     database(database), tick_data_updated_callback(tick_data_updated_callback),
     state(BitmexInterimState::idle), tick_data_thread_running(true)
 {
-    // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
-    timestamp_next = database->get_attribute(BitBase::Bitmex::exchange_name, "XBTUSD", "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
-    if (timestamp_next != BitBase::Bitmex::first_timestamp) {
-        timestamp_next = date::floor<date::days>(timestamp_next) + date::days{ 1 };
-    }
+    // Init Bitmex API
+    const auto bitmex_config = std::make_shared<io::swagger::client::api::ApiConfiguration>(io::swagger::client::api::ApiConfiguration{});
+    auto http_config = web::http::client::http_client_config{};
+    bitmex_config->setHttpConfig(http_config);
+    bitmex_config->setApiKey(BitBase::Bitmex::Interim::api_key_id, BitBase::Bitmex::Interim::api_key_secret);
+    bitmex_config->setBaseUrl(BitBase::Bitmex::Interim::base_url);
+    bitmex_config->setUserAgent(L"unkwnown");
+    auto bitmex_api = std::make_shared<io::swagger::client::api::ApiClient>(bitmex_config);
+    trade_api = std::make_unique<io::swagger::client::api::TradeApi>(bitmex_api);
+
+    timestamp_next = database->get_attribute(BitBase::Bitmex::exchange_name, BitBase::Bitmex::Interim::symbol, "tick_data_last_timestamp", time_point_ms{ BitBase::Bitmex::first_timestamp });
 
     tick_data_worker_thread = std::make_unique<std::thread>(&BitmexInterim::tick_data_worker, this);
 }
@@ -55,9 +113,47 @@ void BitmexInterim::start(void)
     
     state = BitmexInterimState::downloading;
 
-    for (int i = 0; i < BitBase::Bitmex::Daily::active_downloads_max; ++i) {
-        //start_next_download();
+    if (timestamp_next > date::floor<date::days>(system_clock_us_now() - std::chrono::minutes{ 1 })) {
+        state = BitmexInterimState::idle;
+        return;
     }
+
+
+    const auto symbol = utility::string_t{ BitBase::Bitmex::Interim::symbol_w };
+    const auto count = 50;
+    const auto start_time = utility::datetime::from_string(DateTime::to_string_iso_8601(timestamp_next), utility::datetime::date_format::ISO_8601);
+
+    auto trade = trade_api->trade_get(
+        symbol,
+        boost::none,
+        boost::none,
+        count,
+        boost::none,
+        boost::none,
+        start_time,
+        boost::none
+    );
+
+    auto results = trade.get();
+
+    for (auto result : results) {
+        std::wcout <<
+            "Result: " << result->getTimestamp().to_string(utility::datetime::date_format::ISO_8601).c_str() <<
+            "  " << result->getPrice() <<
+            "  " << result->getSize() <<
+            std::endl;
+    }
+
+    std::cout << "Count: " << results.size() << std::endl;
+
+    std::wcout << "First w: " << DateTime::to_string_iso_8601(timestamp_next) << std::endl;
+    std::cout << "First s: " << DateTime::to_string(timestamp_next) << std::endl;
+
+
+
+    auto url = std::string{ BitBase::Bitmex::Daily::base_url_start } + date::format(BitBase::Bitmex::Daily::url_date_format, timestamp_next) + std::string{ BitBase::Bitmex::Daily::base_url_end };
+    //download_manager->download(url, BitBase::Bitmex::Daily::downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
+    timestamp_next += date::days{ 1 };
 }
 
 /*
@@ -71,6 +167,7 @@ void BitmexInterim::download_done_callback(sptr_download_data_t payload)
     auto decompressed = std::stringstream{};
     boost::iostreams::copy(out, decompressed);
     auto tick_data = parse_raw(decompressed);
+    //(*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
 
     if (!tick_data) {
         logger.error("BitmexDaily::download_done_callback parsing error!");
@@ -89,18 +186,6 @@ void BitmexInterim::download_done_callback(sptr_download_data_t payload)
 
 void BitmexDaily::start_next_download(void)
 {
-    if (state == BitmexDailyState::idle) {
-        return;
-    }
-
-    if (timestamp_next > date::floor<date::days>(system_clock_us_now() - date::days{ 1 })) {
-        state = BitmexDailyState::idle;
-        return;
-    }
-
-    auto url = std::string{ BitBase::Bitmex::Daily::base_url_start } + date::format(BitBase::Bitmex::Daily::url_date_format, timestamp_next) + std::string{ BitBase::Bitmex::Daily::base_url_end };
-    download_manager->download(url, BitBase::Bitmex::Daily::downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
-    timestamp_next += date::days{ 1 };
 }
 */
 
@@ -148,87 +233,4 @@ void BitmexInterim::tick_data_worker(void)
         }
     }
     logger.info("BitmexDaily::tick_data_worker exit");
-}
-
-BitmexInterim::uptrTickData BitmexInterim::parse_raw(const std::stringstream& raw_data)
-{
-    auto timer = Timer{};
-
-    auto tick_data = std::make_unique<TickData>();
-
-    const auto linesregx = std::regex{ "\\n" };
-    const auto indata = std::string{ raw_data.str() };
-    auto row_it = std::sregex_token_iterator{ indata.begin(), indata.end(), linesregx, -1 };
-    auto row_end = std::sregex_token_iterator{};
-
-    ++row_it; // Skip table headers
-    while (row_it != row_end) {
-        const auto row = std::string{ row_it->str() };
-        ++row_it;
-
-        if (row.length() < 40) {
-            return nullptr;
-        }
-
-        auto timestamp = time_point_us{};
-        auto ss = std::istringstream{ row.substr(0, 29) };
-        ss >> date::parse("%FD%T", timestamp);
-        if (ss.fail()) {
-            return nullptr;
-        }
-
-        auto commas = std::array<int, 5>{ 0, 0, 0, 0, 0 };
-        auto cidx = 0;
-        auto p = 29;
-
-        while (cidx < 5 && p < row.length()) {
-            const auto c = row.at(p);
-            if (c == '\n') {
-                break;
-            }
-            else if (c == ',') {
-                commas[cidx] = p + 1;
-                ++cidx;
-            }
-            ++p;
-        }
-
-        if (commas[0] != 30 || cidx != 5) {
-            return nullptr;
-        }
-
-        const std::string symbol = row.substr(commas[0], (size_t)(commas[1] - commas[0] - 1));
-
-        auto buy = false;
-        if (row.substr(commas[1], (size_t) (commas[2] - commas[1] - 1)) == "Buy") {
-            buy = true;
-        }
-
-        auto volume = float{};
-        try {
-            const std::string token = row.substr(commas[2], (size_t)(commas[3] - commas[2] - 1));
-            volume = std::stof(token);
-        }
-        catch (...) {
-            return nullptr; // Invalid volume format
-        }
-
-        auto price = float{};
-        try {
-            const std::string token = row.substr(commas[3], (size_t)(commas[4] - commas[3] - 1));
-            price = std::stof(token);
-        }
-        catch (...) {
-            return nullptr; // Invalid price format
-        }
-
-        if ((*tick_data)[symbol] == nullptr) {
-            (*tick_data)[symbol] = std::make_unique<Ticks>();
-        }
-        (*tick_data)[symbol]->rows.push_back({ timestamp, price, volume, buy });
-    }
-
-    logger.info("BitmexDaily::parse_raw end (%d ms)", timer.elapsed().count() / 1000);
-
-    return tick_data;
 }

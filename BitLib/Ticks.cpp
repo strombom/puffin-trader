@@ -17,13 +17,13 @@ std::ostream& operator<<(std::ostream& stream, const Tick& row)
 
 std::istream& operator>>(std::istream& stream, Tick& row)
 {
-    auto timestamp_us = long long{};
-    stream.read(reinterpret_cast<char*>(&timestamp_us), sizeof(timestamp_us));
+    auto timestamp_ms = long long{};
+    stream.read(reinterpret_cast<char*>(&timestamp_ms), sizeof(timestamp_ms));
     stream.read(reinterpret_cast<char*>(&row.price),    sizeof(row.price));
     stream.read(reinterpret_cast<char*>(&row.volume),   sizeof(row.volume));
     stream.read(reinterpret_cast<char*>(&row.buy),      sizeof(row.buy));
 
-    row.timestamp = time_point_us{ (std::chrono::microseconds) timestamp_us };
+    row.timestamp = time_point_ms{ (std::chrono::milliseconds) timestamp_ms };
 
     return stream;
 }

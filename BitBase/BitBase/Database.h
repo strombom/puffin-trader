@@ -39,13 +39,13 @@ public:
     const std::string get_attribute(const std::string& key, const std::string& default_string);
     const int get_attribute(const std::string& key, int default_value);
     const time_point_s get_attribute(const std::string& key, const time_point_s& default_date_time);
-    const time_point_us get_attribute(const std::string& key, const time_point_us& default_date_time);
+    const time_point_ms get_attribute(const std::string& key, const time_point_ms& default_date_time);
     const std::vector<std::string> get_attribute(const std::string& key, const std::vector<std::string>& default_string_vector);
     const std::unordered_set<std::string> get_attribute(const std::string& key, const std::unordered_set<std::string>& default_string_set);
 
     void set_attribute(const std::string& key, const std::string& string);
     void set_attribute(const std::string& key, int value);
-    void set_attribute(const std::string& key, const time_point_us& date_time);
+    void set_attribute(const std::string& key, const time_point_ms& date_time);
     void set_attribute(const std::string& key, const std::vector<std::string>& string_vector);
     void set_attribute(const std::string& key, const std::unordered_set<std::string>& string_set);
 
@@ -56,10 +56,10 @@ public:
 
     std::unique_ptr<TickTableRead> open_tick_table_read(const std::string& exchange, const std::string& symbol);
 
-    void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_us& first_timestamp);
-    void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const Intervals& intervals_data, const time_point_us& timestamp, int tick_idx);
+    void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_ms& first_timestamp);
+    void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const Intervals& intervals_data, const time_point_ms& timestamp, int tick_idx);
 
-    std::unique_ptr<Intervals> get_intervals(const std::string& exchange, const std::string& symbol, const time_point_us& timestamp_start, const time_point_us& timestamp_end, const std::chrono::seconds interval);
+    std::unique_ptr<Intervals> get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::seconds interval);
 
 private:
     std::unique_ptr<SQLite::Database> attributes_db;

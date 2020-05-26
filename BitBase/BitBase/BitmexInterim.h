@@ -4,6 +4,8 @@
 #include "DateTime.h"
 #include "Database.h"
 #include "BitBotConstants.h"
+#include "BitmexAPI/ApiClient.h"
+#include "BitmexAPI/api/TradeApi.h"
 
 #include <mutex>
 #include <queue>
@@ -34,8 +36,7 @@ private:
     std::atomic<BitmexInterimState> state;
 
     sptrDatabase database;
-    //sptrDownloadManager download_manager;
-    time_point_us timestamp_next;
+    time_point_ms timestamp_next;
 
     std::mutex tick_data_mutex;
     std::unique_ptr<std::thread> tick_data_worker_thread;
@@ -44,11 +45,14 @@ private:
     std::atomic_bool tick_data_thread_running;
     tick_data_updated_callback_t tick_data_updated_callback;
 
-    //void start_next_download(void);
     //void download_done_callback(sptr_download_data_t payload);
     void update_symbol_names(const std::unordered_set<std::string>& new_symbol_names);
     void tick_data_worker(void);
     uptrTickData parse_raw(const std::stringstream& raw_data);
+
+
+    //std::shared_ptr<io::swagger::client::api::ApiClient> bitmex_api;
+    std::unique_ptr<io::swagger::client::api::TradeApi> trade_api;
 };
 
 using uptrBitmexInterim = std::unique_ptr<BitmexInterim>;

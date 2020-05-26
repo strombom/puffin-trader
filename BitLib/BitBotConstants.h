@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX"; 
-        constexpr auto first_timestamp = time_point_s{ date::sys_days(date::year{2019} / 06 / 01) };
+        constexpr auto first_timestamp = time_point_s{ date::sys_days(date::year{2020} / 05 / 25) };
 
         namespace Daily
         {
@@ -20,6 +20,15 @@ namespace BitBase
             constexpr auto base_url_end = ".csv.gz";
             constexpr auto url_date_format = "%Y%m%d";
             constexpr auto active_downloads_max = 5;
+        }
+
+        namespace Interim
+        {
+            constexpr auto symbol = "XBTUSD";
+            constexpr auto symbol_w = L"XBTUSD";
+            constexpr auto api_key_id = L"ynOrYOWoC1knanjDld9RtPhC";
+            constexpr auto api_key_secret = L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
+            constexpr auto base_url = L"https://www.bitmex.com/api/v1";
         }
 
         namespace Live
@@ -62,7 +71,7 @@ namespace BitSim
     constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + 0h + 0min + 0s;
     constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 05 / 01) + 0h + 0min + 0s;
 
-    constexpr auto n_batches = 20000;
+    constexpr auto n_batches = 40000;
     constexpr auto batch_size = 1024;
     constexpr auto observation_length = 128;
     constexpr auto n_channels = 3;

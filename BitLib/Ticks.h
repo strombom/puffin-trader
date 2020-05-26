@@ -12,13 +12,13 @@ public:
 
     Tick(void) : price(0), volume(0), buy(0) {}
 
-    Tick(const time_point_us timestamp, const float price, const float volume, const bool buy) :
+    Tick(const time_point_ms timestamp, const float price, const float volume, const bool buy) :
         timestamp(timestamp), price(price), volume(volume), buy(buy) {}
 
     friend std::ostream& operator<<(std::ostream& stream, const Tick& row);
     friend std::istream& operator>>(std::istream& stream, Tick& row);
 
-    time_point_us timestamp;
+    time_point_ms timestamp;
     float price;
     float volume;
     bool buy;

@@ -41,8 +41,8 @@ void Server::server_thread(void)
             logger.info("Server::server_thread get intervals!");
             const auto intervals = database->get_intervals(command["exchange"].string_value(),
                                                            command["symbol"].string_value(),
-                                                           DateTime::to_time_point_us(command["timestamp_start"].string_value()),
-                                                           DateTime::to_time_point_us(command["timestamp_end"].string_value()),
+                                                           DateTime::to_time_point_ms(command["timestamp_start"].string_value()),
+                                                           DateTime::to_time_point_ms(command["timestamp_end"].string_value()),
                                                            std::chrono::seconds{ command["interval_seconds"].int_value() });
 
             auto buffer = std::stringstream{};
