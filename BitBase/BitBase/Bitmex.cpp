@@ -26,6 +26,8 @@ void Bitmex::shutdown(void)
     }
     logger.info("Bitmex::shutdown state = shutdown");
     bitmex_daily->shutdown();
+    bitmex_interim->shutdown();
+    bitmex_live->shutdown();
     bitmex_interval->shutdown();
 
     try {
@@ -59,12 +61,12 @@ void Bitmex::main_loop(void)
                     bitmex_daily->start();
                 }
                 else if (tick_data_last_timestamp < std::chrono::system_clock::now() - std::chrono::minutes{ 1 }) {
-                    state = BitmexState::downloading_interim;
-                    bitmex_interim->start();
+                    //state = BitmexState::downloading_interim;
+                    //bitmex_interim->start();
                 }
                 else {
-                    state = BitmexState::downloading_live;
-                    bitmex_live->start();
+                    //state = BitmexState::downloading_live;
+                    //bitmex_live->start();
                 }
 
             } else if (state == BitmexState::downloading_daily) {
