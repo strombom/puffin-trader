@@ -24,7 +24,7 @@ std::chrono::microseconds Timer::elapsed(void) const
 
 void Timer::print_elapsed(const std::string& message) const
 {
-    std::cout << message << " elapsed: " << elapsed().count() / 1000.0f << "ms" << std::endl;
+    std::cout << message << " elapsed: " << (float)elapsed().count() / 1000.0f << "ms" << std::endl;
 }
 
 const time_point_ms DateTime::to_time_point_ms(const std::string& string)
