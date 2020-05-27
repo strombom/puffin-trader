@@ -7,9 +7,6 @@
     <Filter Include="Headers">
       <UniqueIdentifier>{576c71f2-b842-42c4-b564-0ebc6535c090}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Headers\date">
-      <UniqueIdentifier>{91626909-7148-428b-a5b6-0e75cab1ff9d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\DateTime">
       <UniqueIdentifier>{60e438eb-7fe6-4fa8-bbf2-29436c174379}</UniqueIdentifier>
     </Filter>
@@ -19,15 +16,18 @@
     <Filter Include="Headers\Bitmex">
       <UniqueIdentifier>{1780c522-8e71-4c84-9534-a52db3fd351d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\DateTime">
+      <UniqueIdentifier>{91626909-7148-428b-a5b6-0e75cab1ff9d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="BitmexWebSocket.cpp">
       <Filter>Source\Bitmex</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\BitLib\DateTime.cpp">
+    <ClCompile Include="BitmexDeltaServer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DateTime.cpp">
       <Filter>Source\DateTime</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,14 +35,14 @@
     <ClInclude Include="pch.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\BitLib\date\date.h">
-      <Filter>Headers\date</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BitLib\DateTime.h">
-      <Filter>Headers\date</Filter>
-    </ClInclude>
     <ClInclude Include="BitmexWebSocket.h">
       <Filter>Headers\Bitmex</Filter>
+    </ClInclude>
+    <ClInclude Include="DateTime.h">
+      <Filter>Headers\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="date\date.h">
+      <Filter>Headers\DateTime</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

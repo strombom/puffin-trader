@@ -81,17 +81,14 @@
     <ProjectPublicIncludePath>C:\Apps\vcpkg-2019.11\installed\x64-windows\include;$(ProjectPublicIncludePath)</ProjectPublicIncludePath>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\BitLib\DateTime.cpp">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./;../../BitLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./;../../BitLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
     <ClCompile Include="BitmexWebSocket.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="BitmexDeltaServer.cpp" />
+    <ClCompile Include="DateTime.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\BitLib\DateTime.h" />
-    <ClInclude Include="..\..\BitLib\date\date.h" />
     <ClInclude Include="BitmexWebSocket.h" />
+    <ClInclude Include="DateTime.h" />
+    <ClInclude Include="date\date.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
