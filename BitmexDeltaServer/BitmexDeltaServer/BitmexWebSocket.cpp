@@ -1,7 +1,10 @@
+
 #include "BitmexWebSocket.h"
+#include "DateTime.h"
 
 
-BitmexWebSocket::BitmexWebSocket(void) :
+BitmexWebSocket::BitmexWebSocket(sptrTickData tick_data) :
+    tick_data(tick_data),
     websocket_thread_running(true)
 {
     auto config = web::websockets::client::websocket_client_config{};
@@ -35,14 +38,43 @@ void BitmexWebSocket::shutdown(void)
     catch (...) {}
 }
 
+bool BitmexWebSocket::json_test_field(const web::json::value& data, const std::string& name, const std::string& value)
+{
+    return data.has_field(U(name)) && data.at(U(name)).as_string().compare(U(value)) == 0;
+}
+
 void BitmexWebSocket::websocket_worker(void)
 {
     while (websocket_thread_running) {
-        auto response = client->receive();
-        auto msg = response.get();
-        auto body = msg.extract_string().get();
+        const auto response = client->receive().get();
+        const auto body = response.extract_string().get();
+        const auto data = web::json::value::parse(U(body));
+        
+        if (json_test_field(data, "action", "insert") && json_test_field(data, "table", "trade"))
+        {
+            const auto ticks = data.at(U("data")).as_array();
 
-        std::cout << "BitmexWebSocket: Rcv: " << body << std::endl;
+            for (auto tick : ticks) {
+                const auto symbol = tick.at(U("symbol")).as_string();
+                const auto price = tick.at(U("price")).as_double();
+                const auto volume = tick.at(U("size")).as_double();
+                const auto buy = tick.at(U("side")).as_string().compare(U("Buy")) == 0;
+                const auto timestamp = DateTime::to_time_point_ms(tick.at(U("timestamp")).as_string(), "%FT%TZ");
+
+                std::wcout << "BitmexWebSocket: Insert table: " <<
+                    "timestamp(" << DateTime::to_string_iso_8601(timestamp) << ") " <<
+                    "symbol(" << symbol.c_str() << ") " <<
+                    "price(" << price << ") " <<
+                    "volume(" << volume << ") " <<
+                    "buy(" << buy << ") " << std::endl;
+
+                tick_data->append(symbol, timestamp, (float) price, (float) volume, buy);
+            }
+        }
+        else
+        {
+            std::wcout << "BitmexWebSocket: Rcv: " << data.to_string().c_str() << std::endl;
+        }
+
     }
 }
-

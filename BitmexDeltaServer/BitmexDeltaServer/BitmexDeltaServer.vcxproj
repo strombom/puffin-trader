@@ -84,12 +84,14 @@
     <ClCompile Include="BitmexWebSocket.cpp" />
     <ClCompile Include="BitmexDeltaServer.cpp" />
     <ClCompile Include="DateTime.cpp" />
+    <ClCompile Include="TickData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BitmexWebSocket.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="date\date.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="TickData.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

@@ -2,13 +2,15 @@
 #include <cstdio>
 
 #include "BitmexWebSocket.h"
+#include "TickData.h"
 
 
 int main()
 {
     printf("BitmexDeltaServer: Started\n");
-    
-    auto bitmex_web_socket = BitmexWebSocket{};    
+
+    auto tick_data = sptrTickData{};
+    auto bitmex_web_socket = BitmexWebSocket{ tick_data };
     bitmex_web_socket.start();
 
     getchar(); // Wait for Enter key
