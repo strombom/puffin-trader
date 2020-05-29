@@ -9,7 +9,6 @@ Bitmex::Bitmex(sptrDatabase database, sptrDownloadManager download_manager) :
     database(database), download_manager(download_manager), state(BitmexState::idle), thread_running(true)
 {
     bitmex_daily = std::make_unique<BitmexDaily>(database, download_manager, std::bind(&Bitmex::tick_data_updated_callback, this));
-    bitmex_interim = std::make_unique<BitmexInterim>(database, std::bind(&Bitmex::tick_data_updated_callback, this));
     bitmex_live = std::make_unique<BitmexLive>(database, std::bind(&Bitmex::tick_data_updated_callback, this));
     bitmex_interval = std::make_unique<BitmexInterval>(database);
 
@@ -26,7 +25,6 @@ void Bitmex::shutdown(void)
     }
     logger.info("Bitmex::shutdown state = shutdown");
     bitmex_daily->shutdown();
-    bitmex_interim->shutdown();
     bitmex_live->shutdown();
     bitmex_interval->shutdown();
 
@@ -60,24 +58,14 @@ void Bitmex::main_loop(void)
                     state = BitmexState::downloading_daily;
                     bitmex_daily->start();
                 }
-                else if (tick_data_last_timestamp < std::chrono::system_clock::now() - std::chrono::minutes{ 1 }) {
-                    //state = BitmexState::downloading_interim;
-                    //bitmex_interim->start();
-                }
                 else {
-                    //state = BitmexState::downloading_live;
-                    //bitmex_live->start();
+                    state = BitmexState::downloading_live;
+                    bitmex_live->start();
                 }
 
             } else if (state == BitmexState::downloading_daily) {
                 // Check if daily data is downloaded
                 if (bitmex_daily->get_state() == BitmexDailyState::idle) {
-                    state = BitmexState::idle;
-                }
-            }
-            else if (state == BitmexState::downloading_interim) {
-                // Check if interim data is up to date
-                if (bitmex_interim->get_state() == BitmexInterimState::idle) {
                     state = BitmexState::idle;
                 }
             }

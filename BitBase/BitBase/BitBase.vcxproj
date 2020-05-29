@@ -537,7 +537,6 @@
     <ClInclude Include="..\..\BitLib\Ticks.h" />
     <ClInclude Include="Bitmex.h" />
     <ClInclude Include="BitmexDaily.h" />
-    <ClInclude Include="BitmexInterim.h" />
     <ClInclude Include="BitmexInterval.h" />
     <ClInclude Include="BitmexLive.h" />
     <ClInclude Include="Database.h" />

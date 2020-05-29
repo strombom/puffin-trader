@@ -84,13 +84,18 @@
     <ClCompile Include="BitmexWebSocket.cpp" />
     <ClCompile Include="BitmexDeltaServer.cpp" />
     <ClCompile Include="DateTime.cpp" />
+    <ClCompile Include="json11.cpp" />
+    <ClCompile Include="Server.cpp" />
     <ClCompile Include="TickData.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BitmexConstants.h" />
     <ClInclude Include="BitmexWebSocket.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="date\date.h" />
+    <ClInclude Include="json11.hpp" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Server.h" />
     <ClInclude Include="TickData.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -100,7 +105,7 @@
       <AdditionalOptions>-isystem"/home/strombom/apps/vcpkg/installed/x64-linux/include/" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <LibraryDependencies>ssl;cpprest;boost_thread;pthread;crypto</LibraryDependencies>
+      <LibraryDependencies>ssl;cpprest;boost_thread;pthread;crypto;zmq</LibraryDependencies>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;/usr/lib/x86_64-linux-gnu;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -111,7 +116,7 @@
       <AdditionalOptions>-isystem"/home/strombom/apps/vcpkg/installed/x64-linux/include/" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <LibraryDependencies>ssl;cpprest;boost_thread;pthread;crypto</LibraryDependencies>
+      <LibraryDependencies>ssl;cpprest;boost_thread;pthread;crypto;zmq</LibraryDependencies>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;/usr/lib/x86_64-linux-gnu;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

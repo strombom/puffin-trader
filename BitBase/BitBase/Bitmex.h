@@ -9,7 +9,6 @@
 #include "Database.h"
 #include "BitmexLive.h"
 #include "BitmexDaily.h"
-#include "BitmexInterim.h"
 #include "BitmexInterval.h"
 #include "DownloadManager.h"
 
@@ -17,7 +16,6 @@
 enum class BitmexState { 
     idle,
     downloading_daily,
-    downloading_interim,
     downloading_live,
     shutdown
 };
@@ -35,7 +33,6 @@ private:
     sptrDownloadManager download_manager;
     uptrBitmexLive bitmex_live;
     uptrBitmexDaily bitmex_daily;
-    uptrBitmexInterim bitmex_interim;
     uptrBitmexInterval bitmex_interval;
 
     std::mutex state_mutex;
@@ -50,5 +47,4 @@ private:
 
     void main_loop(void);
     void interval_update_worker(void);
-    //std::future<void> main_loop_task;
 };

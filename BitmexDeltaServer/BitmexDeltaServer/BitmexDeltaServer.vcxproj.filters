@@ -13,6 +13,12 @@
     <Filter Include="Headers\DateTime">
       <UniqueIdentifier>{91626909-7148-428b-a5b6-0e75cab1ff9d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\Libraries">
+      <UniqueIdentifier>{8b5f290a-9a1f-4cc4-b006-7cc9d650cb42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Libraries">
+      <UniqueIdentifier>{96739d9c-6e2b-4fcb-a9e8-18d72551e89c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitmexDeltaServer.cpp">
@@ -27,6 +33,12 @@
     <ClCompile Include="TickData.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="json11.cpp">
+      <Filter>Source\Libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -35,14 +47,23 @@
     <ClInclude Include="DateTime.h">
       <Filter>Headers\DateTime</Filter>
     </ClInclude>
-    <ClInclude Include="date\date.h">
-      <Filter>Headers\DateTime</Filter>
-    </ClInclude>
     <ClInclude Include="BitmexWebSocket.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="TickData.h">
       <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexConstants.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Server.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="date\date.h">
+      <Filter>Headers\Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="json11.hpp">
+      <Filter>Headers\Libraries</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

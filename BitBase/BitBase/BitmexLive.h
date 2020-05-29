@@ -33,7 +33,6 @@ private:
     std::atomic<BitmexLiveState> state;
 
     sptrDatabase database;
-    time_point_ms timestamp_next;
 
     std::mutex tick_data_mutex;
     std::unique_ptr<std::thread> tick_data_worker_thread;
@@ -42,7 +41,9 @@ private:
     std::atomic_bool tick_data_thread_running;
     tick_data_updated_callback_t tick_data_updated_callback;
 
-    void update_symbol_names(const std::unordered_set<std::string>& new_symbol_names);
+    zmq::context_t zmq_context;
+    std::unique_ptr<zmq::socket_t> zmq_client;
+
     void tick_data_worker(void);
     uptrTickData parse_raw(const std::stringstream& raw_data);
 };

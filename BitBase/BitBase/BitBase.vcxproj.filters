@@ -581,8 +581,5 @@
     <ClInclude Include="BitmexLive.h">
       <Filter>Header Files\Bitmex</Filter>
     </ClInclude>
-    <ClInclude Include="BitmexInterim.h">
-      <Filter>Header Files\Bitmex</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

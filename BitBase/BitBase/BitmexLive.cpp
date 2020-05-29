@@ -8,17 +8,15 @@
 #include <array>
 #include <regex>
 #include <string>
+#include <iostream>
 
 
 BitmexLive::BitmexLive(sptrDatabase database, tick_data_updated_callback_t tick_data_updated_callback) :
     database(database), tick_data_updated_callback(tick_data_updated_callback),
     state(BitmexLiveState::idle), tick_data_thread_running(true)
 {
-    // We base daily data on BTCUSD timestamp, it has most activity and is of primary interest. Other symbols will be downloaded as well.
-    timestamp_next = database->get_attribute(BitBase::Bitmex::exchange_name, "XBTUSD", "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
-    if (timestamp_next != BitBase::Bitmex::first_timestamp) {
-        timestamp_next = date::floor<date::days>(timestamp_next) + date::days{ 1 };
-    }
+    zmq_client = std::make_unique<zmq::socket_t>(zmq_context, zmq::socket_type::req);
+    zmq_client->connect(BitBase::Bitmex::Live::address);
 
     tick_data_worker_thread = std::make_unique<std::thread>(&BitmexLive::tick_data_worker, this);
 }
@@ -55,36 +53,11 @@ void BitmexLive::start(void)
     
     state = BitmexLiveState::downloading;
 
+    tick_data_condition.notify_one();
+
     //for (int i = 0; i < BitBase::Bitmex::Daily::active_downloads_max; ++i) {
     //    start_next_download();
     //}
-}
-
-/*
-void BitmexLive::start_next_download(void)
-{
-    if (state == BitmexLiveState::idle) {
-        return;
-    }
-
-    if (timestamp_next > date::floor<date::days>(system_clock_us_now() - date::days{ 1 })) {
-        state = BitmexLiveState::idle;
-        return;
-    }
-
-    auto url = std::string{ BitBase::Bitmex::Daily::base_url_start } + date::format(BitBase::Bitmex::Daily::url_date_format, timestamp_next) + std::string{ BitBase::Bitmex::Daily::base_url_end };
-    //download_manager->download(url, BitBase::Bitmex::Daily::downloader_client_id, std::bind(&BitmexDaily::download_done_callback, this, std::placeholders::_1));
-    timestamp_next += date::days{ 1 };
-}
-*/
-
-void BitmexLive::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
-{
-    auto symbol_names = database->get_attribute(BitBase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
-    for (auto&& symbol_name : new_symbol_names) {
-        symbol_names.insert(symbol_name);
-    }
-    database->set_attribute(BitBase::Bitmex::exchange_name, "symbols", symbol_names);
 }
 
 void BitmexLive::tick_data_worker(void)
@@ -95,7 +68,37 @@ void BitmexLive::tick_data_worker(void)
             tick_data_condition.wait(tick_data_lock);
         }
 
+
         while (tick_data_thread_running) {
+
+            for (auto&& symbol : BitBase::Bitmex::symbols) {
+
+                const auto timestamp_next = database->get_attribute(BitBase::Bitmex::exchange_name, symbol, "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
+
+                json11::Json command = json11::Json::object{
+                    { "command", "get_ticks" },
+                    { "symbol", symbol },
+                    { "timestamp_start", DateTime::to_string_iso_8601(timestamp_next) }
+                };
+
+                auto message = zmq::message_t{ command.dump() };
+                auto result = zmq_client->send(message, zmq::send_flags::dontwait);
+
+                if (result.has_value()) {
+                    zmq_client->recv(message);
+                    auto intervals_buffer = std::stringstream{ std::string(static_cast<char*>(message.data()), message.size()) };
+                    std::cout << "Recv: " << std::string(static_cast<char*>(message.data()), message.size()) << std::endl;
+                    //auto intervals = Intervals{ timestamp_start , interval };
+                    //intervals_buffer >> intervals;
+                }
+            }
+
+            break;
+
+
+            /*
+
+
             auto tick_data = uptrTickData{};
             {
                 auto slock = std::scoped_lock{ tick_data_mutex };
@@ -115,10 +118,11 @@ void BitmexLive::tick_data_worker(void)
                 symbol_names.insert(symbol_name);
                 database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol_name, std::move(symbol_tick_data->second), BitBase::Bitmex::first_timestamp);
             }
-            update_symbol_names(symbol_names);
+            //update_symbol_names(symbol_names);
             tick_data_updated_callback();
 
             logger.info("BitmexDaily::tick_data_worker tick_data appended to database (%d ms)", timer.elapsed().count()/1000);
+            */
         }
     }
     logger.info("BitmexDaily::tick_data_worker exit");
