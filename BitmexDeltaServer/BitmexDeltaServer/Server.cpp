@@ -4,6 +4,7 @@
 #include <zmq.hpp>
 #include "json11.hpp"
 
+#include <memory>
 #include <iostream>
 
 
