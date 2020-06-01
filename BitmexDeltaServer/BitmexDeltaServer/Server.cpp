@@ -2,6 +2,7 @@
 #include "Server.h"
 
 #include <zmq.hpp>
+#include <msgpack.hpp>
 #include "json11.hpp"
 
 #include <memory>
@@ -20,6 +21,11 @@ Server::~Server(void)
     server_thread_handle->join();
 }
 
+void Server::test(void)
+{
+    test_condition.notify_one();
+}
+
 void Server::server_thread(void)
 {
     auto context = zmq::context_t{ 1 };
@@ -29,9 +35,14 @@ void Server::server_thread(void)
 
     auto message = zmq::message_t{};
     while (server_running) {
+        {
+            auto test_lock = std::unique_lock<std::mutex>{ test_mutex };
+            test_condition.wait(test_lock);
+        }
+
         const auto recv_result = server.recv(message);
         if (!recv_result) {
-            continue;
+            //continue;
         }
         const auto message_string = std::string(static_cast<char*>(message.data()), message.size());
 
@@ -39,7 +50,57 @@ void Server::server_thread(void)
 
         //logger.info("Server::server_thread raw message (%s)", message_string.c_str());
 
-        auto error_message = std::string{ "{\"command\":\"error\"}" };
+        auto error_message = std::string{};
+        const auto command = json11::Json::parse(message_string.c_str(), error_message);
+        const auto command_name = command["command"].string_value();
+
+        if (command_name == "get_ticks") {
+            //logger.info("Server::server_thread get intervals!");
+            //const auto intervals = database->get_intervals(command["exchange"].string_value(),
+            //    command["symbol"].string_value(),
+            //    DateTime::to_time_point_ms(command["timestamp_start"].string_value()),
+            //    DateTime::to_time_point_ms(command["timestamp_end"].string_value()),
+            //    std::chrono::seconds{ command["interval_seconds"].int_value() });
+
+            const auto symbol = command["symbol"].string_value();
+            const auto timestamp = DateTime::to_time_point_ms(command["timestamp_start"].string_value(), "%FT%TZ");
+
+            auto ticks = tick_data->get(symbol, timestamp);
+
+            auto sbuf = msgpack::sbuffer{};
+            msgpack::pack(sbuf, ticks);
+            message = zmq::message_t{ sbuf.size() };
+            memcpy(message.data(), sbuf.data(), sbuf.size());
+
+            std::cout << "Send data, size: " << sbuf.size() << std::endl;
+        }
+        else {
+            //logger.info("Server::server_thread unknown command!");
+            message = zmq::message_t{};
+        }
+
+        server.send(message, zmq::send_flags::dontwait);
+
+
+
+    }
+
+    /*
+    return;
+    {
+
+
+        const auto recv_result = server.recv(message);
+        if (!recv_result) {
+            //continue;
+        }
+        const auto message_string = std::string(static_cast<char*>(message.data()), message.size());
+
+        std::cout << "Rcv: " << message_string << std::endl;
+
+        //logger.info("Server::server_thread raw message (%s)", message_string.c_str());
+
+        auto error_message = std::string{};
         const auto command = json11::Json::parse(message_string.c_str(), error_message);
         const auto command_name = command["command"].string_value();
 
@@ -57,8 +118,11 @@ void Server::server_thread(void)
             auto ticks = tick_data->get(symbol, timestamp);
 
             auto buffer = std::stringstream{};
-            buffer << "abc->"; // *intervals;
-            buffer << DateTime::to_string_iso_8601((*ticks)[0].timestamp);
+            buffer << "{"; // *intervals;
+            //for (auto&& tick : *ticks) {
+                //buffer << DateTime::to_string_iso_8601(tick.timestamp);
+            //}
+            buffer << "}";
             message = zmq::message_t{ buffer.str() };
         }
         else {
@@ -68,5 +132,5 @@ void Server::server_thread(void)
 
         server.send(message, zmq::send_flags::dontwait);
     }
+    */
 }
-

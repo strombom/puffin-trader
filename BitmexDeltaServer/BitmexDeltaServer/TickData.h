@@ -5,15 +5,23 @@
 
 #include <map>
 #include <mutex>
+#include <msgpack.hpp>
 
 
 struct Tick
 {
 public:
-    time_point_ms timestamp;
+    int timestamp_ms;
     float price;
     float volume;
     bool buy;
+
+    time_point_ms timestamp(void)
+    {
+        return std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>{ std::chrono::milliseconds{ timestamp_ms } };
+    }
+
+    MSGPACK_DEFINE(timestamp_ms, price, volume, buy);
 };
 
 
