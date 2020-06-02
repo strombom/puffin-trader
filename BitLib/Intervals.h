@@ -30,7 +30,7 @@ public:
 class Intervals
 {
 public:
-    Intervals(const time_point_s& timestamp_start, const std::chrono::seconds& interval) :
+    Intervals(const time_point_ms& timestamp_start, const std::chrono::seconds& interval) :
         timestamp_start(timestamp_start), interval(interval) {}
 
     Intervals(const std::string& file_path)
@@ -45,14 +45,14 @@ public:
     void load(const std::string& file_path);
     void save(const std::string& file_path) const;
 
-    time_point_s get_timestamp_start(void) const;
-    time_point_s get_timestamp_end(void) const;
+    time_point_ms get_timestamp_start(void) const;
+    time_point_ms get_timestamp_end(void) const;
 
     friend std::ostream& operator<<(std::ostream& stream, const Intervals& intervals_data);
     friend std::istream& operator>>(std::istream& stream, Intervals& intervals_data);
 
     std::vector<Interval> rows;
-    time_point_s timestamp_start;
+    time_point_ms timestamp_start;
     std::chrono::seconds interval;
 };
 

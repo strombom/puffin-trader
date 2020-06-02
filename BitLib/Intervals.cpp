@@ -66,7 +66,7 @@ void Intervals::load(const std::string& file_path)
     attr_file >> start_time_raw >> interval_raw;
     attr_file.close();
 
-    timestamp_start = time_point_s{ std::chrono::seconds{start_time_raw} };
+    timestamp_start = time_point_ms{ std::chrono::milliseconds{start_time_raw} };
     interval = std::chrono::seconds{ interval_raw };
 
     auto data_file = std::ifstream{ file_path + "_data", std::ios::binary };
@@ -89,12 +89,12 @@ void Intervals::save(const std::string& file_path) const
     attr_file.close();
 }
 
-time_point_s Intervals::get_timestamp_start(void) const
+time_point_ms Intervals::get_timestamp_start(void) const
 {
     return timestamp_start;
 }
 
-time_point_s Intervals::get_timestamp_end(void) const
+time_point_ms Intervals::get_timestamp_end(void) const
 {
     return timestamp_start + interval * rows.size();
 }
