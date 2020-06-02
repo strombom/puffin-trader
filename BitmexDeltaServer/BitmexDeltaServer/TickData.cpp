@@ -54,17 +54,25 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
 {
     auto slock = std::scoped_lock{ tick_data_mutex };
 
+    if (buffer_count.at(symbol) < 2) {
+        return std::make_unique<std::vector<Tick>>();
+    }
+
     //timestamp = ticks.at(symbol).get()->at((Bitmex::buffer_size + buffer_next_idx.at(symbol) - buffer_count.at(symbol) / 2) % Bitmex::buffer_size).timestamp();
     const auto timestamp_ms = timestamp.time_since_epoch().count();
 
     const auto last_idx = (Bitmex::buffer_size + buffer_next_idx.at(symbol) - 1) % Bitmex::buffer_size;
-    const auto first_idx = buffer_count.at(symbol) < Bitmex::buffer_size ? Bitmex::buffer_size - 1 : last_idx;
+    const auto first_idx = buffer_count.at(symbol) < Bitmex::buffer_size ? 0 : buffer_next_idx.at(symbol);
     const auto read_ticks = ticks.at(symbol).get();
     auto start_idx = -1;
 
-    //std::cout << "first " << DateTime::to_string(read_ticks->at(first_idx).timestamp) << std::endl;
-    //std::cout << "last_idx " << DateTime::to_string(read_ticks->at(last_idx).timestamp) << std::endl;
-    //std::cout << "search " << DateTime::to_string(timestamp) << std::endl;
+    std::cout << "timestamp count:" << timestamp.time_since_epoch().count() << std::endl;
+    std::cout << "ticks timestamp_ms:" << read_ticks->at(first_idx).timestamp_ms << std::endl;
+    std::cout << "ticks timestamp() count:" << read_ticks->at(first_idx).timestamp().time_since_epoch().count() << std::endl;
+
+    std::cout << "first " << DateTime::to_string(read_ticks->at(first_idx).timestamp()) << std::endl;
+    std::cout << "last_idx " << DateTime::to_string(read_ticks->at(last_idx).timestamp()) << std::endl;
+    std::cout << "search " << DateTime::to_string(timestamp) << std::endl;
 
     // Find timestamp
     auto idx = last_idx;
@@ -76,18 +84,22 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
             }
             break;
         }
-        idx = (Bitmex::buffer_size + idx - 1) % Bitmex::buffer_size;
         if (idx == first_idx) {
             break;
         }
+        idx = (Bitmex::buffer_size + idx - 1) % Bitmex::buffer_size;
     }
 
     // Copy data
     auto result = std::vector<Tick>{};
     if (start_idx != -1) {
-        for (auto idx = start_idx; idx != (last_idx + 1) % Bitmex::buffer_size; idx = (idx + 1) % Bitmex::buffer_size) {
+        idx = start_idx;
+        while (true) {
             result.push_back(read_ticks->at(idx));
-            //std::cout << "push " << DateTime::to_string(read_ticks->at(idx).timestamp) << std::endl;
+            if (idx == last_idx) {
+                break;
+            }
+            idx = (Bitmex::buffer_size + idx + 1) % Bitmex::buffer_size;
         }
     }
 

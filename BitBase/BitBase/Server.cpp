@@ -21,7 +21,7 @@ void Server::server_thread(void)
 {
     auto context = zmq::context_t{ 1 };
     auto server = zmq::socket_t{ context, zmq::socket_type::rep };
-    server.bind("tcp://*:31000");
+    server.bind("tcp://*:31001");
     server.setsockopt(ZMQ_RCVTIMEO, 500);
 
     auto message = zmq::message_t{};

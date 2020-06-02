@@ -49,6 +49,7 @@ void BitmexLive::shutdown(void)
 
 void BitmexLive::start(void)
 {
+    std::cout << "BitmexLive::start" << std::endl;
     assert(state == BitmexLiveState::idle);
     
     state = BitmexLiveState::downloading;
@@ -73,26 +74,51 @@ void BitmexLive::tick_data_worker(void)
 
             for (auto&& symbol : BitBase::Bitmex::symbols) {
 
+                std::cout << "Tick data " << symbol << std::endl;
+
                 const auto timestamp_next = database->get_attribute(BitBase::Bitmex::exchange_name, symbol, "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
+
+                //const auto temp_timestamp = std::chrono::system_clock::now() - std::chrono::seconds{ 60 };
+                //const auto temp_ms = std::chrono::milliseconds(temp_timestamp.time_since_epoch().count());
+                //const auto temp_time_point = time_point_ms{ temp_ms };
+
+                auto tp = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - std::chrono::seconds{ 30 });
+                auto temp_time_point = std::chrono::time_point_cast<std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>::duration>( tp );
+                const auto dstr = DateTime::to_string_iso_8601(temp_time_point);
 
                 json11::Json command = json11::Json::object{
                     { "command", "get_ticks" },
                     { "symbol", symbol },
-                    { "timestamp_start", DateTime::to_string_iso_8601(timestamp_next) }
+                    { "timestamp_start", dstr } //timestamp_next) }
                 };
+
+                std::cout << "Send command: " << command.dump() << std::endl;
 
                 auto message = zmq::message_t{ command.dump() };
                 auto result = zmq_client->send(message, zmq::send_flags::dontwait);
 
+                std::cout << "Send response: " << result.has_value() << std::endl;
+                std::cout << "Send response: " << result.value() << std::endl;
+                
+
                 if (result.has_value()) {
-                    zmq_client->recv(message);
-                    auto intervals_buffer = std::stringstream{ std::string(static_cast<char*>(message.data()), message.size()) };
-                    std::cout << "Recv: " << std::string(static_cast<char*>(message.data()), message.size()) << std::endl;
+                    auto result = zmq_client->recv(message);
+                    //auto intervals_buffer = std::stringstream{ std::string(static_cast<char*>(message.data()), message.size()) };
+                    //std::cout << "Recv: " << std::string(static_cast<char*>(message.data()), message.size()) << std::endl;
+                    std::cout << "Recv: " << message.size() << std::endl;
                     //auto intervals = Intervals{ timestamp_start , interval };
                     //intervals_buffer >> intervals;
                 }
+                else {
+                    std::cout << "Recv: fail" << std::endl;
+                }
+
+
+                std::cout << "Recv: end" << std::endl;
+
             }
 
+            state = BitmexLiveState::idle;
             break;
 
 
@@ -128,6 +154,7 @@ void BitmexLive::tick_data_worker(void)
     logger.info("BitmexDaily::tick_data_worker exit");
 }
 
+/*
 BitmexLive::uptrTickData BitmexLive::parse_raw(const std::stringstream& raw_data)
 {
     auto timer = Timer{};
@@ -210,3 +237,4 @@ BitmexLive::uptrTickData BitmexLive::parse_raw(const std::stringstream& raw_data
 
     return tick_data;
 }
+*/

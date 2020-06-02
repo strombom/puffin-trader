@@ -30,19 +30,19 @@ void Server::server_thread(void)
 {
     auto context = zmq::context_t{ 1 };
     auto server = zmq::socket_t{ context, zmq::socket_type::rep };
-    server.bind("tcp://*:31000");
+    server.bind(Bitmex::server_address);
     server.setsockopt(ZMQ_RCVTIMEO, 500);
 
     auto message = zmq::message_t{};
     while (server_running) {
         {
-            auto test_lock = std::unique_lock<std::mutex>{ test_mutex };
-            test_condition.wait(test_lock);
+            //auto test_lock = std::unique_lock<std::mutex>{ test_mutex };
+            //test_condition.wait(test_lock);
         }
 
         const auto recv_result = server.recv(message);
         if (!recv_result) {
-            //continue;
+            continue;
         }
         const auto message_string = std::string(static_cast<char*>(message.data()), message.size());
 
@@ -53,6 +53,9 @@ void Server::server_thread(void)
         auto error_message = std::string{};
         const auto command = json11::Json::parse(message_string.c_str(), error_message);
         const auto command_name = command["command"].string_value();
+
+        std::cout << "Rcv command: " << command_name << std::endl;
+
 
         if (command_name == "get_ticks") {
             //logger.info("Server::server_thread get intervals!");

@@ -445,7 +445,6 @@
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="Bitmex.cpp" />
     <ClCompile Include="BitmexDaily.cpp" />
-    <ClCompile Include="BitmexInterim.cpp" />
     <ClCompile Include="BitmexInterval.cpp" />
     <ClCompile Include="BitmexLive.cpp" />
     <ClCompile Include="Database.cpp" />

@@ -45,7 +45,7 @@ private:
     std::unique_ptr<zmq::socket_t> zmq_client;
 
     void tick_data_worker(void);
-    uptrTickData parse_raw(const std::stringstream& raw_data);
+    //uptrTickData parse_raw(const std::stringstream& raw_data);
 };
 
 using uptrBitmexLive = std::unique_ptr<BitmexLive>;

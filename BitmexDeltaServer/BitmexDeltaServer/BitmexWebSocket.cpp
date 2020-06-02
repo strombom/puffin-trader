@@ -81,7 +81,7 @@ void BitmexWebSocket::websocket_worker(void)
         const auto data = message["data"];
 
         if (action == "insert" && table == "trade" && data.is_array()) {
-            std::cout << "BitmexWebSocket insert: " << message_string << std::endl;
+            //std::cout << "BitmexWebSocket insert: " << message_string << std::endl;
 
             for (auto tick : data.array_items()) {
                 const auto symbol = tick["symbol"].string_value();

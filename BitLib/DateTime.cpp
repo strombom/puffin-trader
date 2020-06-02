@@ -45,10 +45,10 @@ const std::string DateTime::to_string(const time_point_ms timestamp)
     return date::format(time_format, timestamp);
 }
 
-const std::wstring DateTime::to_string_iso_8601(const time_point_ms timestamp)
+const std::string DateTime::to_string_iso_8601(const time_point_ms timestamp)
 {
     const auto string = date::format("%FT%TZ", timestamp);
-    return std::wstring{string.begin(), string.end()};
+    return string; // std::string{ string.begin(), string.end() };
 }
 
 const time_point_s DateTime::random_timestamp(const time_point_s timestamp_start, const time_point_s timestamp_end, const std::chrono::seconds interval)

@@ -8,17 +8,26 @@
 
 int main()
 {
-    printf("BitmexDeltaServer: Started\n");
+    std::cout << "BitmexDeltaServer: Started" << std::endl;
 
     auto tick_data = TickData::create();
     auto server = Server{ tick_data };
     auto bitmex_web_socket = BitmexWebSocket{ tick_data };
     bitmex_web_socket.start();
 
-    getchar(); // Wait for Enter key
+    //getchar(); 
+    //server.test();
+
+    while (true) {
+        auto command = std::string{};
+        std::cin >> command;
+        if (command.compare("q") == 0) {
+            break;
+        }
+    }
 
     bitmex_web_socket.shutdown();
-    
-    printf("BitmexDeltaServer: Shut down\n");
+
+    std::cout << "BitmexDeltaServer: Shut down" << std::endl;
     return 0;
 }

@@ -11,7 +11,7 @@
 struct Tick
 {
 public:
-    int timestamp_ms;
+    unsigned long long timestamp_ms;
     float price;
     float volume;
     bool buy;
