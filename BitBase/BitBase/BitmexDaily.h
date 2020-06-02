@@ -30,7 +30,6 @@ private:
     using TickData = std::map<std::string, uptrDatabaseTicks>;
     using uptrTickData = std::unique_ptr<TickData>;
     
-    std::mutex start_download_mutex;
     std::atomic<BitmexDailyState> state;
 
     sptrDatabase database;

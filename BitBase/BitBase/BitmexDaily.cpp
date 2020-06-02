@@ -34,7 +34,6 @@ void BitmexDaily::shutdown(void)
 
     {
         // Will not start new downloads after this section
-        auto slock = std::scoped_lock{ start_download_mutex };
         state = BitmexDailyState::idle;
     }
 
