@@ -32,7 +32,8 @@ namespace BitBase
 
         namespace Live
         {
-            constexpr auto address = "tcp://localhost:31002";
+            constexpr auto address = "tcp://delta.superdator.se:31002";
+            constexpr auto max_rows = 20;
         }
         
         namespace Interval

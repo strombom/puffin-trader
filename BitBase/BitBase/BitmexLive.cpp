@@ -5,10 +5,29 @@
 #include "DateTime.h"
 #include "Logger.h"
 
+#include <msgpack.hpp>
+
 #include <array>
 #include <regex>
 #include <string>
 #include <iostream>
+
+
+struct MessageTick
+{
+public:
+    unsigned long long timestamp_ms;
+    float price;
+    float volume;
+    bool buy;
+
+    time_point_ms timestamp(void)
+    {
+        return std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>{ std::chrono::milliseconds{ timestamp_ms } };
+    }
+
+    MSGPACK_DEFINE(timestamp_ms, price, volume, buy);
+};
 
 
 BitmexLive::BitmexLive(sptrDatabase database, tick_data_updated_callback_t tick_data_updated_callback) :
@@ -82,14 +101,15 @@ void BitmexLive::tick_data_worker(void)
                 //const auto temp_ms = std::chrono::milliseconds(temp_timestamp.time_since_epoch().count());
                 //const auto temp_time_point = time_point_ms{ temp_ms };
 
-                auto tp = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - std::chrono::seconds{ 30 });
-                auto temp_time_point = std::chrono::time_point_cast<std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>::duration>( tp );
-                const auto dstr = DateTime::to_string_iso_8601(temp_time_point);
+                //auto tp = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - std::chrono::seconds{ 4 });
+                //auto temp_time_point = std::chrono::time_point_cast<std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>::duration>( tp );
+                //const auto dstr = DateTime::to_string_iso_8601(temp_time_point);
 
                 json11::Json command = json11::Json::object{
                     { "command", "get_ticks" },
                     { "symbol", symbol },
-                    { "timestamp_start", dstr } //timestamp_next) }
+                    { "max_rows", BitBase::Bitmex::Live::max_rows },
+                    { "timestamp_start", "2020-06-02T15:50:00.000Z" } //DateTime::to_string_iso_8601(timestamp_next) }
                 };
 
                 std::cout << "Send command: " << command.dump() << std::endl;
@@ -103,9 +123,40 @@ void BitmexLive::tick_data_worker(void)
 
                 if (result.has_value()) {
                     auto result = zmq_client->recv(message);
+
+
+
+
+                    //msgpack::unpacked msg;
+                    //msgpack::unpack(&msg, sbuf.data(), sbuf.size());
+
+                    auto aoh = msgpack::unpack(static_cast<const char*>(message.data()), message.size());
+                    auto obj = aoh.get();
+                    auto ticks = std::vector<MessageTick>{};
+                    ticks = obj.convert(ticks);
+
+                    for (auto &&tick: ticks) {
+                        std::cout << "Recv: " << DateTime::to_string(tick.timestamp()) << std::endl;
+                    }
+
+
+                    //auto o = message.get();
+
+                    //auto oh = msgpack::unpack(message);
+
+                    //msgpack::object_handle oh = msgpack::unpack(str.data(), str.size());
+
+
+
+                    //auto sbuf = msgpack::sbuffer{};
+                    //msgpack::pack(sbuf, ticks);
+                    //message = zmq::message_t{ sbuf.size() };
+                    //memcpy(message.data(), sbuf.data(), sbuf.size());
+
+
                     //auto intervals_buffer = std::stringstream{ std::string(static_cast<char*>(message.data()), message.size()) };
                     //std::cout << "Recv: " << std::string(static_cast<char*>(message.data()), message.size()) << std::endl;
-                    std::cout << "Recv: " << message.size() << std::endl;
+                    std::cout << "Recv count: " << message.size() << std::endl;
                     //auto intervals = Intervals{ timestamp_start , interval };
                     //intervals_buffer >> intervals;
                 }
