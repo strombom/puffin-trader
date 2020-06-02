@@ -32,7 +32,7 @@ public:
 
     static std::shared_ptr<TickData> create(void);
 
-    std::unique_ptr<std::vector<Tick>> get(const std::string& symbol, time_point_ms timestamp);
+    std::unique_ptr<std::vector<Tick>> get(const std::string& symbol, time_point_ms timestamp, int max_rows);
     void append(const std::string& symbol, time_point_ms timestamp, float price, float volume, bool buy);
 
 private:

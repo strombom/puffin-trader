@@ -32,6 +32,7 @@ void Server::server_thread(void)
     auto server = zmq::socket_t{ context, zmq::socket_type::rep };
     server.bind(Bitmex::server_address);
     server.setsockopt(ZMQ_RCVTIMEO, 500);
+    server.setsockopt(ZMQ_SNDTIMEO, 2000);
 
     auto message = zmq::message_t{};
     while (server_running) {
@@ -67,8 +68,9 @@ void Server::server_thread(void)
 
             const auto symbol = command["symbol"].string_value();
             const auto timestamp = DateTime::to_time_point_ms(command["timestamp_start"].string_value(), "%FT%TZ");
+            const auto max_rows = command["max_rows"].int_value();
 
-            auto ticks = tick_data->get(symbol, timestamp);
+            auto ticks = tick_data->get(symbol, timestamp, max_rows);
 
             auto sbuf = msgpack::sbuffer{};
             msgpack::pack(sbuf, ticks);

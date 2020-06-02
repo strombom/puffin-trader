@@ -50,7 +50,7 @@ void TickData::append(const std::string& symbol, time_point_ms timestamp, float 
     
 }
 
-std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time_point_ms timestamp)
+std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time_point_ms timestamp, int max_rows)
 {
     auto slock = std::scoped_lock{ tick_data_mutex };
 
@@ -96,7 +96,7 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
         idx = start_idx;
         while (true) {
             result.push_back(read_ticks->at(idx));
-            if (idx == last_idx) {
+            if (idx == last_idx || result.size() == max_rows) {
                 break;
             }
             idx = (Bitmex::buffer_size + idx + 1) % Bitmex::buffer_size;
