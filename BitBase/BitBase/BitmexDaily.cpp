@@ -91,7 +91,7 @@ void BitmexDaily::start_next_download(void)
         return;
     }
 
-    if (timestamp_next > date::floor<date::days>(system_clock_us_now() - date::days{ 1 })) {
+    if (timestamp_next > date::floor<date::days>(system_clock_ms_now() - date::days{ 1 })) {
         state = BitmexDailyState::idle;
         return;
     }

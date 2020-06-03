@@ -62,7 +62,7 @@ void BitmexLive::shutdown(void)
 
 void BitmexLive::start(void)
 {
-    std::cout << "BitmexLive::start" << std::endl;
+    //std::cout << "BitmexLive::start" << std::endl;
     assert(state == BitmexLiveState::idle);
     
     state = BitmexLiveState::downloading;
@@ -78,20 +78,24 @@ void BitmexLive::tick_data_worker(void)
             tick_data_condition.wait(tick_data_lock);
         }
 
-        auto has_data = true;
-        while (tick_data_thread_running && has_data) {
-            has_data = false;
+        auto fetch_more = true;
+        while (tick_data_thread_running && fetch_more) {
+            fetch_more = false;
 
             for (auto&& symbol : BitBase::Bitmex::symbols) {
 
-                std::cout << "Tick data " << symbol << std::endl;
+                //std::cout << "Tick data " << symbol << std::endl;
 
                 auto timestamp_next = database->get_attribute(BitBase::Bitmex::exchange_name, symbol, "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
+                timestamp_next += std::chrono::milliseconds{ 1 }; // Do not include the latest timestamp, only newer should be fetched
 
-                std::cout << "tscount " << timestamp_next.time_since_epoch().count() << std::endl;
-                std::cout << "ftcount " << BitBase::Bitmex::first_timestamp.time_since_epoch().count() << std::endl;
+                //std::cout << "tscount " << timestamp_next.time_since_epoch().count() << std::endl;
+                //std::cout << "ftcount " << BitBase::Bitmex::first_timestamp.time_since_epoch().count() << std::endl;
 
-                auto timestamp_min = DateTime::to_time_point_ms("2020-06-02T15:50:00.000Z", "%FT%TZ");
+                const auto timestamp_string = DateTime::to_string_iso_8601(timestamp_next);
+
+                /*
+                auto timestamp_min = DateTime::to_time_point_ms("2020-06-03T12:25:00.000Z", "%FT%TZ");
 
                 auto timestamp_string = std::string{};
 
@@ -101,6 +105,7 @@ void BitmexLive::tick_data_worker(void)
                 else {
                     timestamp_string = DateTime::to_string_iso_8601(timestamp_next);
                 }
+                */
 
                 //const auto temp_timestamp = std::chrono::system_clock::now() - std::chrono::seconds{ 60 };
                 //const auto temp_ms = std::chrono::milliseconds(temp_timestamp.time_since_epoch().count());
@@ -117,13 +122,13 @@ void BitmexLive::tick_data_worker(void)
                     { "timestamp_start", timestamp_string } //DateTime::to_string_iso_8601(timestamp_next) }
                 };
 
-                std::cout << "Send command: " << command.dump() << std::endl;
+                //std::cout << "Send command: " << command.dump() << std::endl;
 
                 auto message = zmq::message_t{ command.dump() };
                 auto result = zmq_client->send(message, zmq::send_flags::dontwait);
 
-                std::cout << "Send response: " << result.has_value() << std::endl;
-                std::cout << "Send response: " << result.value() << std::endl;
+                //std::cout << "Send response: " << result.has_value() << std::endl;
+                //std::cout << "Send response: " << result.value() << std::endl;
                 
 
                 if (result.has_value()) {
@@ -132,39 +137,57 @@ void BitmexLive::tick_data_worker(void)
                     auto received_ticks = std::vector<MessageTick>{};
                     received_ticks = msgpack::unpack(static_cast<const char*>(message.data()), message.size()).get().convert(received_ticks);
 
-                    // DONT APPEND THE LAST TIMESTAMP!
-
+                    auto last_timepoint = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - std::chrono::seconds{ 10 });
+                    if (received_ticks.size() > 1) {
+                        if (received_ticks.back().timestamp() < last_timepoint) {
+                            last_timepoint = received_ticks.back().timestamp();
+                        }
+                        else {
+                            last_timepoint = std::chrono::system_clock::time_point(std::chrono::system_clock::now());
+                        }
+                    }
+                    auto last_timestamp = std::chrono::time_point_cast<std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>::duration>(last_timepoint);
+                    
                     auto tick_data = std::make_unique<Ticks>();
                     for (auto &tick: received_ticks) {
-                        std::cout << "Recv: " << DateTime::to_string(tick.timestamp())
-                            << " " << tick.price
-                            << " " << tick.volume
-                            << " " << tick.buy
-                            << std::endl;
-                        tick_data->rows.push_back({ tick.timestamp(), tick.price, tick.volume, tick.buy });
+                        //std::cout << "Recv: " << DateTime::to_string(tick.timestamp())
+                        //    << " " << tick.price
+                        //    << " " << tick.volume
+                        //    << " " << tick.buy;
+                        if (tick.timestamp() < last_timestamp) {
+                            tick_data->rows.push_back({ tick.timestamp(), tick.price, tick.volume, tick.buy });
+                            //std::cout << " " << "append" << std::endl;
+                        }
+                        else {
+                            //std::cout << " " << "nopend" << std::endl;
+                        }
                     }
 
+                    if (tick_data->rows.size() > 0) {
+                        logger.info("BitmexLive::tick_data_worker append count(%d) (%s)", (int)tick_data->rows.size(), DateTime::to_string(last_timestamp).c_str());
 
-                    database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol, std::move(tick_data), BitBase::Bitmex::first_timestamp);
+                        database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol, std::move(tick_data), BitBase::Bitmex::first_timestamp);
+                        //logger.info("BitmexLive::tick_data_worker tick_data appended to database count(%d)", received_ticks.size());
+                        if (received_ticks.size() >= BitBase::Bitmex::Live::max_rows - 1) {
+                            fetch_more = true;
+                        }
+                    }
+                    else {
+                        //logger.info("BitmexLive::tick_data_worker no data");
+                    }
 
-                    logger.info("BitmexLive::tick_data_worker tick_data appended to database count(%d)", received_ticks.size());
-
-                    //update_symbol_names(symbol_names);
-
-                    has_data = true;
-
-                    std::cout << "Recv count: " << message.size() << std::endl;
                 }
                 else {
-                    std::cout << "Recv: fail" << std::endl;
+                    logger.info("BitmexLive::tick_data_worker fail");
                 }
             }
 
-            state = BitmexLiveState::idle;
-            break;
+            //
+            //break;
         }
         
         tick_data_updated_callback();
+        state = BitmexLiveState::idle;
     }
     logger.info("BitmexDaily::tick_data_worker exit");
 }

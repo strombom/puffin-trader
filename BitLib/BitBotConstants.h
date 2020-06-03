@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX"; 
-        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 06 / 01) };
+        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 06 / 02) };
         constexpr auto symbols = std::array<const char*, 1>{ "XBTUSD" };
 
         namespace Daily
@@ -33,7 +33,7 @@ namespace BitBase
         namespace Live
         {
             constexpr auto address = "tcp://delta.superdator.se:31002";
-            constexpr auto max_rows = 30;
+            constexpr auto max_rows = 100000;
         }
         
         namespace Interval
@@ -41,7 +41,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::seconds, 1>{ 10s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 10s };
         }
     }
 

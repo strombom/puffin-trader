@@ -30,7 +30,7 @@ public:
 class Intervals
 {
 public:
-    Intervals(const time_point_ms& timestamp_start, const std::chrono::seconds& interval) :
+    Intervals(const time_point_ms& timestamp_start, const std::chrono::milliseconds& interval) :
         timestamp_start(timestamp_start), interval(interval) {}
 
     Intervals(const std::string& file_path)
@@ -53,7 +53,7 @@ public:
 
     std::vector<Interval> rows;
     time_point_ms timestamp_start;
-    std::chrono::seconds interval;
+    std::chrono::milliseconds interval;
 };
 
 using sptrIntervals = std::shared_ptr<Intervals>;

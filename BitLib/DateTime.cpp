@@ -51,13 +51,13 @@ const std::string DateTime::to_string_iso_8601(const time_point_ms timestamp)
     return string; // std::string{ string.begin(), string.end() };
 }
 
-const time_point_s DateTime::random_timestamp(const time_point_s timestamp_start, const time_point_s timestamp_end, const std::chrono::seconds interval)
+const time_point_ms DateTime::random_timestamp(const time_point_ms timestamp_start, const time_point_ms timestamp_end, const std::chrono::milliseconds interval)
 {
     static auto random_generator = std::mt19937{ std::random_device{}() };
     const auto start = timestamp_start.time_since_epoch().count();
     const auto end = timestamp_end.time_since_epoch().count();
     auto rand_int = std::uniform_int_distribution<long long>{ start, end }(random_generator);
     auto timestamp_int = rand_int - rand_int % interval.count();
-    auto timestamp = time_point_s{ std::chrono::seconds{ timestamp_int } };
+    auto timestamp = time_point_ms{ std::chrono::seconds{ timestamp_int } };
     return timestamp;
 }

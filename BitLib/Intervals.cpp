@@ -67,7 +67,7 @@ void Intervals::load(const std::string& file_path)
     attr_file.close();
 
     timestamp_start = time_point_ms{ std::chrono::milliseconds{start_time_raw} };
-    interval = std::chrono::seconds{ interval_raw };
+    interval = std::chrono::milliseconds{ interval_raw };
 
     auto data_file = std::ifstream{ file_path + "_data", std::ios::binary };
     auto database_interval = Interval{};

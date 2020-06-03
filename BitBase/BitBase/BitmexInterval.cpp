@@ -53,7 +53,7 @@ void BitmexInterval::interval_data_worker(void)
     }
 }
 
-void BitmexInterval::make_interval(const std::string& symbol, std::chrono::seconds interval)
+void BitmexInterval::make_interval(const std::string& symbol, std::chrono::milliseconds interval)
 {
     const auto interval_name = std::to_string(interval.count());
     auto timestamp = database->get_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_timestamp", BitBase::Bitmex::first_timestamp);

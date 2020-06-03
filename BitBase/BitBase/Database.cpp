@@ -184,7 +184,7 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
-void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::seconds interval, const Intervals& intervals_data, const time_point_ms& next_timestamp, int next_tick_idx)
+void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::milliseconds interval, const Intervals& intervals_data, const time_point_ms& next_timestamp, int next_tick_idx)
 {
     if (!intervals_data.rows.size()) {
         return;
@@ -202,7 +202,7 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
     set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_tick_idx", next_tick_idx);
 }
 
-std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::seconds interval)
+std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::milliseconds interval)
 {
     const auto interval_name = std::to_string(interval.count());
     const auto interval_offset = (timestamp_start - BitBase::Bitmex::first_timestamp) / interval;
