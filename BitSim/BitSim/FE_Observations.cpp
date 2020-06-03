@@ -15,7 +15,7 @@ FE_Observations::FE_Observations(const std::string& file_path)
     load(file_path);
 }
 
-FE_Observations::FE_Observations(sptrIntervals intervals, time_point_s start_time) :
+FE_Observations::FE_Observations(sptrIntervals intervals, time_point_ms start_time) :
     start_time(start_time), interval(intervals->interval)
 {
     const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
@@ -89,15 +89,15 @@ void FE_Observations::load(const std::string& file_path)
         file.close();
     }
 
-    start_time = time_point_s{ std::chrono::seconds{start_time_raw} };
-    interval = std::chrono::seconds{ interval_raw };
+    start_time = time_point_ms{ std::chrono::milliseconds{start_time_raw} };
+    interval = std::chrono::milliseconds{ interval_raw };
 
     torch::load(observations, file_path + "_tensor");
 }
 
 void FE_Observations::print(void)
 {
-    std::cout << "Observations, start time: " << datetime_to_string(start_time) << std::endl;
+    std::cout << "Observations, start time: " << DateTime::to_string(start_time) << std::endl;
     std::cout << observations.sizes() << std::endl;
 }
 

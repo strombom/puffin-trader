@@ -11,9 +11,9 @@ public:
 
     sptrIntervals get_intervals(const std::string& symbol, 
                                 const std::string& exchange,
-                                const time_point_s timestamp_start,
-                                const time_point_s timestamp_end,
-                                std::chrono::seconds interval);
+                                const time_point_ms timestamp_start,
+                                const time_point_ms timestamp_end,
+                                std::chrono::milliseconds interval);
 
 private:
     zmq::context_t context;

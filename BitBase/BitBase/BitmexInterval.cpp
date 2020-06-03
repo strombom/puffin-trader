@@ -36,7 +36,7 @@ void BitmexInterval::interval_data_worker(void)
             auto interval_data_lock = std::unique_lock<std::mutex>{ interval_data_mutex };
             interval_data_condition.wait_for(interval_data_lock, std::chrono::milliseconds{ 500 });
             if (!interval_data_thread_running) {
-                break;
+                break; 
             }
         }
 

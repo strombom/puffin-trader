@@ -10,7 +10,7 @@ class FE_Observations
 {
 public:
     FE_Observations(const std::string& file_path);
-    FE_Observations(sptrIntervals intervals, time_point_s start_time);
+    FE_Observations(sptrIntervals intervals, time_point_ms start_time);
 
     void load(const std::string& file_path);
     void save(const std::string& file_path) const;
@@ -29,8 +29,8 @@ private:
     std::mutex get_mutex;
 
     torch::Tensor observations; // TxCxL (10000x3x128)
-    time_point_s start_time;
-    std::chrono::seconds interval;
+    time_point_ms start_time;
+    std::chrono::milliseconds interval;
 
     torch::Tensor make_observation(sptrIntervals intervals, int idx_obs);
     float price_transform(float start_price, float price);

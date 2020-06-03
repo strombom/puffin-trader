@@ -20,7 +20,7 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
 {
     logger = std::make_unique<BitmexSimulatorLogger>("bitmex_sim_" + std::to_string(idx_episode) + ".csv", validation);
 
-    constexpr auto episode_length = (int)(((std::chrono::seconds) BitSim::Trader::episode_length).count() / ((std::chrono::seconds) BitSim::interval).count());
+    constexpr auto episode_length = (int)(((std::chrono::milliseconds) BitSim::Trader::episode_length).count() / ((std::chrono::milliseconds) BitSim::interval).count());
 
     const auto validation_start_idx = 0;
     const auto training_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;

@@ -13,11 +13,10 @@ BitBaseClient::BitBaseClient(void)
 
 sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
                                            const std::string& exchange,
-                                           const time_point_s timestamp_start,
-                                           const time_point_s timestamp_end,
-                                           std::chrono::seconds interval)
+                                           const time_point_ms timestamp_start,
+                                           const time_point_ms timestamp_end,
+                                           std::chrono::milliseconds interval_ms)
 {
-
     assert(interval.count() > 0 && interval.count() <= INT_MAX);
     assert(timestamp_end > timestamp_start);
 
@@ -27,7 +26,7 @@ sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
         { "symbol", symbol },
         { "timestamp_start", DateTime::to_string(timestamp_start) },
         { "timestamp_end", DateTime::to_string(timestamp_end) },
-        { "interval_seconds", (int) interval.count() }
+        { "interval_seconds", (int) interval_ms.count() / 1000 }
     };
 
     auto message = zmq::message_t{ command.dump() };
@@ -36,7 +35,7 @@ sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
     const auto recv_result = client->recv(message);
 
     auto intervals_buffer = std::stringstream{ std::string(static_cast<char*>(message.data()), message.size()) };
-    auto intervals = Intervals{ timestamp_start , interval };
+    auto intervals = Intervals{ timestamp_start , interval_ms };
     intervals_buffer >> intervals;
 
     return std::make_shared<Intervals>(intervals);
