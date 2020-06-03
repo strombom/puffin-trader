@@ -14,25 +14,10 @@ BitmexWebSocket::BitmexWebSocket(sptrTickData tick_data) :
     connected(false)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
-    websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>>(ioc, *ctx);
 }
 
 void BitmexWebSocket::start(void)
 {
-    websocket->set_option(boost::beast::websocket::stream_base::decorator(
-        [](boost::beast::websocket::request_type& req)
-        {
-            req.set(boost::beast::http::field::user_agent,
-                std::string(BOOST_BEAST_VERSION_STRING) +
-                " websocket-client-coro");
-        }));
-
-    websocket->set_option(boost::beast::websocket::stream_base::timeout{
-            std::chrono::seconds(20),
-            std::chrono::seconds(10),
-            true
-        });
-
     // Start websocket worker
     websocket_thread = std::make_unique<std::thread>(&BitmexWebSocket::websocket_worker, this);
 }
@@ -56,6 +41,22 @@ void BitmexWebSocket::shutdown(void)
 void BitmexWebSocket::connect(void)
 {
     try {
+        websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>>(ioc, *ctx);
+
+        websocket->set_option(boost::beast::websocket::stream_base::decorator(
+            [](boost::beast::websocket::request_type& req)
+            {
+                req.set(boost::beast::http::field::user_agent,
+                    std::string(BOOST_BEAST_VERSION_STRING) +
+                    " websocket-client-coro");
+            }));
+
+        websocket->set_option(boost::beast::websocket::stream_base::timeout{
+                std::chrono::seconds(20),
+                std::chrono::seconds(10),
+                true
+            });
+
         auto resolver = boost::asio::ip::tcp::resolver{ ioc };
         auto const results = resolver.resolve(host, port);
         boost::asio::connect(websocket->next_layer().next_layer(), results.begin(), results.end());
@@ -94,6 +95,7 @@ void BitmexWebSocket::websocket_worker(void)
         }
 
         if (!connected) {
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 500 });
             continue;
         }
 
