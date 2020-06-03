@@ -22,8 +22,6 @@ private:
     std::mutex test_mutex;
     std::condition_variable test_condition;
 
-
-
     sptrTickData tick_data;
 
     std::atomic_bool server_running;

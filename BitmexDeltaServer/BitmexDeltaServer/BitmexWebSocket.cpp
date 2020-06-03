@@ -10,7 +10,8 @@
 
 BitmexWebSocket::BitmexWebSocket(sptrTickData tick_data) :
     tick_data(tick_data),
-    websocket_thread_running(true)
+    websocket_thread_running(true),
+    connected(false)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
     websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>>(ioc, *ctx);
@@ -18,12 +19,6 @@ BitmexWebSocket::BitmexWebSocket(sptrTickData tick_data) :
 
 void BitmexWebSocket::start(void)
 {
-    auto resolver = boost::asio::ip::tcp::resolver{ ioc };
-    auto const results = resolver.resolve(host, port);
-    boost::asio::connect(websocket->next_layer().next_layer(), results.begin(), results.end());
-
-    websocket->next_layer().handshake(boost::asio::ssl::stream_base::client);
-
     websocket->set_option(boost::beast::websocket::stream_base::decorator(
         [](boost::beast::websocket::request_type& req)
         {
@@ -32,21 +27,11 @@ void BitmexWebSocket::start(void)
                 " websocket-client-coro");
         }));
 
-    websocket->handshake(host, url);
-
-    // Subscribe to ticker symbols
-    for (auto&& symbol : Bitmex::symbols) {
-        //web::websockets::client::websocket_outgoing_message msg_out;
-        auto message = std::string{ "{\"op\": \"subscribe\", \"args\": [\"trade:" } + symbol + std::string{ "\"]}" };
-        std::cout << "subscribe: " << message << std::endl;
-        //msg_out.set_utf8_message(message);
-        websocket->write(boost::asio::buffer(message));
-    }
-
-    // Receive Bitmex welcome message
-    boost::beast::flat_buffer buffer;
-    websocket->read(buffer);
-    std::cout << boost::beast::make_printable(buffer.data()) << std::endl;
+    websocket->set_option(boost::beast::websocket::stream_base::timeout{
+            std::chrono::seconds(20),
+            std::chrono::seconds(10),
+            true
+        });
 
     // Start websocket worker
     websocket_thread = std::make_unique<std::thread>(&BitmexWebSocket::websocket_worker, this);
@@ -62,39 +47,88 @@ void BitmexWebSocket::shutdown(void)
     }
     catch (...) {}
 
-    websocket->close(boost::beast::websocket::close_code::normal);
+    try {
+        websocket->close(boost::beast::websocket::close_code::normal);
+    }
+    catch (...) {}
+}
+
+void BitmexWebSocket::connect(void)
+{
+    try {
+        auto resolver = boost::asio::ip::tcp::resolver{ ioc };
+        auto const results = resolver.resolve(host, port);
+        boost::asio::connect(websocket->next_layer().next_layer(), results.begin(), results.end());
+
+        websocket->next_layer().handshake(boost::asio::ssl::stream_base::client);
+
+        websocket->handshake(host, url);
+
+        // Subscribe to ticker symbols
+        for (auto&& symbol : Bitmex::symbols) {
+            //web::websockets::client::websocket_outgoing_message msg_out;
+            auto message = std::string{ "{\"op\": \"subscribe\", \"args\": [\"trade:" } + symbol + std::string{ "\"]}" };
+            std::cout << "subscribe: " << message << std::endl;
+            //msg_out.set_utf8_message(message);
+            websocket->write(boost::asio::buffer(message));
+        }
+
+        // Receive Bitmex welcome message
+        boost::beast::flat_buffer buffer;
+        websocket->read(buffer);
+        std::cout << boost::beast::make_printable(buffer.data()) << std::endl;
+
+        connected = true;
+    }
+    catch (std::exception const& e) {
+        connected = false;
+    }
 }
 
 void BitmexWebSocket::websocket_worker(void)
 {
     while (websocket_thread_running) {
-        // Receive message
-        auto buffer = boost::beast::flat_buffer{};
-        websocket->read(buffer);
-        const auto message_string = boost::beast::buffers_to_string(buffer.data());
-    
-        // Parse message
-        auto error_message = std::string{};
-        const auto message = json11::Json::parse(message_string, error_message);
-        const auto action = message["action"].string_value();
-        const auto table = message["table"].string_value();
-        const auto data = message["data"];
+        
+        if (!connected) {
+            connect();
+        }
 
-        if (action == "insert" && table == "trade" && data.is_array()) {
-            //std::cout << "BitmexWebSocket insert: " << message_string << std::endl;
+        if (!connected) {
+            continue;
+        }
 
-            for (auto tick : data.array_items()) {
-                const auto symbol = tick["symbol"].string_value();
-                const auto price = tick["price"].number_value();
-                const auto volume = tick["size"].number_value();
-                const auto buy = tick["side"].string_value().compare("Buy") == 0;
-                const auto timestamp = DateTime::to_time_point_ms(tick["timestamp"].string_value(), "%FT%TZ");
+        try {
+            // Receive message
+            auto buffer = boost::beast::flat_buffer{};
+            websocket->read(buffer);
+            const auto message_string = boost::beast::buffers_to_string(buffer.data());
 
-                tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
+            // Parse message
+            auto error_message = std::string{};
+            const auto message = json11::Json::parse(message_string, error_message);
+            const auto action = message["action"].string_value();
+            const auto table = message["table"].string_value();
+            const auto data = message["data"];
+
+            if (action == "insert" && table == "trade" && data.is_array()) {
+                //std::cout << "BitmexWebSocket insert: " << message_string << std::endl;
+
+                for (auto tick : data.array_items()) {
+                    const auto symbol = tick["symbol"].string_value();
+                    const auto price = tick["price"].number_value();
+                    const auto volume = tick["size"].number_value();
+                    const auto buy = tick["side"].string_value().compare("Buy") == 0;
+                    const auto timestamp = DateTime::to_time_point(tick["timestamp"].string_value(), "%FT%TZ");
+
+                    tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
+                }
+            }
+            else {
+                std::cout << "BitmexWebSocket rcv: " << message_string << std::endl;
             }
         }
-        else {
-            std::cout << "BitmexWebSocket rcv: " << message_string << std::endl;
+        catch (std::exception const& e) {
+            connected = false;
         }
     }
 }
