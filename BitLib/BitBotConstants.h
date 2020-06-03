@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX"; 
-        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 06 / 02) };
+        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 06 / 03) + std::chrono::hours{18} };
         constexpr auto symbols = std::array<const char*, 1>{ "XBTUSD" };
 
         namespace Daily
@@ -21,13 +21,6 @@ namespace BitBase
             constexpr auto base_url_end = ".csv.gz";
             constexpr auto url_date_format = "%Y%m%d";
             constexpr auto active_downloads_max = 5;
-        }
-
-        namespace Interim
-        {
-            constexpr auto api_key_id = L"ynOrYOWoC1knanjDld9RtPhC";
-            constexpr auto api_key_secret = L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
-            constexpr auto base_url = L"https://www.bitmex.com/api/v1";
         }
 
         namespace Live
@@ -66,7 +59,7 @@ namespace BitSim
 
     constexpr auto symbol = "XBTUSD";
     constexpr auto exchange = "BITMEX";
-    constexpr auto interval = std::chrono::seconds{ 10s };
+    constexpr auto interval = std::chrono::milliseconds{ 10s };
     constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + 0h + 0min + 0s;
     constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 05 / 01) + 0h + 0min + 0s;
 
@@ -97,6 +90,12 @@ namespace BitSim
 
     namespace Trader
     {
+        namespace Bitmex
+        {
+            constexpr auto api_key_id = L"ynOrYOWoC1knanjDld9RtPhC";
+            constexpr auto api_key_secret = L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
+        }
+
 #ifdef TORCH_API
         const auto device = torch::Device{ torch::kCUDA };
 #endif
@@ -106,8 +105,8 @@ namespace BitSim
         constexpr auto n_episodes = 2000;
         constexpr auto save_period = 100;
 
-        constexpr auto max_steps = 400; // 1000000; // 200;
-        constexpr auto episode_length = 10h; // 2*7*24h;
+        constexpr auto max_steps = 400;
+        constexpr auto episode_length = 10h;
 
         constexpr auto order_hysteresis = 0.1;
 

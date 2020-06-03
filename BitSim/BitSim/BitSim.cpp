@@ -19,7 +19,7 @@ int main()
 {
     logger.info("BitSim started");
     
-    constexpr auto command = "train";
+    constexpr auto command = "trade";
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -62,6 +62,9 @@ int main()
         auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
+    }
+    else if (command == "trade") {
+
     }
     
     logger.info("BitSim exit");

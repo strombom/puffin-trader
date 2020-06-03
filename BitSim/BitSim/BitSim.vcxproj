@@ -177,6 +177,8 @@
     <ClCompile Include="..\..\BitLib\Utils.cpp" />
     <ClCompile Include="BitBaseClient.cpp" />
     <ClCompile Include="BitmexSimulator.cpp" />
+    <ClCompile Include="BitmexTrader.cpp" />
+    <ClCompile Include="BitmexWebSocket.cpp" />
     <ClCompile Include="BitSim.cpp" />
     <ClCompile Include="FE_DataLoader.cpp" />
     <ClCompile Include="FE_Inference.cpp" />
@@ -204,6 +206,8 @@
     <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
     <ClInclude Include="BitmexSimulator.h" />
+    <ClInclude Include="BitmexTrader.h" />
+    <ClInclude Include="BitmexWebSocket.h" />
     <ClInclude Include="FE_DataLoader.h" />
     <ClInclude Include="FE_Inference.h" />
     <ClInclude Include="FE_Model.h" />

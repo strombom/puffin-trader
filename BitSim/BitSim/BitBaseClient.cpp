@@ -17,7 +17,7 @@ sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
                                            const time_point_ms timestamp_end,
                                            std::chrono::milliseconds interval_ms)
 {
-    assert(interval.count() > 0 && interval.count() <= INT_MAX);
+    assert(interval_ms.count() > 0 && interval_ms.count() <= INT_MAX);
     assert(timestamp_end > timestamp_start);
 
     json11::Json command = json11::Json::object{

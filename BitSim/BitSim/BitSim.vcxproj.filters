@@ -55,6 +55,12 @@
     <Filter Include="Header Files\Simulator">
       <UniqueIdentifier>{a180a3d8-e32f-4824-8b32-5a87d1876a5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Trader">
+      <UniqueIdentifier>{2f9e9e0d-23cb-419f-b439-c389af5d0bfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Trader">
+      <UniqueIdentifier>{a198e053-716d-42f4-bd56-6c0614f546e4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -116,6 +122,12 @@
     </ClCompile>
     <ClCompile Include="BitmexSimulator.cpp">
       <Filter>Source Files\Simulator</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmexTrader.cpp">
+      <Filter>Source Files\Trader</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmexWebSocket.cpp">
+      <Filter>Source Files\Trader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +193,12 @@
     </ClInclude>
     <ClInclude Include="BitmexSimulator.h">
       <Filter>Header Files\Simulator</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexTrader.h">
+      <Filter>Header Files\Trader</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexWebSocket.h">
+      <Filter>Header Files\Trader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
