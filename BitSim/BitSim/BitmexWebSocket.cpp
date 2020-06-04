@@ -68,14 +68,38 @@ void BitmexWebSocket::request_authentication(void)
     const auto sign_message = std::string{ "GET" } + BitSim::Trader::Bitmex::websocket_url + std::to_string(expires);
     const auto signature = authenticator.authenticate(sign_message);
 
-    logger.info("BitmexWebSocket::request_authentication: %s", sign_message.c_str());
-
     json11::Json auth_command = json11::Json::object{
         { "op", "authKeyExpires" },
         { "args", json11::Json::array{BitSim::Trader::Bitmex::api_key, (int)expires, signature} }
     };
 
     send(auth_command.dump());
+}
+
+void BitmexWebSocket::parse_message(const std::string& message)
+{
+    auto error_message = std::string{ "{\"command\":\"error\"}" };
+    const auto command = json11::Json::parse(message.c_str(), error_message);
+
+    if (command["info"].string_value() == "Welcome to the BitMEX Realtime API.") {
+        request_authentication();
+    }
+    else if (command["request"]["op"].string_value() == "authKeyExpires") {
+        if (command["success"].bool_value() == true) {
+            json11::Json subscribe_command = json11::Json::object{
+                { "op", "subscribe" },
+                { "args", json11::Json::array{"execution", "order", "margin", "position", "transact", "wallet"} }
+            };
+            send(subscribe_command.dump());        
+        }
+        else {
+            std::this_thread::sleep_for(2s);
+            request_authentication();
+        }
+    }
+    else {
+        logger.info("BitmexWebSocket::parse_message: unknown command");
+    }
 }
 
 void BitmexWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
@@ -125,8 +149,12 @@ void BitmexWebSocket::on_ssl_handshake(boost::beast::error_code ec)
     // the websocket stream has its own timeout system.
     boost::beast::get_lowest_layer(*websocket).expires_never();
 
-    // Set suggested timeout settings for the websocket
-    websocket->set_option(boost::beast::websocket::stream_base::timeout::suggested(boost::beast::role_type::client));
+    // Enable keep-alive pings
+    websocket->set_option(boost::beast::websocket::stream_base::timeout{
+            std::chrono::seconds(30),
+            std::chrono::seconds(10),
+            true
+        });
 
     // Set a decorator to change the User-Agent of the handshake
     websocket->set_option(boost::beast::websocket::stream_base::decorator(
@@ -179,18 +207,16 @@ void BitmexWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_tra
 
     auto ss = std::stringstream{};
     ss << boost::beast::make_printable(websocket_buffer.data());
-    logger.info("BitmexWebSocket::on_read (%d): %s", (int) bytes_transferred, ss.str().c_str());
+    const auto message = ss.str();
+
+    logger.info("BitmexWebSocket::on_read (%d): %s", (int) bytes_transferred, message.c_str());
 
     boost::ignore_unused(bytes_transferred);
 
     websocket_buffer.clear();
     websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&BitmexWebSocket::on_read, shared_from_this()));
 
-    static auto first = true;
-    if (first) {
-        first = false;
-        request_authentication();
-    }
+    parse_message(message);
 }
 
 void BitmexWebSocket::on_close(boost::beast::error_code ec)

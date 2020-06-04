@@ -34,6 +34,7 @@ private:
     void connect(void);
     void request_authentication(void);
     void send(const std::string& message);
+    void parse_message(const std::string& message);
 
     void fail(boost::beast::error_code ec, const std::string &reason);
     void on_resolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results);
