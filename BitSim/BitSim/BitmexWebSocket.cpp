@@ -29,13 +29,6 @@ void BitmexWebSocket::shutdown(void)
     catch (...) {}
 
     websocket->async_close(boost::beast::websocket::close_code::normal, boost::beast::bind_front_handler(&BitmexWebSocket::on_close, shared_from_this()));
-
-    /*
-    try {
-        websocket->close(boost::beast::websocket::close_code::normal);
-    }
-    catch (...) {}
-    */
 }
 
 void BitmexWebSocket::fail(boost::beast::error_code ec, const std::string &reason)

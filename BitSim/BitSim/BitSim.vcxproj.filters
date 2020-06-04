@@ -129,6 +129,9 @@
     <ClCompile Include="BitmexWebSocket.cpp">
       <Filter>Source Files\Trader</Filter>
     </ClCompile>
+    <ClCompile Include="BitmexAccount.cpp">
+      <Filter>Source Files\Trader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\DateTime.h">
@@ -198,6 +201,9 @@
       <Filter>Header Files\Trader</Filter>
     </ClInclude>
     <ClInclude Include="BitmexWebSocket.h">
+      <Filter>Header Files\Trader</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexAccount.h">
       <Filter>Header Files\Trader</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,7 +3,7 @@
 
 #include <thread>
 
-#include "BitmexWebSocket.h"
+#include "BitmexAccount.h"
 
 
 class BitmexTrader
@@ -15,7 +15,7 @@ public:
     void shutdown(void);
 
 private:
-    sptrBitmexWebSocket websocket;
+    uptrBitmexAccount bitmex_account;
 
     std::atomic_bool trader_thread_running;
     std::unique_ptr<std::thread> trader_thread;
