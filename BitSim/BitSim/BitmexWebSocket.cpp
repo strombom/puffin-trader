@@ -38,7 +38,7 @@ void BitmexWebSocket::shutdown(void)
 
 void BitmexWebSocket::fail(boost::beast::error_code ec, const std::string &reason)
 {
-    logger.warn("BitmexWebSocket error: %s \"%s\"", reason, ec.message());
+    logger.warn("BitmexWebSocket error: %s \"%s\"", reason.c_str(), ec.message().c_str());
 }
 
 void BitmexWebSocket::connect(void)
@@ -65,12 +65,14 @@ void BitmexWebSocket::send(const std::string &message)
 void BitmexWebSocket::request_authentication(void)
 {
     const auto expires = authenticator.generate_expiration(BitSim::Trader::Bitmex::auth_timeout);
-    const auto sign_message = std::string{ "GET" } + BitSim::Trader::Bitmex::websocket_host + std::to_string(expires);
+    const auto sign_message = std::string{ "GET" } + BitSim::Trader::Bitmex::websocket_url + std::to_string(expires);
     const auto signature = authenticator.authenticate(sign_message);
+
+    logger.info("BitmexWebSocket::request_authentication: %s", sign_message.c_str());
 
     json11::Json auth_command = json11::Json::object{
         { "op", "authKeyExpires" },
-        { "args", json11::Json::array{BitSim::Trader::Bitmex::api_key, std::to_string(expires), signature} }
+        { "args", json11::Json::array{BitSim::Trader::Bitmex::api_key, (int)expires, signature} }
     };
 
     send(auth_command.dump());
@@ -148,9 +150,8 @@ void BitmexWebSocket::on_handshake(boost::beast::error_code ec)
         return;
     }
 
-    // Read a message into our buffer
+    websocket_buffer.clear();
     websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&BitmexWebSocket::on_read, shared_from_this()));
-    //request_authentication();
 }
 
 void BitmexWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_transferred)
@@ -166,14 +167,29 @@ void BitmexWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_tr
 
 void BitmexWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_transferred)
 {
+    if (ec) {
+        if (!websocket_thread_running) {
+            // Application shutting down
+            return;
+        }
+        else {
+            return fail(ec, "read");
+        }
+    }
+
     auto ss = std::stringstream{};
     ss << boost::beast::make_printable(websocket_buffer.data());
     logger.info("BitmexWebSocket::on_read (%d): %s", (int) bytes_transferred, ss.str().c_str());
 
     boost::ignore_unused(bytes_transferred);
 
-    if (ec) {
-        return fail(ec, "read");
+    websocket_buffer.clear();
+    websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&BitmexWebSocket::on_read, shared_from_this()));
+
+    static auto first = true;
+    if (first) {
+        first = false;
+        request_authentication();
     }
 }
 
