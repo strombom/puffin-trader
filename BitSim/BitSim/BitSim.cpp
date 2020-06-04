@@ -2,6 +2,7 @@
 
 #include "BitBaseClient.h"
 #include "BitBotConstants.h"
+#include "BitmexTrader.h"
 #include "BitmexSimulator.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
@@ -64,7 +65,18 @@ int main()
         rl_trader.train();
     }
     else if (command == "trade") {
+        auto bitmex_trader = BitmexTrader{};
+        bitmex_trader.start();
 
+        while (true) {
+            auto command = std::string{};
+            std::cin >> command;
+            if (command.compare("q") == 0) {
+                break;
+            }
+        }
+
+        bitmex_trader.shutdown();
     }
     
     logger.info("BitSim exit");

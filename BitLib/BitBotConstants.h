@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX"; 
-        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 06 / 03) + std::chrono::hours{18} };
+        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 06 / 02) + std::chrono::hours{ 0 } };
         constexpr auto symbols = std::array<const char*, 1>{ "XBTUSD" };
 
         namespace Daily
@@ -50,7 +50,7 @@ namespace BitSim
 {
     namespace BitBase
     {
-        constexpr auto address = "tcp://localhost:31000";
+        constexpr auto address = "tcp://localhost:31001";
     }
 
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
@@ -92,6 +92,9 @@ namespace BitSim
     {
         namespace Bitmex
         {
+            constexpr auto websocket_host = "www.bitmex.com";
+            constexpr auto websocket_port = "443";
+            constexpr auto websocket_url = "/realtime";
             constexpr auto api_key_id = L"ynOrYOWoC1knanjDld9RtPhC";
             constexpr auto api_key_secret = L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
         }
