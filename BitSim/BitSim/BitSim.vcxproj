@@ -179,6 +179,7 @@
     <ClCompile Include="..\..\BitLib\Utils.cpp" />
     <ClCompile Include="BitBaseClient.cpp" />
     <ClCompile Include="BitmexAccount.cpp" />
+    <ClCompile Include="BitmexAuthentication.cpp" />
     <ClCompile Include="BitmexSimulator.cpp" />
     <ClCompile Include="BitmexTrader.cpp" />
     <ClCompile Include="BitmexWebSocket.cpp" />
@@ -209,6 +210,7 @@
     <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
     <ClInclude Include="BitmexAccount.h" />
+    <ClInclude Include="BitmexAuthentication.h" />
     <ClInclude Include="BitmexSimulator.h" />
     <ClInclude Include="BitmexTrader.h" />
     <ClInclude Include="BitmexWebSocket.h" />

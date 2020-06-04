@@ -4,6 +4,8 @@
 #include <thread>
 #include <string>
 
+#include "BitmexAuthentication.h"
+
 
 class BitmexWebSocket : public std::enable_shared_from_this<BitmexWebSocket>
 {
@@ -15,6 +17,7 @@ public:
 
 private:
     bool connected;
+
     boost::asio::io_context ioc;
     std::unique_ptr<boost::asio::ssl::context> ctx;
     std::unique_ptr<boost::asio::ip::tcp::resolver> resolver;
@@ -26,8 +29,11 @@ private:
     std::string host_address;
     boost::beast::flat_buffer websocket_buffer;
 
+    BitmexAuthentication authenticator;
+
     void connect(void);
-    void websocket_worker(void);
+    void request_authentication(void);
+    void send(const std::string& message);
 
     void fail(boost::beast::error_code ec, const std::string &reason);
     void on_resolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results);
@@ -37,6 +43,8 @@ private:
     void on_write(boost::beast::error_code ec, std::size_t bytes_transferred);
     void on_read(boost::beast::error_code ec, std::size_t bytes_transferred);
     void on_close(boost::beast::error_code ec);
+
+    void websocket_worker(void);
 };
 
 using sptrBitmexWebSocket = std::shared_ptr<BitmexWebSocket>;

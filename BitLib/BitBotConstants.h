@@ -95,8 +95,9 @@ namespace BitSim
             constexpr auto websocket_host = "www.bitmex.com";
             constexpr auto websocket_port = "443";
             constexpr auto websocket_url = "/realtime";
-            constexpr auto api_key_id = L"ynOrYOWoC1knanjDld9RtPhC";
-            constexpr auto api_key_secret = L"0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
+            constexpr auto api_key = "ynOrYOWoC1knanjDld9RtPhC";
+            constexpr auto api_secret = "0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
+            constexpr auto auth_timeout = 60s;
         }
 
 #ifdef TORCH_API

@@ -132,6 +132,9 @@
     <ClCompile Include="BitmexAccount.cpp">
       <Filter>Source Files\Trader</Filter>
     </ClCompile>
+    <ClCompile Include="BitmexAuthentication.cpp">
+      <Filter>Source Files\Trader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\DateTime.h">
@@ -204,6 +207,9 @@
       <Filter>Header Files\Trader</Filter>
     </ClInclude>
     <ClInclude Include="BitmexAccount.h">
+      <Filter>Header Files\Trader</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmexAuthentication.h">
       <Filter>Header Files\Trader</Filter>
     </ClInclude>
   </ItemGroup>

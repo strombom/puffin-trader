@@ -6,6 +6,8 @@
 #include "BitBotConstants.h"
 
 
+// TODO: Ping/Pong
+
 BitmexWebSocket::BitmexWebSocket(void) :
     connected(false), websocket_thread_running(true)
 {
@@ -22,6 +24,9 @@ void BitmexWebSocket::shutdown(void)
 {
     std::cout << "BitmexWebSocket: Shutting down" << std::endl;
     websocket_thread_running = false;
+
+    // Close the WebSocket connection
+    websocket->async_close(boost::beast::websocket::close_code::normal, boost::beast::bind_front_handler(&BitmexWebSocket::on_close, shared_from_this()));
 
     try {
         websocket_thread->join();
@@ -47,15 +52,36 @@ void BitmexWebSocket::connect(void)
         BitSim::Trader::Bitmex::websocket_host,
         BitSim::Trader::Bitmex::websocket_port,
         boost::beast::bind_front_handler(&BitmexWebSocket::on_resolve, shared_from_this())
-        //std::bind(&BitmexWebSocket::on_resolve, this)
-        //boost::beast::bind_front_handler(&BitmexWebSocket::on_resolve, this); // shared_from_this())
     );
+}
+
+void BitmexWebSocket::send(const std::string &message)
+{
+    logger.info("BitmexWebSocket::send: %s", message.c_str());
+
+    websocket->async_write(boost::asio::buffer(message), boost::beast::bind_front_handler(&BitmexWebSocket::on_write, shared_from_this()));
+}
+
+void BitmexWebSocket::request_authentication(void)
+{
+    const auto expires = authenticator.generate_expiration(BitSim::Trader::Bitmex::auth_timeout);
+    const auto sign_message = std::string{ "GET" } + BitSim::Trader::Bitmex::websocket_host + std::to_string(expires);
+    const auto signature = authenticator.authenticate(sign_message);
+
+    json11::Json auth_command = json11::Json::object{
+        { "op", "authKeyExpires" },
+        { "args", json11::Json::array{BitSim::Trader::Bitmex::api_key, std::to_string(expires), signature} }
+    };
+
+    send(auth_command.dump());
 }
 
 void BitmexWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
 {
+    logger.info("BitmexWebSocket::on_resolve");
+
     if (ec) {
-        fail(ec, "resolve");
+        fail(ec, "on_resolve");
         return;
     }
 
@@ -65,9 +91,11 @@ void BitmexWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::t
 
 void BitmexWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type ep)
 {
+    logger.info("BitmexWebSocket::on_connect");
+
     if (ec)
     {
-        fail(ec, "connect");
+        fail(ec, "on_connect");
         return;
     }        
 
@@ -84,8 +112,12 @@ void BitmexWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::t
 
 void BitmexWebSocket::on_ssl_handshake(boost::beast::error_code ec)
 {
-    if (ec)
-        return fail(ec, "ssl_handshake");
+    logger.info("BitmexWebSocket::on_ssl_handshake");
+
+    if (ec) {
+        fail(ec, "on_ssl_handshake");
+        return;
+    }
 
     // Turn off the timeout on the tcp_stream, because
     // the websocket stream has its own timeout system.
@@ -109,48 +141,50 @@ void BitmexWebSocket::on_ssl_handshake(boost::beast::error_code ec)
 
 void BitmexWebSocket::on_handshake(boost::beast::error_code ec)
 {
-    if (ec)
-        return fail(ec, "handshake");
+    logger.info("BitmexWebSocket::on_handshake");
 
-    // Send the message
-    websocket->async_write(
-        boost::asio::buffer("{\"message\"}"),
-        boost::beast::bind_front_handler(
-            &BitmexWebSocket::on_write,
-            shared_from_this()));
+    if (ec) {
+        fail(ec, "on_handshake");
+        return;
+    }
+
+    // Read a message into our buffer
+    websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&BitmexWebSocket::on_read, shared_from_this()));
+    //request_authentication();
 }
 
 void BitmexWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_transferred)
 {
+    logger.info("BitmexWebSocket::on_write");
+
     boost::ignore_unused(bytes_transferred);
 
-    if (ec)
+    if (ec) {
         return fail(ec, "write");
-
-    // Read a message into our buffer
-    websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&BitmexWebSocket::on_read, shared_from_this()));
+    }
 }
 
 void BitmexWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_transferred)
 {
+    auto ss = std::stringstream{};
+    ss << boost::beast::make_printable(websocket_buffer.data());
+    logger.info("BitmexWebSocket::on_read (%d): %s", (int) bytes_transferred, ss.str().c_str());
+
     boost::ignore_unused(bytes_transferred);
 
-    if (ec)
+    if (ec) {
         return fail(ec, "read");
-
-    // Close the WebSocket connection
-    websocket->async_close(boost::beast::websocket::close_code::normal, boost::beast::bind_front_handler(&BitmexWebSocket::on_close, shared_from_this()));
+    }
 }
 
 void BitmexWebSocket::on_close(boost::beast::error_code ec)
 {
-    if (ec)
+    if (ec) {
         return fail(ec, "close");
+    }
 
     // If we get here then the connection is closed gracefully
 
-    // The make_printable() function helps print a ConstBufferSequence
-    std::cout << "on_close: " << boost::beast::make_printable(websocket_buffer.data()) << std::endl;
 }
 
 void BitmexWebSocket::websocket_worker(void)
