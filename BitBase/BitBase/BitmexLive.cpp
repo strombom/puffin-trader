@@ -119,7 +119,7 @@ void BitmexLive::tick_data_worker(void)
                     }
 
                     if (tick_data->rows.size() > 0) {
-                        logger.info("BitmexLive::tick_data_worker append count(%d) (%s)", (int)tick_data->rows.size(), DateTime::to_string(last_timestamp).c_str());
+                        logger.info("BitmexLive::tick_data_worker append count(%d) (%s) (%0.1f)", (int)tick_data->rows.size(), DateTime::to_string(last_timestamp).c_str(), tick_data->rows.back().price);
 
                         database->extend_tick_data(BitBase::Bitmex::exchange_name, symbol, std::move(tick_data), BitBase::Bitmex::first_timestamp);
                         if (received_ticks.size() >= BitBase::Bitmex::Live::max_rows - 1) {
