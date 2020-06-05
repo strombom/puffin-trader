@@ -7,22 +7,21 @@
 BitmexTrader::BitmexTrader(void) :
     trader_thread_running(true)
 {
-    bitmex_account = std::make_unique<BitmexAccount>();
+    bitmex_account = std::make_shared<BitmexAccount>();
+    bitmex_websocket = std::make_shared<BitmexWebSocket>(bitmex_account);
 }
 
 void BitmexTrader::start(void)
 {
-    // Start websocket worker
+    bitmex_websocket->start();
     trader_thread = std::make_unique<std::thread>(&BitmexTrader::trader_worker, this);
-    bitmex_account->start();
 }
 
 void BitmexTrader::shutdown(void)
 {
     std::cout << "BitmexTrader: Shutting down" << std::endl;
+    bitmex_websocket->shutdown();
     trader_thread_running = false;
-
-    bitmex_account->shutdown();
 
     try {
         trader_thread->join();

@@ -3,17 +3,6 @@
 
 BitmexAccount::BitmexAccount(void)
 {
-    bitmex_websocket = std::make_shared<BitmexWebSocket>();
-}
-
-void BitmexAccount::start(void)
-{
-    bitmex_websocket->start();
-}
-
-void BitmexAccount::shutdown(void)
-{
-    bitmex_websocket->shutdown();
 }
 
 double BitmexAccount::get_leverage(void)

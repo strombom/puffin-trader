@@ -4,18 +4,20 @@
 #include <thread>
 #include <string>
 
+#include "BitmexAccount.h"
 #include "BitmexAuthentication.h"
 
 
 class BitmexWebSocket : public std::enable_shared_from_this<BitmexWebSocket>
 {
 public:
-    BitmexWebSocket(void);
+    BitmexWebSocket(sptrBitmexAccount bitmex_account);
 
     void start(void);
     void shutdown(void);
 
 private:
+    sptrBitmexAccount bitmex_account;
     bool connected;
 
     boost::asio::io_context ioc;
@@ -30,6 +32,8 @@ private:
     boost::beast::flat_buffer websocket_buffer;
 
     BitmexAuthentication authenticator;
+
+    double wallet;
 
     void connect(void);
     void request_authentication(void);
