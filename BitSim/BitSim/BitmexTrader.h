@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "BitmexAccount.h"
+#include "BitmexRestApi.h"
 #include "BitmexWebSocket.h"
 
 
@@ -21,6 +22,9 @@ private:
 
     std::atomic_bool trader_thread_running;
     std::unique_ptr<std::thread> trader_thread;
+
+    void limit_order(double order_leverage);
+    void market_order(double order_leverage);
 
     void trader_worker(void);
 };

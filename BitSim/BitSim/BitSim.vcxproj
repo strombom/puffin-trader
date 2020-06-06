@@ -180,6 +180,7 @@
     <ClCompile Include="BitBaseClient.cpp" />
     <ClCompile Include="BitmexAccount.cpp" />
     <ClCompile Include="BitmexAuthentication.cpp" />
+    <ClCompile Include="BitmexRestApi.cpp" />
     <ClCompile Include="BitmexSimulator.cpp" />
     <ClCompile Include="BitmexTrader.cpp" />
     <ClCompile Include="BitmexWebSocket.cpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="BitBaseClient.h" />
     <ClInclude Include="BitmexAccount.h" />
     <ClInclude Include="BitmexAuthentication.h" />
+    <ClInclude Include="BitmexRestApi.h" />
     <ClInclude Include="BitmexSimulator.h" />
     <ClInclude Include="BitmexTrader.h" />
     <ClInclude Include="BitmexWebSocket.h" />

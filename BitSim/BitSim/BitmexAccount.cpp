@@ -5,38 +5,76 @@
 
 
 BitmexAccount::BitmexAccount(void) :
-    position_leverage(0.0), last_price(0.0), wallet(0.0), active_order("")
+    leverage(0.0), contracts(0), upnl(0.0), last_price(0.0), wallet(0.0), active_order("")
 {
 
 }
 
-double BitmexAccount::get_leverage(void)
+void BitmexAccount::set_contracts(int _contracts)
 {
-    return position_leverage;
+    contracts = _contracts;
 }
 
-double BitmexAccount::get_price(void)
+void BitmexAccount::set_leverage(double mark_value)
+{
+    if (wallet == 0) {
+        leverage = 0;
+    }
+    else {
+        leverage = -1e-8 * mark_value / wallet;
+    }
+    //logger.info("BitmexAccount::set_leverage %0.4f", position_leverage);
+}
+
+void BitmexAccount::set_upnl(double _upnl)
+{
+    upnl = _upnl;
+}
+
+void BitmexAccount::set_wallet(double _wallet)
+{
+    wallet = _wallet;
+    //logger.info("BitmexAccount::set_wallet %0.4f", wallet);
+}
+
+void BitmexAccount::set_price(double price)
+{
+    if (last_price != price) {
+        //logger.info("BitmexAccount::set_price set_price %0.1f", price);
+    }
+    last_price = price;
+}
+
+int BitmexAccount::get_contracts(void) const
+{
+    return contracts;
+}
+
+double BitmexAccount::get_leverage(void) const
+{
+    return leverage;
+}
+
+double BitmexAccount::get_upnl(void) const
+{
+    return upnl;
+}
+
+double BitmexAccount::get_wallet(void) const
+{
+    return wallet;
+}
+
+double BitmexAccount::get_price(void) const
 {
     return last_price;
 }
 
-void BitmexAccount::limit_order(double leverage)
-{
-
-}
-
-void BitmexAccount::market_order(double leverage)
-{
-
-}
-
 void BitmexAccount::print_orders(void)
 {
-    logger.info("BitmexAccount::print_orders ============");
     for (auto const& [key, val] : orders) {
-        logger.info("BitmexAccount::print_orders [%s b(%d) s(%d) p(%0.1f) v(%d)]", DateTime::to_string(val->timestamp).c_str(), val->buy, val->size, val->price, val->valid);
+        logger.info("BitmexAccount::print_orders [%s %s b(%d) s(%d) p(%0.1f) v(%d)]", key.c_str(), DateTime::to_string(val->timestamp).c_str(), val->buy, val->size, val->price, val->valid);
     }
-    logger.info("BitmexAccount::print_orders ============");
 }
 
 void BitmexAccount::insert_order(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, bool buy, int size, double price)
@@ -45,7 +83,7 @@ void BitmexAccount::insert_order(const std::string& symbol, const order_id_t& or
         return;
     }
 
-    logger.info("BitmexAccount::insert_order %s %s %0.1f %d", order_id.c_str(), buy ? "Buy" : "Sell", price, size);
+    //logger.info("BitmexAccount::insert_order %s %s %0.1f %d", order_id.c_str(), buy ? "Buy" : "Sell", price, size);
 
     orders.insert_or_assign(order_id, std::make_unique<BitmexAccountOrder>(timestamp, buy, size, price));
     print_orders();
@@ -57,7 +95,7 @@ void BitmexAccount::fill_order(const std::string& symbol, const order_id_t& orde
         return;
     }
 
-    logger.info("BitmexAccount::fill_order %s %d", order_id.c_str(), remaining_size);
+    //logger.info("BitmexAccount::fill_order %s %d", order_id.c_str(), remaining_size);
 
     if (orders.count(order_id) == 0) {
         // Order does not exist, insert new order with unknown direction and price
@@ -77,40 +115,12 @@ void BitmexAccount::fill_order(const std::string& symbol, const order_id_t& orde
 
 void BitmexAccount::delete_order(const order_id_t& order_id)
 {
-    logger.info("BitmexAccount::delete_order %s", order_id.c_str());
+    //logger.info("BitmexAccount::delete_order %s", order_id.c_str());
 
     if (orders.count(order_id) != 0) {
         orders.erase(order_id);
     }
     print_orders();
-}
-
-void BitmexAccount::set_leverage(double mark_value)
-{
-    if (wallet == 0) {
-        position_leverage = 0;
-    }
-    else {
-        position_leverage = -1e-8 * mark_value / wallet;
-    }
-    logger.info("BitmexAccount::set_leverage %0.4f", position_leverage);
-}
-
-void BitmexAccount::set_wallet(double amount)
-{
-    wallet = amount;
-    logger.info("BitmexAccount::set_wallet %0.4f", wallet);
-}
-
-void BitmexAccount::set_price(const std::string& symbol, double price)
-{
-    if (symbol != "XBTUSD") {
-        return;
-    }
-    if (last_price != price) {
-        //logger.info("BitmexAccount::set_price set_price %0.1f", price);
-    }
-    last_price = price;
 }
 
 BitmexAccountOrder::BitmexAccountOrder(time_point_ms timestamp, int size) :

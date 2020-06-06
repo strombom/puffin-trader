@@ -91,7 +91,7 @@ void BitmexWebSocket::parse_message(const std::string& message)
         if (command["success"].bool_value() == true) {
             json11::Json subscribe_command = json11::Json::object{
                 { "op", "subscribe" },
-                { "args", json11::Json::array{"order", "position", "wallet", "trade:XBTUSD"} }
+                { "args", json11::Json::array{"order", "position", "margin", "wallet", "trade:XBTUSD"} }
             };
             send(subscribe_command.dump());
         }
@@ -129,23 +129,31 @@ void BitmexWebSocket::parse_message(const std::string& message)
     else if (command["table"].string_value() == "trade") {
         for (const auto& data : command["data"].array_items()) {
             const auto& symbol = data["symbol"].string_value();
-            const auto price = data["price"].number_value();
-            bitmex_account->set_price(symbol, price);
+            if (symbol == "XBTUSD") {
+                const auto price = data["price"].number_value();
+                bitmex_account->set_price(price);
+            }
         }
     }
     else if (command["table"].string_value() == "position") {
-        //logger.info("BitmexWebSocket::parse_message: position (%s)", message.c_str());
         for (const auto& data : command["data"].array_items()) {
             if (data["markValue"].is_number()) {
                 const auto mark_value = data["markValue"].number_value();
                 bitmex_account->set_leverage(mark_value);
             }
+            if (data["unrealisedPnl"].is_number()) {
+                const auto upnl = data["unrealisedPnl"].number_value() / 100000000.0; // Convert from Satoshis to Bitcoin
+                bitmex_account->set_upnl(upnl);
+            }
+            if (data["currentQty"].is_number()) {
+                const auto contracts = data["currentQty"].number_value();
+                bitmex_account->set_contracts(contracts);
+            }
         }
     }
     else if (command["table"].string_value() == "wallet") {
-        //logger.info("BitmexWebSocket::parse_message: wallet (%s)", message.c_str());
         for (const auto& data : command["data"].array_items()) {
-            const auto amount = data["amount"].number_value() / 100000000; // Convert from Satoshis to Bitcoin
+            const auto amount = data["amount"].number_value() / 100000000.0; // Convert from Satoshis to Bitcoin
             bitmex_account->set_wallet(amount);
         }
     }
