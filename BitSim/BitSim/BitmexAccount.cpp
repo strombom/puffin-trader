@@ -25,12 +25,12 @@ void BitmexAccount::market_order(double leverage)
 
 }
 
-void BitmexAccount::insert_order(const std::string& order_id, const std::string& symbol, bool buy, int size, double price, time_point_ms timestamp)
+void BitmexAccount::insert_order(const std::string& order_id, const std::string& symbol, time_point_ms timestamp, bool buy, int size, double price)
 {
 
 }
 
-void BitmexAccount::fill_order(const std::string& order_id, int size, int remaining_size)
+void BitmexAccount::fill_order(const std::string& order_id, const std::string& symbol, time_point_ms timestamp, int remaining_size)
 {
 
 }

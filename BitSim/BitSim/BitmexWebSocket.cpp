@@ -89,11 +89,35 @@ void BitmexWebSocket::parse_message(const std::string& message)
                 { "op", "subscribe" },
                 { "args", json11::Json::array{"execution", "order", "margin", "position", "transact", "wallet"} }
             };
-            send(subscribe_command.dump());        
+            send(subscribe_command.dump());
         }
         else {
             std::this_thread::sleep_for(2s);
             request_authentication();
+        }
+    }
+    else if (command["table"].string_value() == "order") {
+        const auto& action = command["action"].string_value();
+
+        for (const auto& data : command["data"].array_items()) {
+
+            const auto& order_id = data["orderID"].string_value();
+            const auto& symbol = data["symbol"].string_value();
+            const auto& timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value());
+
+            if (action == "insert") {
+                const auto& buy = (data["side"].string_value() == "Buy");
+                const auto& order_size = data["orderQty"].int_value();
+                const auto& price = data["price"].number_value();
+                bitmex_account->insert_order(order_id, symbol, timestamp, buy, order_size, price);
+            }
+            else if (action == "update" && data["ordStatus"].string_value() == "Filled") {
+                const auto& remaining_size = data["leavesQty"].int_value();
+                bitmex_account->fill_order(order_id, symbol, timestamp, remaining_size);
+            }
+            else  if (action == "delete") {
+                bitmex_account->delete_order(order_id);
+            }
         }
     }
     else {

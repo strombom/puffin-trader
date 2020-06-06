@@ -9,12 +9,10 @@ class BitmexAccount
 public:
     BitmexAccount(void);
 
-    void insert_order(const std::string &order_id, const std::string &symbol, bool buy, int size, double price, time_point_ms timestamp);
-    void fill_order(const std::string& order_id, int size, int remaining_size);
+    void insert_order(const std::string& order_id, const std::string& symbol, time_point_ms timestamp, bool buy, int size, double price);
+    void fill_order(const std::string& order_id, const std::string& symbol, time_point_ms timestamp, int remaining_size);
     void delete_order(const std::string& order_id);
-
     void margin_update(double leverage);
-
     void set_price(double price);
 
     double get_leverage(void);
