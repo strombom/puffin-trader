@@ -106,7 +106,7 @@ void BitmexWebSocket::parse_message(const std::string& message)
         for (const auto& data : command["data"].array_items()) {
             const auto& order_id = data["orderID"].string_value();
             const auto& symbol = data["symbol"].string_value();
-            const auto timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value());
+            const auto timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value(), "%FT%TZ");
 
             if (action == "insert") {
                 const auto& buy = (data["side"].string_value() == "Buy");
