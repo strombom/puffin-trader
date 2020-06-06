@@ -15,24 +15,21 @@ BitmexWebSocket::BitmexWebSocket(sptrBitmexAccount bitmex_account) :
 
 void BitmexWebSocket::start(void)
 {
-    // Start websocket worker
     websocket_thread = std::make_unique<std::thread>(&BitmexWebSocket::websocket_worker, this);
 }
 
 void BitmexWebSocket::shutdown(void)
 {
     std::cout << "BitmexWebSocket: Shutting down" << std::endl;
-    websocket_thread_running = false;
 
     // Close the WebSocket connection
+    websocket_thread_running = false;
     websocket->async_close(boost::beast::websocket::close_code::normal, boost::beast::bind_front_handler(&BitmexWebSocket::on_close, shared_from_this()));
 
     try {
         websocket_thread->join();
     }
     catch (...) {}
-
-    websocket->async_close(boost::beast::websocket::close_code::normal, boost::beast::bind_front_handler(&BitmexWebSocket::on_close, shared_from_this()));
 }
 
 void BitmexWebSocket::fail(boost::beast::error_code ec, const std::string &reason)
@@ -42,7 +39,14 @@ void BitmexWebSocket::fail(boost::beast::error_code ec, const std::string &reaso
 
 void BitmexWebSocket::connect(void)
 {
-    host_address = "";
+    static bool first = true;
+    if (first) {
+        first = false;
+    }
+    else {
+        // Rate limit reconnects
+        std::this_thread::sleep_for(2s);
+    }
 
     resolver = std::make_unique<boost::asio::ip::tcp::resolver>(boost::asio::make_strand(ioc));
     websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream>>>(boost::asio::make_strand(ioc), *ctx);
@@ -88,7 +92,6 @@ void BitmexWebSocket::parse_message(const std::string& message)
             json11::Json subscribe_command = json11::Json::object{
                 { "op", "subscribe" },
                 { "args", json11::Json::array{"order", "position", "wallet", "trade:XBTUSD"} }
-                // "margin", "execution", "transact", 
             };
             send(subscribe_command.dump());
         }
@@ -101,7 +104,6 @@ void BitmexWebSocket::parse_message(const std::string& message)
         const auto& action = command["action"].string_value();
 
         for (const auto& data : command["data"].array_items()) {
-
             const auto& order_id = data["orderID"].string_value();
             const auto& symbol = data["symbol"].string_value();
             const auto timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value());
@@ -115,6 +117,9 @@ void BitmexWebSocket::parse_message(const std::string& message)
             else if (action == "update" && data["ordStatus"].string_value() == "Filled") {
                 const auto& remaining_size = data["leavesQty"].int_value();
                 bitmex_account->fill_order(symbol, order_id, timestamp, remaining_size);
+            }
+            else if (action == "update" && data["ordStatus"].string_value() == "Canceled") {
+                bitmex_account->delete_order(order_id);
             }
             else  if (action == "delete") {
                 bitmex_account->delete_order(order_id);
@@ -266,13 +271,12 @@ void BitmexWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_tra
         }
     }
 
+    // Get message
     auto ss = std::stringstream{};
     ss << boost::beast::make_printable(websocket_buffer.data());
     const auto message = ss.str();
 
-    //logger.info("BitmexWebSocket::on_read (%d): %s", (int) bytes_transferred, message.c_str());
-
-
+    // Prepare next message reception
     websocket_buffer.clear();
     websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&BitmexWebSocket::on_read, shared_from_this()));
 
@@ -291,10 +295,8 @@ void BitmexWebSocket::websocket_worker(void)
     while (websocket_thread_running) {
         logger.info("BitmexWebSocket:websocket_worker: connect");
         connect();
-        logger.info("BitmexWebSocket:websocket_worker: ioc.run start");
+        logger.info("BitmexWebSocket:websocket_worker: start");
         ioc.run();
-        logger.info("BitmexWebSocket:websocket_worker: ioc.run end");
-
-        websocket_thread_running = false;
+        logger.info("BitmexWebSocket:websocket_worker: end");
     }
 }
