@@ -7,15 +7,45 @@ BitmexAccount::BitmexAccount(void)
 
 double BitmexAccount::get_leverage(void)
 {
-    return 0.0;
+    return position_leverage;
 }
 
-void BitmexAccount::limit_order(int contracts, double price)
+double BitmexAccount::get_price(void)
+{
+    return last_price;
+}
+
+void BitmexAccount::limit_order(double leverage)
 {
 
 }
 
-void BitmexAccount::market_order(int contracts)
+void BitmexAccount::market_order(double leverage)
+{
+
+}
+
+void BitmexAccount::insert_order(const std::string& order_id, const std::string& symbol, bool buy, int size, double price, time_point_ms timestamp)
+{
+
+}
+
+void BitmexAccount::fill_order(const std::string& order_id, int size, int remaining_size)
+{
+
+}
+
+void BitmexAccount::delete_order(const std::string& order_id)
+{
+
+}
+
+void BitmexAccount::margin_update(double leverage)
+{
+
+}
+
+void BitmexAccount::set_price(double price)
 {
 
 }
