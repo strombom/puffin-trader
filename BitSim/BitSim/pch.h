@@ -15,6 +15,9 @@
 #include "json11/json11.hpp"
 
 #include <boost/beast/core.hpp>
+#include <boost/beast/http/write.hpp>
+#include <boost/beast/http/parser.hpp>
+#include <boost/beast/http.hpp>
 #include <boost/beast/ssl.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/websocket/ssl.hpp>

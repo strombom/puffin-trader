@@ -33,17 +33,20 @@ void BitmexTrader::shutdown(void)
 void BitmexTrader::trader_worker(void)
 {
     while (trader_thread_running) {
-        std::this_thread::sleep_for(3500ms);
+        std::this_thread::sleep_for(1ms); // 3500ms);
 
         static auto first = true;
         if (first) {
             first = false;
 
+            bitmex_rest_api.limit_order(0.02);
+            /*
             limit_order(0.0);
             limit_order(0.03);
             limit_order(-0.03);
             limit_order(1.0);
             limit_order(-1.0);
+            */
         }
 
 
@@ -66,7 +69,8 @@ void BitmexTrader::limit_order(double order_leverage)
     const auto contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
     const auto order_contracts = int(contracts - position_contracts);
 
-    logger.info("order leverage(%f) pos_contracts(%d) contracts(%d) price(%0.1f)", order_leverage, position_contracts, order_contracts, mark_price);
+    bitmex_rest_api.limit_order(order_contracts);
+    //logger.info("order leverage(%f) pos_contracts(%d) contracts(%d) price(%0.1f)", order_leverage, position_contracts, order_contracts, mark_price);
 }
 
 void BitmexTrader::market_order(double order_leverage)

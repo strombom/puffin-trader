@@ -146,7 +146,7 @@ void BitmexWebSocket::parse_message(const std::string& message)
                 bitmex_account->set_upnl(upnl);
             }
             if (data["currentQty"].is_number()) {
-                const auto contracts = data["currentQty"].number_value();
+                const auto contracts = (int)data["currentQty"].number_value();
                 bitmex_account->set_contracts(contracts);
             }
         }
