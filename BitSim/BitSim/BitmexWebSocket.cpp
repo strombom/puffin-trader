@@ -87,7 +87,8 @@ void BitmexWebSocket::parse_message(const std::string& message)
         if (command["success"].bool_value() == true) {
             json11::Json subscribe_command = json11::Json::object{
                 { "op", "subscribe" },
-                { "args", json11::Json::array{"execution", "order", "margin", "position", "transact", "wallet"} }
+                { "args", json11::Json::array{"order", "position", "wallet", "trade:XBTUSD"} }
+                // "margin", "execution", "transact", 
             };
             send(subscribe_command.dump());
         }
@@ -103,25 +104,60 @@ void BitmexWebSocket::parse_message(const std::string& message)
 
             const auto& order_id = data["orderID"].string_value();
             const auto& symbol = data["symbol"].string_value();
-            const auto& timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value());
+            const auto timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value());
 
             if (action == "insert") {
                 const auto& buy = (data["side"].string_value() == "Buy");
-                const auto& order_size = data["orderQty"].int_value();
-                const auto& price = data["price"].number_value();
-                bitmex_account->insert_order(order_id, symbol, timestamp, buy, order_size, price);
+                const auto order_size = data["orderQty"].int_value();
+                const auto price = data["price"].number_value();
+                bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
             }
             else if (action == "update" && data["ordStatus"].string_value() == "Filled") {
                 const auto& remaining_size = data["leavesQty"].int_value();
-                bitmex_account->fill_order(order_id, symbol, timestamp, remaining_size);
+                bitmex_account->fill_order(symbol, order_id, timestamp, remaining_size);
             }
             else  if (action == "delete") {
                 bitmex_account->delete_order(order_id);
             }
         }
     }
+    else if (command["table"].string_value() == "trade") {
+        for (const auto& data : command["data"].array_items()) {
+            const auto& symbol = data["symbol"].string_value();
+            const auto price = data["price"].number_value();
+            bitmex_account->set_price(symbol, price);
+        }
+    }
+    else if (command["table"].string_value() == "position") {
+        //logger.info("BitmexWebSocket::parse_message: position (%s)", message.c_str());
+        for (const auto& data : command["data"].array_items()) {
+            if (data["markValue"].is_number()) {
+                const auto mark_value = data["markValue"].number_value();
+                bitmex_account->set_leverage(mark_value);
+            }
+        }
+    }
+    else if (command["table"].string_value() == "wallet") {
+        //logger.info("BitmexWebSocket::parse_message: wallet (%s)", message.c_str());
+        for (const auto& data : command["data"].array_items()) {
+            const auto amount = data["amount"].number_value() / 100000000; // Convert from Satoshis to Bitcoin
+            bitmex_account->set_wallet(amount);
+        }
+    }
+    else if (command["table"].string_value() == "margin") {
+
+    }
+    else if (command["table"].string_value() == "execution") {
+
+    }
+    else if (command["table"].string_value() == "transact") {
+
+    }
+    else if (command["subscribe"].is_string() && command["success"].bool_value()) {
+
+    }
     else {
-        logger.info("BitmexWebSocket::parse_message: unknown command");
+        logger.info("BitmexWebSocket::parse_message: unknown command (%s)", message.c_str());
     }
 }
 
@@ -207,9 +243,9 @@ void BitmexWebSocket::on_handshake(boost::beast::error_code ec)
 
 void BitmexWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_transferred)
 {
-    logger.info("BitmexWebSocket::on_write");
-
     boost::ignore_unused(bytes_transferred);
+
+    logger.info("BitmexWebSocket::on_write");
 
     if (ec) {
         return fail(ec, "write");
@@ -218,6 +254,8 @@ void BitmexWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_tr
 
 void BitmexWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_transferred)
 {
+    boost::ignore_unused(bytes_transferred);
+
     if (ec) {
         if (!websocket_thread_running) {
             // Application shutting down
@@ -232,9 +270,8 @@ void BitmexWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_tra
     ss << boost::beast::make_printable(websocket_buffer.data());
     const auto message = ss.str();
 
-    logger.info("BitmexWebSocket::on_read (%d): %s", (int) bytes_transferred, message.c_str());
+    //logger.info("BitmexWebSocket::on_read (%d): %s", (int) bytes_transferred, message.c_str());
 
-    boost::ignore_unused(bytes_transferred);
 
     websocket_buffer.clear();
     websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&BitmexWebSocket::on_read, shared_from_this()));
