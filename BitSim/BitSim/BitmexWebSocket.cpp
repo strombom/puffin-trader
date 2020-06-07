@@ -108,7 +108,7 @@ void BitmexWebSocket::parse_message(const std::string& message)
             const auto& symbol = data["symbol"].string_value();
             const auto timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value(), "%FT%TZ");
 
-            if (action == "insert") {
+            if (action == "insert" && data["ordStatus"] != "Canceled") {
                 const auto& buy = (data["side"].string_value() == "Buy");
                 const auto order_size = data["orderQty"].int_value();
                 const auto price = data["price"].number_value();
@@ -121,8 +121,14 @@ void BitmexWebSocket::parse_message(const std::string& message)
             else if (action == "update" && data["ordStatus"].string_value() == "Canceled") {
                 bitmex_account->delete_order(order_id);
             }
+            else if (action == "update"){
+                logger.info("BitmexWebSocket::parse_message: update (%s)", message.c_str());
+            }
             else  if (action == "delete") {
                 bitmex_account->delete_order(order_id);
+            }
+            else {
+                logger.info("BitmexWebSocket::parse_message: order unknown (%s)", message.c_str());
             }
         }
     }

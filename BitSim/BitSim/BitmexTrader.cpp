@@ -9,6 +9,7 @@ BitmexTrader::BitmexTrader(void) :
     trader_thread_running(true)
 {
     bitmex_account = std::make_shared<BitmexAccount>();
+    bitmex_rest_api = std::make_shared<BitmexRestApi>(bitmex_account);
     bitmex_websocket = std::make_shared<BitmexWebSocket>(bitmex_account);
 }
 
@@ -39,7 +40,7 @@ void BitmexTrader::trader_worker(void)
         if (first) {
             first = false;
 
-            bitmex_rest_api.limit_order(2);
+            bitmex_rest_api->limit_order(2);
             /*
             limit_order(0.0);
             limit_order(0.03);
@@ -69,7 +70,7 @@ void BitmexTrader::limit_order(double order_leverage)
     const auto contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
     const auto order_contracts = int(contracts - position_contracts);
 
-    bitmex_rest_api.limit_order(order_contracts);
+    bitmex_rest_api->limit_order(order_contracts);
     //logger.info("order leverage(%f) pos_contracts(%d) contracts(%d) price(%0.1f)", order_leverage, position_contracts, order_contracts, mark_price);
 }
 

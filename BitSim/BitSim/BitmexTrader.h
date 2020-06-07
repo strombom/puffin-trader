@@ -19,7 +19,7 @@ public:
 private:
     sptrBitmexWebSocket bitmex_websocket;
     sptrBitmexAccount bitmex_account;
-    BitmexRestApi bitmex_rest_api;
+    sptrBitmexRestApi bitmex_rest_api;
 
     std::atomic_bool trader_thread_running;
     std::unique_ptr<std::thread> trader_thread;

@@ -4,11 +4,11 @@
 #include "DateTime.h"
 
 
-class BitmexAccountOrder
+class BitmexOrder
 {
 public:
-    BitmexAccountOrder(time_point_ms timestamp, int size);
-    BitmexAccountOrder(time_point_ms timestamp, bool buy, int size, double price);
+    BitmexOrder(time_point_ms timestamp, int size);
+    BitmexOrder(time_point_ms timestamp, bool buy, int size, double price);
 
     void fill(time_point_ms fill_timestamp, int remaining_size);
 
@@ -22,7 +22,7 @@ private:
 
 };
 
-using uptrBitmexAccountOrder = std::unique_ptr<BitmexAccountOrder>;
+using uptrBitmexOrder = std::unique_ptr<BitmexOrder>;
 
 class BitmexAccount
 {
@@ -49,6 +49,8 @@ public:
     double get_price(void) const;
 
 private:
+    std::mutex order_mutex;
+
     int contracts;
     double leverage;
     double upnl;
@@ -56,7 +58,7 @@ private:
     double last_price;
 
     const order_id_t active_order;
-    std::map<const order_id_t, uptrBitmexAccountOrder> orders;
+    std::map<const order_id_t, uptrBitmexOrder> orders;
 
     void print_orders(void);
 };

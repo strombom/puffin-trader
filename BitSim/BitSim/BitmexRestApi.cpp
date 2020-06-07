@@ -2,9 +2,15 @@
 
 #include "Logger.h"
 #include "DateTime.h"
-#include "BitBotConstants.h"
 #include "BitmexRestApi.h"
+#include "BitBotConstants.h"
 
+
+BitmexRestApi::BitmexRestApi(sptrBitmexAccount bitmex_account) :
+    bitmex_account(bitmex_account)
+{
+
+}
 
 const std::string BitmexRestApi::limit_order(int contracts)
 {
