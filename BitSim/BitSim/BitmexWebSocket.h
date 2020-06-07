@@ -17,6 +17,7 @@ public:
     void shutdown(void);
 
 private:
+    BitmexAuthentication authenticator;
     sptrBitmexAccount bitmex_account;
     bool connected;
 
@@ -30,8 +31,6 @@ private:
 
     std::string host_address;
     boost::beast::flat_buffer websocket_buffer;
-
-    BitmexAuthentication authenticator;
 
     double wallet;
 

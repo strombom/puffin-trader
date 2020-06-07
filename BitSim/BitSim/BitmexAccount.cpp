@@ -83,7 +83,7 @@ void BitmexAccount::insert_order(const std::string& symbol, const order_id_t& or
         return;
     }
 
-    //logger.info("BitmexAccount::insert_order %s %s %0.1f %d", order_id.c_str(), buy ? "Buy" : "Sell", price, size);
+    logger.info("BitmexAccount::insert_order %s %s %0.1f %d", order_id.c_str(), buy ? "Buy" : "Sell", price, size);
 
     orders.insert_or_assign(order_id, std::make_unique<BitmexAccountOrder>(timestamp, buy, size, price));
     print_orders();
@@ -95,7 +95,7 @@ void BitmexAccount::fill_order(const std::string& symbol, const order_id_t& orde
         return;
     }
 
-    //logger.info("BitmexAccount::fill_order %s %d", order_id.c_str(), remaining_size);
+    logger.info("BitmexAccount::fill_order %s %d", order_id.c_str(), remaining_size);
 
     if (orders.count(order_id) == 0) {
         // Order does not exist, insert new order with unknown direction and price
@@ -115,7 +115,7 @@ void BitmexAccount::fill_order(const std::string& symbol, const order_id_t& orde
 
 void BitmexAccount::delete_order(const order_id_t& order_id)
 {
-    //logger.info("BitmexAccount::delete_order %s", order_id.c_str());
+    logger.info("BitmexAccount::delete_order %s", order_id.c_str());
 
     if (orders.count(order_id) != 0) {
         orders.erase(order_id);

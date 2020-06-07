@@ -67,7 +67,7 @@ void BitmexWebSocket::send(const std::string &message)
 
 void BitmexWebSocket::request_authentication(void)
 {
-    const auto expires = authenticator.generate_expiration(BitSim::Trader::Bitmex::auth_timeout);
+    const auto expires = authenticator.generate_expiration(BitSim::Trader::Bitmex::websocket_auth_timeout);
     const auto sign_message = std::string{ "GET" } + BitSim::Trader::Bitmex::websocket_url + std::to_string(expires);
     const auto signature = authenticator.authenticate(sign_message);
 

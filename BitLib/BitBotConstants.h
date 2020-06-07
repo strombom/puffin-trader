@@ -97,7 +97,11 @@ namespace BitSim
             constexpr auto websocket_url = "/realtime";
             constexpr auto api_key = "ynOrYOWoC1knanjDld9RtPhC";
             constexpr auto api_secret = "0d_jDIPan7mEHSPhQDyMQJKVPJ3kEc5qbS5ed5JBWiKIsAXW";
-            constexpr auto auth_timeout = 10000h;
+            constexpr auto websocket_auth_timeout = 10000h;
+            constexpr auto rest_api_auth_timeout = 60s;
+            constexpr auto rest_api_host = "www.bitmex.com";
+            constexpr auto rest_api_port = "443";
+            constexpr auto rest_api_url = "/api/v1/";
         }
 
 #ifdef TORCH_API

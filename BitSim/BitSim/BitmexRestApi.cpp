@@ -1,6 +1,8 @@
 #include "pch.h"
 
 #include "Logger.h"
+#include "DateTime.h"
+#include "BitBotConstants.h"
 #include "BitmexRestApi.h"
 
 
@@ -8,19 +10,63 @@ const std::string BitmexRestApi::limit_order(int contracts)
 {
     logger.info("BitmexRestApi::limit_order contracts(%d)", contracts);
 
-    auto body = http_request("www.bitmex.com", "443", "/api/v1/trade?symbol=XBTUSD&count=1&reverse=false");
+    json11::Json parameters = json11::Json::object{
+        { "symbol", "XBTUSD" },
+        { "side", "Buy" },
+        { "orderQty", 2 },
+        { "price", "18500" },
+        { "ordType", "Limit" },
+        { "execInst", "ParticipateDoNotInitiate" }
+    };
 
-    std::cout << "Body: " << body << std::endl;
+    auto response = http_post(parameters);
 
-    return "hej";
+    logger.info("Response: %s", response.dump().c_str());
+
+    if (response["orderID"].is_string()) {
+        return response["orderID"].string_value();
+    }
+    else {
+        return "";
+    }
 }
 
-const std::string BitmexRestApi::http_request(const std::string& host, const std::string& port, const std::string& target)
+json11::Json BitmexRestApi::http_post(json11::Json parameters)
 {
+    const auto method = "POST";
+    const auto url = std::string{ BitSim::Trader::Bitmex::rest_api_url } + "order";
+    const auto body = parameters.dump();
+    const auto expires = authenticator.generate_expiration(BitSim::Trader::Bitmex::rest_api_auth_timeout);
+    const auto sign_message = std::string{ method } + url + std::to_string(expires) + body;
+    const auto signature = authenticator.authenticate(sign_message);
     const auto version = 11;
 
-    try
-    {
+    boost::beast::http::request<boost::beast::http::string_body> req;
+    req.target(url);
+    req.method(boost::beast::http::verb::post);
+    req.version(version);
+    req.set(boost::beast::http::field::host, BitSim::Trader::Bitmex::rest_api_host);
+    req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    req.set(boost::beast::http::field::content_type, "application/json");
+    req.set(boost::beast::http::field::accept, "application/json");
+    req.set("api-expires", expires);
+    req.set("api-key", BitSim::Trader::Bitmex::api_key);
+    req.set("api-signature", signature);
+    req.body() = body;
+    req.prepare_payload();
+
+    const auto http_response = http_request(req);
+    auto error_message = std::string{ "{\"command\":\"error\"}" };
+    const auto response = json11::Json::parse(http_response.c_str(), error_message);
+    return response;
+}
+
+const std::string BitmexRestApi::http_request(const boost::beast::http::request<boost::beast::http::string_body>& request)
+{
+
+    //try
+    //{
+
         // The io_context is required for all I/O
     boost::asio::io_context ioc;
 
@@ -38,7 +84,7 @@ const std::string BitmexRestApi::http_request(const std::string& host, const std
         boost::beast::ssl_stream<boost::beast::tcp_stream> stream(ioc, ctx);
 
         // Look up the domain name
-        const auto results = resolver.resolve(host, port);
+        const auto results = resolver.resolve(BitSim::Trader::Bitmex::rest_api_host, BitSim::Trader::Bitmex::rest_api_port);
 
         // Make the connection on the IP address we get from a lookup
         boost::beast::get_lowest_layer(stream).connect(results);
@@ -46,13 +92,8 @@ const std::string BitmexRestApi::http_request(const std::string& host, const std
         // Perform the SSL handshake
         stream.handshake(boost::asio::ssl::stream_base::client);
 
-        // Set up an HTTP GET request message
-        boost::beast::http::request<boost::beast::http::string_body> req{ boost::beast::http::verb::get, target, version };
-        req.set(boost::beast::http::field::host, host);
-        req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
         // Send the HTTP request to the remote host
-        boost::beast::http::write(stream, req);
+        boost::beast::http::write(stream, request);
 
         // This buffer is used for reading and must be persisted
         boost::beast::flat_buffer buffer;
@@ -101,12 +142,12 @@ const std::string BitmexRestApi::http_request(const std::string& host, const std
 
 
         // If we get here then the connection is closed gracefully
-    }
-    catch (std::exception const& e)
-    {
-        logger.warn("BitmexRestApi::http_request fail (%s) (%s)", e.what(), target.c_str());
+    //}
+    //catch (std::exception const& e)
+    //{
+    //    logger.warn("BitmexRestApi::http_request fail (%s) (%s)", e.what(), target.c_str());
         //std::cerr << "Error: " << e.what() << std::endl;
-    }
+    //}
 
     return "";
 }

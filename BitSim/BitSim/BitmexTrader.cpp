@@ -33,13 +33,13 @@ void BitmexTrader::shutdown(void)
 void BitmexTrader::trader_worker(void)
 {
     while (trader_thread_running) {
-        std::this_thread::sleep_for(1ms); // 3500ms);
+        std::this_thread::sleep_for(2000ms); // 3500ms);
 
         static auto first = true;
         if (first) {
             first = false;
 
-            bitmex_rest_api.limit_order(0.02);
+            bitmex_rest_api.limit_order(2);
             /*
             limit_order(0.0);
             limit_order(0.03);
