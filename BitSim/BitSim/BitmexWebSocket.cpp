@@ -106,18 +106,18 @@ void BitmexWebSocket::parse_message(const std::string& message)
         const auto& action = command["action"].string_value();
 
         for (const auto& data : command["data"].array_items()) {
-            const auto& order_id = data["orderID"].string_value();
-            const auto& symbol = data["symbol"].string_value();
+            const auto order_id = data["orderID"].string_value();
+            const auto symbol = data["symbol"].string_value();
             const auto timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value(), "%FT%TZ");
 
             if ((action == "insert" || action == "partial") && (data["ordStatus"] == "New" || data["ordStatus"] == "Partially filled")) {
-                const auto& buy = (data["side"].string_value() == "Buy");
+                const auto buy = (data["side"].string_value() == "Buy");
                 const auto order_size = data["orderQty"].int_value();
                 const auto price = data["price"].number_value();
                 bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
             }
             else if (action == "update" && (data["ordStatus"].string_value() == "Filled" || data["ordStatus"].string_value() == "Partially filled")) {
-                const auto& remaining_size = data["leavesQty"].int_value();
+                const auto remaining_size = data["leavesQty"].int_value();
                 bitmex_account->fill_order(symbol, order_id, timestamp, remaining_size);
             }
             else if (action == "update" && data["ordStatus"].string_value() == "Canceled") {

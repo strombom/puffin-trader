@@ -27,15 +27,22 @@ bool BitmexRestApi::limit_order(int contracts, double price)
         { "execInst", "ParticipateDoNotInitiate" }
     };
 
-    auto response = http_post(parameters);
+    auto response = http_post("order", parameters);
 
-    logger.info("Response: %s", response.dump().c_str());
+    //logger.info("Response: %s", response.dump().c_str());
 
     if (response["ordStatus"].string_value() == "New" ||
         response["ordStatus"].string_value() == "Partially filled") {
-
         
-        //bitmex_account->insert_order(symbol, order_id, timestamp, buy, size, price);
+        const auto order_id = response["orderID"].string_value();
+        const auto symbol = response["symbol"].string_value();
+        const auto timestamp = DateTime::to_time_point_ms(response["timestamp"].string_value(), "%FT%TZ");
+        const auto buy = (response["side"].string_value() == "Buy");
+        const auto order_size = response["orderQty"].int_value();
+        const auto price = response["price"].number_value();
+
+        bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
+        
 
         return true;
     }
@@ -49,19 +56,35 @@ bool BitmexRestApi::limit_order(int contracts, double price)
 
 bool BitmexRestApi::delete_all(void)
 {
+    logger.info("BitmexRestApi::delete_all");
 
-    auto success = false;
+    json11::Json parameters = json11::Json::object{
+        { "symbol", "XBTUSD" }
+    };
 
-    if (success) {
-        bitmex_account->clear_orders();
+    auto response = http_delete("order/all", parameters);
+
+    //logger.info("Response: %s", response.dump().c_str());
+
+    auto fail = false;
+    for (const auto& data : response.array_items()) {
+        if (data["ordStatus"].string_value() == "Canceled") {
+            const auto order_id = data["orderID"].string_value();
+            bitmex_account->delete_order(order_id);
+        }
+        else {
+            fail = true;
+        }
     }
+
+    const auto success = !fail;
     return success;
 }
 
-json11::Json BitmexRestApi::http_post(json11::Json parameters)
+json11::Json BitmexRestApi::http_post(const std::string& endpoint, json11::Json parameters)
 {
     const auto method = "POST";
-    const auto url = std::string{ BitSim::Trader::Bitmex::rest_api_url } + "order";
+    const auto url = std::string{ BitSim::Trader::Bitmex::rest_api_url } + endpoint;
     const auto body = parameters.dump();
     const auto expires = authenticator.generate_expiration(BitSim::Trader::Bitmex::rest_api_auth_timeout);
     const auto sign_message = std::string{ method } + url + std::to_string(expires) + body;
@@ -71,6 +94,36 @@ json11::Json BitmexRestApi::http_post(json11::Json parameters)
     boost::beast::http::request<boost::beast::http::string_body> req;
     req.target(url);
     req.method(boost::beast::http::verb::post);
+    req.version(version);
+    req.set(boost::beast::http::field::host, BitSim::Trader::Bitmex::rest_api_host);
+    req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    req.set(boost::beast::http::field::content_type, "application/json");
+    req.set(boost::beast::http::field::accept, "application/json");
+    req.set("api-expires", expires);
+    req.set("api-key", BitSim::Trader::Bitmex::api_key);
+    req.set("api-signature", signature);
+    req.body() = body;
+    req.prepare_payload();
+
+    const auto http_response = http_request(req);
+    auto error_message = std::string{ "{\"command\":\"error\"}" };
+    const auto response = json11::Json::parse(http_response.c_str(), error_message);
+    return response;
+}
+
+json11::Json BitmexRestApi::http_delete(const std::string& endpoint, json11::Json parameters)
+{
+    const auto method = "DELETE";
+    const auto url = std::string{ BitSim::Trader::Bitmex::rest_api_url } + endpoint;
+    const auto body = parameters.dump();
+    const auto expires = authenticator.generate_expiration(BitSim::Trader::Bitmex::rest_api_auth_timeout);
+    const auto sign_message = std::string{ method } + url + std::to_string(expires) + body;
+    const auto signature = authenticator.authenticate(sign_message);
+    const auto version = 11;
+
+    boost::beast::http::request<boost::beast::http::string_body> req;
+    req.target(url);
+    req.method(boost::beast::http::verb::delete_);
     req.version(version);
     req.set(boost::beast::http::field::host, BitSim::Trader::Bitmex::rest_api_host);
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
