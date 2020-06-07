@@ -28,6 +28,11 @@ BitmexAccount::BitmexAccount(void) :
 
 }
 
+int BitmexAccount::order_count(void)
+{
+    return (int)orders.size();
+}
+
 void BitmexAccount::print_orders(void)
 {
     auto slock = std::scoped_lock{ order_mutex };

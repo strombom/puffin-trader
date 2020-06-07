@@ -35,6 +35,7 @@ public:
     void insert_order(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, bool buy, int size, double price);
     void fill_order(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, int remaining_size);
     void delete_order(const order_id_t& order_id);
+    int order_count(void);
     
     void set_contracts(int contracts);
     void set_leverage(double mark_value);

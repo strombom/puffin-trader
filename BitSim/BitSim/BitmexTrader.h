@@ -8,6 +8,18 @@
 #include "BitmexWebSocket.h"
 
 
+enum TraderState 
+{ 
+    start,
+    wait_for_next_interval,
+    bitbot_action,
+    delete_orders,
+    delete_orders_worker,
+    place_new_order,
+    place_new_order_work,
+    order_monitoring
+};
+
 class BitmexTrader
 {
 public:
@@ -17,6 +29,14 @@ public:
     void shutdown(void);
 
 private:
+    TraderState trader_state;
+    time_point_ms start_timestamp;
+    int delete_orders_remaining_retries;
+    bool new_order_first_try;
+    double order_mark_price;
+
+    double desired_leverage;
+
     sptrBitmexWebSocket bitmex_websocket;
     sptrBitmexAccount bitmex_account;
     sptrBitmexRestApi bitmex_rest_api;
@@ -24,8 +44,7 @@ private:
     std::atomic_bool trader_thread_running;
     std::unique_ptr<std::thread> trader_thread;
 
-    void limit_order(double order_leverage);
-    void market_order(double order_leverage);
+    bool limit_order(double order_leverage, double mark_price);
 
     void trader_worker(void);
 };

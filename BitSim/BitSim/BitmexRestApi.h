@@ -10,7 +10,8 @@ class BitmexRestApi
 public:
     BitmexRestApi(sptrBitmexAccount bitmex_account);
 
-    const std::string limit_order(int contracts);
+    bool limit_order(int contracts, double price);
+    bool delete_all(void);
 
 private:
     sptrBitmexAccount bitmex_account;

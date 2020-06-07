@@ -12,14 +12,19 @@ BitmexRestApi::BitmexRestApi(sptrBitmexAccount bitmex_account) :
 
 }
 
-const std::string BitmexRestApi::limit_order(int contracts)
+bool BitmexRestApi::limit_order(int contracts, double price)
 {
     logger.info("BitmexRestApi::limit_order contracts(%d)", contracts);
 
+    auto side = "Buy";
+    if (contracts < 0) {
+        side = "Sell";
+    }
+
     json11::Json parameters = json11::Json::object{
         { "symbol", "XBTUSD" },
-        { "side", "Buy" },
-        { "orderQty", 2 },
+        { "side", side },
+        { "orderQty", std::abs(contracts) },
         { "price", "18500" },
         { "ordType", "Limit" },
         { "execInst", "ParticipateDoNotInitiate" }
@@ -29,12 +34,19 @@ const std::string BitmexRestApi::limit_order(int contracts)
 
     logger.info("Response: %s", response.dump().c_str());
 
-    if (response["orderID"].is_string()) {
-        return response["orderID"].string_value();
+    if (response["ordStatus"].string_value() == "New" ||
+        response["ordStatus"].string_value() == "Filled" ||
+        response["ordStatus"].string_value() == "Partially filled") {
+        return true;
     }
     else {
-        return "";
+        return false;
     }
+}
+
+bool BitmexRestApi::delete_all(void)
+{
+    return true;
 }
 
 json11::Json BitmexRestApi::http_post(json11::Json parameters)
