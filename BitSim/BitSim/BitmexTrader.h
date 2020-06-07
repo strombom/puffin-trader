@@ -34,8 +34,7 @@ private:
     int delete_orders_remaining_retries;
     bool new_order_first_try;
     double order_mark_price;
-
-    double desired_leverage;
+    double order_leverage;
 
     sptrBitmexWebSocket bitmex_websocket;
     sptrBitmexAccount bitmex_account;
@@ -44,7 +43,6 @@ private:
     std::atomic_bool trader_thread_running;
     std::unique_ptr<std::thread> trader_thread;
 
-    bool limit_order(double order_leverage, double mark_price);
-
+    bool limit_order(void);
     void trader_worker(void);
 };

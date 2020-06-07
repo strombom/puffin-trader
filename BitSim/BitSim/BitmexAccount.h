@@ -10,7 +10,8 @@ public:
     BitmexOrder(time_point_ms timestamp, int size);
     BitmexOrder(time_point_ms timestamp, bool buy, int size, double price);
 
-    void fill(time_point_ms fill_timestamp, int remaining_size);
+    void set_size(time_point_ms fill_timestamp, int remaining_size);
+    void set_price(time_point_ms fill_timestamp, double price);
 
     time_point_ms timestamp;
     bool buy;
@@ -35,7 +36,11 @@ public:
     void insert_order(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, bool buy, int size, double price);
     void fill_order(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, int remaining_size);
     void delete_order(const order_id_t& order_id);
-    int order_count(void);
+    void amend_order(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, int size, double price);
+    void amend_order_size(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, int size);
+    void amend_order_price(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, double price);
+    int count_orders(void);
+    void clear_orders(void);
     
     void set_contracts(int contracts);
     void set_leverage(double mark_value);

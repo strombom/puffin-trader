@@ -8,7 +8,7 @@
 BitmexTrader::BitmexTrader(void) :
     trader_thread_running(true),
     trader_state(TraderState::wait_for_next_interval),
-    desired_leverage(0.0),
+    order_leverage(0.0),
     delete_orders_remaining_retries(0),
     new_order_first_try(true),
     order_mark_price(0)
@@ -40,6 +40,11 @@ void BitmexTrader::trader_worker(void)
 {
     while (trader_thread_running) {
 
+        order_leverage = 0.02;
+        order_mark_price = bitmex_account->get_price();
+        std::this_thread::sleep_for(100ms);
+        continue;
+
         if (trader_state == TraderState::start) {
             trader_state = TraderState::wait_for_next_interval;
         }
@@ -58,7 +63,7 @@ void BitmexTrader::trader_worker(void)
         else if (trader_state == TraderState::bitbot_action) {
             const auto place_order = true;
             if (place_order) {
-                desired_leverage = 0.02;
+                order_leverage = 0.02;
                 order_mark_price = bitmex_account->get_price();
                 trader_state = TraderState::delete_orders;
             }
@@ -92,7 +97,7 @@ void BitmexTrader::trader_worker(void)
             trader_state = TraderState::place_new_order_work;
         }
         else if (trader_state == TraderState::place_new_order_work) {
-            const auto success = bitmex_rest_api->limit_order(2, order_mark_price);
+            const auto success = limit_order();
             if (success) {
                 std::this_thread::sleep_for(1s);
                 trader_state = TraderState::order_monitoring;
@@ -114,7 +119,7 @@ void BitmexTrader::trader_worker(void)
             if (system_clock_ms_now() - start_timestamp > 5s) {
                 trader_state = TraderState::wait_for_next_interval;
             }
-            else if (bitmex_account->order_count() == 0) {
+            else if (bitmex_account->count_orders() == 0) {
                 trader_state = TraderState::wait_for_next_interval;
             } 
             else if (bitmex_account->get_price() != order_mark_price) {
@@ -124,9 +129,10 @@ void BitmexTrader::trader_worker(void)
     }
 }
 
-bool BitmexTrader::limit_order(double order_leverage, double mark_price)
+bool BitmexTrader::limit_order(void)
 {
     const auto position_contracts = bitmex_account->get_contracts();
+    const auto mark_price = bitmex_account->get_price();
     const auto wallet = bitmex_account->get_wallet();
     const auto upnl = bitmex_account->get_upnl();
 

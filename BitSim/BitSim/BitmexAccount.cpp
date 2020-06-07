@@ -16,10 +16,16 @@ BitmexOrder::BitmexOrder(time_point_ms timestamp, bool buy, int size, double pri
 
 }
 
-void BitmexOrder::fill(time_point_ms fill_timestamp, int remaining_size)
+void BitmexOrder::set_size(time_point_ms fill_timestamp, int remaining_size)
 {
     timestamp = fill_timestamp;
     size = remaining_size;
+}
+
+void BitmexOrder::set_price(time_point_ms fill_timestamp, double _price)
+{
+    timestamp = fill_timestamp;
+    price = _price;
 }
 
 BitmexAccount::BitmexAccount(void) :
@@ -28,15 +34,18 @@ BitmexAccount::BitmexAccount(void) :
 
 }
 
-int BitmexAccount::order_count(void)
+int BitmexAccount::count_orders(void)
 {
     return (int)orders.size();
 }
 
+void BitmexAccount::clear_orders(void)
+{
+    orders.clear();
+}
+
 void BitmexAccount::print_orders(void)
 {
-    auto slock = std::scoped_lock{ order_mutex };
-
     for (auto const& [key, val] : orders) {
         logger.info("BitmexAccount::print_orders [%s %s b(%d) s(%d) p(%0.1f) v(%d)]", key.c_str(), DateTime::to_string(val->timestamp).c_str(), val->buy, val->size, val->price, val->valid);
     }
@@ -66,7 +75,7 @@ void BitmexAccount::fill_order(const std::string& symbol, const order_id_t& orde
 
     logger.info("BitmexAccount::fill_order %s %d", order_id.c_str(), remaining_size);
 
-    if (orders.count(order_id) == 0) {
+    if (orders.count(order_id) == 0 && remaining_size > 0) {
         // Order does not exist, insert new order with unknown direction and price
         orders.insert_or_assign(order_id, std::make_unique<BitmexOrder>(timestamp, remaining_size));
         print_orders();
@@ -77,7 +86,7 @@ void BitmexAccount::fill_order(const std::string& symbol, const order_id_t& orde
         orders.erase(order_id);
     }
     else {
-        orders.at(order_id)->fill(timestamp, remaining_size);
+        orders.at(order_id)->set_size(timestamp, remaining_size);
     }
     print_orders();
 }
@@ -88,8 +97,45 @@ void BitmexAccount::delete_order(const order_id_t& order_id)
 
     logger.info("BitmexAccount::delete_order %s", order_id.c_str());
 
-    if (orders.count(order_id) != 0) {
+    if (orders.count(order_id) > 0) {
         orders.erase(order_id);
+    }
+    print_orders();
+}
+
+void BitmexAccount::amend_order(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, int size, double price)
+{
+    if (symbol != "XBTUSD") {
+        return;
+    }
+
+    if (orders.count(order_id) > 0) {
+        orders.at(order_id)->set_size(timestamp, size);
+        orders.at(order_id)->set_price(timestamp, price);
+    }
+    print_orders();
+}
+
+void BitmexAccount::amend_order_size(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, int size)
+{
+    if (symbol != "XBTUSD") {
+        return;
+    }
+
+    if (orders.count(order_id) > 0) {
+        orders.at(order_id)->set_size(timestamp, size);
+    }
+    print_orders();
+}
+
+void BitmexAccount::amend_order_price(const std::string& symbol, const order_id_t& order_id, time_point_ms timestamp, double price)
+{
+    if (symbol != "XBTUSD") {
+        return;
+    }
+
+    if (orders.count(order_id) > 0) {
+        orders.at(order_id)->set_price(timestamp, price);
     }
     print_orders();
 }

@@ -101,6 +101,8 @@ void BitmexWebSocket::parse_message(const std::string& message)
         }
     }
     else if (command["table"].string_value() == "order") {
+        //logger.info("BitmexWebSocket::parse_message: order (%s)", message.c_str());
+
         const auto& action = command["action"].string_value();
 
         for (const auto& data : command["data"].array_items()) {
@@ -108,21 +110,34 @@ void BitmexWebSocket::parse_message(const std::string& message)
             const auto& symbol = data["symbol"].string_value();
             const auto timestamp = DateTime::to_time_point_ms(data["timestamp"].string_value(), "%FT%TZ");
 
-            if (action == "insert" && data["ordStatus"] != "Canceled") {
+            if ((action == "insert" || action == "partial") && (data["ordStatus"] == "New" || data["ordStatus"] == "Partially filled")) {
                 const auto& buy = (data["side"].string_value() == "Buy");
                 const auto order_size = data["orderQty"].int_value();
                 const auto price = data["price"].number_value();
                 bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
             }
-            else if (action == "update" && data["ordStatus"].string_value() == "Filled") {
+            else if (action == "update" && (data["ordStatus"].string_value() == "Filled" || data["ordStatus"].string_value() == "Partially filled")) {
                 const auto& remaining_size = data["leavesQty"].int_value();
                 bitmex_account->fill_order(symbol, order_id, timestamp, remaining_size);
             }
             else if (action == "update" && data["ordStatus"].string_value() == "Canceled") {
                 bitmex_account->delete_order(order_id);
             }
-            else if (action == "update"){
-                logger.info("BitmexWebSocket::parse_message: update (%s)", message.c_str());
+            else if (action == "update" && data["price"].is_number() && data["orderQty"].is_number()) {
+                const auto price = data["price"].number_value();
+                const auto size = data["orderQty"].int_value();
+                bitmex_account->amend_order(symbol, order_id, timestamp, size, price);
+            }
+            else if (action == "update" && data["price"].is_number()) {
+                const auto price = data["price"].number_value();
+                bitmex_account->amend_order_price(symbol, order_id, timestamp, price);
+            }
+            else if (action == "update" && data["orderQty"].is_number()) {
+                const auto size = data["orderQty"].int_value();
+                bitmex_account->amend_order_size(symbol, order_id, timestamp, size);
+            }
+            else if (action == "update") {
+
             }
             else  if (action == "delete") {
                 bitmex_account->delete_order(order_id);
