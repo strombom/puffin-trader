@@ -1,7 +1,6 @@
 #include "pch.h"
 
 #include "FE_Observations.h"
-
 #include "BitBotConstants.h"
 #include "DateTime.h"
 #include "Logger.h"

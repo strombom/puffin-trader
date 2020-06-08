@@ -9,18 +9,19 @@
 #include "FE_Training.h"
 #include "FE_Model.h"
 #include "RL_Trader.h"
+#include "LiveData.h"
+#include "DateTime.h"
 #include "Logger.h"
 #include "Utils.h"
 
-#include "DateTime.h"
 #include <iostream>
 
 
 int main()
 {
     logger.info("BitSim started");
-    
-    constexpr auto command = "trade";
+
+    constexpr auto command = "trade_live";
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -35,7 +36,7 @@ int main()
         observations->save(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
     }
-    else if (command == "train") {
+    else if (command == "train_features") {
         auto observations = std::make_shared<FE_Observations>( BitSim::observations_path );
 
         auto fe_training = FE_Training{ observations };
@@ -52,7 +53,7 @@ int main()
 
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
-    else if (command == "train_bitmex") {
+    else if (command == "train_rl") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
         auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
@@ -77,6 +78,11 @@ int main()
         }
 
         bitmex_trader.shutdown();
+    }
+    else if (command == "trade_live") {
+        auto live_data = LiveData{};
+
+
     }
     
     logger.info("BitSim exit");

@@ -1,11 +1,11 @@
 #pragma once
 #include "pch.h"
 
-#include <thread>
-
 #include "BitmexAccount.h"
 #include "BitmexRestApi.h"
 #include "BitmexWebSocket.h"
+
+#include <thread>
 
 
 enum TraderState 
