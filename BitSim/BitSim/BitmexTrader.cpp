@@ -39,7 +39,9 @@ void BitmexTrader::shutdown(void)
 void BitmexTrader::trader_worker(void)
 {
     while (trader_thread_running) {
-
+        std::this_thread::sleep_for(500ms);
+        continue;
+        /*
         static auto first = true;
         if (first) {
             auto success = bitmex_rest_api->limit_order(1, 9200);
@@ -55,6 +57,7 @@ void BitmexTrader::trader_worker(void)
         order_mark_price = bitmex_account->get_price();
         std::this_thread::sleep_for(100ms);
         continue;
+        */
 
         if (trader_state == TraderState::start) {
             bitmex_rest_api->delete_all();
@@ -65,7 +68,6 @@ void BitmexTrader::trader_worker(void)
             if (first) {
                 first = false;
                 std::this_thread::sleep_for(2000ms);
-                start_timestamp = system_clock_ms_now();
                 trader_state = TraderState::bitbot_action;
             }
             else {
@@ -73,6 +75,7 @@ void BitmexTrader::trader_worker(void)
             }
         }
         else if (trader_state == TraderState::bitbot_action) {
+            start_timestamp = system_clock_ms_now();
             const auto place_order = true;
             if (place_order) {
                 order_leverage = 0.02;

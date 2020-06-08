@@ -175,6 +175,16 @@ void BitmexAccount::set_price(double price)
     last_price = price;
 }
 
+void BitmexAccount::set_ask_price(double price)
+{
+    ask_price = price;
+}
+
+void BitmexAccount::set_bid_price(double price)
+{
+    bid_price = price;
+}
+
 int BitmexAccount::get_contracts(void) const
 {
     return contracts;
@@ -198,4 +208,14 @@ double BitmexAccount::get_wallet(void) const
 double BitmexAccount::get_price(void) const
 {
     return last_price;
+}
+
+double BitmexAccount::get_ask_price(void) const
+{
+    return ask_price;
+}
+
+double BitmexAccount::get_bid_price(void) const
+{
+    return bid_price;
 }

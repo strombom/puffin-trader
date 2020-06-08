@@ -91,7 +91,7 @@ void BitmexWebSocket::parse_message(const std::string& message)
         if (command["success"].bool_value() == true) {
             json11::Json subscribe_command = json11::Json::object{
                 { "op", "subscribe" },
-                { "args", json11::Json::array{"order", "position", "margin", "wallet", "trade:XBTUSD"} }
+                { "args", json11::Json::array{"order", "position", "margin", "wallet", "trade:XBTUSD", "orderBook10:XBTUSD"} }
             };
             send(subscribe_command.dump());
         }
@@ -176,6 +176,17 @@ void BitmexWebSocket::parse_message(const std::string& message)
         for (const auto& data : command["data"].array_items()) {
             const auto amount = data["amount"].number_value() / 100000000.0; // Convert from Satoshis to Bitcoin
             bitmex_account->set_wallet(amount);
+        }
+    }
+    else if (command["table"].string_value() == "orderBook10") {
+        for (const auto& data : command["data"].array_items()) {
+            const auto& symbol = data["symbol"].string_value();
+            if (symbol == "XBTUSD") {
+                const auto ask_price = data["asks"].array_items()[0][0].number_value();
+                const auto bid_price = data["bids"].array_items()[0][0].number_value();
+                bitmex_account->set_ask_price(ask_price);
+                bitmex_account->set_bid_price(bid_price);
+            }
         }
     }
     else if (command["table"].string_value() == "margin") {

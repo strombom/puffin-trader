@@ -47,12 +47,16 @@ public:
     void set_upnl(double upnl);
     void set_wallet(double amount);
     void set_price(double price);
+    void set_ask_price(double price);
+    void set_bid_price(double price);
 
     int get_contracts(void) const;
     double get_leverage(void) const;
     double get_upnl(void) const;
     double get_wallet(void) const;
     double get_price(void) const;
+    double get_ask_price(void) const;
+    double get_bid_price(void) const;
 
 private:
     std::mutex order_mutex;
@@ -62,6 +66,8 @@ private:
     double upnl;
     double wallet;
     double last_price;
+    double ask_price;
+    double bid_price;
 
     const order_id_t active_order;
     std::map<const order_id_t, uptrBitmexOrder> orders;
