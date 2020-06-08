@@ -25,30 +25,24 @@ FE_Observations::FE_Observations(sptrIntervals intervals, time_point_ms start_ti
     }
     observations = torch::empty({ n_observations, BitSim::n_channels, BitSim::observation_length });
 
-    for (auto i = 0; i < 1; ++i) {
-        auto timer = Timer{};
+    for (auto idx_obs = 0; idx_obs < n_observations; idx_obs += n_threads) {
+        auto futures = std::queue<std::future<torch::Tensor>>{};
 
-        for (auto idx_obs = 0; idx_obs < n_observations; idx_obs += n_threads) {
-            auto futures = std::queue<std::future<torch::Tensor>>{};
-
-            for (auto idx_task = 0; idx_task < n_threads && idx_obs + idx_task < n_observations; ++idx_task) {
-                auto future = std::async(std::launch::async, &FE_Observations::make_observation, this, intervals, idx_obs + idx_task);
-                futures.push(std::move(future));
-            }
-
-            for (auto idx_task = 0; !futures.empty(); ++idx_task) {
-                auto a = futures.front().get();
-                observations[(long)idx_obs + idx_task] = a;
-                //std::cout << a << std::endl;
-                futures.pop();
-            }
-
-            if (idx_obs % 100 == 0) {
-                logger.info("working %6.2f%%, %d / %d", ((float)idx_obs) / n_observations * 100, idx_obs, n_observations);
-            }
+        for (auto idx_task = 0; idx_task < n_threads && idx_obs + idx_task < n_observations; ++idx_task) {
+            auto future = std::async(std::launch::async, &FE_Observations::make_observation, this, intervals, idx_obs + idx_task);
+            futures.push(std::move(future));
         }
 
-        timer.print_elapsed("done");
+        for (auto idx_task = 0; !futures.empty(); ++idx_task) {
+            auto a = futures.front().get();
+            observations[(long)idx_obs + idx_task] = a;
+            //std::cout << a << std::endl;
+            futures.pop();
+        }
+
+        if (idx_obs % 100 == 0) {
+            logger.info("working %6.2f%%, %d / %d", ((float)idx_obs) / n_observations * 100, idx_obs, n_observations);
+        }
     }
 }
 
