@@ -34,9 +34,7 @@ FE_Observations::FE_Observations(sptrIntervals intervals, time_point_ms start_ti
         }
 
         for (auto idx_task = 0; !futures.empty(); ++idx_task) {
-            auto a = futures.front().get();
-            observations[(long)idx_obs + idx_task] = a;
-            //std::cout << a << std::endl;
+            observations[(long)idx_obs + idx_task] = futures.front().get();
             futures.pop();
         }
 
