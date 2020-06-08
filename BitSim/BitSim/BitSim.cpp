@@ -68,7 +68,6 @@ int main()
     else if (command == "trade") {
         auto bitmex_trader = BitmexTrader{};
         bitmex_trader.start();
-
         while (true) {
             auto command = std::string{};
             std::cin >> command;
@@ -76,13 +75,19 @@ int main()
                 break;
             }
         }
-
         bitmex_trader.shutdown();
     }
     else if (command == "trade_live") {
         auto live_data = LiveData{};
-
-
+        live_data.start();
+        while (true) {
+            auto command = std::string{};
+            std::cin >> command;
+            if (command.compare("q") == 0) {
+                break;
+            }
+        }
+        live_data.shutdown();
     }
     
     logger.info("BitSim exit");
