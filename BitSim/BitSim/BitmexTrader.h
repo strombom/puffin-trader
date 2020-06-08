@@ -33,8 +33,12 @@ private:
     time_point_ms start_timestamp;
     int delete_orders_remaining_retries;
     bool new_order_first_try;
-    double order_mark_price;
-    double order_leverage;
+    double desired_ask_price;
+    double desired_bid_price;
+    double desired_leverage;
+    double order_price;
+    double order_ask_price;
+    double order_bid_price;
 
     sptrBitmexWebSocket bitmex_websocket;
     sptrBitmexAccount bitmex_account;

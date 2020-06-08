@@ -8,10 +8,11 @@
 BitmexTrader::BitmexTrader(void) :
     trader_thread_running(true),
     trader_state(TraderState::wait_for_next_interval),
-    order_leverage(0.0),
+    desired_leverage(0.0),
+    desired_ask_price(0.0),
+    desired_bid_price(0.0),
     delete_orders_remaining_retries(0),
-    new_order_first_try(true),
-    order_mark_price(0)
+    new_order_first_try(true)
 {
     bitmex_account = std::make_shared<BitmexAccount>();
     bitmex_rest_api = std::make_shared<BitmexRestApi>(bitmex_account);
@@ -39,8 +40,7 @@ void BitmexTrader::shutdown(void)
 void BitmexTrader::trader_worker(void)
 {
     while (trader_thread_running) {
-        std::this_thread::sleep_for(500ms);
-        continue;
+
         /*
         static auto first = true;
         if (first) {
@@ -66,9 +66,17 @@ void BitmexTrader::trader_worker(void)
         else if (trader_state == TraderState::wait_for_next_interval) {
             static auto first = true;
             if (first) {
-                first = false;
-                std::this_thread::sleep_for(2000ms);
-                trader_state = TraderState::bitbot_action;
+                if (bitmex_account->get_mark_price() != 0.0 &&
+                    bitmex_account->get_ask_price() != 0.0 &&
+                    bitmex_account->get_bid_price() != 0.0 &&
+                    bitmex_account->get_wallet() != 0.0) {
+                    first = false;
+                    std::this_thread::sleep_for(1000ms);
+                    trader_state = TraderState::bitbot_action;
+                }
+                else {
+                    std::this_thread::sleep_for(100ms);
+                }
             }
             else {
                 std::this_thread::sleep_for(500ms);
@@ -78,8 +86,9 @@ void BitmexTrader::trader_worker(void)
             start_timestamp = system_clock_ms_now();
             const auto place_order = true;
             if (place_order) {
-                order_leverage = 0.02;
-                order_mark_price = bitmex_account->get_price();
+                desired_leverage = -0.00;;// 1;
+                desired_ask_price = bitmex_account->get_ask_price();
+                desired_bid_price = bitmex_account->get_bid_price();
                 trader_state = TraderState::delete_orders;
             }
             else {
@@ -131,13 +140,13 @@ void BitmexTrader::trader_worker(void)
         }
         else if (trader_state == TraderState::order_monitoring) {
             std::this_thread::sleep_for(150ms);
-            if (system_clock_ms_now() - start_timestamp > 5s) {
+            if (system_clock_ms_now() - start_timestamp > 125s) {
                 trader_state = TraderState::wait_for_next_interval;
             }
             else if (bitmex_account->count_orders() == 0) {
                 trader_state = TraderState::wait_for_next_interval;
             } 
-            else if (bitmex_account->get_price() != order_mark_price) {
+            else if (bitmex_account->get_ask_price() != order_ask_price || bitmex_account->get_bid_price() != order_bid_price) {
                 trader_state = TraderState::delete_orders;
             }
         }
@@ -147,28 +156,36 @@ void BitmexTrader::trader_worker(void)
 bool BitmexTrader::limit_order(void)
 {
     const auto position_contracts = bitmex_account->get_contracts();
-    const auto mark_price = bitmex_account->get_price();
+    const auto mark_price = bitmex_account->get_mark_price();
     const auto wallet = bitmex_account->get_wallet();
     const auto upnl = bitmex_account->get_upnl();
 
     if (wallet == 0.0) {
-        return false;
+        return true;
     }
 
     const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
-    const auto margin = wallet * std::clamp(order_leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
-    const auto contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
-    const auto order_contracts = int(contracts - position_contracts);
+    const auto margin = wallet * std::clamp(desired_leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
+    const auto desired_contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
+    const auto order_contracts = int(desired_contracts - position_contracts);
 
-    auto success = false;
+    if (order_contracts == 0) {
+        return true;
+    }
+
+    order_bid_price = bitmex_account->get_bid_price();
+    order_ask_price = bitmex_account->get_ask_price();
+    const auto range = std::floor(mark_price / 10000) / 2 + 0.5;
     if (order_contracts > 0) {
-        success = bitmex_rest_api->limit_order(order_contracts, mark_price - 0.5);
+        order_price = std::min(order_bid_price, mark_price + range);
     }
-    else if (order_contracts < 0) {
-        success = bitmex_rest_api->limit_order(order_contracts, mark_price + 0.5);
+    else {
+        order_price = std::max(order_ask_price, mark_price - range);
     }
 
-    //logger.info("order leverage(%f) pos_contracts(%d) contracts(%d) price(%0.1f)", order_leverage, position_contracts, order_contracts, mark_price);
+    auto success = bitmex_rest_api->limit_order(order_contracts, order_price);
+
+    //logger.info("Limit order s(%d) oc(%d) op(%0.1f)", success, order_contracts, order_price);
 
     return success;
 }

@@ -152,7 +152,7 @@ void BitmexWebSocket::parse_message(const std::string& message)
             const auto& symbol = data["symbol"].string_value();
             if (symbol == "XBTUSD") {
                 const auto price = data["price"].number_value();
-                bitmex_account->set_price(price);
+                bitmex_account->set_mark_price(price);
             }
         }
     }

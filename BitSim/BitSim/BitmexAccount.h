@@ -46,7 +46,7 @@ public:
     void set_leverage(double mark_value);
     void set_upnl(double upnl);
     void set_wallet(double amount);
-    void set_price(double price);
+    void set_mark_price(double price);
     void set_ask_price(double price);
     void set_bid_price(double price);
 
@@ -54,7 +54,7 @@ public:
     double get_leverage(void) const;
     double get_upnl(void) const;
     double get_wallet(void) const;
-    double get_price(void) const;
+    double get_mark_price(void) const;
     double get_ask_price(void) const;
     double get_bid_price(void) const;
 
@@ -65,7 +65,7 @@ private:
     double leverage;
     double upnl;
     double wallet;
-    double last_price;
+    double mark_price;
     double ask_price;
     double bid_price;
 
