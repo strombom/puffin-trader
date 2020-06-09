@@ -10,7 +10,10 @@ LiveData::LiveData(void) :
     const auto timestamp_now = system_clock_ms_now();
     const auto timestamp_start = timestamp_now - BitSim::LiveData::intervals_buffer_length - (timestamp_now - BitSim::timestamp_start) % BitSim::BitBase::interval;
     intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_start, BitSim::BitBase::interval);
+    observations = std::make_shared<FE_Observations>(intervals);
+
     logger.info("LiveData::LiveData: Intervals (%d): %s", intervals->rows.size(), DateTime::to_string_iso_8601(intervals->timestamp_start).c_str());
+    logger.info("LiveData::LiveData: Observations (%d)", observations->size());
 }
 
 void LiveData::start(void)
@@ -38,8 +41,9 @@ void LiveData::live_data_worker(void)
         const auto new_intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_next, BitSim::BitBase::interval);
         logger.info("LiveData::live_data_worker: New intervals (%d): %s", new_intervals->rows.size(), DateTime::to_string_iso_8601(new_intervals->timestamp_start).c_str());
 
-        if (new_intervals->rows.size() > 2) {
+        if (new_intervals->rows.size() > 0) {
             intervals->rotate_insert(new_intervals);
+            observations->rotate_insert(intervals, new_intervals->rows.size());
         }
     }
 }

@@ -32,12 +32,12 @@ int main()
         std::cout << "Intervals: " << intervals->rows.size() << std::endl;
         intervals->save(BitSim::intervals_path);
 
-        auto observations = std::make_shared<FE_Observations>( intervals, BitSim::timestamp_start );
+        auto observations = std::make_shared<FE_Observations>(intervals);
         observations->save(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
     }
     else if (command == "train_features") {
-        auto observations = std::make_shared<FE_Observations>( BitSim::observations_path );
+        auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
 
         auto fe_training = FE_Training{ observations };
         fe_training.train();

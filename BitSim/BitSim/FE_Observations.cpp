@@ -14,22 +14,30 @@ FE_Observations::FE_Observations(const std::string& file_path)
     load(file_path);
 }
 
-FE_Observations::FE_Observations(sptrIntervals intervals, time_point_ms start_time) :
-    start_time(start_time), interval(intervals->interval)
+FE_Observations::FE_Observations(sptrIntervals intervals) :
+    interval(intervals->interval), timestamp_start(intervals->get_timestamp_start())
 {
     const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
-    const auto n_observations = (long) intervals->rows.size() - BitSim::observation_length + 1;
+    const auto n_observations = (long) intervals->rows.size() - (BitSim::observation_length - 1);
     if (n_observations <= 0) {
         observations = torch::empty({ 0, BitSim::n_channels, BitSim::observation_length });
-        return;
     }
-    observations = torch::empty({ n_observations, BitSim::n_channels, BitSim::observation_length });
+    else {
+        observations = torch::empty({ n_observations, BitSim::n_channels, BitSim::observation_length });
+        calculate_observations(intervals, 0);
+    }
+}
 
-    for (auto idx_obs = 0; idx_obs < n_observations; idx_obs += n_threads) {
+void FE_Observations::calculate_observations(sptrIntervals intervals, size_t start_idx)
+{
+    const auto n_observations = (int)size();
+    const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
+
+    for (auto idx_obs = (int)start_idx; idx_obs < n_observations; idx_obs += n_threads) {
         auto futures = std::queue<std::future<torch::Tensor>>{};
 
         for (auto idx_task = 0; idx_task < n_threads && idx_obs + idx_task < n_observations; ++idx_task) {
-            auto future = std::async(std::launch::async, &FE_Observations::make_observation, this, intervals, idx_obs + idx_task);
+            auto future = std::async(std::launch::async, &FE_Observations::calculate_observation, this, intervals, idx_obs + idx_task);
             futures.push(std::move(future));
         }
 
@@ -38,13 +46,31 @@ FE_Observations::FE_Observations(sptrIntervals intervals, time_point_ms start_ti
             futures.pop();
         }
 
-        if (idx_obs % 100 == 0) {
-            logger.info("working %6.2f%%, %d / %d", ((float)idx_obs) / n_observations * 100, idx_obs, n_observations);
+        if ((idx_obs - start_idx) % 100 == 0 && (idx_obs - start_idx) > 0) {
+            logger.info("working %6.2f%%, %d / %d", ((float)(idx_obs - start_idx)) / (n_observations - start_idx) * 100, idx_obs - start_idx, n_observations - start_idx);
         }
     }
 }
 
-torch::Tensor FE_Observations::make_observation(sptrIntervals intervals, int idx_obs)
+void FE_Observations::rotate_insert(sptrIntervals intervals, size_t new_intervals_count)
+{
+    if (new_intervals_count == 0) {
+        return;
+    }
+
+    timestamp_start += interval * new_intervals_count;
+
+    if (new_intervals_count < observations.size(0)) {
+        // Roll observations left to make place for new observations at the end
+        assert(new_intervals_count < INT32_MAX);
+        observations.roll(-(int)new_intervals_count, 0);
+    }
+
+    const auto first_new_idx = std::max(0, (int)observations.size(0) - (int)new_intervals_count);
+    calculate_observations(intervals, first_new_idx);
+}
+
+torch::Tensor FE_Observations::calculate_observation(sptrIntervals intervals, int idx_obs)
 {
     auto observation = torch::empty({ BitSim::n_channels, BitSim::observation_length });
     const auto first_price = intervals->rows[idx_obs].last_price;
@@ -64,7 +90,7 @@ void FE_Observations::save(const std::string& file_path) const
     torch::save(observations, file_path + "_tensor");
 
     auto file = std::ofstream{ file_path + "_attr" };
-    file << start_time.time_since_epoch().count() << std::endl;
+    file << timestamp_start.time_since_epoch().count() << std::endl;
     file << interval.count() << std::endl;
     file.close();
 }
@@ -80,7 +106,7 @@ void FE_Observations::load(const std::string& file_path)
         file.close();
     }
 
-    start_time = time_point_ms{ std::chrono::milliseconds{start_time_raw} };
+    timestamp_start = time_point_ms{ std::chrono::milliseconds{start_time_raw} };
     interval = std::chrono::milliseconds{ interval_raw };
 
     torch::load(observations, file_path + "_tensor");
@@ -88,11 +114,11 @@ void FE_Observations::load(const std::string& file_path)
 
 void FE_Observations::print(void)
 {
-    std::cout << "Observations, start time: " << DateTime::to_string(start_time) << std::endl;
+    std::cout << "Observations, start time: " << DateTime::to_string(timestamp_start) << std::endl;
     std::cout << observations.sizes() << std::endl;
 }
 
-int64_t FE_Observations::size(void)
+size_t FE_Observations::size(void)
 {
     return observations.size(0);
 }
