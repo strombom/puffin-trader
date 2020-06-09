@@ -94,7 +94,7 @@ time_point_ms Intervals::get_timestamp_start(void) const
     return timestamp_start;
 }
 
-time_point_ms Intervals::get_timestamp_end(void) const
+time_point_ms Intervals::get_timestamp_last(void) const
 {
-    return timestamp_start + interval * rows.size();
+    return timestamp_start + interval * (rows.size() - 1);
 }

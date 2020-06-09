@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DateTime.h"
+#include "Intervals.h"
 #include "BitBaseClient.h"
 
 #include <thread>
@@ -15,6 +17,8 @@ public:
 
 private:
     BitBaseClient bitbase_client;
+
+    sptrIntervals intervals;
 
     std::atomic_bool live_data_thread_running;
     std::unique_ptr<std::thread> live_data_thread;

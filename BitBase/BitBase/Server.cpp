@@ -31,14 +31,13 @@ void Server::server_thread(void)
             continue;
         }
         const auto message_string = std::string(static_cast<char*>(message.data()), message.size());
-        logger.info("Server::server_thread raw message (%s)", message_string.c_str());
+        //logger.info("Server::server_thread raw message (%s)", message_string.c_str());
 
         auto error_message = std::string{ "{\"command\":\"error\"}" };
         const auto command = json11::Json::parse(message_string.c_str(), error_message);
         const auto command_name = command["command"].string_value();
         
         if (command_name == "get_intervals") {
-            logger.info("Server::server_thread get intervals!");
             const auto intervals = database->get_intervals(command["exchange"].string_value(),
                                                            command["symbol"].string_value(),
                                                            DateTime::to_time_point_ms(command["timestamp_start"].string_value()),

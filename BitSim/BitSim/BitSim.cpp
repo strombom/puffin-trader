@@ -80,7 +80,9 @@ int main()
     else if (command == "trade_live") {
         auto live_data = LiveData{};
         live_data.start();
+        //std::this_thread::sleep_for(1s);
         while (true) {
+            //break;
             auto command = std::string{};
             std::cin >> command;
             if (command.compare("q") == 0) {

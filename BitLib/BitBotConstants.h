@@ -48,9 +48,15 @@ namespace BitBase
 
 namespace BitSim
 {
+    namespace LiveData
+    {
+        constexpr auto intervals_buffer_length = 4h;
+    }
+
     namespace BitBase
     {
         constexpr auto address = "tcp://localhost:31001";
+        constexpr auto interval = 10s;
     }
 
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";

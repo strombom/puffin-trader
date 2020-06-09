@@ -46,7 +46,7 @@ public:
     void save(const std::string& file_path) const;
 
     time_point_ms get_timestamp_start(void) const;
-    time_point_ms get_timestamp_end(void) const;
+    time_point_ms get_timestamp_last(void) const;
 
     friend std::ostream& operator<<(std::ostream& stream, const Intervals& intervals_data);
     friend std::istream& operator>>(std::istream& stream, Intervals& intervals_data);

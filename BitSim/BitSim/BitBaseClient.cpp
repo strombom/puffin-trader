@@ -17,8 +17,9 @@ sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
                                            const time_point_ms timestamp_end,
                                            std::chrono::milliseconds interval_ms)
 {
-    assert(interval_ms.count() > 0 && interval_ms.count() <= INT_MAX);
-    assert(timestamp_end > timestamp_start);
+    if (interval_ms.count() == 0 || interval_ms.count() >= INT_MAX || timestamp_start >= timestamp_end) {
+        return std::make_shared<Intervals>(timestamp_start , interval_ms);
+    }
 
     json11::Json command = json11::Json::object{
         { "command", "get_intervals" },
@@ -39,4 +40,13 @@ sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
     intervals_buffer >> intervals;
 
     return std::make_shared<Intervals>(intervals);
+}
+
+sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
+    const std::string& exchange,
+    const time_point_ms timestamp_start,
+    std::chrono::milliseconds interval_ms)
+{
+    const auto timestamp_end = system_clock_ms_now();
+    return get_intervals(symbol, exchange, timestamp_start, timestamp_end, interval_ms);
 }
