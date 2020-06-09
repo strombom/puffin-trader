@@ -59,9 +59,9 @@ std::istream& operator>>(std::istream& stream, Intervals& intervals_data)
 
 void Intervals::rotate_insert(const std::shared_ptr<const Intervals> new_intervals)
 {
-    const auto new_rows_count = new_intervals->rows.size();
+    const auto new_intervals_count = new_intervals->rows.size();
 
-    if (new_rows_count == 0) {
+    if (new_intervals_count == 0) {
         return;
     }
     else if(get_timestamp_last() + interval != new_intervals->get_timestamp_start()) {
@@ -69,14 +69,14 @@ void Intervals::rotate_insert(const std::shared_ptr<const Intervals> new_interva
         return;
     }
 
-    if (rows.size() > new_rows_count) {
-        std::rotate(rows.begin(), rows.begin() + new_rows_count, rows.end());
-        std::copy(new_intervals->rows.begin(), new_intervals->rows.end(), rows.end() - new_rows_count);
+    timestamp_start += interval * new_intervals_count;
+
+    if (new_intervals_count < rows.size()) {
+        std::rotate(rows.begin(), rows.begin() + new_intervals_count, rows.end());
     }
-    else {
-        std::copy(new_intervals->rows.end() - new_rows_count, new_intervals->rows.end(), rows.end() - new_rows_count);
-    }
-    timestamp_start += interval * new_rows_count;
+
+    const auto copy_count = std::min(new_intervals_count, rows.size());
+    std::copy(new_intervals->rows.end() - copy_count, new_intervals->rows.end(), rows.end() - copy_count);
 }
 
 void Intervals::load(const std::string& file_path)

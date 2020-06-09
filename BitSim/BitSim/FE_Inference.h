@@ -16,3 +16,5 @@ public:
 private:
     RepresentationLearner model{};
 };
+
+using sptrFE_Inference = std::shared_ptr<FE_Inference>;

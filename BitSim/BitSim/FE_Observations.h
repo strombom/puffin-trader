@@ -24,6 +24,7 @@ public:
     torch::Tensor get_random(int count);
     torch::Tensor get_range(int start, int count);
     torch::Tensor get_range(int start, int count, int step);
+    torch::Tensor get_tail(int count);
 
     void print(void);
 

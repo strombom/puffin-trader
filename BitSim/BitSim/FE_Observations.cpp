@@ -60,13 +60,13 @@ void FE_Observations::rotate_insert(sptrIntervals intervals, size_t new_interval
 
     timestamp_start += interval * new_intervals_count;
 
-    if (new_intervals_count < observations.size(0)) {
+    if (new_intervals_count < size()) {
         // Roll observations left to make place for new observations at the end
         assert(new_intervals_count < INT32_MAX);
         observations.roll(-(int)new_intervals_count, 0);
     }
 
-    const auto first_new_idx = std::max(0, (int)observations.size(0) - (int)new_intervals_count);
+    const auto first_new_idx = std::max(0, (int)size() - (int)new_intervals_count);
     calculate_observations(intervals, first_new_idx);
 }
 
@@ -141,6 +141,11 @@ torch::Tensor FE_Observations::get(c10::ArrayRef<size_t> indices)
     return output;
 }
 
+torch::Tensor FE_Observations::get_all(void)
+{
+    return observations;
+}
+
 torch::Tensor FE_Observations::get_random(int count)
 {
     auto random = RandomRange{ 0, (int) observations.size(0) };
@@ -165,9 +170,9 @@ torch::Tensor FE_Observations::get_range(int start, int count, int step)
     return get(indices);
 }
 
-torch::Tensor FE_Observations::get_all(void)
+torch::Tensor FE_Observations::get_tail(int count)
 {
-    return observations;
+    return get_range(size() - count, count);
 }
 
 float FE_Observations::price_transform(float start_price, float price)
