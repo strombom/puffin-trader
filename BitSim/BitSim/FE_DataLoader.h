@@ -23,7 +23,7 @@ class TradeDataset : public torch::data::BatchDataset<TradeDataset, Batch, c10::
 public:
     TradeDataset(sptrFE_Observations observations) :
         observations(observations),
-        random_index(BitSim::n_observations * BitSim::feature_size, (int)observations->size() - BitSim::feature_size - 1 - BitSim::n_predictions * BitSim::feature_size) {}
+        random_index(BitSim::n_observations * BitSim::feature_size, (int)observations->size() - BitSim::n_predictions * BitSim::feature_size) {}
 
     Batch get_batch(c10::ArrayRef<size_t> request);
 
