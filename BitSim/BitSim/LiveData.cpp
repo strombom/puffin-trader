@@ -36,7 +36,10 @@ void LiveData::live_data_worker(void)
 
         const auto timestamp_next = intervals->get_timestamp_last() + BitSim::BitBase::interval;
         const auto new_intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_next, BitSim::BitBase::interval);
-
         logger.info("LiveData::live_data_worker: New intervals (%d): %s", new_intervals->rows.size(), DateTime::to_string_iso_8601(new_intervals->timestamp_start).c_str());
+
+        if (new_intervals->rows.size() > 2) {
+            intervals->rotate_insert(new_intervals);
+        }
     }
 }

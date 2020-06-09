@@ -42,6 +42,8 @@ public:
     Intervals(const Intervals& intervals) :
         rows(intervals.rows), timestamp_start(intervals.timestamp_start), interval(intervals.interval) {}
 
+    void rotate_insert(const std::shared_ptr<const Intervals> intervals);
+
     void load(const std::string& file_path);
     void save(const std::string& file_path) const;
 

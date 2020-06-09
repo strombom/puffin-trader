@@ -57,6 +57,28 @@ std::istream& operator>>(std::istream& stream, Intervals& intervals_data)
     return stream;
 }
 
+void Intervals::rotate_insert(const std::shared_ptr<const Intervals> new_intervals)
+{
+    const auto new_rows_count = new_intervals->rows.size();
+
+    if (new_rows_count == 0) {
+        return;
+    }
+    else if(get_timestamp_last() + interval != new_intervals->get_timestamp_start()) {
+        logger.error("Intervals::append: Timestamps unmatched, last(%s) new(%s)", get_timestamp_last(), new_intervals->get_timestamp_start());
+        return;
+    }
+
+    if (rows.size() > new_rows_count) {
+        std::rotate(rows.begin(), rows.begin() + new_rows_count, rows.end());
+        std::copy(new_intervals->rows.begin(), new_intervals->rows.end(), rows.end() - new_rows_count);
+    }
+    else {
+        std::copy(new_intervals->rows.end() - new_rows_count, new_intervals->rows.end(), rows.end() - new_rows_count);
+    }
+    timestamp_start += interval * new_rows_count;
+}
+
 void Intervals::load(const std::string& file_path)
 {
     auto start_time_raw = 0;
