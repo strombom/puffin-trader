@@ -5,7 +5,8 @@
 
 
 LiveData::LiveData(void) :
-    live_data_thread_running(true)
+    live_data_thread_running(true),
+    latest_timestamp(BitSim::timestamp_start)
 {
     feature_encoder = std::make_shared<FE_Inference>(BitSim::tmp_path, BitSim::feature_encoder_weights_filename);
 
@@ -35,6 +36,13 @@ void LiveData::shutdown(void)
     catch (...) {}
 }
 
+std::tuple<bool, time_point_ms, torch::Tensor> LiveData::get_next_interval(std::chrono::milliseconds timeout)
+{
+    auto new_data_lock = std::unique_lock<std::mutex>{ new_data_mutex };
+    const auto has_new_data = new_data_condition.wait_for(new_data_lock, timeout) == std::cv_status::no_timeout;
+    return std::make_tuple(has_new_data, latest_timestamp, features[features.size(0) - 1]);
+}
+
 void LiveData::live_data_worker(void)
 {
     while (live_data_thread_running) {
@@ -56,6 +64,8 @@ void LiveData::live_data_worker(void)
             }
             features.slice(0, features.size(0) - new_features.size(0)) = new_features;
             logger.info("LiveData::live_data_worker: New features %s int(%d) obs(%d) feat(%d)", DateTime::to_string_iso_8601(new_intervals->timestamp_start).c_str(), new_intervals->rows.size(), new_observations_size, new_features.size(0));
+
+            new_data_condition.notify_one();
         }
     }
 }

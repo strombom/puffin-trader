@@ -11,3 +11,5 @@ public:
 private:
 
 };
+
+using sptrRL_Policy = std::shared_ptr<RL_Policy>;

@@ -65,25 +65,13 @@ int main()
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
     }
-    else if (command == "trade") {
-        auto bitmex_trader = BitmexTrader{};
-        bitmex_trader.start();
-        while (true) {
-            auto command = std::string{};
-            std::cin >> command;
-            if (command.compare("q") == 0) {
-                break;
-            }
-        }
-        bitmex_trader.shutdown();
-    }
     else if (command == "trade_live") {
-        auto live_data = LiveData{};
-        //auto rl_trader = RL_Trader{ "filnamn" };
-        //auto bitmex_trader = BitmexTrader{ live_data, rl_trader };
+        auto live_data = std::make_shared<LiveData>();
+        auto rl_policy = std::make_shared<RL_Policy>(BitSim::feature_encoder_weights_filename);
+        auto bitmex_trader = BitmexTrader{ live_data, rl_policy };
 
-        live_data.start();
-        //bitmex_trader.start();
+        live_data->start();
+        bitmex_trader.start();
 
         //std::this_thread::sleep_for(1s);
         while (true) {
@@ -95,8 +83,8 @@ int main()
             }
         }
 
-        //bitmex_trader.shutdown();
-        live_data.shutdown();
+        bitmex_trader.shutdown();
+        live_data->shutdown();
     }
     
     logger.info("BitSim exit");

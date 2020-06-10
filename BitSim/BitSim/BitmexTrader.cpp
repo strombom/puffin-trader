@@ -5,15 +5,18 @@
 #include "BitBotConstants.h"
 
 
-BitmexTrader::BitmexTrader(void) :
+BitmexTrader::BitmexTrader(sptrLiveData live_data, sptrRL_Policy rl_policy) :
     trader_thread_running(true),
     trader_state(TraderState::wait_for_next_interval),
     desired_leverage(0.0),
     desired_ask_price(0.0),
     desired_bid_price(0.0),
-    delete_orders_remaining_retries(0),
-    new_order_first_try(true)
+    new_order_first_try(true),
+    live_data(live_data),
+    rl_policy(rl_policy),
+    current_interval_timestamp(system_clock_ms_now())
 {
+
     bitmex_account = std::make_shared<BitmexAccount>();
     bitmex_rest_api = std::make_shared<BitmexRestApi>(bitmex_account);
     bitmex_websocket = std::make_shared<BitmexWebSocket>(bitmex_account);
@@ -64,6 +67,16 @@ void BitmexTrader::trader_worker(void)
             trader_state = TraderState::wait_for_next_interval;
         }
         else if (trader_state == TraderState::wait_for_next_interval) {
+
+            const auto [has_new_data, latest_interval_timestamp, new_interval_feature] = live_data->get_next_interval(500ms);
+
+            if (has_new_data) {
+                current_interval_timestamp = latest_interval_timestamp;
+                current_interval_feature = new_interval_feature;
+                trader_state = TraderState::bitbot_action;
+            }
+
+            /*
             static auto first = true;
             if (first) {
                 if (bitmex_account->get_mark_price() != 0.0 &&
@@ -83,9 +96,10 @@ void BitmexTrader::trader_worker(void)
             else {
                 std::this_thread::sleep_for(500ms);
             }
+            */
         }
         else if (trader_state == TraderState::bitbot_action) {
-            start_timestamp = system_clock_ms_now();
+            //start_timestamp = system_clock_ms_now();
             const auto place_order = true;
             //auto action = rl_trader.get_action(feature);
             if (place_order) {
@@ -99,7 +113,6 @@ void BitmexTrader::trader_worker(void)
             }
         }
         else if (trader_state == TraderState::delete_orders) {
-            delete_orders_remaining_retries = 3;
             trader_state = TraderState::delete_orders_worker;
         }
         else if (trader_state == TraderState::delete_orders_worker) {
@@ -108,9 +121,7 @@ void BitmexTrader::trader_worker(void)
                 trader_state = TraderState::place_new_order;
             }
             else {
-                delete_orders_remaining_retries--;
-                if (delete_orders_remaining_retries == 0 || system_clock_ms_now() - start_timestamp > 2s) {
-                    // No retries left or timeout
+                if (system_clock_ms_now() - current_interval_timestamp > 2s) {
                     trader_state = TraderState::wait_for_next_interval;
                 }
                 else {
@@ -130,7 +141,7 @@ void BitmexTrader::trader_worker(void)
                 trader_state = TraderState::order_monitoring;
             }
             else {
-                if (system_clock_ms_now() - start_timestamp > 5s) {
+                if (system_clock_ms_now() - current_interval_timestamp > 5s) {
                     trader_state = TraderState::wait_for_next_interval;
                 }
                 else if (new_order_first_try) {
@@ -143,7 +154,7 @@ void BitmexTrader::trader_worker(void)
         }
         else if (trader_state == TraderState::order_monitoring) {
             std::this_thread::sleep_for(150ms);
-            if (system_clock_ms_now() - start_timestamp > 125s) {
+            if (system_clock_ms_now() - current_interval_timestamp > 5s) {
                 trader_state = TraderState::wait_for_next_interval;
             }
             else if (bitmex_account->count_orders() == 0) {
