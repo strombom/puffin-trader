@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "RL_SAC.h"
+//#include "FE_Model.h"
 
 #include <string>
 
@@ -15,6 +16,7 @@ public:
 
 private:
     PolicyNetwork policy;
+    //RepresentationLearner policy;
 };
 
 using sptrRL_Policy = std::shared_ptr<RL_Policy>;

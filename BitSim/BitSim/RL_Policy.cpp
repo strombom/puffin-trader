@@ -3,8 +3,8 @@
 #include "RL_Policy.h"
 
 
-RL_Policy::RL_Policy(const std::string& filename) :
-    policy(nullptr)
+RL_Policy::RL_Policy(const std::string& filename) : 
+    policy(PolicyNetwork{ "policy" })
 {
     torch::load(policy, std::string{ BitSim::tmp_path } + "\\rl\\" + filename);
     policy->to(torch::DeviceType::CUDA);
@@ -13,9 +13,9 @@ RL_Policy::RL_Policy(const std::string& filename) :
 
 std::tuple<bool, double> RL_Policy::get_action(torch::Tensor feature, double leverage)
 {
-    const auto state = torch::cat({ feature, torch::tensor({leverage}) }).view({ 1, BitSim::Trader::state_dim });
-
+    const auto state = torch::cat({ feature, torch::tensor({leverage}).cuda() }).view({ 1, BitSim::Trader::state_dim });
     const auto [next_cont_actions, next_disc_actions_idx, _next_probs, _next_log_probs] = policy->sample_action(state);
-
-    return std::make_tuple(false, 0.0);
+    const auto desired_leverage = next_cont_actions[0].item().toDouble();
+    const auto limit_order = next_disc_actions_idx[0].item().toInt() == 1;
+    return std::make_tuple(limit_order, desired_leverage);
 }

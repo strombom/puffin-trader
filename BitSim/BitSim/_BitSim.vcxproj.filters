@@ -16,6 +16,9 @@
     <Filter Include="Header Files\DateTime">
       <UniqueIdentifier>{883a5310-f4d3-4f82-847b-82d9e30ff588}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\DateTime">
+      <UniqueIdentifier>{5376f141-4959-458f-b428-a4b797b4f7e5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Header Files\BitBase">
       <UniqueIdentifier>{cdcaae43-a793-4804-896a-70bd9a874a96}</UniqueIdentifier>
     </Filter>
@@ -52,14 +55,11 @@
     <Filter Include="Header Files\Simulator">
       <UniqueIdentifier>{a180a3d8-e32f-4824-8b32-5a87d1876a5a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Trader">
-      <UniqueIdentifier>{2f9e9e0d-23cb-419f-b439-c389af5d0bfc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Trader">
-      <UniqueIdentifier>{a198e053-716d-42f4-bd56-6c0614f546e4}</UniqueIdentifier>
+      <UniqueIdentifier>{eb9ed60a-78b7-4562-b82a-aa6e8b176d09}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Data\DateTime">
-      <UniqueIdentifier>{5376f141-4959-458f-b428-a4b797b4f7e5}</UniqueIdentifier>
+    <Filter Include="Header Files\Trader">
+      <UniqueIdentifier>{602c9ebe-e693-44c4-a61e-29d8b8f6926f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -67,7 +67,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BitLib\DateTime.cpp">
-      <Filter>Source Files\Data\DateTime</Filter>
+      <Filter>Source Files\DateTime</Filter>
     </ClCompile>
     <ClCompile Include="..\..\BitLib\json11\json11.cpp">
       <Filter>Source Files\Libraries</Filter>
@@ -125,24 +125,6 @@
     </ClCompile>
     <ClCompile Include="BitmexTrader.cpp">
       <Filter>Source Files\Trader</Filter>
-    </ClCompile>
-    <ClCompile Include="BitmexWebSocket.cpp">
-      <Filter>Source Files\Trader</Filter>
-    </ClCompile>
-    <ClCompile Include="BitmexAccount.cpp">
-      <Filter>Source Files\Trader</Filter>
-    </ClCompile>
-    <ClCompile Include="BitmexAuthentication.cpp">
-      <Filter>Source Files\Trader</Filter>
-    </ClCompile>
-    <ClCompile Include="BitmexRestApi.cpp">
-      <Filter>Source Files\Trader</Filter>
-    </ClCompile>
-    <ClCompile Include="LiveData.cpp">
-      <Filter>Source Files\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="RL_Policy.cpp">
-      <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -211,24 +193,6 @@
     </ClInclude>
     <ClInclude Include="BitmexTrader.h">
       <Filter>Header Files\Trader</Filter>
-    </ClInclude>
-    <ClInclude Include="BitmexWebSocket.h">
-      <Filter>Header Files\Trader</Filter>
-    </ClInclude>
-    <ClInclude Include="BitmexAccount.h">
-      <Filter>Header Files\Trader</Filter>
-    </ClInclude>
-    <ClInclude Include="BitmexAuthentication.h">
-      <Filter>Header Files\Trader</Filter>
-    </ClInclude>
-    <ClInclude Include="BitmexRestApi.h">
-      <Filter>Header Files\Trader</Filter>
-    </ClInclude>
-    <ClInclude Include="LiveData.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
-    <ClInclude Include="RL_Policy.h">
-      <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

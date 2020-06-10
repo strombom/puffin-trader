@@ -33,7 +33,6 @@ private:
     torch::nn::Sequential policy_mean;
     torch::nn::Sequential policy_log_std;
     torch::nn::Sequential policy_discrete;
-
 };
 TORCH_MODULE(PolicyNetwork);
 

@@ -7,7 +7,7 @@
 
 BitmexTrader::BitmexTrader(sptrLiveData live_data, sptrRL_Policy rl_policy) :
     trader_thread_running(true),
-    trader_state(TraderState::wait_for_next_interval),
+    trader_state(TraderState::start),
     desired_leverage(0.0),
     desired_ask_price(0.0),
     desired_bid_price(0.0),
@@ -67,10 +67,13 @@ void BitmexTrader::trader_worker(void)
                 bitmex_account->get_ask_price() != 0.0 &&
                 bitmex_account->get_bid_price() != 0.0 &&
                 bitmex_account->get_wallet() != 0.0) {
+                std::this_thread::sleep_for(100ms);
+            }
+            else {
                 bitmex_rest_api->delete_all();
                 std::this_thread::sleep_for(500ms);
                 trader_state = TraderState::wait_for_next_interval;
-             }
+            }
         }
         else if (trader_state == TraderState::wait_for_next_interval) {
             const auto [has_new_data, latest_interval_timestamp, new_interval_feature] = live_data->get_next_interval(500ms);
@@ -181,7 +184,7 @@ bool BitmexTrader::limit_order(void)
     }
 
     const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
-    const auto margin = wallet * std::clamp(desired_leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
+    const auto margin = wallet * std::clamp(desired_leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage) / 100;
     const auto desired_contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
     const auto order_contracts = int(desired_contracts - position_contracts);
 
