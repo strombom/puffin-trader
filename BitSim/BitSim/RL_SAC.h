@@ -69,8 +69,8 @@ public:
     std::array<double, 6> update_model(void);
     void append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state);
 
-    void save(const std::string& filename);
-    void open(const std::string& filename);
+    void save(const std::string& path, const std::string& name);
+    void open(const std::string& path, const std::string& name);
 
 private:
     RL_SAC_ReplayBuffer replay_buffer;

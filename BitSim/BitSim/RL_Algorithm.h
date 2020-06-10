@@ -12,8 +12,8 @@ public:
     virtual std::array<double, 6> update_model(void) = 0;
     virtual void append_to_replay_buffer(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state) = 0;
 
-    //virtual void save(const std::string& filename) = 0;
-    //virtual void open(const std::string& filename) = 0;
+    virtual void save(const std::string& path, const std::string& name) = 0;
+    virtual void open(const std::string& path, const std::string& name) = 0;
 };
 
 using uptrRL_Algorithm = std::unique_ptr<RL_Algorithm>;

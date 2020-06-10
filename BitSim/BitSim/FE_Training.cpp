@@ -42,6 +42,8 @@ void FE_Training::train(void)
     auto dataset = TradeDataset{ observations };
 
     model = RepresentationLearner{};
+    //auto device = c10::Device{ c10::DeviceType::CUDA , 1 };
+    //model->to(device); 
     model->to(c10::DeviceType::CUDA);
 
     timer.restart();

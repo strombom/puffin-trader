@@ -172,7 +172,7 @@ torch::Tensor FE_Observations::get_range(int start, int count, int step)
 
 torch::Tensor FE_Observations::get_tail(int count)
 {
-    return get_range(size() - count, count);
+    return get_range((int)size() - count, count);
 }
 
 float FE_Observations::price_transform(float start_price, float price)

@@ -157,6 +157,10 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -198,6 +202,7 @@
     </ClCompile>
     <ClCompile Include="RL_Action.cpp" />
     <ClCompile Include="RL_Algorithm.cpp" />
+    <ClCompile Include="RL_Policy.cpp" />
     <ClCompile Include="RL_SAC.cpp" />
     <ClCompile Include="RL_Trader.cpp" />
     <ClCompile Include="RL_State.cpp" />
@@ -227,6 +232,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="RL_Action.h" />
     <ClInclude Include="RL_Algorithm.h" />
+    <ClInclude Include="RL_Policy.h" />
     <ClInclude Include="RL_SAC.h" />
     <ClInclude Include="RL_Trader.h" />
     <ClInclude Include="RL_State.h" />

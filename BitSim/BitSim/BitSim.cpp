@@ -47,7 +47,7 @@ int main()
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
 
-        auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_20200523.pt" };
+        auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_20200524e.pt" };
         auto features = inference.forward(observations->get_all());
         std::cout << "Inference, features " << features.sizes() << std::endl;
 
@@ -79,7 +79,12 @@ int main()
     }
     else if (command == "trade_live") {
         auto live_data = LiveData{};
+        //auto rl_trader = RL_Trader{ "filnamn" };
+        //auto bitmex_trader = BitmexTrader{ live_data, rl_trader };
+
         live_data.start();
+        //bitmex_trader.start();
+
         //std::this_thread::sleep_for(1s);
         while (true) {
             //break;
@@ -89,6 +94,8 @@ int main()
                 break;
             }
         }
+
+        //bitmex_trader.shutdown();
         live_data.shutdown();
     }
     

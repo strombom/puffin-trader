@@ -316,12 +316,27 @@ std::array<double, 6> RL_SAC::update_model(void)
     return losses;
 }
 
-void RL_SAC::save(const std::string& filename)
+void RL_SAC::save(const std::string& path, const std::string& name)
 {
+    auto archive = torch::serialize::OutputArchive{};
+    policy->save(archive);
+    archive.save_to(path + "\\" + name + "_policy" + ".net");
+    /*
+    q1->save(archive);
+    archive.save_to(path + "\\" + name + "_q1" + ".net");
 
+    q2->save(archive);
+    archive.save_to(path + "\\" + name + "_q2" + ".net");
+
+    target_q1->save(archive);
+    archive.save_to(path + "\\" + name + "_target_q1" + ".net");
+
+    target_q2->save(archive);
+    archive.save_to(path + "\\" + name + "_target_q2" + ".net");
+    */
 }
 
-void RL_SAC::open(const std::string& filename)
+void RL_SAC::open(const std::string& path, const std::string& name)
 {
 
 }

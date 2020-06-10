@@ -141,6 +141,9 @@
     <ClCompile Include="LiveData.cpp">
       <Filter>Source Files\Data</Filter>
     </ClCompile>
+    <ClCompile Include="RL_Policy.cpp">
+      <Filter>Source Files\ReinforcementLearning</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\DateTime.h">
@@ -223,6 +226,9 @@
     </ClInclude>
     <ClInclude Include="LiveData.h">
       <Filter>Header Files\DateTime</Filter>
+    </ClInclude>
+    <ClInclude Include="RL_Policy.h">
+      <Filter>Header Files\ReinforcementLearning</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

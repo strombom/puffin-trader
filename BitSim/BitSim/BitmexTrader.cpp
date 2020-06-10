@@ -72,7 +72,9 @@ void BitmexTrader::trader_worker(void)
                     bitmex_account->get_wallet() != 0.0) {
                     first = false;
                     std::this_thread::sleep_for(1000ms);
-                    trader_state = TraderState::bitbot_action;
+                    //if (new interval) {
+                        trader_state = TraderState::bitbot_action;
+                    //}
                 }
                 else {
                     std::this_thread::sleep_for(100ms);
@@ -85,6 +87,7 @@ void BitmexTrader::trader_worker(void)
         else if (trader_state == TraderState::bitbot_action) {
             start_timestamp = system_clock_ms_now();
             const auto place_order = true;
+            //auto action = rl_trader.get_action(feature);
             if (place_order) {
                 desired_leverage = -0.00;;// 1;
                 desired_ask_price = bitmex_account->get_ask_price();

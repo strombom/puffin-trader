@@ -30,7 +30,7 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
     auto update_time = 0.0;
     auto step_time = 0.0;
 
-    while (!state->is_done() && step_episode < BitSim::Trader::max_steps) {
+    while (!state->is_done()) { // && step_episode < BitSim::Trader::max_steps) {
         if (!validation && BitSim::Trader::algorithm == "SAC" &&
             step_total % BitSim::Trader::SAC::update_interval == 0 &&
             step_total >= BitSim::Trader::SAC::batch_size) {
@@ -49,9 +49,9 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
     }
 
     if (validation) {
-        std::cout << "val reward: " << episode_reward << " - "; // std::endl;
+        std::cout << "Val reward: " << episode_reward << " - "; // std::endl;
     } else {
-        std::cout << "train reward: " << episode_reward << " - "; // std::endl;
+        std::cout << DateTime::to_string(system_clock_ms_now()) << " Train reward: " << episode_reward << " - "; // std::endl;
     }
 
     //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
@@ -68,7 +68,8 @@ void RL_Trader::train(void)
         // Validation episode
         run_episode(idx_episode, true);
 
-        if (idx_episode % BitSim::Trader::save_period == 0 ||
+        if (idx_episode == 0 ||
+            idx_episode % BitSim::Trader::save_period == 0 ||
             idx_episode == BitSim::Trader::n_episodes - 1) {
             save_params(idx_episode);
         }
@@ -106,7 +107,10 @@ void RL_Trader::update_model(int idx_episode)
 
 void RL_Trader::save_params(int idx_period)
 {
+    constexpr auto path = "C:\\development\\github\\puffin-trader\\tmp\\rl";
+    const auto name = std::string{ "model_" } + std::to_string(idx_period);
 
+    rl_algorithm->save(path, name);
 }
 
 sptrRL_State RL_Trader::step(sptrRL_State state)
