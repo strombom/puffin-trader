@@ -6,12 +6,12 @@
 
 BitmexAuthentication::BitmexAuthentication(void)
 {
-    HMAC_CTX_init(&hmac_ctx);
+    hmac_ctx = HMAC_CTX_new();
 }
 
 BitmexAuthentication::~BitmexAuthentication(void)
 {
-    HMAC_CTX_cleanup(&hmac_ctx);
+    HMAC_CTX_free(hmac_ctx);
 }
 
 long long BitmexAuthentication::generate_expiration(std::chrono::seconds timeout)
@@ -24,7 +24,7 @@ long long BitmexAuthentication::generate_expiration(std::chrono::seconds timeout
 std::string BitmexAuthentication::authenticate(const std::string& message)
 {
     HMAC_Init_ex(
-        &hmac_ctx,
+        hmac_ctx,
         &BitSim::Trader::Bitmex::api_secret[0],
         (int) std::strlen(BitSim::Trader::Bitmex::api_secret),
         EVP_sha256(),
@@ -32,15 +32,14 @@ std::string BitmexAuthentication::authenticate(const std::string& message)
     );
 
     HMAC_Update(
-        &hmac_ctx,
+        hmac_ctx,
         (const unsigned char*)message.c_str(),
         message.length()
     );
 
     unsigned char hash[32];
     unsigned int len = 32;
-    HMAC_Final(&hmac_ctx, hash, &len);
-    HMAC_CTX_cleanup(&hmac_ctx);
+    HMAC_Final(hmac_ctx, hash, &len);
 
     std::stringstream hash_hex;
     hash_hex << std::hex << std::setfill('0');

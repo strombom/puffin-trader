@@ -15,5 +15,5 @@ public:
     std::string authenticate(const std::string& message);
 
 private:
-    HMAC_CTX hmac_ctx;
+    HMAC_CTX *hmac_ctx;
 };
