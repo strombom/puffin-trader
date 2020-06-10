@@ -63,13 +63,17 @@ void BitmexTrader::trader_worker(void)
         */
 
         if (trader_state == TraderState::start) {
-            bitmex_rest_api->delete_all();
-            trader_state = TraderState::wait_for_next_interval;
+            if (bitmex_account->get_mark_price() != 0.0 &&
+                bitmex_account->get_ask_price() != 0.0 &&
+                bitmex_account->get_bid_price() != 0.0 &&
+                bitmex_account->get_wallet() != 0.0) {
+                bitmex_rest_api->delete_all();
+                std::this_thread::sleep_for(500ms);
+                trader_state = TraderState::wait_for_next_interval;
+             }
         }
         else if (trader_state == TraderState::wait_for_next_interval) {
-
             const auto [has_new_data, latest_interval_timestamp, new_interval_feature] = live_data->get_next_interval(500ms);
-
             if (has_new_data) {
                 current_interval_timestamp = latest_interval_timestamp;
                 current_interval_feature = new_interval_feature;
@@ -99,11 +103,9 @@ void BitmexTrader::trader_worker(void)
             */
         }
         else if (trader_state == TraderState::bitbot_action) {
-            //start_timestamp = system_clock_ms_now();
-            const auto place_order = true;
-            //auto action = rl_trader.get_action(feature);
+            const auto [place_order, action_leverage] = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
             if (place_order) {
-                desired_leverage = -0.00;;// 1;
+                desired_leverage = action_leverage;
                 desired_ask_price = bitmex_account->get_ask_price();
                 desired_bid_price = bitmex_account->get_bid_price();
                 trader_state = TraderState::delete_orders;

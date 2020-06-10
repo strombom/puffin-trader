@@ -14,7 +14,7 @@ public:
     torch::Tensor forward(torch::Tensor observations);
 
 private:
-    RepresentationLearner model{};
+    RepresentationLearner model;
 };
 
 using sptrFE_Inference = std::shared_ptr<FE_Inference>;
