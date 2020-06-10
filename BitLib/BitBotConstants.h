@@ -50,7 +50,7 @@ namespace BitSim
 {
     namespace LiveData
     {
-        constexpr auto intervals_buffer_length = 4h;
+        constexpr auto intervals_buffer_length = 22min; // 4h;
     }
 
     namespace BitBase
@@ -59,6 +59,8 @@ namespace BitSim
         constexpr auto interval = 10s;
     }
 
+    constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
+    constexpr auto policy_weights_filename = "model_280_policy.net";
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
     constexpr auto intervals_path = "C:\\development\\github\\puffin-trader\\tmp\\intervals.dat";
     constexpr auto tmp_path = "C:\\development\\github\\puffin-trader\\tmp";
@@ -66,8 +68,8 @@ namespace BitSim
     constexpr auto symbol = "XBTUSD";
     constexpr auto exchange = "BITMEX";
     constexpr auto interval = std::chrono::milliseconds{ 10s };
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 06 / 01) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 05 / 01) + 0h + 0min + 0s;
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 9 / 1) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 6 / 8) + 0h + 0min + 0s;
 
     constexpr auto n_batches = 40000;
     constexpr auto batch_size = 1024;
@@ -116,11 +118,11 @@ namespace BitSim
 
         constexpr auto algorithm = "SAC";
 
-        constexpr auto n_episodes = 2000;
-        constexpr auto save_period = 100;
+        constexpr auto n_episodes = 5000;
+        constexpr auto save_period = 20;
 
-        constexpr auto max_steps = 400;
-        constexpr auto episode_length = 10h;
+        constexpr auto max_steps = 2000;
+        constexpr auto episode_length = 5h;
 
         constexpr auto order_hysteresis = 0.1;
 
