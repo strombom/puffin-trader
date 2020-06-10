@@ -67,7 +67,7 @@ int main()
     }
     else if (command == "trade_live") {
         auto live_data = std::make_shared<LiveData>();
-        auto rl_policy = std::make_shared<RL_Policy>(BitSim::feature_encoder_weights_filename);
+        auto rl_policy = std::make_shared<RL_Policy>(BitSim::policy_weights_filename);
         auto bitmex_trader = BitmexTrader{ live_data, rl_policy };
 
         live_data->start();
