@@ -184,7 +184,7 @@ bool BitmexTrader::limit_order(void)
     }
 
     const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
-    const auto margin = wallet * std::clamp(desired_leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage) / 100;
+    const auto margin = wallet * std::clamp(desired_leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
     const auto desired_contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
     const auto order_contracts = int(desired_contracts - position_contracts);
 
