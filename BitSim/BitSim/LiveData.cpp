@@ -40,7 +40,7 @@ std::tuple<bool, time_point_ms, torch::Tensor> LiveData::get_next_interval(std::
 {
     auto new_data_lock = std::unique_lock<std::mutex>{ new_data_mutex };
     const auto has_new_data = new_data_condition.wait_for(new_data_lock, timeout) == std::cv_status::no_timeout;
-    return std::make_tuple(has_new_data, latest_timestamp, features[features.size(0) - 1]);
+    return std::make_tuple(has_new_data, latest_timestamp, features[features.size(0) - 1][0]);
 }
 
 void LiveData::live_data_worker(void)
