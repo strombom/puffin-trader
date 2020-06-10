@@ -18,15 +18,30 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
 
 sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
 {
-    logger = std::make_unique<BitmexSimulatorLogger>("bitmex_sim_" + std::to_string(idx_episode) + ".csv", validation);
+    if (validation) {
+        logger = std::make_unique<BitmexSimulatorLogger>("bitmex_val_" + std::to_string(idx_episode) + ".csv", true);
+    }
+    else {
+        logger = std::make_unique<BitmexSimulatorLogger>("bitmex_train_" + std::to_string(idx_episode) + ".csv", true);
+    }
 
     constexpr auto episode_length = (int)(((std::chrono::milliseconds) BitSim::Trader::episode_length).count() / ((std::chrono::milliseconds) BitSim::interval).count());
 
+    /*
     const auto validation_start_idx = 0;
     const auto training_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
     
     const auto validation_end_idx = training_end_idx / 4;
     const auto training_start_idx = validation_end_idx + 1;
+    */
+
+
+    const auto training_start_idx = 0;
+    const auto validation_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
+
+    const auto training_end_idx = validation_end_idx / 10;
+    const auto validation_start_idx = training_end_idx + 1;
+
 
     if (validation) {
         intervals_idx = Utils::random(validation_start_idx, validation_end_idx);
@@ -126,7 +141,7 @@ double BitmexSimulator::get_reward(void)
     if (get_reward_previous_value == 0.0) {
         get_reward_previous_value = value;
     }
-    const auto reward = std::log(value / get_reward_previous_value) * 1000 - 1; // (*1000-1 to get a suitable reward range, between -1000 and -300)
+    const auto reward = std::log(value / get_reward_previous_value) * 200 - 0.2; // (*1000-1 to get a suitable reward range, between -1000 and -300)
     get_reward_previous_value = value;
 
     //std::cout.precision(3);
