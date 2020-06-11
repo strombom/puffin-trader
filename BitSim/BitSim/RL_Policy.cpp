@@ -16,6 +16,6 @@ std::tuple<bool, double> RL_Policy::get_action(torch::Tensor feature, double lev
     const auto state = torch::cat({ feature, torch::tensor({leverage}).cuda() }).view({ 1, BitSim::Trader::state_dim });
     const auto [next_cont_actions, next_disc_actions_idx, _next_probs, _next_log_probs] = policy->sample_action(state);
     const auto desired_leverage = next_cont_actions[0].item().toDouble();
-    const auto limit_order = next_disc_actions_idx[0].item().toInt() == 1;
-    return std::make_tuple(limit_order, desired_leverage);
+    const auto place_order = next_disc_actions_idx[0].item().toInt() > 0;
+    return std::make_tuple(place_order, desired_leverage);
 }
