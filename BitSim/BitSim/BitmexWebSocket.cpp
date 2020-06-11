@@ -116,6 +116,9 @@ void BitmexWebSocket::parse_message(const std::string& message)
                 const auto price = data["price"].number_value();
                 bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
             }
+            else if ((action == "insert" || action == "partial") && data["ordStatus"] == "Canceled") {
+                // Ignore
+            }
             else if (action == "update" && (data["ordStatus"].string_value() == "Filled" || data["ordStatus"].string_value() == "Partially filled")) {
                 const auto remaining_size = data["leavesQty"].int_value();
                 bitmex_account->fill_order(symbol, order_id, timestamp, remaining_size);
