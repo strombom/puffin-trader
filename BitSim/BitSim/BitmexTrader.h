@@ -14,6 +14,7 @@ enum TraderState
 { 
     start,
     wait_for_next_interval,
+    wait_for_next_interval_worker,
     bitbot_action,
     delete_orders,
     delete_orders_worker,

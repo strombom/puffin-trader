@@ -56,7 +56,7 @@ bool BitmexRestApi::limit_order(int contracts, double price)
 
 bool BitmexRestApi::delete_all(void)
 {
-    logger.info("BitmexRestApi::delete_all");
+    //logger.info("BitmexRestApi::delete_all");
 
     json11::Json parameters = json11::Json::object{
         { "symbol", "XBTUSD" }
