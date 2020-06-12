@@ -95,6 +95,7 @@
       <AdditionalIncludeDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-isystem"/home/strombom/vcpkg/installed/x64-linux/include" %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -107,6 +108,7 @@
       <AdditionalIncludeDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-isystem"/home/strombom/vcpkg/installed/x64-linux/include" %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
