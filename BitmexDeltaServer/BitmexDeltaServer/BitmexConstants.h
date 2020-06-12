@@ -2,6 +2,7 @@
 
 #include <array>
 
+using namespace std::chrono_literals;
 
 namespace Bitmex
 {
