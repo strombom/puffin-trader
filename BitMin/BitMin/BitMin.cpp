@@ -1,10 +1,25 @@
 #include "pch.h"
 
-#include <cstdio>
+#include <iostream>
+
+#include "HttpServer.h"
 
 
 int main()
 {
-    printf("hello from BitMin!\n");
+    auto http_server = HttpServer{};
+
+    http_server.start();
+
+    while (true) {
+        auto command = std::string{};
+        std::cin >> command;
+        if (command.compare("q") == 0) {
+            break;
+        }
+    }
+
+    http_server.shutdown();
+
     return 0;
 }
