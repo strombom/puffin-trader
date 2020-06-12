@@ -23,5 +23,4 @@ public:
 private:
     zmq::context_t context;
     std::unique_ptr<zmq::socket_t> client;
-
 };
