@@ -77,26 +77,20 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
 
     auto order_contracts = 0.0;
 
+    /*
     if (!action->idle) {
-
         order_contracts = calculate_order_size(action->leverage);
 
-        //std::cout << "--- " << std::endl;
-        //std::cout << "action.buy_size: " << action.buy_size << std::endl;
-        //std::cout << "action.sell_size: " << action.sell_size << std::endl;
-        //std::cout << "buy_n_contracts: " << buy_contracts << std::endl;
-        //std::cout << "sell_n_contracts: " << sell_contracts << std::endl;
-        //std::cout << "--- " << std::endl;
-
         if (action->market_order) {
-            //std::cout << "Market order" << std::endl;
             market_order(order_contracts);
         }
         else if (action->limit_order) {
-            //std::cout << "Limit order" << std::endl;
             limit_order(order_contracts, prev_interval.last_price);
         }
     }
+    */
+    order_contracts = calculate_order_size(action->leverage);
+    limit_order(order_contracts, prev_interval.last_price);
 
     const auto reward = get_reward();
     auto [_position_margin, position_leverage, upnl] = calculate_position_leverage(prev_interval.last_price);
@@ -109,9 +103,9 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
         position_leverage,
         order_contracts,
         action->leverage,
-        action->idle,
-        action->limit_order,
-        action->market_order,
+        //action->idle,
+        //action->limit_order,
+        //action->market_order,
         reward);
 
     if (is_liquidated()) {
@@ -327,9 +321,9 @@ BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &filename, bool e
             << "position_leverage,"
             << "order_contracts,"
             << "order_leverage,"
-            << "order_idle,"
-            << "order_limit,"
-            << "order_market,"
+            //<< "order_idle,"
+            //<< "order_limit,"
+            //<< "order_market,"
             << "reward" << "\n";
     }
 }
@@ -342,9 +336,9 @@ void BitmexSimulatorLogger::log(
     double position_leverage,
     double order_contracts,
     double order_leverage,
-    int order_idle,
-    int order_limit,
-    int order_market,
+    //int order_idle,
+    //int order_limit,
+    //int order_market,
     double reward
 )
 {
@@ -356,9 +350,9 @@ void BitmexSimulatorLogger::log(
             << position_leverage << ","
             << order_contracts << ","
             << order_leverage << ","
-            << order_idle << ","
-            << order_limit << ","
-            << order_market << ","
             << reward << "\n";
+            //<< order_idle << ","
+            //<< order_limit << ","
+            //<< order_market << ","
     }
 }

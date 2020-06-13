@@ -19,9 +19,9 @@ public:
         double position_leverage,
         double order_contracts,
         double order_leverage,
-        int order_idle,
-        int order_limit,
-        int order_market,
+        //int order_idle,
+        //int order_limit,
+        //int order_market,
         double reward
     );
 

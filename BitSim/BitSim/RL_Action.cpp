@@ -9,10 +9,10 @@ sptrRL_Action RL_Action::random(void)
     const auto disc_action = Utils::random(0, 2);
     const auto cont_action = Utils::random(-BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
     return std::make_shared<RL_Action>(
-        cont_action,
-        disc_action == 0,
-        disc_action == 1,
-        disc_action == 2        
+        cont_action//,
+        //disc_action == 0,
+        //disc_action == 1,
+        //disc_action == 2        
         );
 }
 
@@ -26,7 +26,7 @@ torch::Tensor RL_Action::to_tensor_cont(void) const
 torch::Tensor RL_Action::to_tensor_disc(void) const
 {
     return torch::tensor({ 
-        1 * limit_order + 2 * market_order
+        //1 * limit_order + 2 * market_order
         },
         c10::TensorOptions{}.dtype( c10::ScalarType::Long )
     );
