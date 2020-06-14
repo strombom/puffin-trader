@@ -1,7 +1,6 @@
 #include "pch.h"
 
 #include "Utils.h"
-#include "DateTime.h"
 #include "BitmexSimulator.h"
 
 
@@ -35,13 +34,11 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
     const auto training_start_idx = validation_end_idx + 1;
     */
 
-
     const auto training_start_idx = 0;
     const auto validation_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
 
-    const auto training_end_idx = validation_end_idx / 10;
+    const auto training_end_idx = validation_end_idx * 9 / 10;
     const auto validation_start_idx = training_end_idx + 1;
-
 
     if (validation) {
         intervals_idx = Utils::random(validation_start_idx, validation_end_idx);
@@ -67,8 +64,6 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
 
 sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
 {
-    auto timer = Timer{};
-
     const auto prev_interval = intervals->rows[intervals_idx];
 
     //action->leverage;
