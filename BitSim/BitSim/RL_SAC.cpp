@@ -114,14 +114,14 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> PolicyNet
         disc_log_prob = torch::log(disc_prob + 1e-8);
     }
 
-    auto action = torch::Tensor{};
-    if (BitSim::Trader::action_dim_discrete > 0) {
-        action = torch::cat({ cont_action, disc_action_idx.toType(c10::ScalarType::Float) }, 1);
-    }
-    else {
-        action = cont_action.cuda();
-    }
-    //const auto action = cont_action; // torch::cat({ cont_action, disc_action_idx.toType(c10::ScalarType::Float) }, 1);
+    //auto action = torch::Tensor{};
+    //if (BitSim::Trader::action_dim_discrete > 0) {
+    //    action = torch::cat({ cont_action, disc_action_idx.toType(c10::ScalarType::Float) }, 1);
+    //}
+    //else {
+    //    action = cont_action.cuda();
+    //}
+    const auto action = cont_action.cuda();
     const auto prob = torch::cat({ cont_prob, disc_prob }, 1);
     const auto log_prob = torch::cat({ cont_log_prob, disc_log_prob }, 1); ;
 

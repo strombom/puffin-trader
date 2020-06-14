@@ -6,31 +6,31 @@ class RL_Action
 {
 public:
     RL_Action(void) :
-        leverage(0.0) {} //,
-        //idle(true),
-        //limit_order(false),
-       // market_order(false) {}
+        leverage(0.0),
+        idle(true),
+        limit_order(false),
+        market_order(false) {}
 
     RL_Action(torch::Tensor cont_action, torch::Tensor disc_action) :
-        leverage(cont_action[0].item().to<double>()) {} //,
-        //idle(disc_action[0].item().toLong() == 0),
-        //limit_order(disc_action[0].item().toLong() == 1),
-        //market_order(disc_action[0].item().toLong() == 2) {}
+        leverage(cont_action[0].item().to<double>()),
+        idle(disc_action[0].item().toLong() == 0),
+        limit_order(disc_action[0].item().toLong() == 1),
+        market_order(disc_action[0].item().toLong() == 2) {}
 
-    RL_Action(double leverage) : //, bool idle, bool limit_order, bool market_order) :
-        leverage(leverage) {} //,
-        //idle(idle),
-        //limit_order(limit_order),
-        //market_order(market_order) {}
+    RL_Action(double leverage, bool idle, bool limit_order, bool market_order) :
+        leverage(leverage),
+        idle(idle),
+        limit_order(limit_order),
+        market_order(market_order) {}
 
     static std::shared_ptr<RL_Action> random(void);
     torch::Tensor to_tensor_cont(void) const;
     torch::Tensor to_tensor_disc(void) const;
 
     double leverage;
-    //bool idle;
-    //bool limit_order;
-    //bool market_order;
+    bool idle;
+    bool limit_order;
+    bool market_order;
 
 private:
 };
