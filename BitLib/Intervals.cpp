@@ -81,8 +81,8 @@ void Intervals::rotate_insert(const std::shared_ptr<const Intervals> new_interva
 
 void Intervals::load(const std::string& file_path)
 {
-    auto start_time_raw = 0;
-    auto interval_raw = 0;
+    auto start_time_raw = 0ll;
+    auto interval_raw = 0ll;
 
     auto attr_file = std::ifstream{ file_path + "_attr" };
     attr_file >> start_time_raw >> interval_raw;
