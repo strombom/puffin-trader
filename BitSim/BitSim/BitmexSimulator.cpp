@@ -127,14 +127,15 @@ double BitmexSimulator::get_reward(void)
     const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
     auto position_pnl = 0.0;
     if (pos_contracts != 0) {
-        const auto taker_fee = BitSim::BitMex::taker_fee * abs(pos_contracts / next_price);
-        position_pnl = pos_contracts * (1 / pos_price - 1 / next_price) - taker_fee;
+        //const auto exit_fee = BitSim::BitMex::taker_fee * abs(pos_contracts / next_price);
+        const auto exit_fee = 0.0;
+        position_pnl = pos_contracts * (1 / pos_price - 1 / next_price) - exit_fee;
     }
     const auto value = (wallet + position_pnl) * next_price / start_value;
     if (get_reward_previous_value == 0.0) {
         get_reward_previous_value = value;
     }
-    const auto reward = std::log(value / get_reward_previous_value) * 200 - 0.2; // (*1000-1 to get a suitable reward range, between -1000 and -300)
+    const auto reward = std::log(value / get_reward_previous_value) * 1000 - 1.0; // (*1000-1 to get a suitable reward range, between -1000 and -300)
     get_reward_previous_value = value;
 
     //std::cout.precision(3);
