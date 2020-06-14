@@ -44,9 +44,9 @@ make_patch_spines_invisible(par3)
 par3.spines["right"].set_visible(True)
 
 p1, = host.plot(rows[:,0], "b-", label="Last price")
-p2, = par1.plot(rows[:,3], "g-", label="Contracts")
-p3, = par2.plot(rows[:,1], "r-", label="Wallet")
-p4, = par3.plot(rows[:,2], "y-", label="UPNL")
+p2, = par1.plot(rows[:,2], "g-", label="Contracts")
+p3, = par2.plot(rows[:,3], "r-", label="Wallet")
+p4, = par3.plot(rows[:,4], "y-", label="UPNL")
 
 host.set_xlabel("Time")
 host.set_ylabel("Last price")
