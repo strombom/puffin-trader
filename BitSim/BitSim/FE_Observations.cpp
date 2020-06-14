@@ -97,8 +97,8 @@ void FE_Observations::save(const std::string& file_path) const
 
 void FE_Observations::load(const std::string& file_path)
 {
-    auto start_time_raw = 0;
-    auto interval_raw = 0;
+    auto start_time_raw = 0ll;
+    auto interval_raw = 0ll;
 
     {
         auto file = std::ifstream{ file_path + "_attr" };
