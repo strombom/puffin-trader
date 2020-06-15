@@ -7,9 +7,9 @@
 
 int main()
 {
-    auto http_server = HttpServer{};
+    auto http_server = std::make_shared<HttpServer>();
 
-    http_server.start();
+    http_server->start();
 
     while (true) {
         auto command = std::string{};
@@ -19,7 +19,7 @@ int main()
         }
     }
 
-    http_server.shutdown();
+    http_server->shutdown();
 
     return 0;
 }

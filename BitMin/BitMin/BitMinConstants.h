@@ -16,7 +16,7 @@ namespace BitMin
     namespace HttpServer
     {
         constexpr auto static_path = "C:\\development\\github\\puffin-trader\\BitMin\\static\\";
-        constexpr auto port = 31003;
-        constexpr auto address = "localhost";
+        constexpr auto port = 8080;
+        constexpr auto address = "0.0.0.0"; // localhost";
     }
 }

@@ -5,11 +5,55 @@
 #include <thread>
 #include <atomic>
 
+class HttpListener;
+
+class HttpServer : public std::enable_shared_from_this<HttpServer>
+{
+public:
+    HttpServer(void);
+
+    void start(void);
+    void shutdown(void);
+
+    template<class Body, class Allocator, class Send>
+    void handle_request(boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>>&& req, Send&& send);
+
+    boost::asio::io_context ioc;
+    boost::asio::ssl::context ctx;
+
+private:
+    std::atomic_bool server_thread_running;
+    std::unique_ptr<std::thread> server_thread;
+
+    std::shared_ptr<HttpListener> http_listener;
+
+    boost::beast::string_view mime_type(boost::beast::string_view path);
+    std::string path_cat(boost::beast::string_view base, boost::beast::string_view path);
+
+    void server_worker(void);
+};
+
+class HttpListener : public std::enable_shared_from_this<HttpListener>
+{
+public:
+    HttpListener(std::shared_ptr<HttpServer> http_server, boost::asio::io_context& ioc, boost::asio::ssl::context& ctx, boost::asio::ip::tcp::endpoint endpoint);
+
+    void run(void);
+
+private:
+    std::shared_ptr<HttpServer> http_server;
+    boost::asio::io_context& ioc;
+    boost::asio::ssl::context& ctx;
+    boost::asio::ip::tcp::acceptor acceptor;
+
+    void do_accept(void);
+    void on_accept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
+};
 
 class HttpSession : public std::enable_shared_from_this<HttpSession>
 {
 public:
-    explicit HttpSession(boost::asio::ip::tcp::socket&& socket, std::shared_ptr<boost::asio::ssl::context> ctx);
+    explicit HttpSession(std::shared_ptr<HttpServer> http_server, boost::asio::ip::tcp::socket&& socket, boost::asio::ssl::context &ctx);
 
     void run(void);
 
@@ -42,43 +86,11 @@ private:
         }
     };
 
+    std::shared_ptr<HttpServer> http_server;
+
     boost::beast::ssl_stream<boost::beast::tcp_stream> stream;
     boost::beast::flat_buffer buffer;
     boost::beast::http::request<boost::beast::http::string_body> req;
     std::shared_ptr<void> res;
     send_lambda lambda;
-};
-
-class HttpListener : public std::enable_shared_from_this<HttpListener>
-{
-public:
-    HttpListener(std::shared_ptr<boost::asio::io_context> ioc, std::shared_ptr<boost::asio::ssl::context> ctx, boost::asio::ip::tcp::endpoint endpoint);
-
-    void run(void);
-
-private:
-    std::shared_ptr<boost::asio::io_context> ioc;
-    std::shared_ptr<boost::asio::ssl::context> ctx;
-    boost::asio::ip::tcp::acceptor acceptor;
-
-    void do_accept(void);
-    void on_accept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
-};
-
-class HttpServer
-{
-public:
-    HttpServer(void);
-
-    void start(void);
-    void shutdown(void);
-
-private:
-    std::atomic_bool server_thread_running;
-    std::unique_ptr<std::thread> server_thread;
-
-    std::shared_ptr<boost::asio::io_context> ioc;
-    std::shared_ptr<boost::asio::ssl::context> ctx;
-
-    void server_worker(void);
 };
