@@ -7,10 +7,10 @@
 
 void Utils::save_tensor(const torch::Tensor& tensor, const std::string& path, const std::string& filename)
 {
-    torch::save(tensor, path + "\\" + filename);
+    torch::save(tensor.cpu(), path + "\\" + filename);
 }
 
-torch::Tensor Utils::load_tensor(const std::string &&path, const std::string &&filename)
+torch::Tensor Utils::load_tensor(const std::string &path, const std::string &filename)
 {
     auto tensor = std::vector<torch::Tensor>{};
     torch::load(tensor, path + "\\" + filename);
