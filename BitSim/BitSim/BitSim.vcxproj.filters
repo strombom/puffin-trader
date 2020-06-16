@@ -16,21 +16,6 @@
     <Filter Include="Header Files\DateTime">
       <UniqueIdentifier>{883a5310-f4d3-4f82-847b-82d9e30ff588}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\BitBase">
-      <UniqueIdentifier>{cdcaae43-a793-4804-896a-70bd9a874a96}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\BitBase">
-      <UniqueIdentifier>{026c6520-761d-4ba1-b5d0-d7ba3a2ff877}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Libraries">
-      <UniqueIdentifier>{cd0fd6cf-beed-4d75-bb49-5f8386d45f35}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Libraries">
-      <UniqueIdentifier>{31958dad-2e72-4676-85d6-b0758fed1ffe}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Data">
-      <UniqueIdentifier>{c8372632-e7c1-4e4e-834e-855e9b328879}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Data">
       <UniqueIdentifier>{8dd412cf-221c-4231-86d9-c36cd241da56}</UniqueIdentifier>
     </Filter>
@@ -58,30 +43,15 @@
     <Filter Include="Source Files\Trader">
       <UniqueIdentifier>{a198e053-716d-42f4-bd56-6c0614f546e4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Data\DateTime">
-      <UniqueIdentifier>{5376f141-4959-458f-b428-a4b797b4f7e5}</UniqueIdentifier>
+    <Filter Include="Header Files\BitLib">
+      <UniqueIdentifier>{e695fe9f-28f3-40ee-8235-da0f63a6da37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BitLib">
+      <UniqueIdentifier>{d9ee0505-dd5c-46e2-a182-1e5e3191e362}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BitLib\DateTime.cpp">
-      <Filter>Source Files\Data\DateTime</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BitLib\json11\json11.cpp">
-      <Filter>Source Files\Libraries</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BitLib\Logger.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BitBaseClient.cpp">
-      <Filter>Source Files\BitBase</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BitLib\Intervals.cpp">
-      <Filter>Source Files\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\BitLib\Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FE_DataLoader.cpp">
@@ -144,32 +114,26 @@
     <ClCompile Include="RL_Policy.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
     </ClCompile>
+    <ClCompile Include="BitLib\json11\json11.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\Utils.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\Logger.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\Intervals.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\DateTime.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\BitBaseClient.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\BitLib\DateTime.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BitLib\json11\json11.hpp">
-      <Filter>Header Files\Libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BitLib\Logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BitLib\date\date.h">
-      <Filter>Header Files\DateTime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BitLib\BitBotConstants.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BitBaseClient.h">
-      <Filter>Header Files\BitBase</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BitLib\Intervals.h">
-      <Filter>Header Files\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\BitLib\Utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FE_DataLoader.h">
       <Filter>Header Files\FeatureEncoder</Filter>
     </ClInclude>
@@ -229,6 +193,30 @@
     </ClInclude>
     <ClInclude Include="RL_Policy.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\Utils.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\Logger.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\json11\json11.hpp">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\date\date.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\DateTime.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\Intervals.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitBaseClient.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\BitBotConstants.h">
+      <Filter>Header Files\BitLib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

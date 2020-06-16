@@ -173,15 +173,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\BitLib\DateTime.cpp" />
-    <ClCompile Include="..\..\BitLib\Intervals.cpp" />
-    <ClCompile Include="..\..\BitLib\json11\json11.cpp">
+    <ClCompile Include="BitLib\BitBaseClient.cpp" />
+    <ClCompile Include="BitLib\DateTime.cpp" />
+    <ClCompile Include="BitLib\Intervals.cpp" />
+    <ClCompile Include="BitLib\json11\json11.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\BitLib\Logger.cpp" />
-    <ClCompile Include="..\..\BitLib\Utils.cpp" />
-    <ClCompile Include="BitBaseClient.cpp" />
+    <ClCompile Include="BitLib\Logger.cpp" />
+    <ClCompile Include="BitLib\Utils.cpp" />
     <ClCompile Include="BitmexAccount.cpp" />
     <ClCompile Include="BitmexAuthentication.cpp" />
     <ClCompile Include="BitmexRestApi.cpp" />
@@ -208,14 +208,14 @@
     <ClCompile Include="RL_State.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
-    <ClInclude Include="..\..\BitLib\DateTime.h" />
-    <ClInclude Include="..\..\BitLib\date\date.h" />
-    <ClInclude Include="..\..\BitLib\Intervals.h" />
-    <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
-    <ClInclude Include="..\..\BitLib\Logger.h" />
-    <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="BitBaseClient.h" />
+    <ClInclude Include="BitLib\BitBotConstants.h" />
+    <ClInclude Include="BitLib\DateTime.h" />
+    <ClInclude Include="BitLib\date\date.h" />
+    <ClInclude Include="BitLib\Intervals.h" />
+    <ClInclude Include="BitLib\json11\json11.hpp" />
+    <ClInclude Include="BitLib\Logger.h" />
+    <ClInclude Include="BitLib\Utils.h" />
     <ClInclude Include="BitmexAccount.h" />
     <ClInclude Include="BitmexAuthentication.h" />
     <ClInclude Include="BitmexRestApi.h" />

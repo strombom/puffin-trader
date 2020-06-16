@@ -49,7 +49,7 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
     }
 
     if (validation) {
-        std::cout << "Val reward: " << episode_reward << " - "; // std::endl;
+        std::cout << "Val reward (" << DateTime::to_string(simulator->get_start_timestamp()) << "): " << episode_reward << " - "; // std::endl;
     } else {
         std::cout << DateTime::to_string(system_clock_ms_now()) << " Train reward: " << episode_reward << " - "; // std::endl;
     }
@@ -66,7 +66,7 @@ void RL_Trader::train(void)
         run_episode(idx_episode, false);
 
         // Validation episode
-        run_episode(idx_episode, true);
+        //run_episode(idx_episode, true);
 
         if (idx_episode == 0 ||
             idx_episode % BitSim::Trader::save_period == 0 ||

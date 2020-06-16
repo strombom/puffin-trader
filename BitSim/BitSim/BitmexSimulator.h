@@ -38,6 +38,8 @@ public:
     sptrRL_State reset(int idx_episode, bool validation);
     sptrRL_State step(sptrRL_Action action, bool last_step);
     std::tuple<double, double, double> calculate_position_leverage(double mark_price);
+    
+    time_point_ms get_start_timestamp(void);
 
 private:
     sptrIntervals intervals;
@@ -55,8 +57,10 @@ private:
     double get_reward_previous_value;
 
     void market_order(double contracts);
+    void market_order(double contracts, bool use_fee);
     void limit_order(double contracts, double price);
-    void execute_order(double contracts, double price, bool taker);
+    void limit_order(double contracts, double price, bool use_fee);
+    void execute_order(double contracts, double price, double fee);
     bool is_liquidated(void);
     double get_reward(void);
     double liquidation_price(void);

@@ -1,9 +1,9 @@
 #pragma once
 #include "pch.h"
 
-#include <string>
-
 #include "FE_Model.h"
+
+#include <string>
 
 
 class FE_Inference

@@ -21,7 +21,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    constexpr auto command = "trade_live";
+    constexpr auto command = "train_rl";
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -47,7 +47,7 @@ int main()
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
 
-        auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_20200524e.pt" };
+        auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_20200615.pt" };
         auto features = inference.forward(observations->get_all());
         std::cout << "Inference, features " << features.sizes() << std::endl;
 
