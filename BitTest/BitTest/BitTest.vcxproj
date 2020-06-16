@@ -108,7 +108,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.5.0-debug\include;C:\development\libraries\libtorch-1.5.0-debug\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\libraries\libtorch-1.5.0-debug\include;C:\development\libraries\libtorch-1.5.0-debug\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -153,7 +153,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.5.0-release\include;C:\development\libraries\libtorch-1.5.0-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\libraries\libtorch-1.5.0-release\include;C:\development\libraries\libtorch-1.5.0-release\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -174,7 +174,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\BitLib\Utils.cpp" />
+    <ClCompile Include="BitLib\BitBaseClient.cpp" />
+    <ClCompile Include="BitLib\DateTime.cpp" />
+    <ClCompile Include="BitLib\Intervals.cpp" />
+    <ClCompile Include="BitLib\json11\json11.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="BitLib\Logger.cpp" />
+    <ClCompile Include="BitLib\Utils.cpp" />
     <ClCompile Include="BitTest.cpp" />
     <ClCompile Include="FeaturePlotter.cpp" />
     <ClCompile Include="pch.cpp">
@@ -183,7 +191,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\BitLib\Utils.h" />
+    <ClInclude Include="BitLib\BitBaseClient.h" />
+    <ClInclude Include="BitLib\BitBotConstants.h" />
+    <ClInclude Include="BitLib\DateTime.h" />
+    <ClInclude Include="BitLib\date\date.h" />
+    <ClInclude Include="BitLib\Intervals.h" />
+    <ClInclude Include="BitLib\json11\json11.hpp" />
+    <ClInclude Include="BitLib\Logger.h" />
+    <ClInclude Include="BitLib\Utils.h" />
     <ClInclude Include="FeaturePlotter.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

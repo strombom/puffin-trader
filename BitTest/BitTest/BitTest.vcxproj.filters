@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\BitLib">
+      <UniqueIdentifier>{47959e32-3557-4a11-a5bd-701f170b51e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\BitLib">
+      <UniqueIdentifier>{61d269cb-af4f-449f-9015-f0c0b9f78941}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitTest.cpp">
@@ -24,8 +30,23 @@
     <ClCompile Include="FeaturePlotter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\BitLib\Utils.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="BitLib\Logger.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\Utils.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\json11\json11.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\DateTime.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\BitBaseClient.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\Intervals.cpp">
+      <Filter>Source Files\BitLib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -35,8 +56,29 @@
     <ClInclude Include="FeaturePlotter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\BitLib\Utils.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="BitLib\Logger.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\Utils.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\json11\json11.hpp">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\DateTime.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\date\date.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\BitBaseClient.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\Intervals.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\BitBotConstants.h">
+      <Filter>Header Files\BitLib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
