@@ -27,29 +27,30 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
     constexpr auto episode_length = (int)(((std::chrono::milliseconds) BitSim::Trader::episode_length).count() / ((std::chrono::milliseconds) BitSim::interval).count());
 
     /*
-    const auto validation_start_idx = 0;
-    const auto training_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
-    
+    const auto validation_start_idx = BitSim::observation_length - 1;
+    const auto training_end_idx = (int)intervals->rows.size() - episode_length;    
     const auto validation_end_idx = training_end_idx / 4;
     const auto training_start_idx = validation_end_idx + 1;
     */
+    
     /*
     const auto training_start_idx = 0;
     const auto validation_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
-
     const auto training_end_idx = validation_end_idx * 9 / 10;
     const auto validation_start_idx = training_end_idx + 1;
     */
-    /*
-    const auto training_start_idx = 0;
-    const auto training_end_idx = 1045440-1;
+
+    const auto training_start_idx = BitSim::observation_length - 1;
+    const auto training_end_idx = 1045440 - 1;
     const auto validation_start_idx = 1045440;
-    const auto validation_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
-    */
-    const auto training_start_idx = 0;
-    const auto training_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
+    const auto validation_end_idx = (int)intervals->rows.size() - episode_length;
+    
+    /*
+    const auto training_start_idx = BitSim::observation_length - 1;
+    const auto training_end_idx = (int)intervals->rows.size() - episode_length;
     const auto validation_start_idx = 0;
     const auto validation_end_idx = 0;
+    */
 
     if (validation) {
         intervals_idx = Utils::random(validation_start_idx, validation_end_idx);
@@ -72,8 +73,8 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
     market_order(calculate_order_size(start_leverage), false);
 
     constexpr auto position_reward = 0.0;
-    auto [_position_margin, position_leverage, upnl] = calculate_position_leverage(intervals->rows[intervals_idx_start].last_price);
-    auto state = std::make_shared<RL_State>(position_reward, features[intervals_idx][0], position_leverage);
+    auto [_position_margin, position_leverage, upnl] = calculate_position_leverage(intervals->rows[intervals_idx].last_price);
+    auto state = std::make_shared<RL_State>(position_reward, features[intervals_idx - (BitSim::observation_length - 1)][0], position_leverage);
     return state;
 }
 
@@ -108,7 +109,7 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
 
     const auto reward = get_reward();
     auto [_position_margin, position_leverage, upnl] = calculate_position_leverage(prev_interval.last_price);
-    auto state = std::make_shared<RL_State>(reward, features[intervals_idx][0], position_leverage);
+    auto state = std::make_shared<RL_State>(reward, features[intervals_idx - (BitSim::observation_length - 1)][0], position_leverage);
 
     logger->log(prev_interval.last_price,
         wallet,
