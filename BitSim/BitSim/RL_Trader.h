@@ -20,6 +20,7 @@ public:
     //RL_Trader(sptrPendulumSimulator simulator);
 
     void train(void);
+    void evaluate(int idx_episode, time_point_ms start, time_point_ms end);
 
 private:    
     int step_total;
@@ -29,7 +30,7 @@ private:
     //sptrCartpoleSimulator simulator;
     //sptrPendulumSimulator simulator;
     sptrBitmexSimulator simulator;
-    sptrRL_State step(sptrRL_State state);
+    sptrRL_State step(sptrRL_State state, int max_steps);
     void update_model(int idx_episode);
     void save_params(int idx_period);
     void run_episode(int idx_episode, bool validation);

@@ -24,11 +24,7 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
 {
     auto state = simulator->reset(idx_episode, validation);
     step_episode = 0;
-
     auto episode_reward = 0.0;
-
-    auto update_time = 0.0;
-    auto step_time = 0.0;
 
     while (!state->is_done()) { // && step_episode < BitSim::Trader::max_steps) {
         if (!validation && BitSim::Trader::algorithm == "SAC" &&
@@ -36,8 +32,7 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
             step_total >= BitSim::Trader::SAC::batch_size) {
             update_model(idx_episode);
         }
-
-        state = step(state);
+        state = step(state, BitSim::Trader::max_steps);
         episode_reward += state->reward;
 
         ++step_total;
@@ -53,9 +48,6 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
     } else {
         std::cout << DateTime::to_string(system_clock_ms_now()) << " Train reward: " << episode_reward << " - "; // std::endl;
     }
-
-    //std::cout << "u(" << update_time << ") s(" << step_time << ") ";
-    //std::cout << "Steps: " << step_episode << std::endl;
 }
 
 void RL_Trader::train(void)
@@ -66,7 +58,7 @@ void RL_Trader::train(void)
         run_episode(idx_episode, false);
 
         // Validation episode
-        //run_episode(idx_episode, true);
+        run_episode(idx_episode, true);
 
         if (idx_episode == 0 ||
             idx_episode % BitSim::Trader::save_period == 0 ||
@@ -74,6 +66,24 @@ void RL_Trader::train(void)
             save_params(idx_episode);
         }
     }
+}
+
+void RL_Trader::evaluate(int idx_episode, time_point_ms start, time_point_ms end)
+{
+    auto state = simulator->reset(idx_episode, true);
+    step_episode = 0;
+    auto episode_reward = 0.0;
+    const auto max_steps = (int)(((const std::chrono::milliseconds)(end - start)).count() / 10000);
+
+    while (!state->is_done()) {
+        state = step(state, max_steps);
+        episode_reward += state->reward;
+
+        ++step_total;
+        ++step_episode;
+    }
+
+    std::cout << "Val reward (" << DateTime::to_string(simulator->get_start_timestamp()) << "): " << episode_reward << " - "; // std::endl;
 }
 
 void RL_Trader::update_model(int idx_episode)
@@ -113,7 +123,7 @@ void RL_Trader::save_params(int idx_period)
     rl_algorithm->save(path, name);
 }
 
-sptrRL_State RL_Trader::step(sptrRL_State state)
+sptrRL_State RL_Trader::step(sptrRL_State state, int max_steps)
 {
     auto action = sptrRL_Action{ nullptr };
 
@@ -159,7 +169,7 @@ sptrRL_State RL_Trader::step(sptrRL_State state)
         action = rl_algorithm->get_action(state);
     }
 
-    const auto last_step = step_episode == BitSim::Trader::max_steps - 1;
+    const auto last_step = step_episode == max_steps - 1;
     const auto last_state = std::make_shared<RL_State>( RL_State{ state } );
     auto next_state = simulator->step(action, last_step);
     rl_algorithm->append_to_replay_buffer(last_state, action, next_state);
