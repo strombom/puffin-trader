@@ -20,7 +20,7 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
             batch.past_observations[batch_idx].slice(1, obs_idx, obs_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::n_channels, BitSim::observation_length} }) = observations->get(obs_time_idx);
         }
 
-        for (auto pred_idx = 0; pred_idx < BitSim::n_predictions * BitSim::n_positive; ++pred_idx) {
+        for (auto pred_idx = 0; pred_idx < BitSim::n_predictions; ++pred_idx) {
             const auto obs_time_idx = time_index + pred_idx * BitSim::observation_length;
             batch.future_positives[batch_idx].slice(1, pred_idx, pred_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::n_channels, BitSim::observation_length} }) = observations->get(obs_time_idx);
         }

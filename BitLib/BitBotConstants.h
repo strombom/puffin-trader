@@ -11,7 +11,7 @@ namespace BitBase
     namespace Bitmex
     {
         constexpr auto exchange_name = "BITMEX"; 
-        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2019} / 06 / 01) + std::chrono::hours{ 0 } };
+        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
         constexpr auto symbols = std::array<const char*, 1>{ "XBTUSD" };
 
         namespace Daily
@@ -59,8 +59,9 @@ namespace BitSim
         constexpr auto interval = 10s;
     }
 
-    constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
-    constexpr auto policy_weights_filename = "model_280_policy.net";
+    //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
+    constexpr auto feature_encoder_weights_filename = "fe_weights_20200615.pt";
+    constexpr auto policy_weights_filename = "model_9999_policy_jan_aprl_2h.net";
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
     constexpr auto intervals_path = "C:\\development\\github\\puffin-trader\\tmp\\intervals.dat";
     constexpr auto tmp_path = "C:\\development\\github\\puffin-trader\\tmp";
@@ -68,16 +69,15 @@ namespace BitSim
     constexpr auto symbol = "XBTUSD";
     constexpr auto exchange = "BITMEX";
     constexpr auto interval = std::chrono::milliseconds{ 10s };
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2019 } / 9 / 1) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 6 / 8) + 0h + 0min + 0s;
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 1 / 1) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 6 / 16) + 0h + 0min + 0s;
 
-    constexpr auto n_batches = 40000;
+    constexpr auto n_batches = 30000;
     constexpr auto batch_size = 1024;
     constexpr auto observation_length = 128;
     constexpr auto n_channels = 3;
     constexpr auto n_observations = 10;
     constexpr auto n_predictions = 1;
-    constexpr auto n_positive = 1;
     constexpr auto n_negative = 19;
 
     constexpr auto feature_size = 128;
@@ -118,11 +118,11 @@ namespace BitSim
 
         constexpr auto algorithm = "SAC";
 
-        constexpr auto n_episodes = 5000;
-        constexpr auto save_period = 20;
+        constexpr auto n_episodes = 10000;
+        constexpr auto save_period = 50;
 
         constexpr auto max_steps = 2000;
-        constexpr auto episode_length = 5h;
+        constexpr auto episode_length = 2h;
 
         constexpr auto order_hysteresis = 0.1;
 
@@ -134,7 +134,7 @@ namespace BitSim
             constexpr auto buffer_size = 50000;
             constexpr auto initial_random_action = 1000;
 
-            constexpr auto hidden_dim = 4096;
+            constexpr auto hidden_dim = 2048; // 4096;
 
             constexpr auto alpha = 1.0;
             constexpr auto gamma_discount = 0.99;

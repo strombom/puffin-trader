@@ -13,7 +13,7 @@ struct Batch {
 
     Batch(const int batch_size) :
         past_observations(torch::empty({ batch_size, 3, BitSim::n_observations,                     BitSim::observation_length })),
-        future_positives (torch::empty({ batch_size, 3, BitSim::n_predictions * BitSim::n_positive, BitSim::observation_length })),
+        future_positives (torch::empty({ batch_size, 3, BitSim::n_predictions,                      BitSim::observation_length })),
         future_negatives (torch::empty({ batch_size, 3, BitSim::n_predictions * BitSim::n_negative, BitSim::observation_length })) {}
 };
 
