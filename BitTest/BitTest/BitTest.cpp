@@ -9,7 +9,7 @@
 
 int main()
 {
-    const auto task = std::string{ "plot_features" };
+    const auto task = std::string{ "direction_data" };
 
     if (task == "plot_features") {
 
@@ -36,6 +36,23 @@ int main()
 
         const auto image_filename = "features.png";
         feature_plotter.plot(prices, features_path, image_filename);
+
+    }
+    if (task == "direction_data") {
+
+        auto bitbase_client = BitBaseClient{};
+
+        auto intervals = bitbase_client.get_intervals(
+            "XBTUSD",
+            "BITMEX",
+            time_point_ms{ date::sys_days(date::year{2020} / 6 / 20) + std::chrono::hours{ 0 } },
+            time_point_ms{ date::sys_days(date::year{2020} / 6 / 21) + std::chrono::hours{ 0 } },
+            10s
+        );
+
+        for (auto row : intervals->rows) {
+            std::cout << row.last_price << std::endl;
+        }
 
     }
 }
