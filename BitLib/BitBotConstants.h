@@ -38,6 +38,27 @@ namespace BitBase
         }
     }
 
+    namespace Binance
+    {
+        constexpr auto exchange_name = "BINANCE";
+        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
+        constexpr auto symbols = std::array<const char*, 1>{ "BTC_USDT" };
+
+        namespace Live
+        {
+            constexpr auto address = "tcp://delta.superdator.se:31002";
+            constexpr auto max_rows = 100000;
+        }
+
+        namespace Interval
+        {
+            constexpr auto steps = std::array<float, 0>{};
+            constexpr auto batch_timeout = 1s;
+            constexpr auto batch_size = 10000;
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 10s };
+        }
+    }
+
     namespace Database
     {
         constexpr auto time_format = "%F %T";
@@ -60,7 +81,7 @@ namespace BitSim
     }
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
-    constexpr auto feature_encoder_weights_filename = "fe_weights_20200615.pt";
+    constexpr auto feature_encoder_weights_filename = "fe_weights_20200618.pt";
     constexpr auto policy_weights_filename = "model_9999_policy_jan_aprl_2h.net";
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
     constexpr auto intervals_path = "C:\\development\\github\\puffin-trader\\tmp\\intervals.dat";
@@ -70,17 +91,17 @@ namespace BitSim
     constexpr auto exchange = "BITMEX";
     constexpr auto interval = std::chrono::milliseconds{ 10s };
     constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 1 / 1) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 6 / 16) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 5 / 1) + 0h + 0min + 0s;
 
-    constexpr auto n_batches = 30000;
-    constexpr auto batch_size = 1024;
-    constexpr auto observation_length = 128;
-    constexpr auto n_channels = 3;
-    constexpr auto n_observations = 10;
+    constexpr auto n_batches = 2000;
+    constexpr auto batch_size = 500;
+    constexpr auto observation_length = 8; // Adjust FeatureEncoder
+    constexpr auto n_channels = 1;
+    constexpr auto n_observations = 5;
     constexpr auto n_predictions = 1;
-    constexpr auto n_negative = 19;
+    constexpr auto n_negative = 10;
 
-    constexpr auto feature_size = 128;
+    constexpr auto feature_size = 8;
 
     const auto ch_price = 0;
     const auto ch_buy_volume = 1;
@@ -163,8 +184,8 @@ namespace BitSim
         }
 
         constexpr auto state_dim = feature_size + 1;
-        constexpr auto action_dim_discrete = 3;
-        constexpr auto action_dim_continuous = 1;
+        constexpr auto action_dim_discrete = 6;
+        constexpr auto action_dim_continuous = 0;
 
         constexpr auto log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };
         constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";

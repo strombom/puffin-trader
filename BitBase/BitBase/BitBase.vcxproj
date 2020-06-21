@@ -168,6 +168,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Binance.cpp" />
+    <ClCompile Include="BinanceInterval.cpp" />
+    <ClCompile Include="BinanceLive.cpp" />
+    <ClCompile Include="BinanceTick.cpp" />
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="BitLib\DateTime.cpp" />
     <ClCompile Include="BitLib\Intervals.cpp" />
@@ -192,6 +196,10 @@
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Binance.h" />
+    <ClInclude Include="BinanceInterval.h" />
+    <ClInclude Include="BinanceLive.h" />
+    <ClInclude Include="BinanceTick.h" />
     <ClInclude Include="BitLib\BitBotConstants.h" />
     <ClInclude Include="BitLib\DateTime.h" />
     <ClInclude Include="BitLib\date\date.h" />

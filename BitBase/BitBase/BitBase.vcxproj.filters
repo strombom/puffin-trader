@@ -43,6 +43,12 @@
     <Filter Include="Source Files\BitLib">
       <UniqueIdentifier>{5c5503cb-216d-4822-8245-d5b1990e7354}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Binance">
+      <UniqueIdentifier>{2891c2e2-5512-4fdf-b732-a5b775c7ceb9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Binance">
+      <UniqueIdentifier>{d82d7f0a-cc6d-4728-9066-76338601b55d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -92,6 +98,18 @@
     </ClCompile>
     <ClCompile Include="BitLib\Ticks.cpp">
       <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="Binance.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceInterval.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceLive.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceTick.cpp">
+      <Filter>Source Files\Binance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +163,18 @@
     </ClInclude>
     <ClInclude Include="BitLib\date\date.h">
       <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="Binance.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceInterval.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceLive.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceTick.h">
+      <Filter>Header Files\Binance</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
