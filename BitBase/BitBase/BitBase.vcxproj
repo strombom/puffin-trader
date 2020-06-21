@@ -108,7 +108,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\github\puffin-trader\BitLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zo %(AdditionalOptions)</AdditionalOptions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -151,7 +151,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_TURN_OFF_PLATFORM_STRING;BOOST_UUID_FORCE_AUTO_LINK;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\github\puffin-trader\BitLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -169,8 +169,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Binance.cpp" />
+    <ClCompile Include="BinanceAuthentication.cpp" />
     <ClCompile Include="BinanceInterval.cpp" />
     <ClCompile Include="BinanceLive.cpp" />
+    <ClCompile Include="BinanceRestApi.cpp" />
     <ClCompile Include="BinanceTick.cpp" />
     <ClCompile Include="BitBase.cpp" />
     <ClCompile Include="BitLib\DateTime.cpp" />
@@ -197,8 +199,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Binance.h" />
+    <ClInclude Include="BinanceAuthentication.h" />
     <ClInclude Include="BinanceInterval.h" />
     <ClInclude Include="BinanceLive.h" />
+    <ClInclude Include="BinanceRestApi.h" />
     <ClInclude Include="BinanceTick.h" />
     <ClInclude Include="BitLib\BitBotConstants.h" />
     <ClInclude Include="BitLib\DateTime.h" />

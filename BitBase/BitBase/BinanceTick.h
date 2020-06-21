@@ -1,9 +1,9 @@
 #pragma once
 #include "pch.h"
 
-#include "DateTime.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/BitBotConstants.h"
 #include "Database.h"
-#include "BitBotConstants.h"
 
 #include <mutex>
 #include <queue>

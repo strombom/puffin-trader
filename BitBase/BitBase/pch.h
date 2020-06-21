@@ -1,8 +1,8 @@
 #pragma once
 
-#include "date/date.h"
+#include "BitLib/date/date.h"
 #include "curl/curl.h"
-#include "json11/json11.hpp"
+#include "BitLib/json11/json11.hpp"
 #include "SQLiteCpp/SQLiteCpp.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -13,3 +13,15 @@
 #pragma warning(disable: 4005)
 #include <zmq.hpp>
 #pragma warning(pop)
+
+#include <boost/beast/core.hpp>
+#include <boost/beast/http/write.hpp>
+#include <boost/beast/http/parser.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/beast/websocket/ssl.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/asio/strand.hpp>

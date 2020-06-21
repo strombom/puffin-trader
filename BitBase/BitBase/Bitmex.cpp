@@ -1,8 +1,8 @@
 #include "pch.h"
 
+#include "BitLib/DateTime.h"
+#include "BitLib/Logger.h"
 #include "Bitmex.h"
-#include "Logger.h"
-#include "DateTime.h"
 
 
 Bitmex::Bitmex(sptrDatabase database, sptrDownloadManager download_manager) :

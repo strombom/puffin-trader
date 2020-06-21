@@ -1,8 +1,8 @@
 #include "pch.h"
 
-#include "Logger.h"
+#include "BitLib/Logger.h"
 #include "BitmexInterval.h"
-#include "Intervals.h"
+#include "BitLib/Intervals.h"
 
 #include <algorithm>
 

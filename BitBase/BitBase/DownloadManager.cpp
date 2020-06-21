@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "DownloadManager.h"
-#include "Logger.h"
+#include "BitLib/Logger.h"
 
 #include <future>
 #include "curl/curl.h"

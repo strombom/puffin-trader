@@ -1,8 +1,8 @@
 #include "pch.h"
 
-#include "Logger.h"
+#include "BitLib/Intervals.h"
+#include "BitLib/Logger.h"
 #include "BinanceInterval.h"
-#include "Intervals.h"
 
 #include <algorithm>
 

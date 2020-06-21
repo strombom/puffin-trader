@@ -1,12 +1,12 @@
 #include "pch.h"
 
-#include "Logger.h"
-#include "Bitmex.h"
-#include "Binance.h"
-#include "Server.h"
-#include "Database.h"
+#include "BitLib/BitBotConstants.h"
+#include "BitLib/Logger.h"
 #include "DownloadManager.h"
-#include "BitBotConstants.h"
+#include "Database.h"
+#include "Binance.h"
+#include "Bitmex.h"
+#include "Server.h"
 
 #include <future>
 #include <iostream>

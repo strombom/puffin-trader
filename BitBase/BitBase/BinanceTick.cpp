@@ -1,9 +1,9 @@
 #include "pch.h"
 
-#include "BitBotConstants.h"
+#include "BitLib/BitBotConstants.h"
 #include "BinanceTick.h"
-#include "DateTime.h"
-#include "Logger.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/Logger.h"
 
 #include <msgpack.hpp>
 

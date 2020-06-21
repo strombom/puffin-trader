@@ -111,6 +111,12 @@
     <ClCompile Include="BinanceTick.cpp">
       <Filter>Source Files\Binance</Filter>
     </ClCompile>
+    <ClCompile Include="BinanceRestApi.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceAuthentication.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DownloadManager.h">
@@ -174,6 +180,12 @@
       <Filter>Header Files\Binance</Filter>
     </ClInclude>
     <ClInclude Include="BinanceTick.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceRestApi.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceAuthentication.h">
       <Filter>Header Files\Binance</Filter>
     </ClInclude>
   </ItemGroup>

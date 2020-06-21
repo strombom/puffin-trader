@@ -1,9 +1,9 @@
 #pragma once
 #include "pch.h"
 
-#include "Ticks.h"
-#include "DateTime.h"
-#include "Intervals.h"
+#include "BitLib/Ticks.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/Intervals.h"
 
 #include <mutex>
 #include <string>

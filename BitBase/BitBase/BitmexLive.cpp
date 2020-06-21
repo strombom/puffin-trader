@@ -1,9 +1,9 @@
 #include "pch.h"
 
-#include "BitBotConstants.h"
+#include "BitLib/BitBotConstants.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/Logger.h"
 #include "BitmexLive.h"
-#include "DateTime.h"
-#include "Logger.h"
 
 #include <msgpack.hpp>
 
