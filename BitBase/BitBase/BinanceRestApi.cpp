@@ -5,79 +5,82 @@
 #include "BitLib/BitBotConstants.h"
 #include "BinanceRestApi.h"
 
+#include <iostream>
+
 
 BinanceRestApi::BinanceRestApi(void)
 {
 
 }
 
-bool BinanceRestApi::limit_order(int contracts, double price)
+uptrDatabaseTicks BinanceRestApi::get_aggregate_trades(const std::string& symbol, time_point_ms start_time)
 {
-    logger.info("BinanceRestApi::limit_order contracts(%d)", contracts);
-
-    const auto side = contracts > 0 ? "Buy" : "Sell";
+    auto end_time = start_time + 1h - 1ms; // Difference between start time and end time must be less than one hour
 
     json11::Json parameters = json11::Json::object{
-        { "symbol", "XBTUSD" },
-        { "side", side },
-        { "orderQty", std::abs(contracts) },
-        { "price", price },
-        { "ordType", "Limit" },
-        { "execInst", "ParticipateDoNotInitiate" }
+        { "symbol", symbol },
+        { "startTime", std::to_string(start_time.time_since_epoch().count()) },
+        { "endTime", std::to_string(end_time.time_since_epoch().count()) },
+        { "limit", 1000 }
     };
 
-    auto response = http_post("order", parameters);
+    std::cout << parameters.dump() << std::endl;
 
-    //logger.info("Response: %s", response.dump().c_str());
+    auto response = http_get("aggTrades", parameters);
 
-    if (response["ordStatus"].string_value() == "New" ||
-        response["ordStatus"].string_value() == "Partially filled") {
-        
-        const auto order_id = response["orderID"].string_value();
-        const auto symbol = response["symbol"].string_value();
-        const auto timestamp = DateTime::to_time_point_ms(response["timestamp"].string_value(), "%FT%TZ");
-        const auto buy = (response["side"].string_value() == "Buy");
-        const auto order_size = response["orderQty"].int_value();
-        const auto price = response["price"].number_value();
+    auto ticks = std::make_unique<Ticks>();
 
-        //bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
-        
-
-        return true;
+    for (auto tick : response.array_items()) {
+        const auto timestamp = time_point_ms{ std::chrono::milliseconds{(long long)tick["T"].number_value()} };
+        const auto price = std::stof(tick["p"].string_value());
+        const auto volume = std::stof(tick["q"].string_value());
+        const auto buy = tick["m"].bool_value();
+        ticks->rows.push_back(Tick{timestamp, price, volume, buy});
     }
-    else if (response["ordStatus"].string_value() == "Filled") {
-        return true;
-    }
-    else {
-        return false;
-    }
+
+    return ticks;
 }
 
-bool BinanceRestApi::delete_all(void)
+json11::Json BinanceRestApi::http_get(const std::string& endpoint, json11::Json parameters)
 {
-    //logger.info("BinanceRestApi::delete_all");
+    std::cout << parameters.dump() << std::endl;
 
-    json11::Json parameters = json11::Json::object{
-        { "symbol", "XBTUSD" }
-    };
-
-    auto response = http_delete("order/all", parameters);
-
-    //logger.info("Response: %s", response.dump().c_str());
-
-    auto fail = false;
-    for (const auto& data : response.array_items()) {
-        if (data["ordStatus"].string_value() == "Canceled") {
-            const auto order_id = data["orderID"].string_value();
-            //bitmex_account->delete_order(order_id);
+    auto query_string = std::string{ "?" };
+    for (auto &parameter : parameters.object_items()) {
+        const auto key = parameter.first;
+        const auto value = parameter.second;
+        if (value.is_number()) {
+            const auto number = value.number_value();
+            if (number == std::floor(number)) {
+                query_string += key + "=" + std::to_string((long long)value.number_value()) + "&";
+            }
+            else {
+                query_string += key + "=" + std::to_string(value.number_value()) + "&";
+            }
         }
-        else {
-            fail = true;
+        else if (value.is_string()) {
+            query_string += key + "=" + value.string_value() + "&";
         }
     }
+    query_string.pop_back(); // Remove last "&" or "?" character
 
-    const auto success = !fail;
-    return success;
+    const auto method = "GET";
+    const auto url = std::string{ BitBase::Binance::Live::rest_api_url } + endpoint + query_string;
+    const auto version = 11;
+
+    boost::beast::http::request<boost::beast::http::string_body> req;
+    req.target(url);
+    req.method(boost::beast::http::verb::get);
+    req.version(version);
+    req.set(boost::beast::http::field::host, BitBase::Binance::Live::rest_api_host);
+    req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    req.set(boost::beast::http::field::accept, "application/json");
+    req.prepare_payload();
+
+    const auto http_response = http_request(req);
+    auto error_message = std::string{ "{\"command\":\"error\"}" };
+    const auto response = json11::Json::parse(http_response.c_str(), error_message);
+    return response;
 }
 
 json11::Json BinanceRestApi::http_post(const std::string& endpoint, json11::Json parameters)
@@ -142,15 +145,13 @@ json11::Json BinanceRestApi::http_delete(const std::string& endpoint, json11::Js
 
 const std::string BinanceRestApi::http_request(const boost::beast::http::request<boost::beast::http::string_body>& request)
 {
-
-    //try
-    //{
-
+    try
+    {
         // The io_context is required for all I/O
-    boost::asio::io_context ioc;
+        boost::asio::io_context ioc;
 
         // The SSL context is required, and holds certificates
-    boost::asio::ssl::context ctx(boost::asio::ssl::context::tlsv12_client);
+        boost::asio::ssl::context ctx(boost::asio::ssl::context::tlsv12_client);
 
         // This holds the root certificate used for verification
         //load_root_certificates(ctx);
@@ -190,43 +191,11 @@ const std::string BinanceRestApi::http_request(const boost::beast::http::request
         stream.shutdown(ec);
 
         return body;
-
-
-        /*
-        if (ec == boost::asio::error::eof)
-        {
-            // Rationale:
-            // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-            ec = {};
-        }
-
-        std::cout << "Err: " << ec.message().c_str() << std::endl;
-        std::cout << "Err: " << ec.value() << std::endl;
-
-        if (ec) {
-
-
-            return "";
-            //throw boost::beast::system_error{ ec };
-        }
-        */
-
-        //auto parser = boost::beast::http::response_parser<boost::beast::http::string_body>{};
-        //parser.put(res, ec);
-        //parser.put_eof(ec);
-        //auto message = parser.get();
-        //auto body = message.body();
-
-        //std::cout << "Body: " << body.c_str() << std::endl;
-
-
-        // If we get here then the connection is closed gracefully
-    //}
-    //catch (std::exception const& e)
-    //{
-    //    logger.warn("BinanceRestApi::http_request fail (%s) (%s)", e.what(), target.c_str());
-        //std::cerr << "Error: " << e.what() << std::endl;
-    //}
+    }
+    catch (std::exception const& e)
+    {
+        logger.warn("BinanceRestApi::http_request fail (%s)", e.what());
+    }
 
     return "";
 }

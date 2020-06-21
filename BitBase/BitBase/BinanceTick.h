@@ -1,8 +1,9 @@
 #pragma once
 #include "pch.h"
 
-#include "BitLib/DateTime.h"
 #include "BitLib/BitBotConstants.h"
+#include "BitLib/DateTime.h"
+#include "BinanceRestApi.h"
 #include "Database.h"
 
 #include <mutex>
@@ -27,12 +28,14 @@ public:
     void shutdown(void);
 
 private:
+    sptrBinanceRestApi rest_api;
+    sptrDatabase database;
+
     using TickData = std::map<std::string, uptrDatabaseTicks>;
     using uptrTickData = std::unique_ptr<TickData>;
 
     std::atomic<BinanceTickState> state;
 
-    sptrDatabase database;
 
     std::mutex tick_data_mutex;
     std::unique_ptr<std::thread> tick_data_worker_thread;

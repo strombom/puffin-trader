@@ -10,13 +10,12 @@ class BinanceRestApi
 public:
     BinanceRestApi(void);
 
-    
-    bool limit_order(int contracts, double price);
-    bool delete_all(void);
+    uptrDatabaseTicks get_aggregate_trades(const std::string& symbol, time_point_ms start_time);
 
 private:
     BinanceAuthentication authenticator;
 
+    json11::Json http_get(const std::string& endpoint, json11::Json parameters);
     json11::Json http_post(const std::string& endpoint, json11::Json parameters);
     json11::Json http_delete(const std::string& endpoint, json11::Json parameters);
 
