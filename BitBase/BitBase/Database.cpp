@@ -38,11 +38,11 @@ const std::string Database::get_attribute(const std::string& key, const std::str
     return query_select.getColumn(0).getString();
 }
 
-const int Database::get_attribute(const std::string& key, int default_value)
+const long long Database::get_attribute(const std::string& key, long long default_value)
 {
     const auto attribute = get_attribute(key, std::to_string(default_value));
     auto value = std::istringstream{ attribute };
-    auto return_value = int{ 0 };
+    auto return_value = long long{ 0 };
     value >> return_value;
     return return_value;
 }
@@ -92,7 +92,7 @@ void Database::set_attribute(const std::string& key, const std::string& string)
     query.exec();
 }
 
-void Database::set_attribute(const std::string& key, int value)
+void Database::set_attribute(const std::string& key, long long value)
 {
     set_attribute(key, std::to_string(value));
 }
@@ -142,7 +142,7 @@ std::unique_ptr<Tick> TickTableRead::get_next_tick(void)
     return _get_tick();
 }
 
-std::unique_ptr<Tick> TickTableRead::get_tick(int tick_idx)
+std::unique_ptr<Tick> TickTableRead::get_tick(long long tick_idx)
 {
     auto slock = std::scoped_lock{ file_mutex };
     file.seekg(static_cast<int64_t>(tick_idx) * Tick::struct_size);
@@ -184,7 +184,7 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
     set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
 }
 
-void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::milliseconds interval, const Intervals& intervals_data, const time_point_ms& next_timestamp, int next_tick_idx)
+void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::milliseconds interval, const Intervals& intervals_data, const time_point_ms& next_timestamp, long long next_tick_idx)
 {
     if (!intervals_data.rows.size()) {
         return;

@@ -47,7 +47,7 @@ namespace BitBase
         namespace Live
         {
             constexpr auto address = "tcp://delta.superdator.se:31002";
-            constexpr auto max_rows = 100000;
+            constexpr auto max_rows = 500;
 
             constexpr auto api_key = "N2T7yLPKHiMGA2zJEcc4gI0AxJAxCMO7YqVGDJqQa6uF3PdqjZvHRM2oqkplitps";
             constexpr auto api_secret = "RqqXIVn3Q9W3asDUXZt2jpJIrJMQ4ALOicZYNppkxPHy8pDsR5nCTG9P5YX9FIew";
@@ -55,6 +55,8 @@ namespace BitBase
             constexpr auto rest_api_host = "api.binance.com";
             constexpr auto rest_api_port = "443";
             constexpr auto rest_api_url = "/api/v3/";
+
+            constexpr auto rate_limit = 100ms;
         }
 
         namespace Interval

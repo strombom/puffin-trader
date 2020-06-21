@@ -13,38 +13,43 @@ BinanceRestApi::BinanceRestApi(void)
 
 }
 
-uptrDatabaseTicks BinanceRestApi::get_aggregate_trades(const std::string& symbol, time_point_ms start_time)
+std::tuple<uptrDatabaseTicks, long long> BinanceRestApi::get_aggregate_trades(const std::string& symbol, long long last_id, time_point_ms start_time)
 {
     auto end_time = start_time + 1h - 1ms; // Difference between start time and end time must be less than one hour
-
-    json11::Json parameters = json11::Json::object{
-        { "symbol", symbol },
-        { "startTime", std::to_string(start_time.time_since_epoch().count()) },
-        { "endTime", std::to_string(end_time.time_since_epoch().count()) },
-        { "limit", 1000 }
-    };
-
-    std::cout << parameters.dump() << std::endl;
+    
+    auto parameters = json11::Json{};
+    if (last_id >= 0) {
+        parameters = json11::Json::object{
+            { "symbol", symbol },
+            { "fromId", std::to_string(last_id + 1) }
+        };
+    }
+    else {
+        parameters = json11::Json::object{
+            { "symbol", symbol },
+            { "startTime", std::to_string(start_time.time_since_epoch().count()) },
+            { "endTime", std::to_string(end_time.time_since_epoch().count()) },
+            { "limit", BitBase::Binance::Live::max_rows }
+        };
+    }
 
     auto response = http_get("aggTrades", parameters);
 
     auto ticks = std::make_unique<Ticks>();
-
     for (auto tick : response.array_items()) {
         const auto timestamp = time_point_ms{ std::chrono::milliseconds{(long long)tick["T"].number_value()} };
         const auto price = std::stof(tick["p"].string_value());
         const auto volume = std::stof(tick["q"].string_value());
         const auto buy = tick["m"].bool_value();
+        last_id = (long long)tick["a"].number_value();
         ticks->rows.push_back(Tick{timestamp, price, volume, buy});
     }
 
-    return ticks;
+    return std::make_tuple(std::move(ticks), last_id);
 }
 
 json11::Json BinanceRestApi::http_get(const std::string& endpoint, json11::Json parameters)
 {
-    std::cout << parameters.dump() << std::endl;
-
     auto query_string = std::string{ "?" };
     for (auto &parameter : parameters.object_items()) {
         const auto key = parameter.first;

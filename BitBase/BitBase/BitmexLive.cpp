@@ -100,7 +100,7 @@ void BitmexLive::tick_data_worker(void)
                     auto received_ticks = std::vector<MessageTick>{};
                     received_ticks = msgpack::unpack(static_cast<const char*>(message.data()), message.size()).get().convert(received_ticks);
 
-                    auto last_timepoint = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - std::chrono::seconds{ 5 });
+                    auto last_timepoint = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - 500ms);
                     if (received_ticks.size() > 1) {
                         if (received_ticks.back().timestamp() < last_timepoint) {
                             last_timepoint = received_ticks.back().timestamp();
