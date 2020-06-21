@@ -90,16 +90,24 @@ void BitmexTrader::trader_worker(void)
             }
         }
         else if (trader_state == TraderState::bitbot_action) {
-            const auto [place_order, action_leverage] = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
-            if (place_order) {
-                desired_leverage = action_leverage;
-                desired_ask_price = bitmex_account->get_ask_price();
-                desired_bid_price = bitmex_account->get_bid_price();
-                trader_state = TraderState::delete_orders;
+            //const auto [place_order, action_leverage] = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
+            const auto buy = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
+            //if (place_order) {
+            //if (buy) {
+                //desired_leverage = action_leverage;
+            if (buy) {
+                desired_leverage = BitSim::BitMex::max_leverage;
             }
             else {
-                trader_state = TraderState::wait_for_next_interval;
+                desired_leverage = -BitSim::BitMex::max_leverage;
             }
+            desired_ask_price = bitmex_account->get_ask_price();
+            desired_bid_price = bitmex_account->get_bid_price();
+            trader_state = TraderState::delete_orders;
+            //}
+            //else {
+            //    trader_state = TraderState::wait_for_next_interval;
+            //}
         }
         else if (trader_state == TraderState::delete_orders) {
             trader_state = TraderState::delete_orders_worker;

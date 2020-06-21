@@ -12,7 +12,7 @@ class QNetworkImpl : public torch::nn::Module
 public:
     QNetworkImpl(const std::string& name);
 
-    torch::Tensor forward(torch::Tensor state, torch::Tensor action);
+    torch::Tensor forward(torch::Tensor state); // , torch::Tensor action);
 
 private:
     torch::nn::Sequential layers;
@@ -25,13 +25,14 @@ class PolicyNetworkImpl : public torch::nn::Module
 public:
     PolicyNetworkImpl(const std::string& name);
 
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
+    torch::Tensor forward(torch::Tensor state);
+    //std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> forward(torch::Tensor state);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> sample_action(torch::Tensor state);
 
 private:
     torch::nn::Sequential policy;
-    torch::nn::Sequential policy_mean;
-    torch::nn::Sequential policy_log_std;
+    //torch::nn::Sequential policy_mean;
+    //torch::nn::Sequential policy_log_std;
     torch::nn::Sequential policy_discrete;
 };
 TORCH_MODULE(PolicyNetwork);
@@ -43,11 +44,11 @@ public:
     RL_SAC_ReplayBuffer(void);
 
     void append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state);
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(void);
 
 private:
     torch::Tensor current_states;
-    torch::Tensor cont_actions;
+    //torch::Tensor cont_actions;
     torch::Tensor disc_actions_idx;
     torch::Tensor rewards;
     torch::Tensor next_states;

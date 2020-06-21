@@ -21,7 +21,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    constexpr auto command = "train_rl";
+    const auto command = std::string{ "make_direction_data" };
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -36,22 +36,25 @@ int main()
         observations->save(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
     }
-    else if (command == "train_features") {
+    else if (command == "train_feature_encoder") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
 
         auto fe_training = FE_Training{ observations };
         fe_training.train();
         fe_training.save_weights(BitSim::tmp_path, "fe_weights.pt");
     }
-    else if (command == "inference") {
+    else if (command == "make_features") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
 
-        auto inference = FE_Inference{ BitSim::tmp_path, "fe_weights_20200615.pt" };
+        auto inference = FE_Inference{ BitSim::tmp_path, BitSim::feature_encoder_weights_filename };
         auto features = inference.forward(observations->get_all());
         std::cout << "Inference, features " << features.sizes() << std::endl;
 
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
+    }
+    else if (command == "make_direction_data") {
+        
     }
     else if (command == "train_rl") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
@@ -64,6 +67,22 @@ int main()
         auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
+    }
+    else if (command == "evaluate_rl") {
+        auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
+        auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
+        auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
+        std::cout << "observations: " << observations->get_all().sizes() << std::endl;
+        std::cout << "features: " << features.sizes() << std::endl;
+        std::cout << "intervals: " << intervals->rows.size() << std::endl;
+
+        auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
+        auto rl_trader = RL_Trader{ simulator };
+        //rl_trader.train();
+        const auto idx_episode = 0;
+        const auto timestamp_start = date::sys_days(date::year{ 2020 } / 4 / 1) + 0h + 0min + 0s;
+        const auto timestamp_end = date::sys_days(date::year{ 2020 } / 4 / 1) + 2h + 0min + 0s;
+        rl_trader.evaluate(idx_episode, timestamp_start, timestamp_end);
     }
     else if (command == "trade_live") {
         auto live_data = std::make_shared<LiveData>();

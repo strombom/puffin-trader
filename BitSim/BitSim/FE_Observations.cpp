@@ -78,8 +78,8 @@ torch::Tensor FE_Observations::calculate_observation(sptrIntervals intervals, in
     for (auto idx_interval = 0; idx_interval < BitSim::observation_length; ++idx_interval) {
         const auto&& row = &intervals->rows[(int)((long)idx_obs + idx_interval)];
         observation[BitSim::ch_price][idx_interval] = price_transform(first_price, row->last_price);
-        observation[BitSim::ch_buy_volume][idx_interval] = volume_transform(row->vol_buy);
-        observation[BitSim::ch_sell_volume][idx_interval] = volume_transform(row->vol_sell);
+        //observation[BitSim::ch_buy_volume][idx_interval] = volume_transform(row->vol_buy);
+        //observation[BitSim::ch_sell_volume][idx_interval] = volume_transform(row->vol_sell);
     }
 
     return observation;

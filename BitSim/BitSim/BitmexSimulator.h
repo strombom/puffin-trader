@@ -17,11 +17,13 @@ public:
         double upnl,
         double position_contracts,
         double position_leverage,
-        double order_contracts,
+        int make_order,
         double order_leverage,
-        int order_idle,
-        int order_limit,
-        int order_market,
+        //double order_contracts,
+        //double order_leverage,
+        //int order_idle,
+        //int order_limit,
+        //int order_market,
         double reward
     );
 

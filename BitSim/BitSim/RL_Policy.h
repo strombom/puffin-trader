@@ -12,7 +12,8 @@ class RL_Policy
 public:
     RL_Policy(const std::string& filename);
 
-    std::tuple<bool, double> get_action(torch::Tensor feature, double leverage);
+    //std::tuple<bool, double> get_action(torch::Tensor feature, double leverage);
+    bool get_action(torch::Tensor feature, double leverage);
 
 private:
     PolicyNetwork policy;
