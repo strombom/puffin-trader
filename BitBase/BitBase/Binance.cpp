@@ -45,6 +45,7 @@ void Binance::tick_data_updated_callback(void)
     interval_update_condition.notify_one();
 }
 
+#include <iostream>
 void Binance::main_loop(void)
 {
     while (state != BinanceState::shutdown) {
@@ -52,7 +53,7 @@ void Binance::main_loop(void)
             auto slock = std::scoped_lock{ state_mutex };
 
             if (state == BinanceState::idle) {
-                auto tick_data_last_timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", BitBase::Binance::first_timestamp);
+                auto tick_data_last_timestamp = database->get_attribute(BitBase::Binance::exchange_name, "BTCUSDT", "tick_data_last_timestamp", BitBase::Binance::first_timestamp);
                 if (tick_data_last_timestamp < std::chrono::system_clock::now() - std::chrono::hours{ 1 }) {
                     // Last tick timestamp is more than 1 hour old, get data from Binance API
                     state = BinanceState::downloading_tick;
@@ -62,7 +63,6 @@ void Binance::main_loop(void)
                     state = BinanceState::downloading_live;
                     binance_live->start();
                 }
-
             }
             else if (state == BinanceState::downloading_tick) {
                 // Check if daily data is downloaded
@@ -78,7 +78,7 @@ void Binance::main_loop(void)
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
