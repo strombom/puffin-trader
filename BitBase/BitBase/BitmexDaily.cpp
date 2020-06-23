@@ -104,10 +104,16 @@ void BitmexDaily::start_next_download(void)
 void BitmexDaily::update_symbol_names(const std::unordered_set<std::string>& new_symbol_names)
 {
     auto symbol_names = database->get_attribute(BitBase::Bitmex::exchange_name, "symbols", std::unordered_set<std::string>{});
+    auto update = false;
     for (auto&& symbol_name : new_symbol_names) {
-        symbol_names.insert(symbol_name);
+        if (symbol_names.count(symbol_name) == 0) {
+            symbol_names.insert(symbol_name);
+            update = true;
+        }
     }
-    database->set_attribute(BitBase::Bitmex::exchange_name, "symbols", symbol_names);
+    if (update) {
+        database->set_attribute(BitBase::Bitmex::exchange_name, "symbols", symbol_names);
+    }
 }
 
 void BitmexDaily::tick_data_worker(void)
@@ -228,87 +234,4 @@ BitmexDaily::uptrTickData BitmexDaily::parse_raw(const std::stringstream& raw_da
     logger.info("BitmexDaily::parse_raw end (%d ms)", timer.elapsed().count() / 1000);
 
     return tick_data;
-
-    /*
-    const std::regex fieldsregx(",");
-    const std::regex linesregx("\\n");
-
-    std::string indata = raw_data.str();
-    std::sregex_token_iterator row_it(indata.begin(), indata.end(), linesregx, -1);
-    std::sregex_token_iterator row_end;
-
-    ++row_it; // Skip table headers
-    while (row_it != row_end) {
-        const std::string row = row_it->str();
-        ++row_it;
-        
-        std::sregex_token_iterator col_it(row.begin(), row.end(), fieldsregx, -1);
-        std::sregex_token_iterator col_end;
-
-        time_point_us timestamp;
-        std::string symbol;
-        float price;
-        float volume;
-        bool buy;
-        bool valid = false;
-
-        timer.start();
-        int idx = 0;
-        while (col_it != col_end) {
-            std::string token = col_it->str();
-            ++col_it;
-            if (idx == 0) {
-                std::istringstream ss{ token };
-                ss >> date::parse("%FD%T", timestamp);
-                if (ss.fail()) {
-                    break;
-                }
-            }
-            else if (idx == 1) {
-                symbol = token;
-            }
-            else if (idx == 2) {
-                if (token == "Buy") {
-                    buy = true;
-                }
-                else if (token == "Sell") {
-                    buy = false;
-                }
-                else if (token == "") {
-                    buy = true;
-                }
-                else {
-                    break;
-                }
-            }
-            else if (idx == 3) {
-                try {
-                    volume = std::stof(token);
-                }
-                catch (...) {
-                    break; // Invalid volume format
-                }
-            }
-            else if (idx == 4) {
-                try {
-                    price = std::stof(token);
-                    valid = true;
-                    break;
-                }
-                catch (...) {
-                    break; // Invalid price format
-                }
-            }
-            ++idx;
-        }
-
-        if (!valid) {
-            return nullptr;
-        }
-        if ((*tick_data)[symbol] == nullptr) {
-            (*tick_data)[symbol] = std::make_unique<DatabaseTicks>();
-        }
-        (*tick_data)[symbol]->append(timestamp, price, volume, buy);
-    }
-    */
 }
