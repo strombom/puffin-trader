@@ -67,10 +67,8 @@ void BinanceWebSocket::connect(void)
 
         for (auto symbol : Binance::symbols) {
             auto symbol_string = std::string{ symbol };
-            std::transform(symbol_string.begin(), symbol_string.end(), symbol_string.begin(),
-                [](unsigned char c) { return std::tolower(c); });
-
-            url += symbol_string + "@trade/";
+            std::transform(symbol_string.begin(), symbol_string.end(), symbol_string.begin(), [](unsigned char c) { return std::tolower(c); });
+            url += symbol_string + "@aggTrade/";
         }
         if (url.back() == '/') {
             url.pop_back();
@@ -98,7 +96,7 @@ void BinanceWebSocket::websocket_worker(void)
             continue;
         }
 
-        //try {
+        try {
             // Receive message
             auto buffer = boost::beast::flat_buffer{};
             websocket->read(buffer);
@@ -107,29 +105,34 @@ void BinanceWebSocket::websocket_worker(void)
             // Parse message
             auto error_message = std::string{};
             const auto message = json11::Json::parse(message_string, error_message);
-            const auto action = message["action"].string_value();
-            const auto table = message["table"].string_value();
-            const auto data = message["data"];
-
-            if (action == "insert" && table == "trade" && data.is_array()) {
-                //std::cout << "BinanceWebSocket insert: " << message_string << std::endl;
-
-                for (auto tick : data.array_items()) {
-                    const auto symbol = tick["symbol"].string_value();
-                    const auto price = tick["price"].number_value();
-                    const auto volume = tick["size"].number_value();
-                    const auto buy = tick["side"].string_value().compare("Buy") == 0;
-                    const auto timestamp = DateTime::to_time_point(tick["timestamp"].string_value(), "%FT%TZ");
-
-                    tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
-                }
+            if (!message["stream"].is_string() || !message["data"].is_object()) {
+                continue;
             }
-            else {
-                std::cout << "BinanceWebSocket rcv: " << message_string << std::endl;
+            const auto stream = message["stream"].string_value();
+            auto find_stream_type = stream.find("@aggTrade");
+            if (find_stream_type == std::string::npos || find_stream_type == 0) {
+                continue;
             }
-        //}
-        //catch (std::exception const& e) {
-        //    connected = false;
-        //}
+            auto symbol = stream.substr(0, find_stream_type);
+            std::transform(symbol.begin(), symbol.end(), symbol.begin(), [](unsigned char c) { return std::toupper(c); });
+
+            const auto timestamp_raw_ms = (long long)message["data"]["T"].number_value();
+            const auto price_raw = message["data"]["p"].string_value();
+            const auto volume_raw = message["data"]["q"].string_value();
+
+            const auto timestamp = time_point_ms{ std::chrono::milliseconds{timestamp_raw_ms} };
+            const auto price = std::stod(price_raw);
+            const auto volume = std::stod(volume_raw);
+            const auto buy = message["data"]["m"].bool_value();
+
+            if (timestamp_raw_ms == 0 || price == 0.0 || volume == 0.0 || !message["data"]["m"].is_bool()) {
+                continue;
+            }
+
+            tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
+        }
+        catch (std::exception const& e) {
+            connected = false;
+        }
     }
 }
