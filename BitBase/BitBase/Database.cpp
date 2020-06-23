@@ -198,8 +198,8 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
     file << intervals_data;
     file.close();
 
-    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_timestamp", next_timestamp);
-    set_attribute(BitBase::Bitmex::exchange_name, symbol + "_interval_" + interval_name + "_next_tick_idx", next_tick_idx);
+    set_attribute(exchange, symbol + "_interval_" + interval_name + "_next_timestamp", next_timestamp);
+    set_attribute(exchange, symbol + "_interval_" + interval_name + "_next_tick_idx", next_tick_idx);
 }
 
 std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::milliseconds interval)
