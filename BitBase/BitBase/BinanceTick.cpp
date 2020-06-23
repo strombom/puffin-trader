@@ -49,6 +49,15 @@ void BinanceTick::start(void)
     tick_data_condition.notify_one();
 }
 
+void BinanceTick::insert_symbol_name(const std::string& symbol_name)
+{
+    auto symbol_names = database->get_attribute(BitBase::Binance::exchange_name, "symbols", std::unordered_set<std::string>{});
+    if (symbol_names.count(symbol_name) == 0) {
+        symbol_names.insert(symbol_name);
+        database->set_attribute(BitBase::Binance::exchange_name, "symbols", symbol_names);
+    }
+}
+
 void BinanceTick::tick_data_worker(void)
 {
     while (tick_data_thread_running) {
@@ -87,6 +96,7 @@ void BinanceTick::tick_data_worker(void)
                     // Potential bug, might skip multiple ticks on the same timestamp, unlikely to occur so we don't mind - 2020-06-22
                     database->extend_tick_data(BitBase::Binance::exchange_name, symbol, std::move(ticks), BitBase::Binance::first_timestamp - 1ms);
                     database->set_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_id", new_last_id);
+                    insert_symbol_name(symbol);
                 }
             }
         }

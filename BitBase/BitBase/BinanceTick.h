@@ -47,6 +47,7 @@ private:
     zmq::context_t zmq_context;
     std::unique_ptr<zmq::socket_t> zmq_client;
 
+    void insert_symbol_name(const std::string& new_symbol_name);
     void tick_data_worker(void);
 };
 
