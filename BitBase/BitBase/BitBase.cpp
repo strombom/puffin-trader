@@ -65,9 +65,9 @@ int main()
 
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
-    //auto download_manager = DownloadManager::create();
+    auto download_manager = DownloadManager::create();
     auto database = Database::create(BitBase::Database::root_path);
-    //auto bitmex = Bitmex{ database, download_manager };
+    auto bitmex = Bitmex{ database, download_manager };
     auto binance = Binance{ database };
     auto server = Server{ database };
 
@@ -86,7 +86,7 @@ int main()
     }
     logger.info("Shutting down");
 
-    //bitmex.shutdown();
+    bitmex.shutdown();
     binance.shutdown();
-    //download_manager->shutdown();
+    download_manager->shutdown();
 }

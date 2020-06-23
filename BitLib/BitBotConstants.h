@@ -46,8 +46,8 @@ namespace BitBase
 
         namespace Live
         {
-            constexpr auto address = "tcp://delta.superdator.se:31002";
-            constexpr auto max_rows = 500;
+            constexpr auto address = "tcp://delta.superdator.se:31003";
+            constexpr auto max_rows = 10000;
 
             constexpr auto api_key = "N2T7yLPKHiMGA2zJEcc4gI0AxJAxCMO7YqVGDJqQa6uF3PdqjZvHRM2oqkplitps";
             constexpr auto api_secret = "RqqXIVn3Q9W3asDUXZt2jpJIrJMQ4ALOicZYNppkxPHy8pDsR5nCTG9P5YX9FIew";
