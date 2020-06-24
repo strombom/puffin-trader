@@ -52,7 +52,7 @@ void Bitmex::main_loop(void)
             auto slock = std::scoped_lock{ state_mutex };
 
             if (state == BitmexState::idle) {
-                auto tick_data_last_timestamp = database->get_attribute("BITMEX", "XBTUSD", "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
+                auto tick_data_last_timestamp = database->get_attribute(BitBase::Bitmex::exchange_name, BitBase::Bitmex::symbols[0], "tick_data_last_timestamp", BitBase::Bitmex::first_timestamp);
                 if (tick_data_last_timestamp < date::floor<date::days>(system_clock_ms_now()) &&
                     date::floor<date::days>(tick_data_last_timestamp) + 24h + 9h < system_clock_ms_now() &&
                     tick_data_last_timestamp + 24h < system_clock_ms_now()) {

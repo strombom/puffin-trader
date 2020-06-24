@@ -52,7 +52,7 @@ void Coinbase::main_loop(void)
             auto slock = std::scoped_lock{ state_mutex };
 
             if (state == CoinbaseState::idle) {
-                auto tick_data_last_timestamp = database->get_attribute(BitBase::Coinbase::exchange_name, "BTCUSDT", "tick_data_last_timestamp", BitBase::Coinbase::first_timestamp);
+                auto tick_data_last_timestamp = database->get_attribute(BitBase::Coinbase::exchange_name, BitBase::Coinbase::symbols[0], "tick_data_last_timestamp", BitBase::Coinbase::first_timestamp);
                 if (tick_data_last_timestamp < std::chrono::system_clock::now() - std::chrono::hours{ 1 }) {
                     // Last tick timestamp is more than 1 hour old, get data from Coinbase API
                     state = CoinbaseState::downloading_tick;
