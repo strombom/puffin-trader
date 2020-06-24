@@ -88,7 +88,8 @@ namespace BitBase
             constexpr auto rest_api_url = "/";
 
             constexpr auto rate_limit = 200ms;
-            constexpr auto max_rows = 1000;
+            constexpr auto max_rows = 100;
+            constexpr auto first_id = 80350317;
         }
 
         namespace Live

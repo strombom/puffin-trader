@@ -6,6 +6,7 @@
 #include "CoinbaseRestApi.h"
 
 #include <iostream>
+#include <openssl/ssl.h>
 
 
 CoinbaseRestApi::CoinbaseRestApi(void)
@@ -15,34 +16,21 @@ CoinbaseRestApi::CoinbaseRestApi(void)
 
 std::tuple<uptrDatabaseTicks, long long> CoinbaseRestApi::get_aggregate_trades(const std::string& symbol, long long last_id, time_point_ms start_time)
 {
-    auto end_time = start_time + 1h - 1ms; // Difference between start time and end time must be less than one hour
+    const auto url = std::string{ "products/" } + symbol + "/trades";
+    auto parameters = json11::Json::object{
+        { "after", std::to_string(last_id + BitBase::Coinbase::Tick::max_rows + 1) }
+    };
 
-    auto parameters = json11::Json{};
-    if (last_id >= 0) {
-        parameters = json11::Json::object{
-            { "symbol", symbol },
-            { "fromId", std::to_string(last_id + 1) },
-            { "limit", BitBase::Coinbase::Tick::max_rows }
-        };
-    }
-    else {
-        parameters = json11::Json::object{
-            { "symbol", symbol },
-            { "startTime", std::to_string(start_time.time_since_epoch().count()) },
-            { "endTime", std::to_string(end_time.time_since_epoch().count()) },
-            { "limit", BitBase::Coinbase::Tick::max_rows }
-        };
-    }
-
-    auto response = http_get("aggTrades", parameters);
+    auto response = http_get(url, parameters).array_items();
+    std::reverse(std::begin(response), std::end(response));
 
     auto ticks = std::make_unique<Ticks>();
-    for (auto tick : response.array_items()) {
-        const auto timestamp = time_point_ms{ std::chrono::milliseconds{(long long)tick["T"].number_value()} };
-        const auto price = std::stof(tick["p"].string_value());
-        const auto volume = std::stof(tick["q"].string_value());
-        const auto buy = tick["m"].bool_value();
-        last_id = (long long)tick["a"].number_value();
+    for (auto tick : response) {
+        const auto timestamp = DateTime::to_time_point_ms(tick["time"].string_value(), "%FT%TZ");
+        const auto price = std::stof(tick["price"].string_value());
+        const auto volume = std::stof(tick["size"].string_value());
+        const auto buy = tick["m"].string_value().compare("buy") == 0;
+        last_id = (long long)tick["trade_id"].number_value();
         ticks->rows.push_back(Tick{ timestamp, price, volume, buy });
     }
 
@@ -73,6 +61,9 @@ json11::Json CoinbaseRestApi::http_get(const std::string& endpoint, json11::Json
     const auto method = "GET";
     const auto url = std::string{ BitBase::Coinbase::Tick::rest_api_url } + endpoint + query_string;
     const auto version = 11;
+    const auto access_timestamp = authenticator.generate_expiration(0s);
+    const auto sign_message = std::to_string(access_timestamp) + method + url;
+    const auto access_signature = authenticator.authenticate(sign_message);
 
     boost::beast::http::request<boost::beast::http::string_body> req;
     req.target(url);
@@ -81,71 +72,15 @@ json11::Json CoinbaseRestApi::http_get(const std::string& endpoint, json11::Json
     req.set(boost::beast::http::field::host, BitBase::Coinbase::Tick::rest_api_host);
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(boost::beast::http::field::accept, "application/json");
+    req.set("CB-ACCESS-KEY", BitBase::Coinbase::Tick::api_key);
+    req.set("CB-ACCESS-SIGN", access_signature);
+    req.set("CB-ACCESS-TIMESTAMP", access_timestamp);
     req.prepare_payload();
 
     const auto http_response = http_request(req);
     auto error_message = std::string{ "{\"command\":\"error\"}" };
     const auto response = json11::Json::parse(http_response.c_str(), error_message);
-    return response;
-}
 
-json11::Json CoinbaseRestApi::http_post(const std::string& endpoint, json11::Json parameters)
-{
-    const auto method = "POST";
-    const auto url = std::string{ BitBase::Coinbase::Tick::rest_api_url } + endpoint;
-    const auto body = parameters.dump();
-    const auto expires = authenticator.generate_expiration(BitBase::Coinbase::Tick::rest_api_auth_timeout);
-    const auto sign_message = std::string{ method } + url + std::to_string(expires) + body;
-    const auto signature = authenticator.authenticate(sign_message);
-    const auto version = 11;
-
-    boost::beast::http::request<boost::beast::http::string_body> req;
-    req.target(url);
-    req.method(boost::beast::http::verb::post);
-    req.version(version);
-    req.set(boost::beast::http::field::host, BitBase::Coinbase::Tick::rest_api_host);
-    req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-    req.set(boost::beast::http::field::content_type, "application/json");
-    req.set(boost::beast::http::field::accept, "application/json");
-    req.set("api-expires", expires);
-    req.set("api-key", BitBase::Coinbase::Tick::api_key);
-    req.set("api-signature", signature);
-    req.body() = body;
-    req.prepare_payload();
-
-    const auto http_response = http_request(req);
-    auto error_message = std::string{ "{\"command\":\"error\"}" };
-    const auto response = json11::Json::parse(http_response.c_str(), error_message);
-    return response;
-}
-
-json11::Json CoinbaseRestApi::http_delete(const std::string& endpoint, json11::Json parameters)
-{
-    const auto method = "DELETE";
-    const auto url = std::string{ BitBase::Coinbase::Tick::rest_api_url } + endpoint;
-    const auto body = parameters.dump();
-    const auto expires = authenticator.generate_expiration(BitBase::Coinbase::Tick::rest_api_auth_timeout);
-    const auto sign_message = std::string{ method } + url + std::to_string(expires) + body;
-    const auto signature = authenticator.authenticate(sign_message);
-    const auto version = 11;
-
-    boost::beast::http::request<boost::beast::http::string_body> req;
-    req.target(url);
-    req.method(boost::beast::http::verb::delete_);
-    req.version(version);
-    req.set(boost::beast::http::field::host, BitBase::Coinbase::Tick::rest_api_host);
-    req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-    req.set(boost::beast::http::field::content_type, "application/json");
-    req.set(boost::beast::http::field::accept, "application/json");
-    req.set("api-expires", expires);
-    req.set("api-key", BitBase::Coinbase::Tick::api_key);
-    req.set("api-signature", signature);
-    req.body() = body;
-    req.prepare_payload();
-
-    const auto http_response = http_request(req);
-    auto error_message = std::string{ "{\"command\":\"error\"}" };
-    const auto response = json11::Json::parse(http_response.c_str(), error_message);
     return response;
 }
 
@@ -153,6 +88,8 @@ const std::string CoinbaseRestApi::http_request(const boost::beast::http::reques
 {
     try
     {
+        boost::beast::error_code ec;
+
         // The io_context is required for all I/O
         boost::asio::io_context ioc;
 
@@ -160,14 +97,21 @@ const std::string CoinbaseRestApi::http_request(const boost::beast::http::reques
         boost::asio::ssl::context ctx(boost::asio::ssl::context::tlsv12_client);
 
         // This holds the root certificate used for verification
-        //load_root_certificates(ctx);
+        load_root_certificates(ctx, ec);
 
         // Verify the remote server's certificate
-        //ctx.set_verify_mode(boost::asio::ssl::verify_peer);
+        ctx.set_verify_mode(boost::asio::ssl::verify_peer);
 
         // These objects perform our I/O
         boost::asio::ip::tcp::resolver resolver(ioc);
         boost::beast::ssl_stream<boost::beast::tcp_stream> stream(ioc, ctx);
+
+        // Set SNI Hostname (many hosts need this to handshake successfully)
+        if (!SSL_set_tlsext_host_name(stream.native_handle(), BitBase::Coinbase::Tick::rest_api_host))
+        {
+            boost::system::error_code ec{ static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category() };
+            throw boost::system::system_error{ ec };
+        }
 
         // Look up the domain name
         const auto results = resolver.resolve(BitBase::Coinbase::Tick::rest_api_host, BitBase::Coinbase::Tick::rest_api_port);
@@ -193,7 +137,6 @@ const std::string CoinbaseRestApi::http_request(const boost::beast::http::reques
         const auto body = boost::beast::buffers_to_string(res.body().data());
 
         // Gracefully close the stream
-        boost::beast::error_code ec;
         stream.shutdown(ec);
 
         return body;
@@ -204,4 +147,35 @@ const std::string CoinbaseRestApi::http_request(const boost::beast::http::reques
     }
 
     return "";
+}
+
+
+void CoinbaseRestApi::load_root_certificates(boost::asio::ssl::context& ctx, boost::system::error_code& ec)
+{
+    // coinbase-com-chain.pem
+    const auto cert = std::string{
+        "-----BEGIN CERTIFICATE-----\n"
+        "MIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n"
+        "RTESMBAGA1UEChMJQmFsdGltb3JlMRMwEQYDVQQLEwpDeWJlclRydXN0MSIwIAYD\n"
+        "VQQDExlCYWx0aW1vcmUgQ3liZXJUcnVzdCBSb290MB4XDTAwMDUxMjE4NDYwMFoX\n"
+        "DTI1MDUxMjIzNTkwMFowWjELMAkGA1UEBhMCSUUxEjAQBgNVBAoTCUJhbHRpbW9y\n"
+        "ZTETMBEGA1UECxMKQ3liZXJUcnVzdDEiMCAGA1UEAxMZQmFsdGltb3JlIEN5YmVy\n"
+        "VHJ1c3QgUm9vdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKMEuyKr\n"
+        "mD1X6CZymrV51Cni4eiVgLGw41uOKymaZN+hXe2wCQVt2yguzmKiYv60iNoS6zjr\n"
+        "IZ3AQSsBUnuId9Mcj8e6uYi1agnnc+gRQKfRzMpijS3ljwumUNKoUMMo6vWrJYeK\n"
+        "mpYcqWe4PwzV9/lSEy/CG9VwcPCPwBLKBsua4dnKM3p31vjsufFoREJIE9LAwqSu\n"
+        "XmD+tqYF/LTdB1kC1FkYmGP1pWPgkAx9XbIGevOF6uvUA65ehD5f/xXtabz5OTZy\n"
+        "dc93Uk3zyZAsuT3lySNTPx8kmCFcB5kpvcY67Oduhjprl3RjM71oGDHweI12v/ye\n"
+        "jl0qhqdNkNwnGjkCAwEAAaNFMEMwHQYDVR0OBBYEFOWdWTCCR1jMrPoIVDaGezq1\n"
+        "BE3wMBIGA1UdEwEB/wQIMAYBAf8CAQMwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3\n"
+        "DQEBBQUAA4IBAQCFDF2O5G9RaEIFoN27TyclhAO992T9Ldcw46QQF+vaKSm2eT92\n"
+        "9hkTI7gQCvlYpNRhcL0EYWoSihfVCr3FvDB81ukMJY2GQE/szKN+OMY3EU/t3Wgx\n"
+        "jkzSswF07r51XgdIGn9w/xZchMB5hbgF/X++ZRGjD8ACtPhSNzkE1akxehi/oCr0\n"
+        "Epn3o0WC4zxe9Z2etciefC7IpJ5OCBRLbf1wbWsaY71k5h+3zvDyny67G7fyUIhz\n"
+        "ksLi4xaNmjICq44Y3ekQEe5+NauQrz4wlHrQMz2nZQ/1/I6eYs9HRCwBXbsdtTLS\n"
+        "R9I4LtD+gdwyah617jzV/OeBHRnDJELqYzmp\n"
+        "-----END CERTIFICATE-----\n"
+    };
+
+    ctx.add_certificate_authority(boost::asio::buffer(cert.data(), cert.size()), ec);
 }
