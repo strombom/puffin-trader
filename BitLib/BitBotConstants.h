@@ -44,11 +44,8 @@ namespace BitBase
         constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
         constexpr auto symbols = std::array<const char*, 1>{ "BTCUSDT" };
 
-        namespace Live
+        namespace Tick
         {
-            constexpr auto address = "tcp://delta.superdator.se:31003";
-            constexpr auto max_rows = 10000;
-
             constexpr auto api_key = "N2T7yLPKHiMGA2zJEcc4gI0AxJAxCMO7YqVGDJqQa6uF3PdqjZvHRM2oqkplitps";
             constexpr auto api_secret = "RqqXIVn3Q9W3asDUXZt2jpJIrJMQ4ALOicZYNppkxPHy8pDsR5nCTG9P5YX9FIew";
             constexpr auto rest_api_auth_timeout = 60s;
@@ -57,6 +54,13 @@ namespace BitBase
             constexpr auto rest_api_url = "/api/v3/";
 
             constexpr auto rate_limit = 100ms;
+            constexpr auto max_rows = 1000;
+        }
+
+        namespace Live
+        {
+            constexpr auto address = "tcp://delta.superdator.se:31003";
+            constexpr auto max_rows = 10000;
         }
 
         namespace Interval

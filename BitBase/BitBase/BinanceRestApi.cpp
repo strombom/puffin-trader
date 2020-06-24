@@ -21,7 +21,8 @@ std::tuple<uptrDatabaseTicks, long long> BinanceRestApi::get_aggregate_trades(co
     if (last_id >= 0) {
         parameters = json11::Json::object{
             { "symbol", symbol },
-            { "fromId", std::to_string(last_id + 1) }
+            { "fromId", std::to_string(last_id + 1) },
+            { "limit", BitBase::Binance::Tick::max_rows }
         };
     }
     else {
@@ -29,7 +30,7 @@ std::tuple<uptrDatabaseTicks, long long> BinanceRestApi::get_aggregate_trades(co
             { "symbol", symbol },
             { "startTime", std::to_string(start_time.time_since_epoch().count()) },
             { "endTime", std::to_string(end_time.time_since_epoch().count()) },
-            { "limit", BitBase::Binance::Live::max_rows }
+            { "limit", BitBase::Binance::Tick::max_rows }
         };
     }
 
@@ -70,14 +71,14 @@ json11::Json BinanceRestApi::http_get(const std::string& endpoint, json11::Json 
     query_string.pop_back(); // Remove last "&" or "?" character
 
     const auto method = "GET";
-    const auto url = std::string{ BitBase::Binance::Live::rest_api_url } + endpoint + query_string;
+    const auto url = std::string{ BitBase::Binance::Tick::rest_api_url } + endpoint + query_string;
     const auto version = 11;
 
     boost::beast::http::request<boost::beast::http::string_body> req;
     req.target(url);
     req.method(boost::beast::http::verb::get);
     req.version(version);
-    req.set(boost::beast::http::field::host, BitBase::Binance::Live::rest_api_host);
+    req.set(boost::beast::http::field::host, BitBase::Binance::Tick::rest_api_host);
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(boost::beast::http::field::accept, "application/json");
     req.prepare_payload();
@@ -91,9 +92,9 @@ json11::Json BinanceRestApi::http_get(const std::string& endpoint, json11::Json 
 json11::Json BinanceRestApi::http_post(const std::string& endpoint, json11::Json parameters)
 {
     const auto method = "POST";
-    const auto url = std::string{ BitBase::Binance::Live::rest_api_url } + endpoint;
+    const auto url = std::string{ BitBase::Binance::Tick::rest_api_url } + endpoint;
     const auto body = parameters.dump();
-    const auto expires = authenticator.generate_expiration(BitBase::Binance::Live::rest_api_auth_timeout);
+    const auto expires = authenticator.generate_expiration(BitBase::Binance::Tick::rest_api_auth_timeout);
     const auto sign_message = std::string{ method } + url + std::to_string(expires) + body;
     const auto signature = authenticator.authenticate(sign_message);
     const auto version = 11;
@@ -102,12 +103,12 @@ json11::Json BinanceRestApi::http_post(const std::string& endpoint, json11::Json
     req.target(url);
     req.method(boost::beast::http::verb::post);
     req.version(version);
-    req.set(boost::beast::http::field::host, BitBase::Binance::Live::rest_api_host);
+    req.set(boost::beast::http::field::host, BitBase::Binance::Tick::rest_api_host);
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(boost::beast::http::field::content_type, "application/json");
     req.set(boost::beast::http::field::accept, "application/json");
     req.set("api-expires", expires);
-    req.set("api-key", BitBase::Binance::Live::api_key);
+    req.set("api-key", BitBase::Binance::Tick::api_key);
     req.set("api-signature", signature);
     req.body() = body;
     req.prepare_payload();
@@ -121,9 +122,9 @@ json11::Json BinanceRestApi::http_post(const std::string& endpoint, json11::Json
 json11::Json BinanceRestApi::http_delete(const std::string& endpoint, json11::Json parameters)
 {
     const auto method = "DELETE";
-    const auto url = std::string{ BitBase::Binance::Live::rest_api_url } + endpoint;
+    const auto url = std::string{ BitBase::Binance::Tick::rest_api_url } + endpoint;
     const auto body = parameters.dump();
-    const auto expires = authenticator.generate_expiration(BitBase::Binance::Live::rest_api_auth_timeout);
+    const auto expires = authenticator.generate_expiration(BitBase::Binance::Tick::rest_api_auth_timeout);
     const auto sign_message = std::string{ method } + url + std::to_string(expires) + body;
     const auto signature = authenticator.authenticate(sign_message);
     const auto version = 11;
@@ -132,12 +133,12 @@ json11::Json BinanceRestApi::http_delete(const std::string& endpoint, json11::Js
     req.target(url);
     req.method(boost::beast::http::verb::delete_);
     req.version(version);
-    req.set(boost::beast::http::field::host, BitBase::Binance::Live::rest_api_host);
+    req.set(boost::beast::http::field::host, BitBase::Binance::Tick::rest_api_host);
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(boost::beast::http::field::content_type, "application/json");
     req.set(boost::beast::http::field::accept, "application/json");
     req.set("api-expires", expires);
-    req.set("api-key", BitBase::Binance::Live::api_key);
+    req.set("api-key", BitBase::Binance::Tick::api_key);
     req.set("api-signature", signature);
     req.body() = body;
     req.prepare_payload();
@@ -169,7 +170,7 @@ const std::string BinanceRestApi::http_request(const boost::beast::http::request
         boost::beast::ssl_stream<boost::beast::tcp_stream> stream(ioc, ctx);
 
         // Look up the domain name
-        const auto results = resolver.resolve(BitBase::Binance::Live::rest_api_host, BitBase::Binance::Live::rest_api_port);
+        const auto results = resolver.resolve(BitBase::Binance::Tick::rest_api_host, BitBase::Binance::Tick::rest_api_port);
 
         // Make the connection on the IP address we get from a lookup
         boost::beast::get_lowest_layer(stream).connect(results);

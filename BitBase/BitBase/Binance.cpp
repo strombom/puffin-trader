@@ -45,7 +45,6 @@ void Binance::tick_data_updated_callback(void)
     interval_update_condition.notify_one();
 }
 
-#include <iostream>
 void Binance::main_loop(void)
 {
     while (state != BinanceState::shutdown) {

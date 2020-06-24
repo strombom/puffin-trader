@@ -25,8 +25,8 @@ std::string BinanceAuthentication::authenticate(const std::string& message)
 {
     HMAC_Init_ex(
         hmac_ctx,
-        &BitBase::Binance::Live::api_secret[0],
-        (int)std::strlen(BitBase::Binance::Live::api_secret),
+        &BitBase::Binance::Tick::api_secret[0],
+        (int)std::strlen(BitBase::Binance::Tick::api_secret),
         EVP_sha256(),
         NULL
     );
