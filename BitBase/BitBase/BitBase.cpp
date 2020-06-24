@@ -6,6 +6,7 @@
 #include "Database.h"
 #include "Binance.h"
 #include "Bitmex.h"
+#include "Coinbase.h"
 #include "Server.h"
 
 #include <future>

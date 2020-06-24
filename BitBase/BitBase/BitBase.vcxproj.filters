@@ -49,6 +49,12 @@
     <Filter Include="Source Files\Binance">
       <UniqueIdentifier>{d82d7f0a-cc6d-4728-9066-76338601b55d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Coinbase">
+      <UniqueIdentifier>{c00691ce-de1c-482f-bcaf-21908e927e25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Coinbase">
+      <UniqueIdentifier>{92c088e6-b5e0-4654-9f28-f9febd4b2adf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -116,6 +122,24 @@
     </ClCompile>
     <ClCompile Include="BinanceAuthentication.cpp">
       <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="Coinbase.cpp">
+      <Filter>Source Files\Coinbase</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseInterval.cpp">
+      <Filter>Source Files\Coinbase</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseLive.cpp">
+      <Filter>Source Files\Coinbase</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseRestApi.cpp">
+      <Filter>Source Files\Coinbase</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseTick.cpp">
+      <Filter>Source Files\Coinbase</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseAuthentication.cpp">
+      <Filter>Source Files\Coinbase</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -187,6 +211,24 @@
     </ClInclude>
     <ClInclude Include="BinanceAuthentication.h">
       <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="Coinbase.h">
+      <Filter>Header Files\Coinbase</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseInterval.h">
+      <Filter>Header Files\Coinbase</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseLive.h">
+      <Filter>Header Files\Coinbase</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseRestApi.h">
+      <Filter>Header Files\Coinbase</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseTick.h">
+      <Filter>Header Files\Coinbase</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseAuthentication.h">
+      <Filter>Header Files\Coinbase</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
