@@ -87,7 +87,7 @@ namespace BitBase
             constexpr auto rest_api_port = "443";
             constexpr auto rest_api_url = "/";
 
-            constexpr auto rate_limit = 200ms;
+            constexpr auto rate_limit = 250ms;
             constexpr auto max_rows = 100;
             constexpr auto first_id = 80350317;
         }
