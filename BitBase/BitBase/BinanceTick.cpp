@@ -90,7 +90,7 @@ void BinanceTick::tick_data_worker(void)
                 if (ticks->rows.size() > 0) {
                     logger.info("BinanceLive::tick_data_worker append count(%d) (%s) (%0.1f)", (int)ticks->rows.size(), DateTime::to_string(last_timestamp).c_str(), ticks->rows.back().price);
 
-                    if (ticks->rows.size() >= BitBase::Binance::Live::max_rows - 1) {
+                    if (ticks->rows.size() >= BitBase::Binance::Tick::max_rows - 1) {
                         fetch_more = true;
                     }
                     // Potential bug, might skip multiple ticks on the same timestamp, unlikely to occur so we don't mind - 2020-06-22
