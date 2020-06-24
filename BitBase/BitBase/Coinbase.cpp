@@ -60,7 +60,7 @@ void Coinbase::main_loop(void)
                 }
                 else {
                     state = CoinbaseState::downloading_live;
-                    Coinbase_live->start();
+                    //Coinbase_live->start();
                 }
             }
             else if (state == CoinbaseState::downloading_tick) {

@@ -68,8 +68,8 @@ int main()
 
     auto download_manager = DownloadManager::create();
     auto database = Database::create(BitBase::Database::root_path);
-    //auto bitmex = Bitmex{ database, download_manager };
-    //auto binance = Binance{ database };
+    auto bitmex = Bitmex{ database, download_manager };
+    auto binance = Binance{ database };
     auto coinbase = Coinbase{ database };
     auto server = Server{ database };
 
@@ -88,8 +88,8 @@ int main()
     }
     logger.info("Shutting down");
 
-    //bitmex.shutdown();
-    //binance.shutdown();
+    bitmex.shutdown();
+    binance.shutdown();
     coinbase.shutdown();
     download_manager->shutdown();
 }
