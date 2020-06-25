@@ -75,6 +75,7 @@ json11::Json CoinbaseProRestApi::http_get(const std::string& endpoint, json11::J
     req.set("CB-ACCESS-KEY", BitBase::CoinbasePro::Tick::api_key);
     req.set("CB-ACCESS-SIGN", access_signature);
     req.set("CB-ACCESS-TIMESTAMP", access_timestamp);
+    req.set("CB-ACCESS-PASSPHRASE ", BitBase::CoinbasePro::Tick::api_passphrase);
     req.prepare_payload();
 
     const auto http_response = http_request(req);
