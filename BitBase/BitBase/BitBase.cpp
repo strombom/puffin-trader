@@ -6,7 +6,6 @@
 #include "Database.h"
 #include "Binance.h"
 #include "Bitmex.h"
-#include "Coinbase.h"
 #include "CoinbasePro.h"
 #include "Server.h"
 
@@ -71,7 +70,6 @@ int main()
     auto database = Database::create(BitBase::Database::root_path);
     auto bitmex = Bitmex{ database, download_manager };
     auto binance = Binance{ database };
-    auto coinbase = Coinbase{ database };
     auto coinbase_pro = CoinbasePro{ database };
     auto server = Server{ database };
 
@@ -92,7 +90,6 @@ int main()
 
     bitmex.shutdown();
     binance.shutdown();
-    coinbase.shutdown();
     coinbase_pro.shutdown();
     download_manager->shutdown();
 }

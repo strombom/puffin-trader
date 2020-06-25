@@ -72,41 +72,6 @@ namespace BitBase
         }
     }
 
-    namespace Coinbase
-    {
-        constexpr auto exchange_name = "COINBASE";
-        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
-        constexpr auto symbols = std::array<const char*, 1>{ "BTC-USD" };
-
-        namespace Tick
-        {
-            constexpr auto api_key = "Hj4Vsi9c6QgyXPku";
-            constexpr auto api_secret = "8lJPvzaW0Jeio5fEkluXzVE8hsyHSisb";
-            constexpr auto rest_api_auth_timeout = 60s;
-            constexpr auto rest_api_host = "api.pro.coinbase.com";
-            constexpr auto rest_api_port = "443";
-            constexpr auto rest_api_url = "/";
-
-            constexpr auto rate_limit = 250ms;
-            constexpr auto max_rows = 100;
-            constexpr auto first_id = 80350317;
-        }
-
-        namespace Live
-        {
-            constexpr auto address = "tcp://delta.superdator.se:31004";
-            constexpr auto max_rows = 10000;
-        }
-
-        namespace Interval
-        {
-            constexpr auto steps = std::array<float, 0>{};
-            constexpr auto batch_timeout = 1s;
-            constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 10s };
-        }
-    }
-
     namespace CoinbasePro
     {
         constexpr auto exchange_name = "COINBASE_PRO";
@@ -115,8 +80,9 @@ namespace BitBase
 
         namespace Tick
         {
-            constexpr auto api_key = "Hj4Vsi9c6QgyXPku";
-            constexpr auto api_secret = "8lJPvzaW0Jeio5fEkluXzVE8hsyHSisb";
+            constexpr auto api_key = "bbaf349a94d91ff0a84f12121e0bcf15";
+            constexpr auto api_secret = "wj+LdtE7im6JJAHFZZfp9hd2YRT9rA0jqhocuHICz9y7LPgN66NlmDrM3hM84i2Jf+yvyuw2qJ3rmRpRaxX85Q==";
+            constexpr auto api_passphrase = "zmkcltqij1c";
             constexpr auto rest_api_auth_timeout = 60s;
             constexpr auto rest_api_host = "api.pro.coinbase.com";
             constexpr auto rest_api_port = "443";
