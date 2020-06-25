@@ -53,14 +53,14 @@ void CoinbasePro::main_loop(void)
 
             if (state == CoinbaseProState::idle) {
                 auto tick_data_last_timestamp = database->get_attribute(BitBase::CoinbasePro::exchange_name, BitBase::CoinbasePro::symbols[0], "tick_data_last_timestamp", BitBase::CoinbasePro::first_timestamp);
-                if (tick_data_last_timestamp < std::chrono::system_clock::now() - std::chrono::hours{ 1 }) {
+                if (tick_data_last_timestamp < std::chrono::system_clock::now() - BitBase::CoinbasePro::Live::buffer_length) {
                     // Last tick timestamp is more than 1 hour old, get data from CoinbasePro API
                     state = CoinbaseProState::downloading_tick;
                     CoinbasePro_tick->start();
                 }
                 else {
                     state = CoinbaseProState::downloading_live;
-                    //CoinbasePro_live->start();
+                    CoinbasePro_live->start();
                 }
             }
             else if (state == CoinbaseProState::downloading_tick) {

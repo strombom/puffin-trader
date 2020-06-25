@@ -71,15 +71,18 @@ void CoinbaseProTick::tick_data_worker(void)
             fetch_more = false;
 
             for (auto&& symbol : BitBase::CoinbasePro::symbols) {
-                auto last_id = database->get_attribute(BitBase::CoinbasePro::exchange_name, symbol, "tick_data_last_id", (long long)BitBase::CoinbasePro::Tick::first_id - 1ll);
-
-                auto [ticks, new_last_id] = rest_api->get_aggregate_trades(symbol, last_id);
-
-                if (ticks->rows.size() == 0) {
+                const auto last_timestamp = database->get_attribute(BitBase::CoinbasePro::exchange_name, symbol, "tick_data_last_timestamp", BitBase::CoinbasePro::first_timestamp - 1ms);
+                if (last_timestamp > system_clock_ms_now() - BitBase::CoinbasePro::Live::buffer_length) {
                     continue;
                 }
 
-                const auto last_timestamp = ticks->rows.back().timestamp;
+                const auto last_id = database->get_attribute(BitBase::CoinbasePro::exchange_name, symbol, "tick_data_last_id", (long long)BitBase::CoinbasePro::Tick::first_id - 1ll);
+
+                auto [ticks, new_last_id] = rest_api->get_aggregate_trades(symbol, last_id);
+
+                if (ticks->rows.size() == 0 || last_id == new_last_id) {
+                    continue;
+                }
 
                 if (ticks->rows.size() > 0) {
                     logger.info("CoinbaseProTick::tick_data_worker append count(%d) (%s) (%0.1f)", (int)ticks->rows.size(), DateTime::to_string(last_timestamp).c_str(), ticks->rows.back().price);

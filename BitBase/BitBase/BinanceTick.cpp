@@ -85,9 +85,8 @@ void BinanceTick::tick_data_worker(void)
                     continue;
                 }
 
-                const auto last_timestamp = ticks->rows.back().timestamp;
-
                 if (ticks->rows.size() > 0) {
+                    const auto last_timestamp = ticks->rows.back().timestamp;
                     logger.info("BinanceTick::tick_data_worker append count(%d) (%s) (%0.1f)", (int)ticks->rows.size(), DateTime::to_string(last_timestamp).c_str(), ticks->rows.back().price);
 
                     if (ticks->rows.size() >= BitBase::Binance::Tick::max_rows - 1) {
