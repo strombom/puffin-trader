@@ -4,6 +4,7 @@
 #include <string>
 #include <mutex>
 #include <fstream>
+#include <vector>
 
 
 class Logger
