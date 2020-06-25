@@ -191,6 +191,12 @@
     <ClCompile Include="CoinbaseAuthentication.cpp" />
     <ClCompile Include="CoinbaseInterval.cpp" />
     <ClCompile Include="CoinbaseLive.cpp" />
+    <ClCompile Include="CoinbasePro.cpp" />
+    <ClCompile Include="CoinbaseProAuthentication.cpp" />
+    <ClCompile Include="CoinbaseProInterval.cpp" />
+    <ClCompile Include="CoinbaseProLive.cpp" />
+    <ClCompile Include="CoinbaseProRestApi.cpp" />
+    <ClCompile Include="CoinbaseProTick.cpp" />
     <ClCompile Include="CoinbaseRestApi.cpp" />
     <ClCompile Include="CoinbaseTick.cpp" />
     <ClCompile Include="Database.cpp" />
@@ -225,6 +231,12 @@
     <ClInclude Include="CoinbaseAuthentication.h" />
     <ClInclude Include="CoinbaseInterval.h" />
     <ClInclude Include="CoinbaseLive.h" />
+    <ClInclude Include="CoinbasePro.h" />
+    <ClInclude Include="CoinbaseProAuthentication.h" />
+    <ClInclude Include="CoinbaseProInterval.h" />
+    <ClInclude Include="CoinbaseProLive.h" />
+    <ClInclude Include="CoinbaseProRestApi.h" />
+    <ClInclude Include="CoinbaseProTick.h" />
     <ClInclude Include="CoinbaseRestApi.h" />
     <ClInclude Include="CoinbaseTick.h" />
     <ClInclude Include="Database.h" />

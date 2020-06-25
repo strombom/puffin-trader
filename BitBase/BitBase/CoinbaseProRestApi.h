@@ -2,18 +2,18 @@
 #include "pch.h"
 
 #include "BitLib/Ticks.h"
-#include "CoinbaseAuthentication.h"
+#include "CoinbaseProAuthentication.h"
 
 
-class CoinbaseRestApi
+class CoinbaseProRestApi
 {
 public:
-    CoinbaseRestApi(void);
+    CoinbaseProRestApi(void);
 
     std::tuple<uptrDatabaseTicks, long long> get_aggregate_trades(const std::string& symbol, long long last_id);
 
 private:
-    CoinbaseAuthentication authenticator;
+    CoinbaseProAuthentication authenticator;
 
     json11::Json http_get(const std::string& endpoint, json11::Json parameters);
 
@@ -21,4 +21,4 @@ private:
     const std::string http_request(const boost::beast::http::request<boost::beast::http::string_body>& request);
 };
 
-using sptrCoinbaseRestApi = std::shared_ptr<CoinbaseRestApi>;
+using sptrCoinbaseProRestApi = std::shared_ptr<CoinbaseProRestApi>;

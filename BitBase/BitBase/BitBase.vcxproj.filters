@@ -55,6 +55,12 @@
     <Filter Include="Header Files\Coinbase">
       <UniqueIdentifier>{92c088e6-b5e0-4654-9f28-f9febd4b2adf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\CoinbasePro">
+      <UniqueIdentifier>{6b6ea959-5c7a-4edf-930d-178ab1e59fcc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CoinbasePro">
+      <UniqueIdentifier>{2672f6ba-7e00-4844-8f9b-4b83b777e4db}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBase.cpp">
@@ -140,6 +146,24 @@
     </ClCompile>
     <ClCompile Include="CoinbaseAuthentication.cpp">
       <Filter>Source Files\Coinbase</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseProAuthentication.cpp">
+      <Filter>Source Files\CoinbasePro</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseProInterval.cpp">
+      <Filter>Source Files\CoinbasePro</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseProLive.cpp">
+      <Filter>Source Files\CoinbasePro</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseProRestApi.cpp">
+      <Filter>Source Files\CoinbasePro</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbaseProTick.cpp">
+      <Filter>Source Files\CoinbasePro</Filter>
+    </ClCompile>
+    <ClCompile Include="CoinbasePro.cpp">
+      <Filter>Source Files\CoinbasePro</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -229,6 +253,24 @@
     </ClInclude>
     <ClInclude Include="CoinbaseAuthentication.h">
       <Filter>Header Files\Coinbase</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseProTick.h">
+      <Filter>Header Files\CoinbasePro</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbasePro.h">
+      <Filter>Header Files\CoinbasePro</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseProAuthentication.h">
+      <Filter>Header Files\CoinbasePro</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseProInterval.h">
+      <Filter>Header Files\CoinbasePro</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseProLive.h">
+      <Filter>Header Files\CoinbasePro</Filter>
+    </ClInclude>
+    <ClInclude Include="CoinbaseProRestApi.h">
+      <Filter>Header Files\CoinbasePro</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

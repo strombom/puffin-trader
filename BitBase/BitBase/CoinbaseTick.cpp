@@ -72,14 +72,8 @@ void CoinbaseTick::tick_data_worker(void)
 
             for (auto&& symbol : BitBase::Coinbase::symbols) {
                 auto last_id = database->get_attribute(BitBase::Coinbase::exchange_name, symbol, "tick_data_last_id", (long long)BitBase::Coinbase::Tick::first_id - 1ll);
-                auto timestamp_next = database->get_attribute(BitBase::Coinbase::exchange_name, symbol, "tick_data_last_timestamp", BitBase::Coinbase::first_timestamp - 1ms);
-                timestamp_next += 1ms; // Do not include the latest timestamp, only newer should be fetched
 
-                if (last_id == -1) {
-                    timestamp_next -= 1h;
-                }
-
-                auto [ticks, new_last_id] = rest_api->get_aggregate_trades(symbol, last_id, timestamp_next);
+                auto [ticks, new_last_id] = rest_api->get_aggregate_trades(symbol, last_id);
 
                 if (ticks->rows.size() == 0) {
                     continue;
@@ -93,7 +87,7 @@ void CoinbaseTick::tick_data_worker(void)
                     if (ticks->rows.size() >= BitBase::Coinbase::Tick::max_rows - 1) {
                         fetch_more = true;
                     }
-                    // Potential bug, might skip multiple ticks on the same timestamp, unlikely to occur so we don't mind - 2020-06-22
+
                     database->extend_tick_data(BitBase::Coinbase::exchange_name, symbol, std::move(ticks), BitBase::Coinbase::first_timestamp - 1ms);
                     database->set_attribute(BitBase::Coinbase::exchange_name, symbol, "tick_data_last_id", new_last_id);
                     insert_symbol_name(symbol);

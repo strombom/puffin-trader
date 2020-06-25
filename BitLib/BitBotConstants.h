@@ -107,6 +107,41 @@ namespace BitBase
         }
     }
 
+    namespace CoinbasePro
+    {
+        constexpr auto exchange_name = "COINBASE_PRO";
+        constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
+        constexpr auto symbols = std::array<const char*, 1>{ "BTC-USD" };
+
+        namespace Tick
+        {
+            constexpr auto api_key = "Hj4Vsi9c6QgyXPku";
+            constexpr auto api_secret = "8lJPvzaW0Jeio5fEkluXzVE8hsyHSisb";
+            constexpr auto rest_api_auth_timeout = 60s;
+            constexpr auto rest_api_host = "api.pro.coinbase.com";
+            constexpr auto rest_api_port = "443";
+            constexpr auto rest_api_url = "/";
+
+            constexpr auto rate_limit = 250ms;
+            constexpr auto max_rows = 100;
+            constexpr auto first_id = 80350317;
+        }
+
+        namespace Live
+        {
+            constexpr auto address = "tcp://delta.superdator.se:31005";
+            constexpr auto max_rows = 10000;
+        }
+
+        namespace Interval
+        {
+            constexpr auto steps = std::array<float, 0>{};
+            constexpr auto batch_timeout = 1s;
+            constexpr auto batch_size = 10000;
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 10s };
+        }
+    }
+
     namespace Database
     {
         constexpr auto time_format = "%F %T";

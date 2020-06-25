@@ -3,22 +3,22 @@
 #include "BitLib/Logger.h"
 #include "BitLib/DateTime.h"
 #include "BitLib/BitBotConstants.h"
-#include "CoinbaseRestApi.h"
+#include "CoinbaseProRestApi.h"
 
 #include <iostream>
 #include <openssl/ssl.h>
 
 
-CoinbaseRestApi::CoinbaseRestApi(void)
+CoinbaseProRestApi::CoinbaseProRestApi(void)
 {
 
 }
 
-std::tuple<uptrDatabaseTicks, long long> CoinbaseRestApi::get_aggregate_trades(const std::string& symbol, long long last_id)
+std::tuple<uptrDatabaseTicks, long long> CoinbaseProRestApi::get_aggregate_trades(const std::string& symbol, long long last_id)
 {
     const auto url = std::string{ "products/" } + symbol + "/trades";
     auto parameters = json11::Json::object{
-        { "after", std::to_string(last_id + BitBase::Coinbase::Tick::max_rows + 1) }
+        { "after", std::to_string(last_id + BitBase::CoinbasePro::Tick::max_rows + 1) }
     };
 
     auto response = http_get(url, parameters).array_items();
@@ -37,7 +37,7 @@ std::tuple<uptrDatabaseTicks, long long> CoinbaseRestApi::get_aggregate_trades(c
     return std::make_tuple(std::move(ticks), last_id);
 }
 
-json11::Json CoinbaseRestApi::http_get(const std::string& endpoint, json11::Json parameters)
+json11::Json CoinbaseProRestApi::http_get(const std::string& endpoint, json11::Json parameters)
 {
     auto query_string = std::string{ "?" };
     for (auto& parameter : parameters.object_items()) {
@@ -59,7 +59,7 @@ json11::Json CoinbaseRestApi::http_get(const std::string& endpoint, json11::Json
     query_string.pop_back(); // Remove last "&" or "?" character
 
     const auto method = "GET";
-    const auto url = std::string{ BitBase::Coinbase::Tick::rest_api_url } + endpoint + query_string;
+    const auto url = std::string{ BitBase::CoinbasePro::Tick::rest_api_url } + endpoint + query_string;
     const auto version = 11;
     const auto access_timestamp = authenticator.generate_expiration(0s);
     const auto sign_message = std::to_string(access_timestamp) + method + url;
@@ -69,10 +69,10 @@ json11::Json CoinbaseRestApi::http_get(const std::string& endpoint, json11::Json
     req.target(url);
     req.method(boost::beast::http::verb::get);
     req.version(version);
-    req.set(boost::beast::http::field::host, BitBase::Coinbase::Tick::rest_api_host);
+    req.set(boost::beast::http::field::host, BitBase::CoinbasePro::Tick::rest_api_host);
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(boost::beast::http::field::accept, "application/json");
-    req.set("CB-ACCESS-KEY", BitBase::Coinbase::Tick::api_key);
+    req.set("CB-ACCESS-KEY", BitBase::CoinbasePro::Tick::api_key);
     req.set("CB-ACCESS-SIGN", access_signature);
     req.set("CB-ACCESS-TIMESTAMP", access_timestamp);
     req.prepare_payload();
@@ -84,7 +84,7 @@ json11::Json CoinbaseRestApi::http_get(const std::string& endpoint, json11::Json
     return response;
 }
 
-const std::string CoinbaseRestApi::http_request(const boost::beast::http::request<boost::beast::http::string_body>& request)
+const std::string CoinbaseProRestApi::http_request(const boost::beast::http::request<boost::beast::http::string_body>& request)
 {
     try
     {
@@ -107,14 +107,14 @@ const std::string CoinbaseRestApi::http_request(const boost::beast::http::reques
         boost::beast::ssl_stream<boost::beast::tcp_stream> stream(ioc, ctx);
 
         // Set SNI Hostname (many hosts need this to handshake successfully)
-        if (!SSL_set_tlsext_host_name(stream.native_handle(), BitBase::Coinbase::Tick::rest_api_host))
+        if (!SSL_set_tlsext_host_name(stream.native_handle(), BitBase::CoinbasePro::Tick::rest_api_host))
         {
             boost::system::error_code ec{ static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category() };
             throw boost::system::system_error{ ec };
         }
 
         // Look up the domain name
-        const auto results = resolver.resolve(BitBase::Coinbase::Tick::rest_api_host, BitBase::Coinbase::Tick::rest_api_port);
+        const auto results = resolver.resolve(BitBase::CoinbasePro::Tick::rest_api_host, BitBase::CoinbasePro::Tick::rest_api_port);
 
         // Make the connection on the IP address we get from a lookup
         boost::beast::get_lowest_layer(stream).connect(results);
@@ -143,14 +143,14 @@ const std::string CoinbaseRestApi::http_request(const boost::beast::http::reques
     }
     catch (std::exception const& e)
     {
-        logger.warn("CoinbaseRestApi::http_request fail (%s)", e.what());
+        logger.warn("CoinbaseProRestApi::http_request fail (%s)", e.what());
     }
 
     return "";
 }
 
 
-void CoinbaseRestApi::load_root_certificates(boost::asio::ssl::context& ctx, boost::system::error_code& ec)
+void CoinbaseProRestApi::load_root_certificates(boost::asio::ssl::context& ctx, boost::system::error_code& ec)
 {
     // coinbase-com-chain.pem
     const auto cert = std::string{
