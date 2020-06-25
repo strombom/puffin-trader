@@ -1,7 +1,5 @@
 #pragma once
 
-#include "TickData.h"
-
 #include <boost/beast/core.hpp>
 #include <boost/beast/ssl.hpp>
 #include <boost/beast/websocket.hpp>
@@ -14,11 +12,13 @@
 #include <thread>
 #include <string>
 
+#include "TickData.h"
 
-class CoinbaseTick
+
+class CoinbaseProWebSocket
 {
 public:
-    CoinbaseTick(sptrTickData tick_data);
+    CoinbaseProWebSocket(sptrTickData tick_data);
 
     void start(void);
     void shutdown(void);

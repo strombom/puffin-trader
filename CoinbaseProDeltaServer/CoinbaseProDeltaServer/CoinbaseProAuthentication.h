@@ -4,11 +4,11 @@
 #include <openssl/hmac.h>
 
 
-class CoinbaseAuthentication
+class CoinbaseProAuthentication
 {
 public:
-    CoinbaseAuthentication(void);
-    ~CoinbaseAuthentication(void);
+    CoinbaseProAuthentication(void);
+    ~CoinbaseProAuthentication(void);
 
     long long generate_expiration(std::chrono::seconds timeout);
 

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "BitLib/DateTime.h"
-#include "CoinbaseConstants.h"
+#include "CoinbaseProConstants.h"
 
-#include <map>
-#include <mutex>
 #include <msgpack.hpp>
+#include <mutex>
+#include <unordered_map>
 
 
 struct Tick
@@ -38,9 +38,9 @@ public:
 private:
     std::mutex tick_data_mutex;
 
-    std::map<std::string, int> buffer_count;
-    std::map<std::string, int> buffer_next_idx;
-    std::map<std::string, std::unique_ptr<std::array<Tick, Coinbase::buffer_size>>> ticks;
+    std::unordered_map<std::string, int> buffer_count;
+    std::unordered_map<std::string, int> buffer_next_idx;
+    std::unordered_map<std::string, std::unique_ptr<std::array<Tick, CoinbasePro::buffer_size>>> ticks;
 };
 
 using sptrTickData = std::shared_ptr<TickData>;

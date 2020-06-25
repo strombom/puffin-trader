@@ -5,8 +5,8 @@
 
 TickData::TickData(void)
 {
-    for (auto &&symbol: Coinbase::symbols) {
-        auto tick_array = std::make_unique<std::array<Tick, Coinbase::buffer_size>>();
+    for (auto &&symbol: CoinbasePro::symbols) {
+        auto tick_array = std::make_unique<std::array<Tick, CoinbasePro::buffer_size>>();
         ticks.insert(std::make_pair(symbol, std::move(tick_array)));
         buffer_next_idx.insert(std::make_pair(symbol, 0));
         buffer_count.insert(std::make_pair(symbol, 0));
@@ -27,7 +27,7 @@ void TickData::append(const std::string& symbol, time_point_ms timestamp, float 
         return;
     }
 
-    const auto idx = buffer_next_idx.at(symbol) % Coinbase::buffer_size;
+    const auto idx = buffer_next_idx.at(symbol) % CoinbasePro::buffer_size;
     const auto tick = &(*ticks.at(symbol))[idx];
 
     tick->timestamp_ms = timestamp.time_since_epoch().count();
@@ -35,8 +35,8 @@ void TickData::append(const std::string& symbol, time_point_ms timestamp, float 
     tick->volume = volume;
     tick->buy = buy;
 
-    buffer_next_idx.at(symbol) = (buffer_next_idx.at(symbol) + 1) % Coinbase::buffer_size;
-    buffer_count.at(symbol) = std::min(buffer_count.at(symbol) + 1, Coinbase::buffer_size);
+    buffer_next_idx.at(symbol) = (buffer_next_idx.at(symbol) + 1) % CoinbasePro::buffer_size;
+    buffer_count.at(symbol) = std::min(buffer_count.at(symbol) + 1, CoinbasePro::buffer_size);
     
     std::cout << "append " <<
         "sym(" << symbol << ") " <<
@@ -47,7 +47,6 @@ void TickData::append(const std::string& symbol, time_point_ms timestamp, float 
         "idx(" << buffer_next_idx.at(symbol) << ") " <<
         "cnt(" << buffer_count.at(symbol) << ") " <<
         std::endl;
-    
 }
 
 std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time_point_ms timestamp, int max_rows)
@@ -58,11 +57,11 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
         return std::make_unique<std::vector<Tick>>();
     }
 
-    //timestamp = ticks.at(symbol).get()->at((Coinbase::buffer_size + buffer_next_idx.at(symbol) - buffer_count.at(symbol) / 2) % Coinbase::buffer_size).timestamp();
+    //timestamp = ticks.at(symbol).get()->at((CoinbasePro::buffer_size + buffer_next_idx.at(symbol) - buffer_count.at(symbol) / 2) % CoinbasePro::buffer_size).timestamp();
     const auto timestamp_ms = timestamp.time_since_epoch().count();
 
-    const auto last_idx = (Coinbase::buffer_size + buffer_next_idx.at(symbol) - 1) % Coinbase::buffer_size;
-    const auto first_idx = buffer_count.at(symbol) < Coinbase::buffer_size ? 0 : buffer_next_idx.at(symbol);
+    const auto last_idx = (CoinbasePro::buffer_size + buffer_next_idx.at(symbol) - 1) % CoinbasePro::buffer_size;
+    const auto first_idx = buffer_count.at(symbol) < CoinbasePro::buffer_size ? 0 : buffer_next_idx.at(symbol);
     const auto read_ticks = ticks.at(symbol).get();
     auto start_idx = -1;
 
@@ -80,14 +79,14 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
         //std::cout << "search " << idx << std::endl;
         if (read_ticks->at(idx).timestamp_ms < timestamp_ms) {
             if (idx != last_idx) {
-                start_idx = (idx + 1) % Coinbase::buffer_size;
+                start_idx = (idx + 1) % CoinbasePro::buffer_size;
             }
             break;
         }
         if (idx == first_idx) {
             break;
         }
-        idx = (Coinbase::buffer_size + idx - 1) % Coinbase::buffer_size;
+        idx = (CoinbasePro::buffer_size + idx - 1) % CoinbasePro::buffer_size;
     }
 
     // Copy data
@@ -99,7 +98,7 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
             if (idx == last_idx || result.size() == max_rows) {
                 break;
             }
-            idx = (Coinbase::buffer_size + idx + 1) % Coinbase::buffer_size;
+            idx = (CoinbasePro::buffer_size + idx + 1) % CoinbasePro::buffer_size;
         }
     }
 

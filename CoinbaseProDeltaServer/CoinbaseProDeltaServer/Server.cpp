@@ -30,7 +30,7 @@ void Server::server_thread(void)
 {
     auto context = zmq::context_t{ 1 };
     auto server = zmq::socket_t{ context, zmq::socket_type::rep };
-    server.bind(Coinbase::server_address);
+    server.bind(CoinbasePro::server_address);
     server.setsockopt(ZMQ_RCVTIMEO, 500);
     server.setsockopt(ZMQ_SNDTIMEO, 2000);
 

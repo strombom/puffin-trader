@@ -21,10 +21,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CoinbaseDeltaServer.cpp">
+    <ClCompile Include="CoinbaseProDeltaServer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="CoinbaseWebSocket.cpp">
+    <ClCompile Include="CoinbaseProWebSocket.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="TickData.cpp">
@@ -33,13 +33,13 @@
     <ClCompile Include="Server.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="CoinbaseTick.cpp">
+    <ClCompile Include="CoinbaseProTick.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="CoinbaseRestApi.cpp">
+    <ClCompile Include="CoinbaseProRestApi.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="CoinbaseAuthentication.cpp">
+    <ClCompile Include="CoinbaseProAuthentication.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="BitLib\DateTime.cpp">
@@ -56,25 +56,25 @@
     <ClInclude Include="pch.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="CoinbaseWebSocket.h">
+    <ClInclude Include="CoinbaseProWebSocket.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="TickData.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="CoinbaseConstants.h">
+    <ClInclude Include="CoinbaseProConstants.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Server.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="CoinbaseTick.h">
+    <ClInclude Include="CoinbaseProTick.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="CoinbaseRestApi.h">
+    <ClInclude Include="CoinbaseProRestApi.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="CoinbaseAuthentication.h">
+    <ClInclude Include="CoinbaseProAuthentication.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="BitLib\json11\json11.hpp">

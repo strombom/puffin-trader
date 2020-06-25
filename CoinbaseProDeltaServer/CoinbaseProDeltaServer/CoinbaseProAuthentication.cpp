@@ -1,35 +1,35 @@
 #include "pch.h"
 
-#include "CoinbaseConstants.h"
-#include "CoinbaseAuthentication.h"
+#include "CoinbaseProConstants.h"
+#include "CoinbaseProAuthentication.h"
 
 #include <cstring>
 #include <iomanip>
 
 
-CoinbaseAuthentication::CoinbaseAuthentication(void)
+CoinbaseProAuthentication::CoinbaseProAuthentication(void)
 {
     hmac_ctx = HMAC_CTX_new();
 }
 
-CoinbaseAuthentication::~CoinbaseAuthentication(void)
+CoinbaseProAuthentication::~CoinbaseProAuthentication(void)
 {
     HMAC_CTX_free(hmac_ctx);
 }
 
-long long CoinbaseAuthentication::generate_expiration(std::chrono::seconds timeout)
+long long CoinbaseProAuthentication::generate_expiration(std::chrono::seconds timeout)
 {
     const auto now = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
     const auto expiration = (now + timeout).time_since_epoch().count();
     return expiration;
 }
 
-std::string CoinbaseAuthentication::authenticate(const std::string& message)
+std::string CoinbaseProAuthentication::authenticate(const std::string& message)
 {
     HMAC_Init_ex(
         hmac_ctx,
-        &Coinbase::RestApi::api_secret[0],
-        (int)std::strlen(Coinbase::RestApi::api_secret),
+        &CoinbasePro::RestApi::api_secret[0],
+        (int)std::strlen(CoinbasePro::RestApi::api_secret),
         EVP_sha256(),
         NULL
     );

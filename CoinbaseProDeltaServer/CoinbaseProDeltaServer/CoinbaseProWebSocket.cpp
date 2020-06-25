@@ -1,16 +1,13 @@
 
-#include "CoinbaseConstants.h"
-#include "CoinbaseTick.h"
-
+#include "CoinbaseProConstants.h"
+#include "CoinbaseProWebSocket.h"
 #include "BitLib/DateTime.h"
 #include "BitLib/json11/json11.hpp"
 
 #include <boost/beast/core/stream_traits.hpp>
 
 
-using namespace std::chrono_literals;
-
-CoinbaseTick::CoinbaseTick(sptrTickData tick_data) :
+CoinbaseProWebSocket::CoinbaseProWebSocket(sptrTickData tick_data) :
     tick_data(tick_data),
     websocket_thread_running(true),
     connected(false)
@@ -18,17 +15,17 @@ CoinbaseTick::CoinbaseTick(sptrTickData tick_data) :
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
 
-void CoinbaseTick::start(void)
+void CoinbaseProWebSocket::start(void)
 {
     // Start websocket worker
-    websocket_thread = std::make_unique<std::thread>(&CoinbaseTick::websocket_worker, this);
+    websocket_thread = std::make_unique<std::thread>(&CoinbaseProWebSocket::websocket_worker, this);
 }
 
-void CoinbaseTick::shutdown(void)
+void CoinbaseProWebSocket::shutdown(void)
 {
-    std::cout << "CoinbaseTick: Shutting down" << std::endl;
+    std::cout << "CoinbaseProWebSocket: Shutting down" << std::endl;
     websocket_thread_running = false;
-
+    
     try {
         websocket_thread->join();
     }
@@ -40,7 +37,7 @@ void CoinbaseTick::shutdown(void)
     catch (...) {}
 }
 
-void CoinbaseTick::connect(void)
+void CoinbaseProWebSocket::connect(void)
 {
     try {
         websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>>(ioc, *ctx);
@@ -60,14 +57,14 @@ void CoinbaseTick::connect(void)
             });
 
         auto resolver = boost::asio::ip::tcp::resolver{ ioc };
-        auto const results = resolver.resolve(Coinbase::websocket::host, Coinbase::websocket::port);
+        auto const results = resolver.resolve(CoinbasePro::websocket::host, CoinbasePro::websocket::port);
         boost::asio::connect(websocket->next_layer().next_layer(), results.begin(), results.end());
 
         websocket->next_layer().handshake(boost::asio::ssl::stream_base::client);
 
-        auto url = std::string{ Coinbase::websocket::url };
+        auto url = std::string{ CoinbasePro::websocket::url };
 
-        for (auto symbol : Coinbase::symbols) {
+        for (auto symbol : CoinbasePro::symbols) {
             auto symbol_string = std::string{ symbol };
             std::transform(symbol_string.begin(), symbol_string.end(), symbol_string.begin(), [](unsigned char c) { return std::tolower(c); });
             url += symbol_string + "@aggTrade/";
@@ -76,7 +73,7 @@ void CoinbaseTick::connect(void)
             url.pop_back();
         }
 
-        websocket->handshake(Coinbase::websocket::host, url);
+        websocket->handshake(CoinbasePro::websocket::host, url);
 
         connected = true;
     }
@@ -85,10 +82,10 @@ void CoinbaseTick::connect(void)
     }
 }
 
-void CoinbaseTick::websocket_worker(void)
+void CoinbaseProWebSocket::websocket_worker(void)
 {
     while (websocket_thread_running) {
-
+        
         if (!connected) {
             connect();
         }

@@ -1,18 +1,19 @@
 
-#include <cstdio>
-
-#include "CoinbaseTick.h"
+#include "CoinbaseProTick.h"
 #include "TickData.h"
 #include "Server.h"
+
+#include <cstdio>
+#include <iostream>
 
 
 int main()
 {
-    std::cout << "CoinbaseDeltaServer: Started" << std::endl;
+    std::cout << "CoinbaseProDeltaServer: Started" << std::endl;
 
     auto tick_data = TickData::create();
     auto server = Server{ tick_data };
-    auto coinbase_tick = CoinbaseTick{ tick_data };
+    auto coinbase_tick = CoinbaseProTick{ tick_data };
     coinbase_tick.start();
 
     while (true) {
@@ -25,6 +26,6 @@ int main()
 
     coinbase_tick.shutdown();
 
-    std::cout << "CoinbaseDeltaServer: Shut down" << std::endl;
+    std::cout << "CoinbaseProDeltaServer: Shut down" << std::endl;
     return 0;
 }

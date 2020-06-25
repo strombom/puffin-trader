@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4c6a12f9-3a6f-4f63-a64b-3bab3980c693}</ProjectGuid>
     <Keyword>Linux</Keyword>
-    <RootNamespace>CoinbaseDeltaServer</RootNamespace>
+    <RootNamespace>CoinbaseProDeltaServer</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <ApplicationType>Linux</ApplicationType>
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
@@ -90,11 +90,11 @@
     <ClCompile Include="BitLib\DateTime.cpp" />
     <ClCompile Include="BitLib\json11\json11.cpp" />
     <ClCompile Include="BitLib\Logger.cpp" />
-    <ClCompile Include="CoinbaseAuthentication.cpp" />
-    <ClCompile Include="CoinbaseRestApi.cpp" />
-    <ClCompile Include="CoinbaseTick.cpp" />
-    <ClCompile Include="CoinbaseWebSocket.cpp" />
-    <ClCompile Include="CoinbaseDeltaServer.cpp" />
+    <ClCompile Include="CoinbaseProAuthentication.cpp" />
+    <ClCompile Include="CoinbaseProRestApi.cpp" />
+    <ClCompile Include="CoinbaseProTick.cpp" />
+    <ClCompile Include="CoinbaseProWebSocket.cpp" />
+    <ClCompile Include="CoinbaseProDeltaServer.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="TickData.cpp" />
   </ItemGroup>
@@ -103,11 +103,11 @@
     <ClInclude Include="BitLib\date\date.h" />
     <ClInclude Include="BitLib\json11\json11.hpp" />
     <ClInclude Include="BitLib\Logger.h" />
-    <ClInclude Include="CoinbaseAuthentication.h" />
-    <ClInclude Include="CoinbaseConstants.h" />
-    <ClInclude Include="CoinbaseRestApi.h" />
-    <ClInclude Include="CoinbaseTick.h" />
-    <ClInclude Include="CoinbaseWebSocket.h" />
+    <ClInclude Include="CoinbaseProAuthentication.h" />
+    <ClInclude Include="CoinbaseProConstants.h" />
+    <ClInclude Include="CoinbaseProRestApi.h" />
+    <ClInclude Include="CoinbaseProTick.h" />
+    <ClInclude Include="CoinbaseProWebSocket.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Server.h" />
     <ClInclude Include="TickData.h" />
