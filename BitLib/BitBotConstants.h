@@ -34,7 +34,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 10s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 2>{ 2s, 10s };
         }
     }
 
@@ -68,7 +68,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 0>{};
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 10s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 2>{ 2s, 10s };
         }
     }
 
@@ -105,7 +105,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 0>{};
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 10s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 2>{ 2s, 10s };
         }
     }
 
