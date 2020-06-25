@@ -33,15 +33,6 @@
     <ClCompile Include="Server.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="CoinbaseProTick.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="CoinbaseProRestApi.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="CoinbaseProAuthentication.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="BitLib\DateTime.cpp">
       <Filter>Source\BitLib</Filter>
     </ClCompile>
@@ -66,15 +57,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Server.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="CoinbaseProTick.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="CoinbaseProRestApi.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="CoinbaseProAuthentication.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="BitLib\json11\json11.hpp">

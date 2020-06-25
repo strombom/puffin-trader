@@ -1,5 +1,5 @@
 
-#include "CoinbaseProTick.h"
+#include "CoinbaseProWebSocket.h"
 #include "TickData.h"
 #include "Server.h"
 
@@ -13,8 +13,8 @@ int main()
 
     auto tick_data = TickData::create();
     auto server = Server{ tick_data };
-    auto coinbase_tick = CoinbaseProTick{ tick_data };
-    coinbase_tick.start();
+    auto coinbase_websocket = CoinbaseProWebSocket{ tick_data };
+    coinbase_websocket.start();
 
     while (true) {
         auto command = std::string{};
@@ -24,7 +24,7 @@ int main()
         }
     }
 
-    coinbase_tick.shutdown();
+    coinbase_websocket.shutdown();
 
     std::cout << "CoinbaseProDeltaServer: Shut down" << std::endl;
     return 0;

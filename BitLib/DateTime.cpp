@@ -35,9 +35,17 @@ const time_point_ms DateTime::to_time_point_ms(const std::string& string)
 const time_point_ms DateTime::to_time_point_ms(const std::string& string, const std::string& time_format)
 {
     auto value = std::istringstream{ string };
-    auto time_point = time_point_ms{};
+    auto time_point = std::chrono::time_point<std::chrono::system_clock, std::chrono::microseconds>{};// time_point_ms{};
     value >> date::parse(time_format, time_point);
-    return time_point;
+    return std::chrono::time_point_cast<std::chrono::milliseconds, std::chrono::system_clock, std::chrono::microseconds>(time_point);
+}
+
+const time_point_ms DateTime::iso8601_us_to_time_point_ms(const std::string& string)
+{
+    auto value = std::istringstream{ string };
+    auto time_point = std::chrono::time_point<std::chrono::system_clock, std::chrono::microseconds>{};
+    value >> date::parse("%FT%TZ", time_point);
+    return std::chrono::time_point_cast<std::chrono::milliseconds, std::chrono::system_clock, std::chrono::microseconds>(time_point);
 }
 
 const std::string DateTime::to_string(const time_point_ms timestamp)

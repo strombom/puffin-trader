@@ -39,7 +39,8 @@ void CoinbaseProWebSocket::shutdown(void)
 
 void CoinbaseProWebSocket::connect(void)
 {
-    try {
+    try
+    {
         websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>>(ioc, *ctx);
 
         websocket->set_option(boost::beast::websocket::stream_base::decorator(
@@ -57,23 +58,47 @@ void CoinbaseProWebSocket::connect(void)
             });
 
         auto resolver = boost::asio::ip::tcp::resolver{ ioc };
-        auto const results = resolver.resolve(CoinbasePro::websocket::host, CoinbasePro::websocket::port);
+        auto const results = resolver.resolve(CoinbasePro::WebSocket::host, CoinbasePro::WebSocket::port);
         boost::asio::connect(websocket->next_layer().next_layer(), results.begin(), results.end());
 
+        // Set SNI Hostname (many hosts need this to handshake successfully)
+        if (!SSL_set_tlsext_host_name(websocket->next_layer().native_handle(), CoinbasePro::WebSocket::host))
+        {
+            boost::system::error_code ec{ static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category() };
+            throw boost::system::system_error{ ec };
+        }
+
         websocket->next_layer().handshake(boost::asio::ssl::stream_base::client);
+        websocket->handshake(CoinbasePro::WebSocket::host, std::string{ CoinbasePro::WebSocket::url });
 
-        auto url = std::string{ CoinbasePro::websocket::url };
-
-        for (auto symbol : CoinbasePro::symbols) {
-            auto symbol_string = std::string{ symbol };
-            std::transform(symbol_string.begin(), symbol_string.end(), symbol_string.begin(), [](unsigned char c) { return std::tolower(c); });
-            url += symbol_string + "@aggTrade/";
+        // Subscribe to ticker symbols
+        auto message = std::string{ "{\"type\":\"subscribe\"," };
+        message += "\"product_ids\":[";
+        for (auto&& symbol : CoinbasePro::symbols) {
+            message += "\"" + std::string{ symbol } + "\",";
         }
-        if (url.back() == '/') {
-            url.pop_back();
+        if (message.back() == ',') {
+            // Remove last comma
+            message.pop_back();
         }
+        message += "],";
+        message += "\"channels\":[";
+        message += "{\"name\":\"ticker\",";
+        message += "\"product_ids\":[";
+        for (auto&& symbol : CoinbasePro::symbols) {
+            message += "\"" + std::string{ symbol } + "\",";
+        }
+        if (message.back() == ',') {
+            // Remove last comma
+            message.pop_back();
+        }
+        message += "]}]}";
+        websocket->write(boost::asio::buffer(message));
 
-        websocket->handshake(CoinbasePro::websocket::host, url);
+        // Receive Bitmex welcome message
+        boost::beast::flat_buffer buffer;
+        websocket->read(buffer);
+        std::cout << boost::beast::make_printable(buffer.data()) << std::endl;
 
         connected = true;
     }
@@ -104,29 +129,16 @@ void CoinbaseProWebSocket::websocket_worker(void)
             // Parse message
             auto error_message = std::string{};
             const auto message = json11::Json::parse(message_string, error_message);
-            if (!message["stream"].is_string() || !message["data"].is_object()) {
+
+            if (!message["type"].is_string() || message["type"].string_value().compare("ticker") != 0) {
                 continue;
             }
-            const auto stream = message["stream"].string_value();
-            auto find_stream_type = stream.find("@aggTrade");
-            if (find_stream_type == std::string::npos || find_stream_type == 0) {
-                continue;
-            }
-            auto symbol = stream.substr(0, find_stream_type);
-            std::transform(symbol.begin(), symbol.end(), symbol.begin(), [](unsigned char c) { return std::toupper(c); });
-
-            const auto timestamp_raw_ms = (long long)message["data"]["T"].number_value();
-            const auto price_raw = message["data"]["p"].string_value();
-            const auto volume_raw = message["data"]["q"].string_value();
-
-            const auto timestamp = time_point_ms{ std::chrono::milliseconds{timestamp_raw_ms} };
-            const auto price = std::stod(price_raw);
-            const auto volume = std::stod(volume_raw);
-            const auto buy = message["data"]["m"].bool_value();
-
-            if (timestamp_raw_ms == 0 || price == 0.0 || volume == 0.0 || !message["data"]["m"].is_bool()) {
-                continue;
-            }
+            
+            const auto symbol = message["product_id"].string_value();
+            const auto timestamp = DateTime::iso8601_us_to_time_point_ms(message["time"].string_value());
+            const auto price = std::stod(message["price"].string_value());
+            const auto volume = std::stod(message["last_size"].string_value());
+            const auto buy = message["side"].string_value().compare("buy") == 0;
 
             tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
         }
