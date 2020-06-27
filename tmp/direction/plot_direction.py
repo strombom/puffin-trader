@@ -5,7 +5,7 @@ import csv
 xs = []
 prices = []
 
-with open('C:\\development\\github\\puffin-trader\\tmp\\swing\\data' + '.csv') as csvfile:
+with open('C:\\development\\github\\puffin-trader\\tmp\\direction\\data' + '.csv') as csvfile:
     reader = csv.reader(csvfile)
     x = 0
     for row in reader:
@@ -26,7 +26,6 @@ dirs[xs.size - 1] = 2
 #  1 - Buy
 #  2 - Sell
 
-
 # Make orderbook
 orderbook[0] = prices[0]
 for i in range(1, xs.size):
@@ -37,17 +36,11 @@ for i in range(1, xs.size):
 	else:
 		orderbook[i] = orderbook[i - 1]
 
-#print(orderbook)
-#quit()
-
-
 for i in range(1, xs.size):
-
 	if prices[i] > orderbook[i - 1]:
 		dirs[i - 1] = 2
 	elif prices[i] < orderbook[i - 1] - 0.5:
 		dirs[i - 1] = 1
-
 
 last_direction = 1
 for i in range(xs.size - 1, -1, -1):
@@ -56,38 +49,6 @@ for i in range(xs.size - 1, -1, -1):
 	else:
 		last_direction = dirs[i]
 print(dirs)
-
-"""
-last_idx = 0
-last_price = prices[last_idx]
-
-
-search_idx = last_idx + 1
-found = False
-
-
-def find_next_sell(search_idx):
-	lowest_price = prices[search_idx]
-	while True:
-		search_idx += 1
-		lowest_price = min(lowest_price, prices[search_idx])
-		if prices[search_idx] >= lowest_price + 1:
-			break
-	return search_idx - 1
-
-while True:
-
-	if prices[search_idx] >= last_price + 1:
-		dirs[search_idx] = 2
-		break
-	elif prices[search_idx] <= last_price - 1:
-		lowest_idx = find_next_sell(search_idx)
-		dirs[lowest_idx] = 2
-		dirs[search_idx] = 1
-		break
-	search_idx += 1
-"""
-
 
 import matplotlib
 import matplotlib.pyplot as plt
