@@ -15,13 +15,14 @@ public:
     float price;
     float volume;
     bool buy;
+    long long trade_id;
 
     time_point_ms timestamp(void)
     {
         return std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>{ std::chrono::milliseconds{ timestamp_ms } };
     }
 
-    MSGPACK_DEFINE(timestamp_ms, price, volume, buy);
+    MSGPACK_DEFINE(timestamp_ms, price, volume, buy, trade_id);
 };
 
 
@@ -33,7 +34,7 @@ public:
     static std::shared_ptr<TickData> create(void);
 
     std::unique_ptr<std::vector<Tick>> get(const std::string& symbol, time_point_ms timestamp, int max_rows);
-    void append(const std::string& symbol, time_point_ms timestamp, float price, float volume, bool buy);
+    void append(const std::string& symbol, time_point_ms timestamp, float price, float volume, bool buy, long long trade_id);
 
 private:
     std::mutex tick_data_mutex;

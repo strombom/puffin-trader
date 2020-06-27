@@ -7,7 +7,7 @@ using namespace std::chrono_literals;
 namespace Binance
 {
     constexpr auto symbols = std::array<const char*, 2>{"BTCUSDT", "ETHUSDT"};
-    constexpr auto buffer_size = 1000000;
+    constexpr auto buffer_size = 2000000;
     constexpr auto server_address = "tcp://*:31003";
 
     namespace websocket

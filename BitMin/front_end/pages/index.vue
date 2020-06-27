@@ -1,11 +1,12 @@
 <template>
   <div class="container">
-    <div>
-      <h1 class="title">
-        bitmin
-      </h1>
 
       <PlotDirection />
+
+      <!--h1 class="title">
+        bitmin
+      </h1-->
+
 
       <!--div class="links">
         <a
@@ -24,7 +25,6 @@
         >
           GitHub
         </a-->
-      </div>
     </div>
   </div>
 </template>
@@ -34,6 +34,10 @@ export default {}
 </script>
 
 <style>
+
+</style>
+
+<!--style>
 .container {
   margin: 0 auto;
   min-height: 100vh;
@@ -72,4 +76,4 @@ export default {}
 .links {
   padding-top: 15px;
 }
-</style>
+</style-->

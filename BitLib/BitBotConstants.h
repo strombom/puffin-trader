@@ -59,6 +59,7 @@ namespace BitBase
 
         namespace Live
         {
+            constexpr auto buffer_length = 6h;
             constexpr auto address = "tcp://delta.superdator.se:31003";
             constexpr auto max_rows = 10000;
         }
@@ -95,7 +96,7 @@ namespace BitBase
 
         namespace Live
         {
-            constexpr auto buffer_length = 1h;
+            constexpr auto buffer_length = 12h;
             constexpr auto address = "tcp://delta.superdator.se:31004";
             constexpr auto max_rows = 10000;
         }

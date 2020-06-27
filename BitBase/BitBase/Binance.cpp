@@ -53,7 +53,7 @@ void Binance::main_loop(void)
 
             if (state == BinanceState::idle) {
                 auto tick_data_last_timestamp = database->get_attribute(BitBase::Binance::exchange_name, BitBase::Binance::symbols[0], "tick_data_last_timestamp", BitBase::Binance::first_timestamp);
-                if (tick_data_last_timestamp < std::chrono::system_clock::now() - std::chrono::hours{ 1 }) {
+                if (tick_data_last_timestamp < std::chrono::system_clock::now() - BitBase::Binance::Live::buffer_length) {
                     // Last tick timestamp is more than 1 hour old, get data from Binance API
                     state = BinanceState::downloading_tick;
                     binance_tick->start();

@@ -124,12 +124,13 @@ void BinanceWebSocket::websocket_worker(void)
             const auto price = std::stod(price_raw);
             const auto volume = std::stod(volume_raw);
             const auto buy = message["data"]["m"].bool_value();
+            const auto trade_id = (long long)message["data"]["a"].number_value();
 
             if (timestamp_raw_ms == 0 || price == 0.0 || volume == 0.0 || !message["data"]["m"].is_bool()) {
                 continue;
             }
 
-            tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
+            tick_data->append(symbol, timestamp, (float)price, (float)volume, buy, trade_id);
         }
         catch (std::exception const& e) {
             connected = false;

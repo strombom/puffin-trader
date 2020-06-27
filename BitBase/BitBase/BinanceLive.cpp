@@ -13,20 +13,21 @@
 #include <iostream>
 
 
-struct MessageTick
+struct BinanceMessageTick
 {
 public:
     unsigned long long timestamp_ms;
     float price;
     float volume;
     bool buy;
+    long long trade_id;
 
     time_point_ms timestamp(void)
     {
         return std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>{ std::chrono::milliseconds{ timestamp_ms } };
     }
 
-    MSGPACK_DEFINE(timestamp_ms, price, volume, buy);
+    MSGPACK_DEFINE(timestamp_ms, price, volume, buy, trade_id);
 };
 
 
@@ -97,7 +98,7 @@ void BinanceLive::tick_data_worker(void)
                 if (result.has_value()) {
                     auto result = zmq_client->recv(message);
 
-                    auto received_ticks = std::vector<MessageTick>{};
+                    auto received_ticks = std::vector<BinanceMessageTick>{};
                     received_ticks = msgpack::unpack(static_cast<const char*>(message.data()), message.size()).get().convert(received_ticks);
 
                     auto last_timepoint = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - std::chrono::seconds{ 5 });
@@ -112,9 +113,11 @@ void BinanceLive::tick_data_worker(void)
                     auto last_timestamp = std::chrono::time_point_cast<std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>::duration>(last_timepoint);
 
                     auto tick_data = std::make_unique<Ticks>();
+                    auto last_id = 0ll;
                     for (auto& tick : received_ticks) {
                         if (tick.timestamp() < last_timestamp) {
                             tick_data->rows.push_back({ tick.timestamp(), tick.price, tick.volume, tick.buy });
+                            last_id = tick.trade_id;
                         }
                     }
 
@@ -122,6 +125,7 @@ void BinanceLive::tick_data_worker(void)
                         logger.info("BinanceLive::tick_data_worker append count(%d) (%s) (%0.1f)", (int)tick_data->rows.size(), DateTime::to_string(last_timestamp).c_str(), tick_data->rows.back().price);
 
                         database->extend_tick_data(BitBase::Binance::exchange_name, symbol, std::move(tick_data), BitBase::Binance::first_timestamp);
+                        database->set_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_id", last_id);
                         if (received_ticks.size() >= BitBase::Binance::Live::max_rows - 1) {
                             fetch_more = true;
                         }

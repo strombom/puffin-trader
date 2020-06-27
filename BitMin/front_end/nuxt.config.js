@@ -34,7 +34,10 @@ export default {
   ** Plugins to load before mounting the App
   ** https://nuxtjs.org/guide/plugins
   */
-  plugins: ['@/plugins/highcharts.js'],
+  plugins: [
+    '@/plugins/highcharts.js',
+    '@/plugins/chart_event_bus.js'
+  ],
   /*
   ** Auto import components
   ** See https://nuxtjs.org/api/configuration-components
@@ -54,6 +57,11 @@ export default {
     // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
   ],
+  bootstrapVue: {
+    icons: true,
+    bootstrapCSS: true,
+    bootstrapVueCSS: true,
+  },
   /*
   ** Axios module configuration
   ** See https://axios.nuxtjs.org/options

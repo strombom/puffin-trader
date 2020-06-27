@@ -13,7 +13,7 @@
 #include <iostream>
 
 
-struct MessageTick
+struct CoinbaseProMessageTick
 {
 public:
     unsigned long long timestamp_ms;
@@ -97,7 +97,7 @@ void CoinbaseProLive::tick_data_worker(void)
                 if (result.has_value()) {
                     auto result = zmq_client->recv(message);
 
-                    auto received_ticks = std::vector<MessageTick>{};
+                    auto received_ticks = std::vector<CoinbaseProMessageTick>{};
                     received_ticks = msgpack::unpack(static_cast<const char*>(message.data()), message.size()).get().convert(received_ticks);
 
                     auto last_timepoint = std::chrono::system_clock::time_point(std::chrono::system_clock::now() - std::chrono::seconds{ 5 });

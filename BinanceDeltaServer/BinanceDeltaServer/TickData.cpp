@@ -18,7 +18,7 @@ std::shared_ptr<TickData> TickData::create(void)
     return std::make_shared<TickData>();
 }
 
-void TickData::append(const std::string& symbol, time_point_ms timestamp, float price, float volume, bool buy)
+void TickData::append(const std::string& symbol, time_point_ms timestamp, float price, float volume, bool buy, long long trade_id)
 {
     auto slock = std::scoped_lock{ tick_data_mutex };
 
@@ -34,6 +34,7 @@ void TickData::append(const std::string& symbol, time_point_ms timestamp, float 
     tick->price = price;
     tick->volume = volume;
     tick->buy = buy;
+    tick->trade_id = trade_id;
 
     buffer_next_idx.at(symbol) = (buffer_next_idx.at(symbol) + 1) % Binance::buffer_size;
     buffer_count.at(symbol) = std::min(buffer_count.at(symbol) + 1, Binance::buffer_size);
@@ -44,10 +45,10 @@ void TickData::append(const std::string& symbol, time_point_ms timestamp, float 
         "p(" << price << ") " <<
         "v(" << volume << ") " <<
         "b(" << buy << ") " <<
+        "tid(" << trade_id << ") " <<
         "idx(" << buffer_next_idx.at(symbol) << ") " <<
         "cnt(" << buffer_count.at(symbol) << ") " <<
         std::endl;
-    
 }
 
 std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time_point_ms timestamp, int max_rows)
