@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DateTime.h"
+#include "BitLib/DateTime.h"
 
 #include <array>
 
@@ -15,8 +15,8 @@ namespace BitMin
 
     namespace HttpServer
     {
-        constexpr auto static_path = "C:\\development\\github\\puffin-trader\\BitMin\\static\\";
-        constexpr auto port = 8080;
-        constexpr auto address = "0.0.0.0"; // localhost";
+        constexpr auto static_path = "/home/strombom/bitmin_static";
+        constexpr auto port = 8443;
+        constexpr auto address = "0.0.0.0";
     }
 }

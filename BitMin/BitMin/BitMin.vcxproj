@@ -77,22 +77,22 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="BitLib\DateTime.cpp" />
+    <ClCompile Include="BitLib\json11\json11.cpp" />
     <ClCompile Include="BitMin.cpp" />
-    <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="HttpServer.cpp" />
-    <ClCompile Include="json11.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BitLib\DateTime.h" />
+    <ClInclude Include="BitLib\date\date.h" />
+    <ClInclude Include="BitLib\json11\json11.hpp" />
     <ClInclude Include="BitMinConstants.h" />
-    <ClInclude Include="DateTime.h" />
-    <ClInclude Include="date\date.h" />
     <ClInclude Include="HttpServer.h" />
-    <ClInclude Include="json11.hpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);/home/strombom/apps/vcpkg/installed/x64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-isystem"/home/strombom/vcpkg/installed/x64-linux/include" %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -100,12 +100,12 @@
     <Link>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <LibraryDependencies>pthread;ssl;crypto</LibraryDependencies>
+      <LibraryDependencies>pthread;ssl;crypto;dl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);/home/strombom/apps/vcpkg/installed/x64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++17</CppLanguageStandard>
       <AdditionalOptions>-isystem"/home/strombom/vcpkg/installed/x64-linux/include" %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -113,7 +113,7 @@
     <Link>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <LibraryDependencies>pthread;ssl;crypto</LibraryDependencies>
+      <LibraryDependencies>pthread;ssl;crypto;dl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

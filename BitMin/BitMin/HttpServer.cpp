@@ -12,33 +12,16 @@ HttpServer::HttpServer(void) :
     server_thread_running(true)
 {
     load_server_certificate(ctx);
-    //ioc = std::make_shared<boost::asio::io_context>();
 }
 
 void HttpServer::start(void)
 {
-    /*
-    auto resolver = boost::asio::ip::tcp::resolver{ *ioc };
-    auto const results = resolver.resolve(BitMin::HttpServer::address, BitMin::HttpServer::port);
-    auto endpoint = results->endpoint();
-    auto http_listener = std::make_shared<HttpListener>(this->shared_from_this(), ioc, ctx, endpoint);
-    http_listener->run();
-
-    server_thread = std::make_unique<std::thread>(&HttpServer::server_worker, this);
-
-    */
-
-    //std::shared_ptr<boost::asio::io_context> ioc;
-    //std::shared_ptr<boost::asio::ssl::context> ctx;
-    //ctx = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12);
-
     auto address = boost::asio::ip::make_address(BitMin::HttpServer::address);
     auto endpoint = boost::asio::ip::tcp::endpoint{ address, static_cast<unsigned short>(BitMin::HttpServer::port) };
     http_listener = std::make_shared<HttpListener>(this->shared_from_this(), ioc, ctx, endpoint);
     http_listener->run();
 
-    server_thread = std::make_unique<std::thread>(&HttpServer::server_worker, this);
-    
+    server_thread = std::make_unique<std::thread>(&HttpServer::server_worker, this);    
 }
 
 void HttpServer::shutdown(void)
@@ -133,6 +116,8 @@ void HttpServer::handle_request(boost::beast::http::request<Body, boost::beast::
     if (req.target().back() == '/') {
         path.append("index.html");
     }
+
+    //path = boost::replace_all_copy(path, "/", std::string{ '\\' });
 
     // Attempt to open the file
     boost::beast::error_code ec;
@@ -230,9 +215,113 @@ std::string HttpServer::path_cat(boost::beast::string_view base, boost::beast::s
     return result;
 }
 
+void HttpServer::load_server_certificate(boost::asio::ssl::context& ctx)
+{
+    std::string const cert =
+        "-----BEGIN CERTIFICATE-----\n"
+        "MIIC8DCCAdigAwIBAgIUAth8oHSiJS92KOhhn9tor2PbLg4wDQYJKoZIhvcNAQEL\n"
+        "BQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTIwMDYyODA5MDIxNloXDTIwMDcy\n"
+        "ODA5MDIxNlowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\n"
+        "AAOCAQ8AMIIBCgKCAQEA0OXwpvEAfOc16NZ2ul/jrZTtxaanF63mewVsipoleaBI\n"
+        "OBBD+/5KSHwSNeztMpBkU339k2g3PC1Wc+85vbkXRBD5UiZToyzyZlK1E790VTYf\n"
+        "vySCPKdlH8+w86XWUazzJH8roXYa//qYC6WfdigpOYtXWXkt4GUT6QdTDB4TfgVi\n"
+        "BPFpFigJZLUWN214HrAvQHMMKY5+EnNUpynDrEHxtFZj8q2saNGMlyHrVWNvytFg\n"
+        "xYssvkrlj6Kb4+QfbzZwMcrUhmUIMNGrmc56woUY4haJnw0ZN66eFd3jfhx/xazG\n"
+        "t48KIiCNDxRdNRDCHMcAWySJOXOSV/PtYYhcGnOyEQIDAQABozowODAUBgNVHREE\n"
+        "DTALgglsb2NhbGhvc3QwCwYDVR0PBAQDAgeAMBMGA1UdJQQMMAoGCCsGAQUFBwMB\n"
+        "MA0GCSqGSIb3DQEBCwUAA4IBAQCJaywRDeBoVeVapBcm5y21EuTRpsk/k1wnIejI\n"
+        "21VIKiyNyc7ELhlShm8M8MsmG1Ydt/av6cxpB+vIoJ/2c0zUpPZxLLbrRD7SeNp7\n"
+        "+kdkZl9VVJglpWjPhVR4lvsbm6VEOx0Rtk/3DUqy99RsUB2LLuc0X6vtAyToJ72d\n"
+        "2CHiHjqzpXIEUJWqSpJwDg81aziPpgx/Q9/1F9xo2F9q0VpYKWj6KAuHyHQX7S5S\n"
+        "qK1ZXZvz5cSaUcm/QjyPSPmsycRyEmplX7CTzxZ4d0crnIf0OB0nghBhTW1bTioK\n"
+        "N+YpoewWArC572Pc+xebiKJOE3qEROj93cPoQIXhlCemMkfT\n"
+        "-----END CERTIFICATE-----\n";
+
+    std::string const key =
+        "-----BEGIN PRIVATE KEY-----\n"
+        "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDQ5fCm8QB85zXo\n"
+        "1na6X+OtlO3FpqcXreZ7BWyKmiV5oEg4EEP7/kpIfBI17O0ykGRTff2TaDc8LVZz\n"
+        "7zm9uRdEEPlSJlOjLPJmUrUTv3RVNh+/JII8p2Ufz7DzpdZRrPMkfyuhdhr/+pgL\n"
+        "pZ92KCk5i1dZeS3gZRPpB1MMHhN+BWIE8WkWKAlktRY3bXgesC9Acwwpjn4Sc1Sn\n"
+        "KcOsQfG0VmPyraxo0YyXIetVY2/K0WDFiyy+SuWPopvj5B9vNnAxytSGZQgw0auZ\n"
+        "znrChRjiFomfDRk3rp4V3eN+HH/FrMa3jwoiII0PFF01EMIcxwBbJIk5c5JX8+1h\n"
+        "iFwac7IRAgMBAAECggEBAIShmZvE5HRpMFc244cNnrb1GcomN2zXYsC0/uc5W5XP\n"
+        "aEsAOMnj+DHxZHaMiUVTW/+OvNM8leVFO+C8AMMuo1D6HfJEl1HBFd5VoNZ69ler\n"
+        "15g6i94Kwi/iZA0uO9b7ohyICaGoJRhleOfcLlSMxy/cAoeyYqhYRL3tgpLs/Z9C\n"
+        "kgP71UZX5wwGOF9cVw8Xq+FVBfUaWcNIeS2tcZog6SD4NzYSnnMO2tttmUkSmLA3\n"
+        "Y4mtiTXyE6aP1lwpGHqtMf8cOkSFpm4lWPelva71SIa40Xg2QwmrfhJl/E1zXeln\n"
+        "uYgJL4ZTvRkIxFh33eR60UpNV/8XDXqV1W7AFgchJukCgYEA564F/doRh0DsuWef\n"
+        "EmQDQfSNXhqb9+LZtEF9flvs61P37ohcWJ6kv8rsKPoWwHe2VeVtboz/WHOF3ZVI\n"
+        "SF8TcLyX/eHKPVDWYyTQ0Mpf3oV5JlFsRpsy7s8X8HUiLQL0IHY/49hWfPyMGMpr\n"
+        "wu/jMSoUaU9DW7xsGs/QGrB2BicCgYEA5tOz7dkwAezF0CJhAXYfD0amWhDEPaCO\n"
+        "XWjFGAXPvp2wAEKZWyM9rr9vVCOVndKCJTacot3vV45BD7DKpLN/EfAJDi6UAbfo\n"
+        "CzwdMVqgZstMx0XacCYxyLYFHhfCAijtOMgHgHXYRBeQ1c09tWgFphZCZmTGIXU6\n"
+        "6vdGEBOtoQcCgYEAwS+jX2IPa7D/tDprsnIjJUQ+/VFC7RkEYAKcGlmc3T5PZ1/d\n"
+        "YSgoSKV091ZS0nsAV+/PqHd6FM9/uJ1agL6G/2LDerhkY2yc2F9CoFegSXUS6JjM\n"
+        "qLORbQDS/Xcu4EmuN8Ni0yL6O457Y9Cmuw49bCmii43EpSIhItpWtWqff9ECgYAo\n"
+        "A7EgXVMuMj6Ee0E3wKNXwZaa7Gcoi8nCNaRdKry9vZZCJUlyfCR4Q6Vn/5czOcfn\n"
+        "7ZSvwyt3kSiEMNCgRqGTmXnoZHix55CpSe2BncVKrJmNvfVFFcnxkmRGuDWgrDmb\n"
+        "a0mpokQwYalw9thotzSrexZdq8CREkJ5cw5JQTALRwKBgQDNfe6Vxk3PnNOxkE/F\n"
+        "wU+e6YRH4xT/fkTeCCaI3gi50Wjxkf7pljSJoZpdw1z+HHZG0g4SCEmqCmrrmAZG\n"
+        "RKBrS7Awri6elygQqLbNyOyki2naJwQfR/c11MJYqW4wFpn9cyHcxvC8eG8kuj3A\n"
+        "zkESeRDCoKcxjEXobJ+zrfc1hA==\n"
+        "-----END PRIVATE KEY-----\n";
+
+    std::string const dh =
+        "-----BEGIN DH PARAMETERS-----\n"
+        "MIICCAKCAgEAg3W3Q7KwdDkKjwIRTMiuCRiFIoKUKJI3YFPtgTzC57idSxJFkUrM\n"
+        "iIHoFM5Abo0REBAuZbfPkSKPMCiScT8ljOEte003J5899UMnx/Mn2tV0vpb/HWyr\n"
+        "EhV4KSmf2eFx0iN2McgjtzpvL9tExIy5UWRJaeGI+l1zFjOBDdw234JghQqZ8P52\n"
+        "YzQmJQt17GchaM9s6QMwvqAIm9SfDwtJUexa0U4fh/qLnJnjpx882+CxGi8+e3JZ\n"
+        "lWCU1yrDp7LqKdHu04bftqL518O9wyFlNdDiyH1ITxXlgVJHFpA/+HlHhfFEudHL\n"
+        "ekLpvOlVJmkQDeWo+QbK8DDuLQE7Gz9aNW/D3ZvlhcONbqvddJqTZpkfxmnVV/x2\n"
+        "dQbMHMYCKWochTcVrFfPflVN6d2FBu1eCpdbvCdzCe1I3z+vDb1LHRm3JZOKKFie\n"
+        "NfT8t+vxvIgdQYClRw2uYylRfsOl2C838QnNXENHPCyw56PkyqANvxqgb3DauPZr\n"
+        "GsQfjeBqFpeEtIOsIB52sVSHBl0FtbyfEJEcAguI34HNYiB6WAASDQPjIBwV9iEW\n"
+        "Z7ZJKpOljMsrCElUFXq0//UjWH4266wCJHYGb1Ipcf9VSYR6XgD5B7dZ91q69OAL\n"
+        "NaIWBRxQNQoobrIxXobYhN4eEGkOuBbubkCgfBmdnV8aX+faLHK1xgMCAQI=\n"
+        "-----END DH PARAMETERS-----";
+
+    ctx.set_password_callback(
+        [](std::size_t,
+            boost::asio::ssl::context_base::password_purpose)
+        {
+            return "test";
+        });
+
+    ctx.set_options(
+        boost::asio::ssl::context::default_workarounds |
+        boost::asio::ssl::context::no_sslv2 |
+        boost::asio::ssl::context::single_dh_use);
+
+    ctx.use_certificate_chain(
+        boost::asio::buffer(cert.data(), cert.size()));
+
+    ctx.use_private_key(
+        boost::asio::buffer(key.data(), key.size()),
+        boost::asio::ssl::context::file_format::pem);
+
+    ctx.use_tmp_dh(
+        boost::asio::buffer(dh.data(), dh.size()));
+}
+
 void fail(boost::beast::error_code ec, std::string message)
 {
+    std::string err = ec.message();
+    if (ec.category() == boost::asio::error::get_ssl_category()) {
+        err = std::string(" (")
+            + boost::lexical_cast<std::string>(ERR_GET_LIB(ec.value())) + ","
+            + boost::lexical_cast<std::string>(ERR_GET_FUNC(ec.value())) + ","
+            + boost::lexical_cast<std::string>(ERR_GET_REASON(ec.value())) + ") "
+            ;
+        //ERR_PACK /* crypto/err/err.h */
+        char buf[128];
+        ::ERR_error_string_n(ec.value(), buf, sizeof(buf));
+        err += buf;
+    }
+
     std::cout << "Fail: " << ec.message() << " - " << ec.value() << " - " << message << std::endl;
+    std::cout << "Fail2: " << err << std::endl;
 }
 
 HttpListener::HttpListener(std::shared_ptr<HttpServer> http_server, boost::asio::io_context& ioc, boost::asio::ssl::context& ctx, boost::asio::ip::tcp::endpoint endpoint) :

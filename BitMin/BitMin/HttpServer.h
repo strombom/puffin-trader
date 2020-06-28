@@ -30,6 +30,7 @@ private:
     boost::beast::string_view mime_type(boost::beast::string_view path);
     std::string path_cat(boost::beast::string_view base, boost::beast::string_view path);
 
+    void load_server_certificate(boost::asio::ssl::context& ctx);
     void server_worker(void);
 };
 
