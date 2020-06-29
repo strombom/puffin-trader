@@ -6,7 +6,8 @@
 #include <iostream>
 
 
-HttpServer::HttpServer(void) :
+HttpServer::HttpServer(std::shared_ptr<HttpRouter> http_router) :
+    http_router(http_router),
     ioc(),
     ctx(boost::asio::ssl::context::tlsv12),
     server_thread_running(true)

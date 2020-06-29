@@ -80,6 +80,8 @@
     <ClCompile Include="BitLib\DateTime.cpp" />
     <ClCompile Include="BitLib\json11\json11.cpp" />
     <ClCompile Include="BitMin.cpp" />
+    <ClCompile Include="DirectionEstimation.cpp" />
+    <ClCompile Include="HttpRouter.cpp" />
     <ClCompile Include="HttpServer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +89,8 @@
     <ClInclude Include="BitLib\date\date.h" />
     <ClInclude Include="BitLib\json11\json11.hpp" />
     <ClInclude Include="BitMinConstants.h" />
+    <ClInclude Include="DirectionEstimation.h" />
+    <ClInclude Include="HttpRouter.h" />
     <ClInclude Include="HttpServer.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

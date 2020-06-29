@@ -1,16 +1,19 @@
 #pragma once
 #include "pch.h"
 
+#include "HttpRouter.h"
+
 #include <chrono>
 #include <thread>
 #include <atomic>
+
 
 class HttpListener;
 
 class HttpServer : public std::enable_shared_from_this<HttpServer>
 {
 public:
-    HttpServer(void);
+    HttpServer(std::shared_ptr<HttpRouter> http_router);
 
     void start(void);
     void shutdown(void);
@@ -22,6 +25,8 @@ public:
     boost::asio::ssl::context ctx;
 
 private:
+    std::shared_ptr<HttpRouter> http_router;
+
     std::atomic_bool server_thread_running;
     std::unique_ptr<std::thread> server_thread;
 

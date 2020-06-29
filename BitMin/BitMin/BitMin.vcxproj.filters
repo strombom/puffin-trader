@@ -13,6 +13,12 @@
     <ClCompile Include="BitLib\json11\json11.cpp">
       <Filter>Source\Libraries</Filter>
     </ClCompile>
+    <ClCompile Include="HttpRouter.cpp">
+      <Filter>Source\Server</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectionEstimation.cpp">
+      <Filter>Source\Models</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">
@@ -33,6 +39,12 @@
     <Filter Include="Header\Server">
       <UniqueIdentifier>{294d1d75-8cad-46d1-8034-7fe8a6ef1399}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header\Models">
+      <UniqueIdentifier>{4b498ebf-3509-4334-9c5f-7e7deb295b5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Models">
+      <UniqueIdentifier>{728fbd5d-b258-4a34-8284-7aee31b5db8b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -52,6 +64,12 @@
     </ClInclude>
     <ClInclude Include="BitLib\DateTime.h">
       <Filter>Header\Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpRouter.h">
+      <Filter>Header\Server</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectionEstimation.h">
+      <Filter>Header\Models</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
