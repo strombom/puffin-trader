@@ -150,7 +150,6 @@ const std::string CoinbaseProRestApi::http_request(const boost::beast::http::req
     return "";
 }
 
-
 void CoinbaseProRestApi::load_root_certificates(boost::asio::ssl::context& ctx, boost::system::error_code& ec)
 {
     // coinbase-com-chain.pem
