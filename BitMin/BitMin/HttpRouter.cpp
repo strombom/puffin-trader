@@ -36,10 +36,32 @@ std::tuple<bool, std::string> HttpRouter::get_request(const std::string& target)
     auto found = false;
 
     if (path == "/directions") {
+        response["names"] = json11::Json::object{
+            {"bitmex", "Bitmex"},
+            {"binance", "Binance"},
+            {"coinbase", "Coinbase"}
+        };
 
-        auto prices_bitmex = json11::Json::array{ {0.5, 1.0, 1.5, 2.0, 2.5, 3.0} };
-        auto prices_binance = json11::Json::array{ {1.0, 0.5, 1.0, 1.5, 2.0, 3.0} };
-        response["prices"] = json11::Json::object{ {"bitmex", prices_bitmex}, {"binance", prices_binance} };
+        response["directions"] = json11::Json::object{
+            {"up", json11::Json::object{
+                {"x", json11::Json::array{ {1, 2} }},
+                {"y", json11::Json::array{ {2.6, 3.7} }}
+            } },
+            {"down", json11::Json::object{
+                {"x", json11::Json::array{ {0, 3} }},
+                {"y", json11::Json::array{ {1.5, 2.8} }}
+            } },
+            {"unknown", json11::Json::object{
+                {"x", json11::Json::array{ {4, 5} }},
+                {"y", json11::Json::array{ {3.9, 2.0} }}
+            } }
+        };
+
+        response["prices"] = json11::Json::object{ 
+            {"bitmex", json11::Json::array{ {0.5, 1.0, 1.5, 2.0, 2.5, 3.0} }},
+            {"binance", json11::Json::array{ {1.0, 0.5, 1.0, 1.5, 2.0, 3.0} }},
+            {"coinbase", json11::Json::array{ {2.0, 2.5, 2.0, 2.5, 3.0, 2.5} }}
+        };
         found = true;
     }
 
