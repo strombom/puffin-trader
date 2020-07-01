@@ -43,18 +43,18 @@ std::tuple<bool, std::string> HttpRouter::get_request(const std::string& target)
         };
 
         response["directions"] = json11::Json::object{
-            {"up", json11::Json::object{
-                {"x", json11::Json::array{ {1, 2} }},
-                {"y", json11::Json::array{ {2.6, 3.7} }}
-            } },
-            {"down", json11::Json::object{
-                {"x", json11::Json::array{ {0, 3} }},
-                {"y", json11::Json::array{ {1.5, 2.8} }}
-            } },
-            {"unknown", json11::Json::object{
-                {"x", json11::Json::array{ {4, 5} }},
-                {"y", json11::Json::array{ {3.9, 2.0} }}
-            } }
+            {"up", json11::Json::array{
+                json11::Json::array{{1, 2.6}},
+                json11::Json::array{{2, 3.7}}
+            }},
+            {"down", json11::Json::array{
+                json11::Json::array{{0, 1.5}},
+                json11::Json::array{{3, 2.8}}
+            }},
+            {"unknown", json11::Json::array{
+                json11::Json::array{{4, 3.9}},
+                json11::Json::array{{5, 2.0}}
+            }}
         };
 
         response["prices"] = json11::Json::object{ 
