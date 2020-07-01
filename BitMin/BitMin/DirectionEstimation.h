@@ -1,6 +1,8 @@
 #pragma once
 #include "pch.h"
 
+#include "DE_Server.h"
+
 #include "BitLib/json11/json11.hpp"
 
 
@@ -13,6 +15,6 @@ public:
     
 
 private:
-
+    std::unique_ptr<DE_Server> de_server;
 };
 

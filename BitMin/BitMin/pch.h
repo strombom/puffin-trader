@@ -11,3 +11,5 @@
 #include <boost/asio/ssl/context.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/replace.hpp>
+
+#include <zmq.hpp>

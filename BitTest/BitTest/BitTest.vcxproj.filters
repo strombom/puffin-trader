@@ -48,6 +48,9 @@
     <ClCompile Include="BitLib\Intervals.cpp">
       <Filter>Source Files\BitLib</Filter>
     </ClCompile>
+    <ClCompile Include="DirectionClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -79,6 +82,9 @@
     </ClInclude>
     <ClInclude Include="BitLib\BitBotConstants.h">
       <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectionClient.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

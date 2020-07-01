@@ -5,7 +5,7 @@
 
 DirectionEstimation::DirectionEstimation(void)
 {
-
+    de_server = std::make_unique<DE_Server>();
 }
 
 json11::Json DirectionEstimation::get_directions(json11::Json parameters)

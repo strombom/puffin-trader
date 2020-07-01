@@ -79,7 +79,9 @@
   <ItemGroup>
     <ClCompile Include="BitLib\DateTime.cpp" />
     <ClCompile Include="BitLib\json11\json11.cpp" />
+    <ClCompile Include="BitLib\Logger.cpp" />
     <ClCompile Include="BitMin.cpp" />
+    <ClCompile Include="DE_Server.cpp" />
     <ClCompile Include="DirectionEstimation.cpp" />
     <ClCompile Include="HttpRouter.cpp" />
     <ClCompile Include="HttpServer.cpp" />
@@ -88,7 +90,9 @@
     <ClInclude Include="BitLib\DateTime.h" />
     <ClInclude Include="BitLib\date\date.h" />
     <ClInclude Include="BitLib\json11\json11.hpp" />
+    <ClInclude Include="BitLib\Logger.h" />
     <ClInclude Include="BitMinConstants.h" />
+    <ClInclude Include="DE_Server.h" />
     <ClInclude Include="DirectionEstimation.h" />
     <ClInclude Include="HttpRouter.h" />
     <ClInclude Include="HttpServer.h" />
@@ -104,7 +108,7 @@
     <Link>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <LibraryDependencies>pthread;ssl;crypto;dl</LibraryDependencies>
+      <LibraryDependencies>pthread;ssl;crypto;dl;zmq</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -117,7 +121,7 @@
     <Link>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(Link.AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <LibraryDependencies>pthread;ssl;crypto;dl</LibraryDependencies>
+      <LibraryDependencies>pthread;ssl;crypto;dl;zmq</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

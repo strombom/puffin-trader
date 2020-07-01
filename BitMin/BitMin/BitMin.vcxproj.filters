@@ -17,7 +17,13 @@
       <Filter>Source\Server</Filter>
     </ClCompile>
     <ClCompile Include="DirectionEstimation.cpp">
-      <Filter>Source\Models</Filter>
+      <Filter>Source\DirectionEstimaton</Filter>
+    </ClCompile>
+    <ClCompile Include="DE_Server.cpp">
+      <Filter>Source\DirectionEstimaton</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\Logger.cpp">
+      <Filter>Source\Libraries</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -39,11 +45,11 @@
     <Filter Include="Header\Server">
       <UniqueIdentifier>{294d1d75-8cad-46d1-8034-7fe8a6ef1399}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header\Models">
-      <UniqueIdentifier>{4b498ebf-3509-4334-9c5f-7e7deb295b5a}</UniqueIdentifier>
+    <Filter Include="Source\DirectionEstimaton">
+      <UniqueIdentifier>{9c192118-5bb4-4239-9512-4abb7af40f5a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Models">
-      <UniqueIdentifier>{728fbd5d-b258-4a34-8284-7aee31b5db8b}</UniqueIdentifier>
+    <Filter Include="Header\DirectionEstimaton">
+      <UniqueIdentifier>{55212a2b-f814-47dd-9d9c-8a64c481f97a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -69,7 +75,13 @@
       <Filter>Header\Server</Filter>
     </ClInclude>
     <ClInclude Include="DirectionEstimation.h">
-      <Filter>Header\Models</Filter>
+      <Filter>Header\DirectionEstimaton</Filter>
+    </ClInclude>
+    <ClInclude Include="DE_Server.h">
+      <Filter>Header\DirectionEstimaton</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\Logger.h">
+      <Filter>Header\Libraries</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

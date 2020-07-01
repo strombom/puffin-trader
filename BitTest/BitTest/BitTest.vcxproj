@@ -184,6 +184,7 @@
     <ClCompile Include="BitLib\Logger.cpp" />
     <ClCompile Include="BitLib\Utils.cpp" />
     <ClCompile Include="BitTest.cpp" />
+    <ClCompile Include="DirectionClient.cpp" />
     <ClCompile Include="FeaturePlotter.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -199,6 +200,7 @@
     <ClInclude Include="BitLib\json11\json11.hpp" />
     <ClInclude Include="BitLib\Logger.h" />
     <ClInclude Include="BitLib\Utils.h" />
+    <ClInclude Include="DirectionClient.h" />
     <ClInclude Include="FeaturePlotter.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
