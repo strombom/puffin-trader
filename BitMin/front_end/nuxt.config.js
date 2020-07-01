@@ -36,7 +36,8 @@ export default {
   */
   plugins: [
     '@/plugins/highcharts.js',
-    '@/plugins/chart_event_bus.js'
+    '@/plugins/chart_event_bus.js',
+    '@/plugins/axios.js'
   ],
   /*
   ** Auto import components
@@ -62,11 +63,22 @@ export default {
     bootstrapCSS: true,
     bootstrapVueCSS: true,
   },
+
+  env: {
+    baseUrl: "https://localhost:8443"
+  },
   /*
   ** Axios module configuration
   ** See https://axios.nuxtjs.org/options
   */
-  axios: {},
+  axios: {
+    baseURL: 'https://localhost:8443',
+    proxy: false//,
+    //requestInterceptor: (config, {store}) => {
+    //  config.headers.common['Content-Type'] = 'application/json';
+    //  return config
+    //}
+  },
   /*
   ** Build configuration
   ** See https://nuxtjs.org/api/configuration-build/

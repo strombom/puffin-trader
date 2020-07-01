@@ -7,9 +7,9 @@
 
 
 HttpServer::HttpServer(std::shared_ptr<HttpRouter> http_router) :
-    http_router(http_router),
     ioc(),
     ctx(boost::asio::ssl::context::tlsv12),
+    http_router(http_router),    
     server_thread_running(true)
 {
     load_server_certificate(ctx);
@@ -102,6 +102,18 @@ void HttpServer::handle_request(boost::beast::http::request<Body, boost::beast::
         return res;
     };
 
+    if (req.method() == boost::beast::http::verb::options) {
+        boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
+        res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(boost::beast::http::field::allow, "GET, PUT, POST, DELETE");
+        res.set(boost::beast::http::field::access_control_allow_origin, "http://localhost:3000");
+        res.body() = "";
+        res.content_length(res.payload_size());
+        res.keep_alive(req.keep_alive());
+        res.prepare_payload();
+        return send(std::move(res));
+    }
+
     // Make sure we can handle the method
     if (req.method() != boost::beast::http::verb::get && req.method() != boost::beast::http::verb::head) {
         return send(bad_request("Unknown HTTP-method"));
@@ -111,6 +123,25 @@ void HttpServer::handle_request(boost::beast::http::request<Body, boost::beast::
     if (req.target().empty() || req.target()[0] != '/' || req.target().find("..") != boost::beast::string_view::npos) {
         return send(bad_request("Illegal request-target"));
     }
+
+    if (req.method() == boost::beast::http::verb::get) {
+        auto [found, response] = http_router->get_request(std::string{ req.target() });
+
+        if (found) {
+            //boost::beast::http::response<boost::beast::http::file_body> res{ std::piecewise_construct, std::make_tuple(std::move(body)), std::make_tuple(boost::beast::http::status::ok, req.version()) };
+
+            boost::beast::http::response<boost::beast::http::string_body> res{};
+            res.body() = response;
+
+            res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+            res.set(boost::beast::http::field::content_type, "application/json");
+            res.set(boost::beast::http::field::access_control_allow_origin, "http://localhost:3000");
+            res.content_length(res.payload_size());
+            res.keep_alive(req.keep_alive());
+            return send(std::move(res));
+        }
+    }
+
 
     // Build the path to the requested file
     std::string path = path_cat(BitMin::HttpServer::static_path, req.target());

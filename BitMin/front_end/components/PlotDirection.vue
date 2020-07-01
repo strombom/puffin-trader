@@ -11,6 +11,10 @@
 <script>
 import { ChartEventBus } from "./../plugins/chart_event_bus.js";
 import Highcharts from "highcharts";
+//import axios from 'axios'
+
+//axios.defaults.baseURL = process.env.API_URL
+//console.log("axios.defaults.baseURL " + $axios.defaults.baseURL)
 
 let exchanges = {
   bitmex: {
@@ -47,30 +51,37 @@ export default {
     };
   },
   methods: {
-    updateChart: function(event) {
-      let new_data;
-      new_data = requestData();
+    updateChart: async function(event) {
+      let new_data
+      //new_data = requestData()
+
+
+      const data = (await this.$axios.get("/directions")).data
+
+      console.log(data.prices.bitmex)
 
       Highcharts.charts.forEach((chart, chart_index) => {
-
         Object.entries(exchanges).forEach(([exchange_key, exchange]) => {
-            console.log("The value: ",exchange);
-            
-            let series_idx = exchange["index"];
-
-            chart.series[series_idx].setData(new_data[exchange_key], true);
+            let series_idx = exchange["index"]
+            chart.series[series_idx].setData(data.prices[exchange_key], true)
         });
       });
     }
   }
 };
 
-function requestData() {
-  console.log("abc");
+
+
+
+async function requestData() {
+  //const data = await this.$axios.get("/directions")
+  
+
+  console.log("abc")
   return {
     bitmex: [5.5, 1.6, 2.7, 1.8, 2.9, 1],
     binance: [0, 2, 1, 2, 1, 2]
-  };
+  }
 }
 </script>
 
