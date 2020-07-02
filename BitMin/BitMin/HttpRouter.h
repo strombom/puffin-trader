@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "BitLib/json11/json11.hpp"
+#include "DE_Server.h"
 
 #include <functional>
 

@@ -35,6 +35,46 @@ std::tuple<bool, std::string> HttpRouter::get_request(const std::string& target)
 
     auto found = false;
 
+    for (const auto [target, route] : get_routes) {
+        if (path.compare(target) == 0) {
+            found = true;
+
+            auto data = route.callback(json11::Json{});
+
+            response["names"] = data["names"];
+            response["prices"] = data["prices"];
+
+            auto dir_up = std::vector<std::vector<double>>{};
+            auto dir_down = std::vector<std::vector<double>>{};
+            auto dir_unknown = std::vector<std::vector<double>>{};
+
+            for (auto idx = 0; idx < data["directions"].array_items().size(); ++idx) {
+
+                const auto price = data["prices"]["bitmex"][idx].number_value();
+                const auto direction = data["directions"][idx];
+
+                if (direction == 0) {
+                    dir_unknown.push_back({ (double)idx, price });
+                }
+                else if (direction == 1) {
+                    dir_up.push_back({ (double)idx, price });
+                }
+                else if (direction == 2) {
+                    dir_down.push_back({ (double)idx, price });
+                }
+            }
+
+            response["directions"] = json11::Json::object{
+                {"up", dir_up},
+                {"down", dir_down},
+                {"unknown", dir_unknown}
+            };
+
+            break;
+        }
+    }
+
+    /*
     if (path == "/directions") {
         response["names"] = json11::Json::object{
             {"bitmex", "Bitmex"},
@@ -64,6 +104,7 @@ std::tuple<bool, std::string> HttpRouter::get_request(const std::string& target)
         };
         found = true;
     }
+    */
 
     return std::make_tuple(found, json11::Json{ response }.dump());
 }

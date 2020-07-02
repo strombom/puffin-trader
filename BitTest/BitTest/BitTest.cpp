@@ -13,7 +13,6 @@ int main()
     const auto task = std::string{ "direction_data" };
 
     if (task == "plot_features") {
-
         auto bitbase_client = BitBaseClient{};
 
         auto intervals = bitbase_client.get_intervals(
@@ -40,7 +39,6 @@ int main()
 
     }
     else if (task == "plot_prices") {
-
         auto bitbase_client = BitBaseClient{};
 
         const auto timestamp_start = time_point_ms{ date::sys_days(date::year{ 2020 } / 5 / 1) + std::chrono::hours{ 0 } };
@@ -56,15 +54,13 @@ int main()
         }
     }
     else if (task == "direction_data") {
-
-        auto bitbase_client = BitBaseClient{};
-
         const auto timestamp_start = time_point_ms{ date::sys_days(date::year{ 2020 } / 5 / 1) + std::chrono::hours{ 0 } };
-        const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2020} / 5 / 1) + std::chrono::minutes{ 1 } };
+        const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2020} / 5 / 1) + std::chrono::minutes{ 2 } };
         const auto interval = 2s;
 
+        auto bitbase_client = BitBaseClient{};
         const auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", timestamp_start, timestamp_end, interval);
-        const auto binance_intervals = bitbase_client.get_intervals("XBTUSDT", "BINANCE", timestamp_start, timestamp_end, interval);
+        const auto binance_intervals = bitbase_client.get_intervals("BTCUSDT", "BINANCE", timestamp_start, timestamp_end, interval);
         const auto coinbase_intervals = bitbase_client.get_intervals("BTC-USD", "COINBASE_PRO", timestamp_start, timestamp_end, interval);
 
         const auto length = bitmex_intervals->rows.size();
@@ -72,12 +68,12 @@ int main()
         // Make orderbook
         auto orderbook = std::vector<double>{};
         orderbook.resize(length);
-        orderbook[0] = 0.0;
+        orderbook[0] = bitmex_intervals->rows[0].last_price;
         for (auto idx = 1; idx < length; ++idx) {
             if (bitmex_intervals->rows[idx].last_price > orderbook[idx - 1]) {
                 orderbook[idx] = bitmex_intervals->rows[idx].last_price;
             }
-            else if (bitmex_intervals->rows[idx].last_price > orderbook[idx - 1] - 0.5) {
+            else if (bitmex_intervals->rows[idx].last_price < orderbook[idx - 1] - 0.5) {
                 orderbook[idx] = bitmex_intervals->rows[idx].last_price + 0.5;
             }
             else {
@@ -95,11 +91,22 @@ int main()
             if (bitmex_intervals->rows[idx].last_price > orderbook[idx - 1]) {
                 directions[idx - 1] = 2;
             }
-            else {
+            else if (bitmex_intervals->rows[idx].last_price < orderbook[idx - 1] - 0.5) {
                 directions[idx - 1] = 1;
             }
         }
 
+        auto last_direction = directions.back();
+        for (int idx = length - 1; idx > -1; --idx) {
+            if (directions[idx] == 0) {
+                directions[idx] = last_direction;
+            }
+            else {
+                last_direction = directions[idx];
+            }
+        }
 
+        auto direction_client = DirectionClient{};
+        direction_client.send({{"bitmex", bitmex_intervals}, {"binance", binance_intervals}, {"coinbase", coinbase_intervals}}, directions);
     }
 }

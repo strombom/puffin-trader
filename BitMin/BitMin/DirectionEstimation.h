@@ -17,4 +17,3 @@ public:
 private:
     std::unique_ptr<DE_Server> de_server;
 };
-

@@ -19,11 +19,13 @@ export default {
   data() {
     return {
       chartOptions: {
+        chart: {
+          height: 600
+        },
         title: {
           text: "Direction"
         },
-        series: [
-        ]
+        series: [],
       }
     };
   },
@@ -57,6 +59,11 @@ export default {
             marker: {
               fillColor: direction_colors[direction_key],
               symbol: 'square'
+            },
+            states: {
+              inactive: {
+                opacity: 1
+              } 
             }
           })
         })
@@ -80,7 +87,12 @@ export default {
             marker: {
               enabled: false
             },
-            type: 'line'
+            type: 'line',
+            states: {
+              inactive: {
+                opacity: 1
+              } 
+            }
           })
         } else {
           let series_idx = series_idxs[exchange_key]

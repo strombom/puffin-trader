@@ -25,6 +25,9 @@
     <ClCompile Include="BitLib\Logger.cpp">
       <Filter>Source\Libraries</Filter>
     </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">
