@@ -27,7 +27,7 @@ sptrIntervals BitBaseClient::get_intervals(const std::string& symbol,
         { "symbol", symbol },
         { "timestamp_start", DateTime::to_string(timestamp_start) },
         { "timestamp_end", DateTime::to_string(timestamp_end) },
-        { "interval_seconds", (int) interval_ms.count() / 1000 }
+        { "interval_ms", (int) interval_ms.count() }
     };
 
     auto message = zmq::message_t{ command.dump() };

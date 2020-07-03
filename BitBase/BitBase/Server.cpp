@@ -42,7 +42,7 @@ void Server::server_thread(void)
                                                            command["symbol"].string_value(),
                                                            DateTime::to_time_point_ms(command["timestamp_start"].string_value()),
                                                            DateTime::to_time_point_ms(command["timestamp_end"].string_value()),
-                                                           std::chrono::seconds{ command["interval_seconds"].int_value() });
+                                                           std::chrono::milliseconds{ command["interval_ms"].int_value() });
 
             auto buffer = std::stringstream{};
             buffer << *intervals;
