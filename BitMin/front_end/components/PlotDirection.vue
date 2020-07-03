@@ -20,12 +20,22 @@ export default {
     return {
       chartOptions: {
         chart: {
-          height: 600
+          height: 600,
+          zoomType: 'x',
+          panning: true,
+          panKey: 'shift'
+        },
+        yAxis: {
+          minRange: 50
+        },
+        mapNavigation: {
+          enableMouseWheelZoom: true
         },
         title: {
           text: "Direction"
         },
         series: [],
+        tooltip: { enabled: false }
       }
     };
   },
