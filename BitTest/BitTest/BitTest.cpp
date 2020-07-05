@@ -54,9 +54,9 @@ int main()
         }
     }
     else if (task == "direction_data") {
-        const auto timestamp_start = time_point_ms{ date::sys_days(date::year{ 2020 } / 5 / 1) + std::chrono::hours{ 0 } };
-        const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2020} / 5 / 1) + std::chrono::minutes{ 2 } };
-        const auto interval = 2s;
+        const auto timestamp_start = time_point_ms{ date::sys_days(date::year{ 2020 } / 7 / 4) + 16h + 00min + 0s};
+        const auto timestamp_end = timestamp_start + 2h + 0min; // time_point_ms{ date::sys_days(date::year{2020} / 7 / 3) + 0h + 120min + 0s };
+        const auto interval = 1000ms;
 
         auto bitbase_client = BitBaseClient{};
         const auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", timestamp_start, timestamp_end, interval);
@@ -64,6 +64,40 @@ int main()
         const auto coinbase_intervals = bitbase_client.get_intervals("BTC-USD", "COINBASE_PRO", timestamp_start, timestamp_end, interval);
 
         const auto length = bitmex_intervals->rows.size();
+
+        /*
+        auto bitmex_median = 0.0;
+        auto binance_median = 0.0;
+        auto coinbase_median = 0.0;
+        for (auto idx = 0; idx < length; ++idx) {
+            bitmex_median += bitmex_intervals->rows[idx].last_price;
+            binance_median += binance_intervals->rows[idx].last_price;
+            coinbase_median += coinbase_intervals->rows[idx].last_price;
+        }
+        bitmex_median /= length;
+        binance_median /= length;
+        coinbase_median /= length;
+        for (auto idx = 0; idx < length; ++idx) {
+            binance_intervals->rows[idx].last_price += (float)(bitmex_median - binance_median);
+            coinbase_intervals->rows[idx].last_price += (float)(bitmex_median - coinbase_median);
+        }
+        */
+        
+
+        auto binance_diff_ema = bitmex_intervals->rows[0].last_price - binance_intervals->rows[0].last_price;
+        auto coinbase_diff_ema = bitmex_intervals->rows[0].last_price - coinbase_intervals->rows[0].last_price;
+        const auto alpha = 0.0001;
+        for (auto idx = 1; idx < length; ++idx) {
+            //coinbase_intervals->rows[idx].last_price = binance_intervals->rows[idx].last_price;
+
+            const auto binance_diff = bitmex_intervals->rows[idx].last_price - binance_intervals->rows[idx].last_price;
+            const auto coinbase_diff = bitmex_intervals->rows[idx].last_price - coinbase_intervals->rows[idx].last_price;
+
+            binance_diff_ema = alpha * binance_diff + (1 - alpha) * binance_diff_ema;
+            binance_intervals->rows[idx].last_price += (float)(binance_diff_ema);
+            coinbase_diff_ema = alpha * coinbase_diff + (1 - alpha) * coinbase_diff_ema;
+            coinbase_intervals->rows[idx].last_price += (float)(coinbase_diff_ema);
+        }
 
         // Make orderbook
         auto orderbook = std::vector<double>{};
