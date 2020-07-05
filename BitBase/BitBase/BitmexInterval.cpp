@@ -99,33 +99,33 @@ void BitmexInterval::make_interval(const std::string& symbol, std::chrono::milli
         }
 
         // Sort buys and sells by volume
-        std::sort(buys.begin(), buys.end(), std::less<std::pair<float, float>>());
-        std::sort(sells.begin(), sells.end(), std::greater<std::pair<float, float>>());
+        //std::sort(buys.begin(), buys.end(), std::less<std::pair<float, float>>());
+        //std::sort(sells.begin(), sells.end(), std::greater<std::pair<float, float>>());
 
-        auto prices_buy = step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-        auto prices_sell = step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+        //auto prices_buy = step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+        //auto prices_sell = step_prices_t{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
         auto accum_vol_buy = 0.0f;
         auto accum_vol_sell = 0.0f;
 
-        auto step_idx = 0;
+        //auto step_idx = 0;
         for (auto&& buy : buys) {
             accum_vol_buy += buy.second;
-            while (step_idx < BitBase::Bitmex::Interval::steps.size() && accum_vol_buy > BitBase::Bitmex::Interval::steps[step_idx]) {
-                prices_buy[step_idx] = buy.first;
-                ++step_idx;
-            }
+            //while (step_idx < BitBase::Bitmex::Interval::steps.size() && accum_vol_buy > BitBase::Bitmex::Interval::steps[step_idx]) {
+            //    prices_buy[step_idx] = buy.first;
+            //    ++step_idx;
+            //}
         }
 
-        step_idx = 0;
+        //step_idx = 0;
         for (auto&& sell : sells) {
             accum_vol_sell += sell.second;
-            while (step_idx < BitBase::Bitmex::Interval::steps.size() && accum_vol_sell > BitBase::Bitmex::Interval::steps[step_idx]) {
-                prices_sell[step_idx] = sell.first;
-                ++step_idx;
-            }
+            //while (step_idx < BitBase::Bitmex::Interval::steps.size() && accum_vol_sell > BitBase::Bitmex::Interval::steps[step_idx]) {
+            //    prices_sell[step_idx] = sell.first;
+            //    ++step_idx;
+            //}
         }
 
-        intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell, prices_buy, prices_sell });
+        intervals_data.rows.push_back({ last_price, accum_vol_buy, accum_vol_sell }); //, prices_buy, prices_sell });
         timestamp += interval;
     } 
 

@@ -10,6 +10,7 @@ std::ostream& operator<<(std::ostream& stream, const Interval& row)
     stream.write(reinterpret_cast<const char*>(&row.vol_buy), sizeof(row.vol_buy));
     stream.write(reinterpret_cast<const char*>(&row.vol_sell), sizeof(row.vol_sell));
 
+    /*
     for (auto&& step : row.prices_buy) {
         stream.write(reinterpret_cast<const char*>(&step), sizeof(step));
     }
@@ -17,6 +18,7 @@ std::ostream& operator<<(std::ostream& stream, const Interval& row)
     for (auto&& step : row.prices_sell) {
         stream.write(reinterpret_cast<const char*>(&step), sizeof(step));
     }
+    */
 
     return stream;
 }
@@ -27,6 +29,7 @@ std::istream& operator>>(std::istream& stream, Interval& row)
     stream.read(reinterpret_cast <char*> (&row.vol_buy), sizeof(float));
     stream.read(reinterpret_cast <char*> (&row.vol_sell), sizeof(float));
     
+    /*
     for (std::vector<step_prices_t>::size_type step = 0; step != row.prices_buy.size(); step++) {
         stream.read(reinterpret_cast <char*> (&row.prices_buy[step]), sizeof(float));
     }
@@ -34,6 +37,7 @@ std::istream& operator>>(std::istream& stream, Interval& row)
     for (std::vector<step_prices_t>::size_type step = 0; step != row.prices_sell.size(); step++) {
         stream.read(reinterpret_cast <char*> (&row.prices_sell[step]), sizeof(float));
     }
+    */
 
     return stream;
 }
