@@ -10,7 +10,7 @@ class FE_Observations
 {
 public:
     FE_Observations(const std::string& file_path);
-    FE_Observations(sptrIntervals intervals);
+    FE_Observations(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals);
 
     void load(const std::string& file_path);
     void save(const std::string& file_path) const;
@@ -31,12 +31,12 @@ public:
 private:
     std::mutex get_mutex;
 
-    torch::Tensor observations; // TxCxL (10000x3x128)
+    torch::Tensor observations; // TxCxL (10000x6x32)
     time_point_ms timestamp_start;
     std::chrono::milliseconds interval;
 
-    void calculate_observations(sptrIntervals intervals, size_t start_idx);
-    torch::Tensor calculate_observation(sptrIntervals intervals, int idx_obs);
+    void calculate_observations(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, size_t start_idx);
+    torch::Tensor calculate_observation(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, int idx_obs);
     float price_transform(float start_price, float price);
     float volume_transform(float volume);
 };

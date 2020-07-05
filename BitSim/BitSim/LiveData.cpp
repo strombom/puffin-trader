@@ -11,9 +11,9 @@ LiveData::LiveData(void) :
     feature_encoder = std::make_shared<FE_Inference>(BitSim::tmp_path, BitSim::feature_encoder_weights_filename);
 
     const auto timestamp_now = system_clock_ms_now();
-    const auto timestamp_start = timestamp_now - BitSim::LiveData::intervals_buffer_length - (timestamp_now - BitSim::timestamp_start) % BitSim::BitBase::interval;
-    intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_start, BitSim::BitBase::interval);
-    observations = std::make_shared<FE_Observations>(intervals);
+    const auto timestamp_start = timestamp_now - BitSim::LiveData::intervals_buffer_length - (timestamp_now - BitSim::timestamp_start) % BitSim::interval;
+    intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_start, BitSim::interval);
+    observations = std::make_shared<FE_Observations>(intervals, intervals, intervals);
     features = feature_encoder->forward(observations->get_all());
 
     logger.info("LiveData::LiveData: Intervals (%d): %s", intervals->rows.size(), DateTime::to_string_iso_8601(intervals->timestamp_start).c_str());
@@ -48,8 +48,8 @@ void LiveData::live_data_worker(void)
     while (live_data_thread_running) {
         std::this_thread::sleep_for(100ms);
 
-        const auto timestamp_next = intervals->get_timestamp_last() + BitSim::BitBase::interval;
-        const auto new_intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_next, BitSim::BitBase::interval);
+        const auto timestamp_next = intervals->get_timestamp_last() + BitSim::interval;
+        const auto new_intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_next, BitSim::interval);
 
         if (new_intervals->rows.size() > 0) {
             intervals->rotate_insert(new_intervals);

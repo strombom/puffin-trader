@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\DateTime">
-      <UniqueIdentifier>{883a5310-f4d3-4f82-847b-82d9e30ff588}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Data">
       <UniqueIdentifier>{8dd412cf-221c-4231-86d9-c36cd241da56}</UniqueIdentifier>
     </Filter>
@@ -48,6 +45,9 @@
     </Filter>
     <Filter Include="Source Files\BitLib">
       <UniqueIdentifier>{d9ee0505-dd5c-46e2-a182-1e5e3191e362}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Data">
+      <UniqueIdentifier>{883a5310-f4d3-4f82-847b-82d9e30ff588}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -189,7 +189,7 @@
       <Filter>Header Files\Trader</Filter>
     </ClInclude>
     <ClInclude Include="LiveData.h">
-      <Filter>Header Files\DateTime</Filter>
+      <Filter>Header Files\Data</Filter>
     </ClInclude>
     <ClInclude Include="RL_Policy.h">
       <Filter>Header Files\ReinforcementLearning</Filter>

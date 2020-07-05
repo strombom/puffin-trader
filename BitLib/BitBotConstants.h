@@ -34,7 +34,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 4>{ 500ms, 1s, 2s, 10s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
         }
     }
 
@@ -69,7 +69,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 0>{};
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 4>{ 500ms, 1s, 2s, 10s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
         }
     }
 
@@ -106,7 +106,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 0>{};
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 4>{ 500ms, 1s, 2s, 10s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
         }
     }
 
@@ -120,6 +120,8 @@ namespace BitBase
 
 namespace BitSim
 {
+    constexpr auto interval = 500ms;
+
     namespace LiveData
     {
         constexpr auto intervals_buffer_length = 22min; // 4h;
@@ -128,8 +130,23 @@ namespace BitSim
     namespace BitBase
     {
         constexpr auto address = "tcp://localhost:31001";
-        constexpr auto interval = 10s;
     }
+
+    namespace FeatureEncoder
+    {
+        constexpr auto observation_timespan = 2h;
+        constexpr auto feature_length = 32;
+        constexpr auto lookback_index = std::array<int, feature_length>{ {0, 1, 2, 4, 7, 10, 15, 21, 29, 39, 52, 69, 91, 120, 157, 206, 269, 352, 460, 601, 783, 1022, 1332, 1736, 2262, 2948, 3840, 5002, 6516, 8487, 11055, 14399} };
+        constexpr auto observation_length = lookback_index.back() + 1;
+        constexpr auto offset_ema_alpha = 0.0001;
+
+    }
+    constexpr auto n_channels = 6;
+
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 5 / 1) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 5 / 1) + 24h + 1min + 1s;
+    constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
+
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
     constexpr auto feature_encoder_weights_filename = "fe_weights_20200618.pt";
@@ -140,14 +157,9 @@ namespace BitSim
 
     constexpr auto symbol = "XBTUSD";
     constexpr auto exchange = "BITMEX";
-    constexpr auto interval = std::chrono::milliseconds{ 10s };
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 1 / 1) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 5 / 1) + 0h + 0min + 0s;
 
     constexpr auto n_batches = 2000;
     constexpr auto batch_size = 500;
-    constexpr auto observation_length = 8; // Adjust FeatureEncoder
-    constexpr auto n_channels = 1;
     constexpr auto n_observations = 5;
     constexpr auto n_predictions = 1;
     constexpr auto n_negative = 10;

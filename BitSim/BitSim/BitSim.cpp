@@ -21,18 +21,17 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_direction_data" };
+    const auto command = std::string{ "make_observations" };
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
-        constexpr auto symbol = "XBTUSD";
-        constexpr auto exchange = "BITMEX";
-        constexpr auto interval = std::chrono::seconds{ 10s };
-        auto intervals = bitbase_client.get_intervals(symbol, exchange, BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
-        std::cout << "Intervals: " << intervals->rows.size() << std::endl;
-        intervals->save(BitSim::intervals_path);
+        auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
+        auto binance_intervals = bitbase_client.get_intervals("BTCUSDT", "BINANCE", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
+        auto coinbase_intervals = bitbase_client.get_intervals("BTC-USD", "COINBASE_PRO", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
+        std::cout << "Intervals: " << bitmex_intervals->rows.size() << std::endl;
+        //intervals->save(BitSim::intervals_path);
 
-        auto observations = std::make_shared<FE_Observations>(intervals);
+        auto observations = std::make_shared<FE_Observations>(bitmex_intervals, binance_intervals, coinbase_intervals);
         observations->save(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
     }

@@ -10,7 +10,7 @@ torch::Tensor FeatureEncoderImpl::forward(torch::Tensor observations)
     const auto max_chunk_size = std::min(1000, BitSim::batch_size); // Adjust to GPU memory
     const auto chunk_count = batch_size * n / max_chunk_size;
 
-    const auto chunks = observations.transpose(1, 2).reshape({ batch_size * n, BitSim::n_channels, BitSim::observation_length }).chunk(chunk_count);
+    const auto chunks = observations.transpose(1, 2).reshape({ batch_size * n, BitSim::n_channels, BitSim::FeatureEncoder::observation_length }).chunk(chunk_count);
     const auto first_chunk_size = chunks[0].size(0);
     auto features = torch::empty({ batch_size, n, BitSim::feature_size }).cuda();
 
