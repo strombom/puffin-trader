@@ -50,46 +50,33 @@ void FE_Observations::calculate_observations(sptrIntervals bitmex_intervals, spt
         coinbase_offsets[idx] = (coinbase_intervals->rows[idx].last_price - bitmex_intervals->rows[idx].last_price - (float)(coinbase_diff_ema));
     }
 
+    /*
     const auto filename = "C:\\development\\github\\puffin-trader\\tmp\\direction\\observations.csv";
     {
         auto csv = CSVLogger{ {"bitmex_price",  "binance_offsets", "coinbase_offsets"}, filename };
         for (auto idx = 0; idx < BitSim::intervals_length; ++idx) {
 
-            csv.append_row({ 
-                (double)bitmex_intervals->rows[idx].last_price, 
+            csv.append_row({
+                (double)bitmex_intervals->rows[idx].last_price,
                 (double)binance_offsets[idx],
                 (double)coinbase_offsets[idx]
-            });
+                });
         }
     }
+    */
 
     const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
 
-    for (auto idx_obs = (int)start_idx; idx_obs < n_observations; ++idx_obs) {
-        calculate_observation(
-            bitmex_intervals,
-            binance_intervals,
-            coinbase_intervals,
-            binance_offsets,
-            coinbase_offsets,
-            idx_obs
-        );
-    }
-    
-
-    /*
-    /*
-
     for (auto idx_obs = (int)start_idx; idx_obs < n_observations; idx_obs += n_threads) {
-        auto futures = std::queue<std::future<torch::Tensor>>{};
+        auto futures = std::queue<std::future<void>>{};
 
         for (auto idx_task = 0; idx_task < n_threads && idx_obs + idx_task < n_observations; ++idx_task) {
-            auto future = std::async(std::launch::async, &FE_Observations::calculate_observation, this, bitmex_intervals, binance_intervals, coinbase_intervals, idx_obs + idx_task);
+            auto future = std::async(std::launch::async, &FE_Observations::calculate_observation, this, bitmex_intervals, binance_intervals, coinbase_intervals, binance_offsets, coinbase_offsets, idx_obs + idx_task);
             futures.push(std::move(future));
         }
 
         for (auto idx_task = 0; !futures.empty(); ++idx_task) {
-            observations[(long)idx_obs + idx_task] = futures.front().get();
+            futures.front().wait();
             futures.pop();
         }
 
@@ -97,7 +84,21 @@ void FE_Observations::calculate_observations(sptrIntervals bitmex_intervals, spt
             logger.info("working %6.2f%%, %d / %d", ((float)(idx_obs - start_idx)) / (n_observations - start_idx) * 100, idx_obs - start_idx, n_observations - start_idx);
         }
     }
-    */
+    
+    std::cout << "obs " << observations << std::endl;
+
+    const auto filename = "C:\\development\\github\\puffin-trader\\tmp\\direction\\observations.csv";
+    {
+        auto csv = CSVLogger{ {"bitmex_price",  "binance_offsets", "coinbase_offsets"}, filename };
+        for (auto idx = 0; idx < BitSim::intervals_length; ++idx) {
+
+            csv.append_row({
+                (double)bitmex_intervals->rows[idx].last_price,
+                (double)binance_offsets[idx],
+                (double)coinbase_offsets[idx]
+                });
+        }
+    }
 }
 
 void FE_Observations::rotate_insert(sptrIntervals intervals, size_t new_intervals_count)
