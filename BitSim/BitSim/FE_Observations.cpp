@@ -1,7 +1,6 @@
 #include "pch.h"
 
 #include "FE_Observations.h"
-#include "BitBotConstants.h"
 #include "DateTime.h"
 #include "Logger.h"
 #include "Utils.h"
@@ -19,10 +18,10 @@ FE_Observations::FE_Observations(sptrIntervals bitmex_intervals, sptrIntervals b
 {
     const auto n_observations = (long)bitmex_intervals->rows.size() - (BitSim::FeatureEncoder::observation_length - 1);
     if (n_observations <= 0) {
-        observations = torch::empty({ 0, BitSim::n_channels, BitSim::FeatureEncoder::feature_length });
+        observations = torch::empty({ 0, BitSim::FeatureEncoder::n_channels, BitSim::FeatureEncoder::feature_length });
     }
     else {
-        observations = torch::empty({ n_observations, BitSim::n_channels, BitSim::FeatureEncoder::feature_length });
+        observations = torch::empty({ n_observations, BitSim::FeatureEncoder::n_channels, BitSim::FeatureEncoder::feature_length });
         calculate_observations(std::move(bitmex_intervals), std::move(binance_intervals), std::move(coinbase_intervals), 0);
     }
 }
@@ -33,11 +32,11 @@ void FE_Observations::calculate_observations(sptrIntervals bitmex_intervals, spt
 
     std::cout << "Observations " << observations.sizes() << std::endl;
 
-    auto binance_offsets = std::vector<double>(BitSim::intervals_length);
-    auto coinbase_offsets = std::vector<double>(BitSim::intervals_length);
+    auto binance_offsets = std::vector<float>(BitSim::intervals_length);
+    auto coinbase_offsets = std::vector<float>(BitSim::intervals_length);
 
-    auto binance_diff_ema = (double)binance_intervals->rows[0].last_price - bitmex_intervals->rows[0].last_price;
-    auto coinbase_diff_ema = (double)coinbase_intervals->rows[0].last_price - bitmex_intervals->rows[0].last_price;
+    auto binance_diff_ema = binance_intervals->rows[0].last_price - bitmex_intervals->rows[0].last_price;
+    auto coinbase_diff_ema = coinbase_intervals->rows[0].last_price - bitmex_intervals->rows[0].last_price;
     binance_offsets[0] = binance_diff_ema;
     coinbase_offsets[0] = coinbase_diff_ema;
 
@@ -58,17 +57,28 @@ void FE_Observations::calculate_observations(sptrIntervals bitmex_intervals, spt
 
             csv.append_row({ 
                 (double)bitmex_intervals->rows[idx].last_price, 
-                binance_offsets[idx],
-                coinbase_offsets[idx]
-                });
+                (double)binance_offsets[idx],
+                (double)coinbase_offsets[idx]
+            });
         }
     }
 
-    calculate_observation(bitmex_intervals, binance_intervals, coinbase_intervals, 0);
-    
-    /*
-    /*
     const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
+
+    for (auto idx_obs = (int)start_idx; idx_obs < n_observations; ++idx_obs) {
+        calculate_observation(
+            bitmex_intervals,
+            binance_intervals,
+            coinbase_intervals,
+            binance_offsets,
+            coinbase_offsets,
+            idx_obs
+        );
+    }
+    
+
+    /*
+    /*
 
     for (auto idx_obs = (int)start_idx; idx_obs < n_observations; idx_obs += n_threads) {
         auto futures = std::queue<std::future<torch::Tensor>>{};
@@ -108,19 +118,71 @@ void FE_Observations::rotate_insert(sptrIntervals intervals, size_t new_interval
     calculate_observations(intervals, intervals, intervals, first_new_idx);
 }
 
-torch::Tensor FE_Observations::calculate_observation(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, int idx_obs)
+void FE_Observations::calculate_observation(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, const std::vector<float>& binance_offsets, const std::vector<float>& coinbase_offsets, int obs_idx)
 {
-    auto observation = torch::empty({ BitSim::n_channels, BitSim::FeatureEncoder::observation_length });
-    const auto first_price = bitmex_intervals->rows[idx_obs].last_price;
+    auto interval_idx = obs_idx + BitSim::FeatureEncoder::observation_length - 1;
+    const auto bitmex_first_price = bitmex_intervals->rows[interval_idx].last_price;
+    auto observation = observations.narrow(0, obs_idx, 1).squeeze();
+    auto obs_access = observation.accessor<float, 2>();
 
-    for (auto idx_interval = 0; idx_interval < BitSim::FeatureEncoder::observation_length; ++idx_interval) {
-        const auto&& row = &bitmex_intervals->rows[(int)((long)idx_obs + idx_interval)];
-        observation[BitSim::ch_price][idx_interval] = price_transform(first_price, row->last_price);
-        //observation[BitSim::ch_buy_volume][idx_interval] = volume_transform(row->vol_buy);
-        //observation[BitSim::ch_sell_volume][idx_interval] = volume_transform(row->vol_sell);
+    for (auto feature_idx = 0; feature_idx < BitSim::FeatureEncoder::feature_length; ++feature_idx) {
+        const auto end_idx = obs_idx + BitSim::FeatureEncoder::observation_length - 1 - BitSim::FeatureEncoder::lookback_index[feature_idx];
+
+        auto bitmex_max_price = -std::numeric_limits<float>::max();
+        auto bitmex_min_price = std::numeric_limits<float>::max();
+        auto bitmex_volume_buy = 0.0f;
+        auto bitmex_volume_sell = 0.0f;
+
+        auto binance_max_offset = -std::numeric_limits<float>::max();
+        auto binance_min_offset = std::numeric_limits<float>::max();
+        auto binance_volume_buy = 0.0f;
+        auto binance_volume_sell = 0.0f;
+
+        auto coinbase_max_offset = -std::numeric_limits<float>::max();
+        auto coinbase_min_offset = std::numeric_limits<float>::max();
+        auto coinbase_volume_buy = 0.0f;
+        auto coinbase_volume_sell = 0.0f;
+
+        for (; interval_idx >= end_idx; --interval_idx) {
+            const auto bitmex_price = bitmex_intervals->rows[interval_idx].last_price - bitmex_first_price;
+            bitmex_max_price = std::max(bitmex_max_price, bitmex_price);
+            bitmex_min_price = std::min(bitmex_min_price, bitmex_price);
+            bitmex_volume_buy += bitmex_intervals->rows[interval_idx].vol_buy;
+            bitmex_volume_sell += bitmex_intervals->rows[interval_idx].vol_sell;
+
+            const auto binance_offset = binance_offsets[interval_idx];
+            binance_max_offset = std::max(binance_max_offset, binance_offset);
+            binance_min_offset = std::min(binance_min_offset, binance_offset);
+            binance_volume_buy += binance_intervals->rows[interval_idx].vol_buy;
+            binance_volume_sell += binance_intervals->rows[interval_idx].vol_sell;
+
+            const auto coinbase_offset = coinbase_offsets[interval_idx];
+            coinbase_max_offset = std::max(coinbase_max_offset, coinbase_offset);
+            coinbase_min_offset = std::min(coinbase_min_offset, coinbase_offset);
+            coinbase_volume_buy += coinbase_intervals->rows[interval_idx].vol_buy;
+            coinbase_volume_sell += coinbase_intervals->rows[interval_idx].vol_sell;
+        }
+
+        bitmex_volume_buy /= BitSim::FeatureEncoder::lookback_length[feature_idx];
+        bitmex_volume_sell /= BitSim::FeatureEncoder::lookback_length[feature_idx];
+        binance_volume_buy /= BitSim::FeatureEncoder::lookback_length[feature_idx];
+        binance_min_offset /= BitSim::FeatureEncoder::lookback_length[feature_idx];
+        coinbase_volume_buy /= BitSim::FeatureEncoder::lookback_length[feature_idx];
+        coinbase_volume_sell /= BitSim::FeatureEncoder::lookback_length[feature_idx];
+
+        obs_access[0][feature_idx] = bitmex_max_price;
+        obs_access[1][feature_idx] = bitmex_min_price;
+        obs_access[2][feature_idx] = bitmex_volume_buy;
+        obs_access[3][feature_idx] = bitmex_volume_sell;
+        obs_access[4][feature_idx] = binance_max_offset;
+        obs_access[5][feature_idx] = binance_min_offset;
+        obs_access[6][feature_idx] = binance_volume_buy;
+        obs_access[7][feature_idx] = binance_volume_sell;
+        obs_access[8][feature_idx] = coinbase_max_offset;
+        obs_access[9][feature_idx] = coinbase_min_offset;
+        obs_access[10][feature_idx] = coinbase_volume_buy;
+        obs_access[11][feature_idx] = coinbase_volume_sell;
     }
-
-    return observation;
 }
 
 void FE_Observations::save(const std::string& file_path) const
@@ -171,7 +233,7 @@ torch::Tensor FE_Observations::get(int index)
 torch::Tensor FE_Observations::get(c10::ArrayRef<size_t> indices)
 {
     auto lock = std::scoped_lock(get_mutex);
-    auto output = torch::empty({ (long)indices.size(), BitSim::n_channels, BitSim::feature_size });
+    auto output = torch::empty({ (long)indices.size(), BitSim::FeatureEncoder::n_channels, BitSim::feature_size });
 
     for (auto idx = 0; idx < indices.size(); ++idx) {
         output[idx] = observations[indices[idx]];

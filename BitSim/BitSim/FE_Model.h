@@ -8,7 +8,7 @@ struct FeatureEncoderImpl : public torch::nn::Module
 {
     FeatureEncoderImpl(const std::string& name = "feature_encoder_cnn") :
         encoder(register_module(name, torch::nn::Sequential{
-            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::n_channels, BitSim::feature_size, 4}.stride(2).padding(1).bias(false)},
+            torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::FeatureEncoder::n_channels, BitSim::feature_size, 4}.stride(2).padding(1).bias(false)},
             torch::nn::BatchNorm1d{BitSim::feature_size},
             torch::nn::ReLU6{},
             //torch::nn::Conv1d{torch::nn::Conv1dOptions{BitSim::feature_size, BitSim::feature_size, 4}.stride(2).padding(1).bias(false)},

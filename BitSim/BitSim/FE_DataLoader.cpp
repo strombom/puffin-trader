@@ -17,17 +17,17 @@ Batch TradeDataset::get_batch(c10::ArrayRef<size_t> request)
 
         for (auto obs_idx = 0; obs_idx < BitSim::n_observations; ++obs_idx) {
             const auto obs_time_idx = time_index - (BitSim::n_observations - obs_idx) * BitSim::FeatureEncoder::observation_length;
-            batch.past_observations[batch_idx].slice(1, obs_idx, obs_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::n_channels, BitSim::FeatureEncoder::observation_length} }) = observations->get(obs_time_idx);
+            batch.past_observations[batch_idx].slice(1, obs_idx, obs_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::FeatureEncoder::n_channels, BitSim::FeatureEncoder::observation_length} }) = observations->get(obs_time_idx);
         }
 
         for (auto pred_idx = 0; pred_idx < BitSim::n_predictions; ++pred_idx) {
             const auto obs_time_idx = time_index + pred_idx * BitSim::FeatureEncoder::observation_length;
-            batch.future_positives[batch_idx].slice(1, pred_idx, pred_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::n_channels, BitSim::FeatureEncoder::observation_length} }) = observations->get(obs_time_idx);
+            batch.future_positives[batch_idx].slice(1, pred_idx, pred_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::FeatureEncoder::n_channels, BitSim::FeatureEncoder::observation_length} }) = observations->get(obs_time_idx);
         }
 
         for (auto neg_idx = 0; neg_idx < BitSim::n_predictions * BitSim::n_negative; ++neg_idx) {
             const auto obs_time_idx = random_index.get();
-            batch.future_negatives[batch_idx].slice(1, neg_idx, neg_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::n_channels, BitSim::FeatureEncoder::observation_length} }) = observations->get(obs_time_idx);
+            batch.future_negatives[batch_idx].slice(1, neg_idx, neg_idx + 1, 1).reshape(c10::IntArrayRef{ {BitSim::FeatureEncoder::n_channels, BitSim::FeatureEncoder::observation_length} }) = observations->get(obs_time_idx);
         }
     }
 

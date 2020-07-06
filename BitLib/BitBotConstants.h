@@ -134,19 +134,18 @@ namespace BitSim
 
     namespace FeatureEncoder
     {
-        constexpr auto observation_timespan = 2h;
-        constexpr auto feature_length = 32;
-        constexpr auto lookback_index = std::array<int, feature_length>{ {0, 1, 2, 4, 7, 10, 15, 21, 29, 39, 52, 69, 91, 120, 157, 206, 269, 352, 460, 601, 783, 1022, 1332, 1736, 2262, 2948, 3840, 5002, 6516, 8487, 11055, 14399} };
+        constexpr auto feature_length = 16;
+        constexpr auto lookback_index = std::array<int, feature_length>{ {0, 1, 2, 5, 11, 23, 45, 86, 164, 311, 590, 1119, 2120, 4016, 7604, 14399} };
+        constexpr auto lookback_length = std::array<int, feature_length>{ {1, 1, 1, 3, 6, 12, 22, 41, 78, 147, 279, 529, 1001, 1896, 3588, 6795} };
         constexpr auto observation_length = lookback_index.back() + 1;
-        constexpr auto offset_ema_alpha = 0.0001;
-
+        constexpr auto observation_timespan = std::chrono::milliseconds{ observation_length * BitSim::interval.count() };
+        constexpr auto offset_ema_alpha = 0.0001f;
+        constexpr auto n_channels = 3 * 4;
     }
-    constexpr auto n_channels = 6;
 
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 5 / 1) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 5 / 1) + 24h + 1min + 1s;
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 5 / 2) + 2h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 5 / 2) + 4h + 0min + 1s;
     constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
-
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
     constexpr auto feature_encoder_weights_filename = "fe_weights_20200618.pt";

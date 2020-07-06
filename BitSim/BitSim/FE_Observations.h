@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "Intervals.h"
+#include "BitBotConstants.h"
 
 #include <string>
 
@@ -36,7 +37,7 @@ private:
     std::chrono::milliseconds interval;
 
     void calculate_observations(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, size_t start_idx);
-    torch::Tensor calculate_observation(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, int idx_obs);
+    void calculate_observation(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, const std::vector<float>& binance_offsets, const std::vector<float>& coinbase_offsets, int obs_idx);
     float price_transform(float start_price, float price);
     float volume_transform(float volume);
 };
