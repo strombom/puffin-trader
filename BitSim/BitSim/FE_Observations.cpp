@@ -65,40 +65,46 @@ void FE_Observations::calculate_observations(sptrIntervals bitmex_intervals, spt
     }
     */
 
-    const auto n_threads = std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
+    const auto n_threads = 1; // std::max(1, (int)(std::thread::hardware_concurrency()) - 1);
+
+    /*
+    auto buffer_tensors = std::vector<torch::Tensor>{};
+    auto buffer_accessors = std::vector<at::TensorAccessor<float, 2>>{};
+
+    for (auto thread_idx = 0; thread_idx < n_threads; ++thread_idx) {
+        auto tensor = torch::empty({ BitSim::FeatureEncoder::n_channels, BitSim::FeatureEncoder::feature_length });
+        buffer_tensors.push_back(tensor);
+        buffer_accessors.push_back(tensor.accessor<float, 2>());
+    }
+    */
 
     for (auto idx_obs = (int)start_idx; idx_obs < n_observations; idx_obs += n_threads) {
         auto futures = std::queue<std::future<void>>{};
-
+        const auto idx_task = 0;
+        calculate_observation(bitmex_intervals, binance_intervals, coinbase_intervals, binance_offsets, coinbase_offsets, idx_obs + idx_task);
+        /*
         for (auto idx_task = 0; idx_task < n_threads && idx_obs + idx_task < n_observations; ++idx_task) {
-            auto future = std::async(std::launch::async, &FE_Observations::calculate_observation, this, bitmex_intervals, binance_intervals, coinbase_intervals, binance_offsets, coinbase_offsets, idx_obs + idx_task);
+            auto future = std::async(std::launch::async, &FE_Observations::calculate_observation, this, buffer_accessors[idx_task], bitmex_intervals, binance_intervals, coinbase_intervals, binance_offsets, coinbase_offsets, idx_obs + idx_task);
             futures.push(std::move(future));
         }
 
         for (auto idx_task = 0; !futures.empty(); ++idx_task) {
             futures.front().wait();
+
+            //auto observation = observations.narrow(0, idx_obs + idx_task, 1).squeeze();
+            observations.narrow(0, idx_obs + idx_task, 1).squeeze() = buffer_tensors[idx_task];
+
             futures.pop();
         }
+        */
 
-        if ((idx_obs - start_idx) % 100 == 0 && (idx_obs - start_idx) > 0) {
+        //if ((idx_obs - start_idx) % 100 == 0 && (idx_obs - start_idx) > 0) {
+        if (idx_obs % 1000 == 0) {
             logger.info("working %6.2f%%, %d / %d", ((float)(idx_obs - start_idx)) / (n_observations - start_idx) * 100, idx_obs - start_idx, n_observations - start_idx);
         }
     }
     
-    std::cout << "obs " << observations << std::endl;
-
-    const auto filename = "C:\\development\\github\\puffin-trader\\tmp\\direction\\observations.csv";
-    {
-        auto csv = CSVLogger{ {"bitmex_price",  "binance_offsets", "coinbase_offsets"}, filename };
-        for (auto idx = 0; idx < BitSim::intervals_length; ++idx) {
-
-            csv.append_row({
-                (double)bitmex_intervals->rows[idx].last_price,
-                (double)binance_offsets[idx],
-                (double)coinbase_offsets[idx]
-                });
-        }
-    }
+    //std::cout << "obs " << observations << std::endl;
 }
 
 void FE_Observations::rotate_insert(sptrIntervals intervals, size_t new_intervals_count)
@@ -123,6 +129,7 @@ void FE_Observations::calculate_observation(sptrIntervals bitmex_intervals, sptr
 {
     auto interval_idx = obs_idx + BitSim::FeatureEncoder::observation_length - 1;
     const auto bitmex_first_price = bitmex_intervals->rows[interval_idx].last_price;
+    interval_idx -= 1;
     auto observation = observations.narrow(0, obs_idx, 1).squeeze();
     auto obs_access = observation.accessor<float, 2>();
 
@@ -171,16 +178,19 @@ void FE_Observations::calculate_observation(sptrIntervals bitmex_intervals, sptr
         coinbase_volume_buy /= BitSim::FeatureEncoder::lookback_length[feature_idx];
         coinbase_volume_sell /= BitSim::FeatureEncoder::lookback_length[feature_idx];
 
-        obs_access[0][feature_idx] = bitmex_max_price;
-        obs_access[1][feature_idx] = bitmex_min_price;
-        obs_access[2][feature_idx] = bitmex_volume_buy;
-        obs_access[3][feature_idx] = bitmex_volume_sell;
-        obs_access[4][feature_idx] = binance_max_offset;
-        obs_access[5][feature_idx] = binance_min_offset;
-        obs_access[6][feature_idx] = binance_volume_buy;
-        obs_access[7][feature_idx] = binance_volume_sell;
-        obs_access[8][feature_idx] = coinbase_max_offset;
-        obs_access[9][feature_idx] = coinbase_min_offset;
+        if (feature_idx < 2 && bitmex_max_price > 4000) {
+            std::cout << "was obs(" << obs_idx << ") maxprice(" << bitmex_max_price << ")" << std::endl;
+        }
+        obs_access[0][feature_idx] = price_transform(bitmex_max_price);
+        obs_access[1][feature_idx] = price_transform(bitmex_min_price);
+        obs_access[2][feature_idx] = bitmex_volume_transform(bitmex_volume_buy, feature_idx);
+        obs_access[3][feature_idx] = bitmex_volume_transform(bitmex_volume_sell, feature_idx);
+        obs_access[4][feature_idx] = price_offset_transform(binance_max_offset, feature_idx);
+        obs_access[5][feature_idx] = price_offset_transform(binance_min_offset, feature_idx);
+        obs_access[6][feature_idx] = binance_volume_buy_transform(binance_volume_buy, feature_idx);
+        obs_access[7][feature_idx] = binance_volume_sell_transform(binance_volume_sell, feature_idx);
+        obs_access[8][feature_idx] = price_offset_transform(coinbase_max_offset, feature_idx);
+        obs_access[9][feature_idx] = price_offset_transform(coinbase_min_offset, feature_idx);
         obs_access[10][feature_idx] = coinbase_volume_buy;
         obs_access[11][feature_idx] = coinbase_volume_sell;
     }
@@ -276,32 +286,71 @@ torch::Tensor FE_Observations::get_tail(int count)
     return get_range((int)size() - count, count);
 }
 
-float FE_Observations::price_transform(float start_price, float price)
+float FE_Observations::price_transform(float price)
 {
-    // Transform the price ratio into a -1 to 1 distribution
-    auto indicator = price / start_price - 1.0f;
+    // Transform the relative price into a -1 to 1 distribution
+    auto indicator = price;
     auto sign = 1;
     if (indicator < 0) {
         sign = -1;
     }
 
-    indicator = std::powf(sign * indicator, 0.01f);
-    if (indicator > 0.902f) {
-        indicator -= 0.902f;
+    indicator = std::powf(sign * indicator, 0.001f);
+    if (indicator > 0.998f) {
+        indicator -= 0.998f;
     }
-    indicator *= sign * 12.5f;
+
+    return sign * indicator * 125;
+}
+
+float FE_Observations::bitmex_volume_transform(float volume, int feature_idx)
+{
+    constexpr auto a = std::array<double, BitSim::FeatureEncoder::feature_length>{
+        0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.15, 0.06, 0.06, 0.06, 0.06, 0.06
+    };
+
+    constexpr auto b = std::array<double, BitSim::FeatureEncoder::feature_length>{
+        2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 4.0, 4.0, 4.0, 5.0, 6.0
+    };
+
+    constexpr auto c = std::array<double, BitSim::FeatureEncoder::feature_length>{
+        0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 1.0, 1.0, 1.3, 3.0, 3.0, 3.0, 4.0, 5.0
+    };
+
+    // Transform the volume into a [-1, 1] distribution
+
+    const auto max = std::powf(1.45f, 16.0f - feature_idx) * 60000;
+    const auto indicator = std::powf(volume / max, a[feature_idx]) * b[feature_idx] - c[feature_idx];
 
     return indicator;
 }
 
-float FE_Observations::volume_transform(float volume)
+float FE_Observations::price_offset_transform(float volume, int feature_idx)
 {
-    // Transform the volume into a 0 to 1 distribution
-    auto indicator = std::powf(volume, 0.1f);
-    if (indicator > 0.95f) {
-        indicator -= 0.95f;
-    }
-    indicator *= 0.2f;
+    // Transform the offset into a [-1, 1] distribution
+    const auto sign = std::fabsf(volume) / volume;
+
+    const auto indicator = std::powf(volume, 0.25f) * 0.5f;
+
+    return indicator;
+}
+
+float FE_Observations::binance_volume_buy_transform(float volume, int feature_idx)
+{
+    // Transform the offset into a [-1, 1] distribution
+    const auto sign = std::fabsf(volume) / volume;
+
+    const auto indicator = std::powf(volume, 0.1f) * (2.0f + feature_idx / 15.0f) - (1.5f + feature_idx / 15.0f);
+
+    return indicator;
+}
+
+float FE_Observations::binance_volume_sell_transform(float volume, int feature_idx)
+{
+    // Transform the offset into a [-1, 1] distribution
+    const auto sign = std::fabsf(volume) / volume;
+
+    const auto indicator = std::powf(volume, 0.1f) * (2.0f + feature_idx / 15.0f) - (0.5f + std::powf(1.115f, feature_idx));
 
     return indicator;
 }

@@ -38,8 +38,11 @@ private:
 
     void calculate_observations(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, size_t start_idx);
     void calculate_observation(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, const std::vector<float>& binance_offsets, const std::vector<float>& coinbase_offsets, int obs_idx);
-    float price_transform(float start_price, float price);
-    float volume_transform(float volume);
+    float price_transform(float price);
+    float bitmex_volume_transform(float volume, int feature_idx);
+    float price_offset_transform(float volume, int feature_idx);
+    float binance_volume_buy_transform(float volume, int feature_idx);
+    float binance_volume_sell_transform(float volume, int feature_idx);
 };
 
 using sptrFE_Observations = std::shared_ptr<FE_Observations>;
