@@ -191,8 +191,8 @@ void FE_Observations::calculate_observation(sptrIntervals bitmex_intervals, sptr
         obs_access[7][feature_idx] = binance_volume_sell_transform(binance_volume_sell, feature_idx);
         obs_access[8][feature_idx] = price_offset_transform(coinbase_max_offset, feature_idx);
         obs_access[9][feature_idx] = price_offset_transform(coinbase_min_offset, feature_idx);
-        obs_access[10][feature_idx] = coinbase_volume_buy;
-        obs_access[11][feature_idx] = coinbase_volume_sell;
+        obs_access[10][feature_idx] = binance_volume_buy_transform(coinbase_volume_buy, feature_idx);
+        obs_access[11][feature_idx] = binance_volume_sell_transform(coinbase_volume_sell, feature_idx);
     }
 }
 
@@ -318,10 +318,8 @@ float FE_Observations::bitmex_volume_transform(float volume, int feature_idx)
     };
 
     // Transform the volume into a [-1, 1] distribution
-
     const auto max = std::powf(1.45f, 16.0f - feature_idx) * 60000;
     const auto indicator = std::powf(volume / max, a[feature_idx]) * b[feature_idx] - c[feature_idx];
-
     return indicator;
 }
 
@@ -329,28 +327,42 @@ float FE_Observations::price_offset_transform(float volume, int feature_idx)
 {
     // Transform the offset into a [-1, 1] distribution
     const auto sign = std::fabsf(volume) / volume;
-
     const auto indicator = std::powf(volume, 0.25f) * 0.5f;
-
     return indicator;
 }
 
 float FE_Observations::binance_volume_buy_transform(float volume, int feature_idx)
 {
-    // Transform the offset into a [-1, 1] distribution
-    const auto sign = std::fabsf(volume) / volume;
-
-    const auto indicator = std::powf(volume, 0.1f) * (2.0f + feature_idx / 15.0f) - (1.5f + feature_idx / 15.0f);
-
+    // Transform the volume into a [-1, 1] distribution
+    const auto indicator = std::powf(volume, 0.1f)
+        * (2.0f + (BitSim::FeatureEncoder::feature_length - 1) / 15.0f)
+        - (1.5f + feature_idx / 15.0f);
     return indicator;
 }
 
 float FE_Observations::binance_volume_sell_transform(float volume, int feature_idx)
 {
-    // Transform the offset into a [-1, 1] distribution
-    const auto sign = std::fabsf(volume) / volume;
+    // Transform the volume into a [-1, 1] distribution
+    const auto indicator = std::powf(volume, 0.1f)
+        * (2.0f + (BitSim::FeatureEncoder::feature_length - 1) / 15.0f)
+        - (0.5f + std::powf(1.115f, feature_idx));
+    return indicator;
+}
 
-    const auto indicator = std::powf(volume, 0.1f) * (2.0f + feature_idx / 15.0f) - (0.5f + std::powf(1.115f, feature_idx));
+float FE_Observations::coinbase_volume_buy_transform(float volume, int feature_idx)
+{
+    // Transform the volume into a [-1, 1] distribution
+    const auto indicator = std::powf(volume, 0.1f)
+        * (2.0f + feature_idx / (BitSim::FeatureEncoder::feature_length - 1))
+        - (1.5f + feature_idx / 15.0f);
+    return indicator;
+}
 
+float FE_Observations::coinbase_volume_sell_transform(float volume, int feature_idx)
+{
+    // Transform the volume into a [-1, 1] distribution
+    const auto indicator = std::powf(volume, 0.1f)
+        * (2.0f + 1.0f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1))
+        - (0.5f + std::powf(1.115f, feature_idx));
     return indicator;
 }

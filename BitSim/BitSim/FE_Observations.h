@@ -43,6 +43,8 @@ private:
     float price_offset_transform(float volume, int feature_idx);
     float binance_volume_buy_transform(float volume, int feature_idx);
     float binance_volume_sell_transform(float volume, int feature_idx);
+    float coinbase_volume_buy_transform(float volume, int feature_idx);
+    float coinbase_volume_sell_transform(float volume, int feature_idx);
 };
 
 using sptrFE_Observations = std::shared_ptr<FE_Observations>;
