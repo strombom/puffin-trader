@@ -29,7 +29,7 @@ std::tuple<uptrDatabaseTicks, long long> CoinbaseProRestApi::get_aggregate_trade
         const auto timestamp = DateTime::to_time_point_ms(tick["time"].string_value(), "%FT%TZ");
         const auto price = std::stof(tick["price"].string_value());
         const auto volume = std::stof(tick["size"].string_value());
-        const auto buy = tick["m"].string_value().compare("buy") == 0;
+        const auto buy = tick["side"].string_value().compare("buy") == 0;
         last_id = (long long)tick["trade_id"].number_value();
         ticks->rows.push_back(Tick{ timestamp, price, volume, buy });
     }
