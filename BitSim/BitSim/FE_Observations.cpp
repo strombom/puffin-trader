@@ -330,7 +330,7 @@ float FE_Observations::binance_volume_buy_transform(float volume, int feature_id
     // Transform the volume into a [-1, 1] distribution
     const auto indicator = std::powf(volume, 0.1f)
         * (2.0f + (BitSim::FeatureEncoder::feature_length - 1) / 15.0f)
-        - (1.5f + feature_idx / 15.0f);
+        - (1.5f + 1.0f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1));
     return indicator;
 }
 
@@ -349,7 +349,7 @@ float FE_Observations::coinbase_price_offset_transform(float price_offset, int f
     const auto sign = price_offset >= 0 ? 1.0f : -1.0f;
     const auto indicator = sign * std::powf(sign * price_offset, 0.25f)
         * 0.5f
-        - (0.6f + 0.3f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1));
+        - (0.0f + 0.0f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1));
     return indicator;
 }
 
@@ -367,6 +367,6 @@ float FE_Observations::coinbase_volume_sell_transform(float volume, int feature_
     // Transform the volume into a [-1, 1] distribution
     const auto indicator = std::powf(volume, 0.1f)
         * (1.0f + 2.5f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1))
-        - (1.3f - 2.2f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1));
+        - (0.6f + 1.7f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1));
     return indicator;
 }
