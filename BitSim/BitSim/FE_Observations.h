@@ -40,9 +40,10 @@ private:
     void calculate_observation(sptrIntervals bitmex_intervals, sptrIntervals binance_intervals, sptrIntervals coinbase_intervals, const std::vector<float>& binance_offsets, const std::vector<float>& coinbase_offsets, int obs_idx);
     float price_transform(float price);
     float bitmex_volume_transform(float volume, int feature_idx);
-    float price_offset_transform(float volume, int feature_idx);
+    float binance_price_offset_transform(float volume, int feature_idx);
     float binance_volume_buy_transform(float volume, int feature_idx);
     float binance_volume_sell_transform(float volume, int feature_idx);
+    float coinbase_price_offset_transform(float volume, int feature_idx);
     float coinbase_volume_buy_transform(float volume, int feature_idx);
     float coinbase_volume_sell_transform(float volume, int feature_idx);
 };
