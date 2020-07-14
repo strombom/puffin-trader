@@ -289,17 +289,11 @@ torch::Tensor FE_Observations::get_tail(int count)
 float FE_Observations::price_transform(float price)
 {
     // Transform the relative price into a -1 to 1 distribution
-    auto indicator = price;
-    auto sign = 1;
-    if (indicator < 0) {
-        sign = -1;
-    }
-
-    indicator = std::powf(sign * indicator, 0.001f);
+    const auto sign = price >= 0 ? 1.0f : -1.0f;
+    auto indicator = std::powf(sign * price, 0.001f);
     if (indicator > 0.998f) {
         indicator -= 0.998f;
     }
-
     return sign * indicator * 125;
 }
 
@@ -323,11 +317,11 @@ float FE_Observations::bitmex_volume_transform(float volume, int feature_idx)
     return indicator;
 }
 
-float FE_Observations::binance_price_offset_transform(float volume, int feature_idx)
+float FE_Observations::binance_price_offset_transform(float price_offset, int feature_idx)
 {
     // Transform the offset into a [-1, 1] distribution
-    const auto sign = std::fabsf(volume) / volume;
-    const auto indicator = std::powf(volume, 0.25f) * 0.5f;
+    const auto sign = price_offset >= 0 ? 1.0f : -1.0f;
+    const auto indicator = sign * std::powf(sign * price_offset, 0.25f) * 0.5f;
     return indicator;
 }
 
@@ -349,11 +343,11 @@ float FE_Observations::binance_volume_sell_transform(float volume, int feature_i
     return indicator;
 }
 
-float FE_Observations::coinbase_price_offset_transform(float volume, int feature_idx)
+float FE_Observations::coinbase_price_offset_transform(float price_offset, int feature_idx)
 {
     // Transform the offset into a [-1, 1] distribution
-    const auto sign = std::fabsf(volume) / volume;
-    const auto indicator = std::powf(volume, 0.25f)
+    const auto sign = price_offset >= 0 ? 1.0f : -1.0f;
+    const auto indicator = sign * std::powf(sign * price_offset, 0.25f)
         * 0.5f
         - (0.6f + 0.3f * feature_idx / (BitSim::FeatureEncoder::feature_length - 1));
     return indicator;
