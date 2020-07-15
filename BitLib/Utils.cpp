@@ -3,6 +3,7 @@
 #include "BitLib/Utils.h"
 
 #include "torch/serialize.h"
+#include <iterator>
 
 
 void Utils::save_tensor(const torch::Tensor& tensor, const std::string& path, const std::string& filename)
@@ -27,4 +28,11 @@ int Utils::random(int min, int max)
 {
     static auto random_generator = std::mt19937{ std::random_device{}() };
     return std::uniform_int_distribution<int>{min, max}(random_generator);
+}
+
+double Utils::random_choice(std::vector<double> choices)
+{
+    static auto random_generator = std::mt19937{ std::random_device{}() };
+    const auto idx = std::uniform_int_distribution<int>{ 0, (int)choices.size() - 1 }(random_generator);
+    return choices[idx];
 }

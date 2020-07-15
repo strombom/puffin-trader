@@ -14,6 +14,7 @@ public:
 
     static double random(double min, double max);
     static int random(int min, int max);
+    static double random_choice(std::vector<double> choices);
 
 private:
 
