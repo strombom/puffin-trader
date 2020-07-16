@@ -21,7 +21,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_observations" };
+    const auto command = std::string{ "train_rl" };
 
     if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
@@ -29,7 +29,7 @@ int main()
         auto binance_intervals = bitbase_client.get_intervals("BTCUSDT", "BINANCE", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto coinbase_intervals = bitbase_client.get_intervals("BTC-USD", "COINBASE_PRO", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         std::cout << "Intervals: " << bitmex_intervals->rows.size() << std::endl;
-        //intervals->save(BitSim::intervals_path);
+        bitmex_intervals->save(BitSim::intervals_path);
 
         auto observations = std::make_shared<FE_Observations>(bitmex_intervals, binance_intervals, coinbase_intervals);
         observations->save(BitSim::observations_path);
@@ -58,12 +58,14 @@ int main()
     else if (command == "train_rl") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
-        auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
+        //auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
         std::cout << "observations: " << observations->get_all().sizes() << std::endl;
-        std::cout << "features: " << features.sizes() << std::endl;
+        //std::cout << "features: " << features.sizes() << std::endl;
         std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
-        auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
+        auto features = observations->get_all().flatten(1).cpu();
+
+        auto simulator = std::make_shared<BitmexSimulator>(intervals, features);
         auto rl_trader = RL_Trader{ simulator };
         rl_trader.train();
     }

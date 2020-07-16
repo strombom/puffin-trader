@@ -10,13 +10,18 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
     intervals_idx_start(0), intervals_idx_end(0),
     intervals_idx(0),
     wallet(0.0), pos_price(0.0), pos_contracts(0.0),
-    get_reward_previous_value(0.0)
+    get_reward_previous_value(0.0),
+    time_since_leverage_change(0.0),
+    training_progress(0.0),
+    orderbook_last_price(0.0)
 {
 
 }
 
-sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
+sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation, double _training_progress)
 {
+    training_progress = _training_progress;
+
     if (validation) {
         logger = std::make_unique<BitmexSimulatorLogger>("bitmex_val_" + std::to_string(idx_episode) + ".csv", true);
     }
@@ -26,32 +31,12 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
 
     constexpr auto episode_length = (int)(((std::chrono::milliseconds) BitSim::Trader::episode_length).count() / ((std::chrono::milliseconds) BitSim::interval).count());
 
-    /*
-    const auto validation_start_idx = BitSim::observation_length - 1;
-    const auto training_end_idx = (int)intervals->rows.size() - episode_length;    
-    const auto validation_end_idx = training_end_idx / 4;
-    const auto training_start_idx = validation_end_idx + 1;
-    */
-    
-    /*
-    const auto training_start_idx = 0;
-    const auto validation_end_idx = (int)intervals->rows.size() - BitSim::observation_length - episode_length - 1;
-    const auto training_end_idx = validation_end_idx * 9 / 10;
-    const auto validation_start_idx = training_end_idx + 1;
-    */
-
     const auto training_start_idx = BitSim::FeatureEncoder::observation_length - 1;
-    const auto training_end_idx = 1045440 - 1;
-    const auto validation_start_idx = 1045440;
     const auto validation_end_idx = (int)intervals->rows.size() - episode_length;
-    
-    /*
-    const auto training_start_idx = BitSim::observation_length - 1;
-    const auto training_end_idx = (int)intervals->rows.size() - episode_length;
-    const auto validation_start_idx = 0;
-    const auto validation_end_idx = 0;
-    */
 
+    const auto training_end_idx = (int)((validation_end_idx - training_start_idx) * 4.0 / 5.0) - 1;
+    const auto validation_start_idx = training_end_idx + 1;
+    
     if (validation) {
         intervals_idx = Utils::random(validation_start_idx, validation_end_idx);
     }
@@ -67,14 +52,24 @@ sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation)
     pos_contracts = 0.0;
     start_value = wallet * intervals->rows[intervals_idx_start].last_price;
     get_reward_previous_value = 0.0;
+
+    orderbook_last_price = start_value;
     
     // Random leverage at start
-    const auto start_leverage = Utils::random(-BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
+    //const auto start_leverage = Utils::random(-BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
+    const auto start_leverage = Utils::random_choice({ -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage });
     market_order(calculate_order_size(start_leverage), false);
 
     constexpr auto position_reward = 0.0;
+    constexpr auto time_since_change = 0.0;
+    constexpr auto delta_price = 0.0;
+
+    //std::cout << "Features " << features.sizes() << std::endl;
+    //const auto feature = features[intervals_idx - (BitSim::FeatureEncoder::observation_length - 1)][0];
+    const auto feature = features[intervals_idx - (BitSim::FeatureEncoder::observation_length - 1)];
+
     auto [_position_margin, position_leverage, upnl] = calculate_position_leverage(intervals->rows[intervals_idx].last_price);
-    auto state = std::make_shared<RL_State>(position_reward, features[intervals_idx - (BitSim::FeatureEncoder::observation_length - 1)][0], position_leverage);
+    auto state = std::make_shared<RL_State>(position_reward, feature, position_leverage, delta_price, time_since_change);
     return state;
 }
 
@@ -87,32 +82,31 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
 {
     const auto prev_interval = intervals->rows[intervals_idx];
 
+    if (prev_interval.last_price > orderbook_last_price + 0.5) {
+        orderbook_last_price = prev_interval.last_price - 0.5;
+    }
+    else if (prev_interval.last_price < orderbook_last_price) {
+        orderbook_last_price = prev_interval.last_price;
+    }
+
     //action->leverage;
     //action->limit_order;
     //action->market_order;
     
-    auto order_leverage = 0.0;
+    const auto order_leverage = action->buy ? BitSim::BitMex::max_leverage : -BitSim::BitMex::max_leverage;
 
-    if (action->b9) {
-        order_leverage = 9;
-    }
-    else if (action->b3) {
-        order_leverage = 3;
-    }
-    else if (action->s1) {
-        order_leverage = -1;
-    }
-    else if (action->s4) {
-        order_leverage = -4;
-    }
-    else if (action->s10) {
-        order_leverage = -10;
-    }
-
-    if (!action->idle) {
+    if (order_leverage > 0 && pos_contracts < 0 ||
+        order_leverage < 0 && pos_contracts > 0) {
+        time_since_leverage_change = 0.0;
         const auto order_contracts = calculate_order_size(order_leverage);
-        limit_order(order_contracts, prev_interval.last_price);
+        market_order(order_contracts, prev_interval.last_price);
     }
+    else {
+        time_since_leverage_change += 1;
+    }
+
+    //if (!action->idle) {
+    //}
 
     /*
     auto order_contracts = 0.0;
@@ -131,16 +125,25 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
     //order_contracts = calculate_order_size(action->leverage);
     //limit_order(order_contracts, prev_interval.last_price);
 
+    const auto time_since_change = std::log1p(time_since_leverage_change) / 5.0;
+    
+    auto delta_price = pos_price - prev_interval.last_price;
+    const auto delta_price_sign = delta_price < 0 ? -1.0 : 1.0;
+    delta_price = delta_price_sign * std::log1p(delta_price_sign * delta_price) / 3.0;
+
+    //const auto feature = features[intervals_idx - (BitSim::FeatureEncoder::observation_length - 1)][0];
+    const auto feature = features[intervals_idx - (BitSim::FeatureEncoder::observation_length - 1)];
+
     const auto reward = get_reward();
     auto [_position_margin, position_leverage, upnl] = calculate_position_leverage(prev_interval.last_price);
-    auto state = std::make_shared<RL_State>(reward, features[intervals_idx - (BitSim::FeatureEncoder::observation_length - 1)][0], position_leverage);
+    auto state = std::make_shared<RL_State>(reward, feature, position_leverage, delta_price, time_since_change);
 
     logger->log(prev_interval.last_price,
         wallet,
         upnl,
         pos_contracts,
         position_leverage,
-        action->idle,
+        action->buy,
         order_leverage,
         //order_contracts,
         //action->leverage,
@@ -178,7 +181,7 @@ double BitmexSimulator::get_reward(void)
         get_reward_previous_value = value;
     }
     //const auto reward = std::log(value / get_reward_previous_value) * 1000 - 1.0; // (*1000-1 to get a suitable reward range, between -1000 and -300)
-    const auto reward = (value - get_reward_previous_value) * 1000.0 - 1.0;
+    const auto reward = (value - get_reward_previous_value) * 1000.0 - 0.1;
     get_reward_previous_value = value;
 
     //std::cout.precision(3);
@@ -264,15 +267,22 @@ void BitmexSimulator::market_order(double contracts, bool use_fee)
 {
     //std::cout << "market_order size(" << contracts << ")" << std::endl;
     const auto next_price = intervals->rows[(long)(intervals_idx + 1)].last_price;
-    const auto fee = use_fee ? BitSim::BitMex::taker_fee : 0.0;
+    const auto fee = use_fee ? BitSim::BitMex::taker_fee * (training_progress + 0.0001) : 0.0;
+
+    if (next_price > orderbook_last_price + 0.5) {
+        orderbook_last_price = next_price - 0.5;
+    }
+    else if (next_price < orderbook_last_price) {
+        orderbook_last_price = next_price;
+    }
 
     if (contracts > 0.0) {
         // Buy
-        execute_order(contracts, next_price + 0.5, fee);
+        execute_order(contracts, orderbook_last_price + 0.5, fee);
     } 
     else if (contracts < 0.0) {
         // Sell
-        execute_order(contracts, next_price - 0.5, fee);
+        execute_order(contracts, orderbook_last_price, fee);
     }
 }
 

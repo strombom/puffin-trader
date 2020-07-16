@@ -143,8 +143,8 @@ namespace BitSim
         constexpr auto n_channels = 3 * 4;
     }
 
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 5 / 26) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 6 / 12) + 0h + 0min + 0s;
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 6 / 30) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 7 / 1) + 0h + 0min + 0s;
     constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
@@ -163,7 +163,7 @@ namespace BitSim
     constexpr auto n_predictions = 1;
     constexpr auto n_negative = 10;
 
-    constexpr auto feature_size = 8;
+    constexpr auto feature_size = FeatureEncoder::feature_length * FeatureEncoder::n_channels; //  8;
 
     const auto ch_price = 0;
     const auto ch_buy_volume = 1;
@@ -211,7 +211,7 @@ namespace BitSim
 
         namespace SAC
         {
-            constexpr auto update_interval = n_episodes / 200;
+            constexpr auto update_interval = episode_length / interval / 20;
 
             constexpr auto batch_size = 512;
             constexpr auto buffer_size = 50000;
@@ -245,8 +245,8 @@ namespace BitSim
             constexpr auto gamma_discount = 0.95;
         }
 
-        constexpr auto state_dim = feature_size + 1;
-        constexpr auto action_dim_discrete = 6;
+        constexpr auto state_dim = feature_size + 3;
+        constexpr auto action_dim_discrete = 2;
         constexpr auto action_dim_continuous = 0;
 
         constexpr auto log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };

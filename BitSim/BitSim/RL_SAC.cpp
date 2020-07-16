@@ -257,6 +257,7 @@ std::array<double, 6> RL_SAC::update_model(void)
         //std::cout << "next_log_probs: " << next_log_probs << std::endl;
         //std::cout << "next_probs: " << next_probs << std::endl;
         //std::cout << "next_q_target: " << next_q_target << std::endl;
+        //std::cout << "rewards: " << rewards << std::endl;
 
         q_target = rewards + BitSim::Trader::SAC::gamma_discount * next_q_target;
 

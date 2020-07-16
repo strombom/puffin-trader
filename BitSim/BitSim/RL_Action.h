@@ -13,7 +13,8 @@ public:
         //market_order(false) {}
 
     RL_Action(torch::Tensor disc_action) :
-        buy(disc_action[0].item().toLong() == 0) {}
+        buy(disc_action[0].item().toLong() == 0) {    
+    }
 
     //RL_Action(torch::Tensor cont_action, torch::Tensor disc_action) :
         //leverage(cont_action[0].item().to<double>()),

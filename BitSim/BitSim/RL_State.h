@@ -4,7 +4,7 @@
 class RL_State
 {
 public:
-    RL_State(double reward, torch::Tensor features, double leverage);
+    RL_State(double reward, torch::Tensor features, double leverage, double delta_price, double time_since_change);
     RL_State(std::shared_ptr<RL_State> state);
 
     void set_done(void);
@@ -15,6 +15,8 @@ public:
     double reward;
     torch::Tensor features;
     double leverage;
+    double delta_price;
+    double time_since_change;
 };
 
 using sptrRL_State = std::shared_ptr<RL_State>;
