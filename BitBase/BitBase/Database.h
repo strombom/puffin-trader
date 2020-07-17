@@ -59,6 +59,7 @@ public:
     void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::milliseconds interval, const Intervals& intervals_data, const time_point_ms& timestamp, long long tick_idx);
 
     std::unique_ptr<Intervals> get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::milliseconds interval);
+    std::unique_ptr<Ticks> get_ticks(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end);
 
 private:
     std::unique_ptr<SQLite::Database> attributes_db;

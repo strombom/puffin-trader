@@ -219,6 +219,26 @@ std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, 
     }
 
     file.close();
-
     return database_intervals;
+}
+
+std::unique_ptr<Ticks> Database::get_ticks(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end)
+{
+    const auto tick_offset = timestamp_start - BitBase::Bitmex::first_timestamp;
+
+    auto file = std::ifstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary };
+
+    auto ticks = std::make_unique<Ticks>();
+    auto tick = Tick{};
+    while (file >> tick) {
+        if (tick.timestamp > timestamp_end) {
+            break;
+        }
+        if (tick.timestamp >= timestamp_start) {
+            ticks->rows.push_back(tick);
+        }
+    }
+
+    file.close();
+    return ticks;
 }

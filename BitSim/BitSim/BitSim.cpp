@@ -21,10 +21,17 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "train_rl" };
+    const auto command = std::string{ "download_ticks" };
 
-    if (command == "make_observations") {
+    if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
+
+        auto bitmex_ticks = bitbase_client.get_ticks("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end);
+        bitmex_ticks->save(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+    }
+    else if (command == "make_observations") {
+        auto bitbase_client = BitBaseClient();
+
         auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto binance_intervals = bitbase_client.get_intervals("BTCUSDT", "BINANCE", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto coinbase_intervals = bitbase_client.get_intervals("BTC-USD", "COINBASE_PRO", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);

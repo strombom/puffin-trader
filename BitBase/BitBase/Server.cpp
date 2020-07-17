@@ -36,17 +36,27 @@ void Server::server_thread(void)
         auto error_message = std::string{ "{\"command\":\"error\"}" };
         const auto command = json11::Json::parse(message_string.c_str(), error_message);
         const auto command_name = command["command"].string_value();
-        
+
         if (command_name == "get_intervals") {
             const auto intervals = database->get_intervals(command["exchange"].string_value(),
-                                                           command["symbol"].string_value(),
-                                                           DateTime::to_time_point_ms(command["timestamp_start"].string_value()),
-                                                           DateTime::to_time_point_ms(command["timestamp_end"].string_value()),
-                                                           std::chrono::milliseconds{ command["interval_ms"].int_value() });
+                command["symbol"].string_value(),
+                DateTime::to_time_point_ms(command["timestamp_start"].string_value()),
+                DateTime::to_time_point_ms(command["timestamp_end"].string_value()),
+                std::chrono::milliseconds{ command["interval_ms"].int_value() });
 
             auto buffer = std::stringstream{};
             buffer << *intervals;
             message = zmq::message_t{ buffer.str() };
+        }
+        else if (command_name == "get_ticks") {
+                const auto ticks = database->get_ticks(command["exchange"].string_value(),
+                    command["symbol"].string_value(),
+                    DateTime::to_time_point_ms(command["timestamp_start"].string_value()),
+                    DateTime::to_time_point_ms(command["timestamp_end"].string_value()));
+
+                auto buffer = std::stringstream{};
+                buffer << *ticks;
+                message = zmq::message_t{ buffer.str() };
         }
         else {
             logger.info("Server::server_thread unknown command!");

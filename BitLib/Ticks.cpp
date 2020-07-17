@@ -46,3 +46,8 @@ std::istream& operator>>(std::istream& stream, Ticks& ticks_data)
 
     return stream;
 }
+
+void Ticks::save(const std::string filename_path)
+{
+
+}

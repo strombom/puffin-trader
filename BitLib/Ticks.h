@@ -30,7 +30,10 @@ class Ticks
 public:
     std::vector<Tick> rows;
 
+    friend std::ostream& operator<<(std::ostream& stream, const Ticks& ticks_data);
     friend std::istream& operator>>(std::istream& stream, Ticks& ticks_data);
+
+    void save(const std::string filename_path);
 };
 
 using sptrTicks = std::shared_ptr<Ticks>;
