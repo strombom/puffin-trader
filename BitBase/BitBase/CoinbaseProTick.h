@@ -31,7 +31,7 @@ private:
     sptrCoinbaseProRestApi rest_api;
     sptrDatabase database;
 
-    using TickData = std::map<std::string, uptrDatabaseTicks>;
+    using TickData = std::map<std::string, sptrTicks>;
     using uptrTickData = std::unique_ptr<TickData>;
 
     std::atomic<CoinbaseProTickState> state;

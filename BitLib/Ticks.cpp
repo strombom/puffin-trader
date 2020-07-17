@@ -27,3 +27,22 @@ std::istream& operator>>(std::istream& stream, Tick& row)
 
     return stream;
 }
+
+std::ostream& operator<<(std::ostream& stream, const Ticks& ticks_data)
+{
+    for (auto&& row : ticks_data.rows) {
+        stream << row;
+    }
+
+    return stream;
+}
+
+std::istream& operator>>(std::istream& stream, Ticks& ticks_data)
+{
+    auto tick = Tick{};
+    while (stream >> tick) {
+        ticks_data.rows.push_back(tick);
+    }
+
+    return stream;
+}

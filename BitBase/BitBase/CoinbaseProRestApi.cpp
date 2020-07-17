@@ -14,7 +14,7 @@ CoinbaseProRestApi::CoinbaseProRestApi(void)
 
 }
 
-std::tuple<uptrDatabaseTicks, long long> CoinbaseProRestApi::get_aggregate_trades(const std::string& symbol, long long last_id)
+std::tuple<sptrTicks, long long> CoinbaseProRestApi::get_aggregate_trades(const std::string& symbol, long long last_id)
 {
     const auto url = std::string{ "products/" } + symbol + "/trades";
     auto parameters = json11::Json::object{

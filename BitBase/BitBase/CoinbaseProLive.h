@@ -27,7 +27,7 @@ public:
     void shutdown(void);
 
 private:
-    using TickData = std::map<std::string, uptrDatabaseTicks>;
+    using TickData = std::map<std::string, sptrTicks>;
     using uptrTickData = std::unique_ptr<TickData>;
 
     std::atomic<CoinbaseProLiveState> state;

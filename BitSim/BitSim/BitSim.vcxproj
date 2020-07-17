@@ -181,6 +181,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="BitLib\Logger.cpp" />
+    <ClCompile Include="BitLib\Ticks.cpp" />
     <ClCompile Include="BitLib\Utils.cpp" />
     <ClCompile Include="BitmexAccount.cpp" />
     <ClCompile Include="BitmexAuthentication.cpp" />
@@ -208,13 +209,14 @@
     <ClCompile Include="RL_State.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BitBaseClient.h" />
+    <ClInclude Include="BitLib\BitBaseClient.h" />
     <ClInclude Include="BitLib\BitBotConstants.h" />
     <ClInclude Include="BitLib\DateTime.h" />
     <ClInclude Include="BitLib\date\date.h" />
     <ClInclude Include="BitLib\Intervals.h" />
     <ClInclude Include="BitLib\json11\json11.hpp" />
     <ClInclude Include="BitLib\Logger.h" />
+    <ClInclude Include="BitLib\Ticks.h" />
     <ClInclude Include="BitLib\Utils.h" />
     <ClInclude Include="BitmexAccount.h" />
     <ClInclude Include="BitmexAuthentication.h" />

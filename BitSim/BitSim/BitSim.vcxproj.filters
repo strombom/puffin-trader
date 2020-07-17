@@ -132,6 +132,9 @@
     <ClCompile Include="BitLib\BitBaseClient.cpp">
       <Filter>Source Files\BitLib</Filter>
     </ClCompile>
+    <ClCompile Include="BitLib\Ticks.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FE_DataLoader.h">
@@ -212,10 +215,13 @@
     <ClInclude Include="BitLib\Intervals.h">
       <Filter>Header Files\BitLib</Filter>
     </ClInclude>
-    <ClInclude Include="BitBaseClient.h">
+    <ClInclude Include="BitLib\BitBotConstants.h">
       <Filter>Header Files\BitLib</Filter>
     </ClInclude>
-    <ClInclude Include="BitLib\BitBotConstants.h">
+    <ClInclude Include="BitLib\BitBaseClient.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\Ticks.h">
       <Filter>Header Files\BitLib</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 
+#include "Ticks.h"
 #include "Intervals.h"
 
 
@@ -19,6 +20,11 @@ public:
         const std::string& exchange,
         const time_point_ms timestamp_start,
         std::chrono::milliseconds interval);
+
+    sptrTicks get_ticks(const std::string& symbol,
+        const std::string& exchange,
+        const time_point_ms timestamp_start,
+        const time_point_ms timestamp_end);
 
 private:
     zmq::context_t context;

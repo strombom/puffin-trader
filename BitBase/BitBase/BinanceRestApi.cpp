@@ -13,7 +13,7 @@ BinanceRestApi::BinanceRestApi(void)
 
 }
 
-std::tuple<uptrDatabaseTicks, long long> BinanceRestApi::get_aggregate_trades(const std::string& symbol, long long last_id, time_point_ms start_time)
+std::tuple<sptrTicks, long long> BinanceRestApi::get_aggregate_trades(const std::string& symbol, long long last_id, time_point_ms start_time)
 {
     auto end_time = start_time + 1h - 1ms; // Difference between start time and end time must be less than one hour
     

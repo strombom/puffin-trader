@@ -29,6 +29,8 @@ class Ticks
 {
 public:
     std::vector<Tick> rows;
+
+    friend std::istream& operator>>(std::istream& stream, Ticks& ticks_data);
 };
 
-using uptrDatabaseTicks = std::unique_ptr<Ticks>;
+using sptrTicks = std::shared_ptr<Ticks>;

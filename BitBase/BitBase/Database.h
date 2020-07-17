@@ -55,7 +55,7 @@ public:
 
     std::unique_ptr<TickTableRead> open_tick_table_read(const std::string& exchange, const std::string& symbol);
 
-    void extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_ms& first_timestamp);
+    void extend_tick_data(const std::string& exchange, const std::string& symbol, sptrTicks ticks, const time_point_ms& first_timestamp);
     void extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::milliseconds interval, const Intervals& intervals_data, const time_point_ms& timestamp, long long tick_idx);
 
     std::unique_ptr<Intervals> get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::milliseconds interval);

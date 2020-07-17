@@ -161,7 +161,7 @@ std::unique_ptr<Tick> TickTableRead::_get_tick(void)
     }
 }
 
-void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, uptrDatabaseTicks ticks, const time_point_ms& first_timestamp)
+void Database::extend_tick_data(const std::string& exchange, const std::string& symbol, sptrTicks ticks, const time_point_ms& first_timestamp)
 {
     auto slock = std::scoped_lock{ file_mutex };
 

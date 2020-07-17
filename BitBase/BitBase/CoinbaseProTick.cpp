@@ -91,7 +91,7 @@ void CoinbaseProTick::tick_data_worker(void)
                         fetch_more = true;
                     }
 
-                    database->extend_tick_data(BitBase::CoinbasePro::exchange_name, symbol, std::move(ticks), BitBase::CoinbasePro::first_timestamp - 1ms);
+                    database->extend_tick_data(BitBase::CoinbasePro::exchange_name, symbol, ticks, BitBase::CoinbasePro::first_timestamp - 1ms);
                     database->set_attribute(BitBase::CoinbasePro::exchange_name, symbol, "tick_data_last_id", new_last_id);
                     insert_symbol_name(symbol);
                     
