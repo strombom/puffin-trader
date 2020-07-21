@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 
-#include "DateTime.h"
+#include "BitLib/DateTime.h"
 
 #include <vector>
 
@@ -28,6 +28,9 @@ public:
 class Ticks
 {
 public:
+    Ticks(void) {}
+    Ticks(const std::string filename_path);
+
     std::vector<Tick> rows;
 
     friend std::ostream& operator<<(std::ostream& stream, const Ticks& ticks_data);

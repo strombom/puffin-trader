@@ -231,7 +231,7 @@ std::unique_ptr<Ticks> Database::get_ticks(const std::string& exchange, const st
     auto ticks = std::make_unique<Ticks>();
     auto tick = Tick{};
     while (file >> tick) {
-        if (tick.timestamp > timestamp_end) {
+        if (tick.timestamp >= timestamp_end) {
             break;
         }
         if (tick.timestamp >= timestamp_start) {

@@ -28,6 +28,18 @@ std::istream& operator>>(std::istream& stream, Tick& row)
     return stream;
 }
 
+Ticks::Ticks(const std::string filename_path)
+{
+    auto file = std::ifstream{ filename_path, std::ifstream::binary };
+
+    auto tick = Tick{};
+    while (file >> tick) {
+        rows.push_back(tick);
+    }
+
+    file.close();
+}
+
 std::ostream& operator<<(std::ostream& stream, const Ticks& ticks_data)
 {
     for (auto&& row : ticks_data.rows) {
@@ -49,5 +61,9 @@ std::istream& operator>>(std::istream& stream, Ticks& ticks_data)
 
 void Ticks::save(const std::string filename_path)
 {
-
+    auto file = std::ofstream{ filename_path, std::ofstream::binary };
+    for (auto &&row : rows) {
+        file << row;
+    }
+    file.close();
 }

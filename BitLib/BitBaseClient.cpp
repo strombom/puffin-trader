@@ -1,8 +1,8 @@
 #include "pch.h"
 
-#include "BitLib/Logger.h"
-#include "BitLib/BitBaseClient.h"
-#include "BitLib/BitBotConstants.h"
+#include "Logger.h"
+#include "BitBaseClient.h"
+#include "BitBotConstants.h"
 
 
 BitBaseClient::BitBaseClient(void)
