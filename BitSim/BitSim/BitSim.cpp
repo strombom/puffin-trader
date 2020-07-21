@@ -1,18 +1,20 @@
 #include "pch.h"
 
-#include "BitBaseClient.h"
-#include "BitBotConstants.h"
 #include "BitmexTrader.h"
 #include "BitmexSimulator.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
 #include "FE_Training.h"
 #include "FE_Model.h"
+#include "MT_Evaluator.h"
 #include "RL_Trader.h"
+#include "PD_Events.h"
 #include "LiveData.h"
-#include "DateTime.h"
-#include "Logger.h"
-#include "Utils.h"
+#include "BitLib/BitBotConstants.h"
+#include "BitLib\BitBaseClient.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/Logger.h"
+#include "BitLib/Utils.h"
 
 #include <iostream>
 
@@ -21,17 +23,23 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "download_ticks" };
+    const auto command = std::string{ "train_rl" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
-
         auto bitmex_ticks = bitbase_client.get_ticks("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end);
         bitmex_ticks->save(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
     }
+    else if (command == "find_direction_changes") {
+        auto ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+        auto pd_events = PD_Events{ ticks };
+
+        auto bitbase_client = BitBaseClient();
+        auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
+        pd_events.plot_events(bitmex_intervals);
+    }
     else if (command == "make_observations") {
         auto bitbase_client = BitBaseClient();
-
         auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto binance_intervals = bitbase_client.get_intervals("BTCUSDT", "BINANCE", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto coinbase_intervals = bitbase_client.get_intervals("BTC-USD", "COINBASE_PRO", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
@@ -59,22 +67,25 @@ int main()
 
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
-    else if (command == "make_direction_data") {
-        
-    }
     else if (command == "train_rl") {
-        auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
-        auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
+        //auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
+        //auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
         //auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
-        std::cout << "observations: " << observations->get_all().sizes() << std::endl;
+        //std::cout << "observations: " << observations->get_all().sizes() << std::endl;
         //std::cout << "features: " << features.sizes() << std::endl;
-        std::cout << "intervals: " << intervals->rows.size() << std::endl;
+        //std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
-        auto features = observations->get_all().flatten(1).cpu();
+        //auto features = observations->get_all().flatten(1).cpu();
 
-        auto simulator = std::make_shared<BitmexSimulator>(intervals, features);
-        auto rl_trader = RL_Trader{ simulator };
-        rl_trader.train();
+        auto ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+        //auto pd_events = PD_Events{ ticks };
+
+        auto evaluator = MT_Evaluator{};
+        evaluator.evaluate();
+
+        //auto simulator = std::make_shared<BitmexSimulator>(ticks);
+        //auto rl_trader = RL_Trader{ simulator };
+        //rl_trader.train();
     }
     else if (command == "evaluate_rl") {
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);

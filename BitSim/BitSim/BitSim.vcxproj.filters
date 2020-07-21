@@ -49,6 +49,18 @@
     <Filter Include="Header Files\Data">
       <UniqueIdentifier>{883a5310-f4d3-4f82-847b-82d9e30ff588}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\PriceDirections">
+      <UniqueIdentifier>{9d62b2db-c121-44b8-832e-5f3fad77ee26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PriceDirections">
+      <UniqueIdentifier>{c5f3c50a-9179-4a98-a9c4-bed18229ed38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MechanicalTrader">
+      <UniqueIdentifier>{e9c214dd-83e0-49e9-baf1-5e5be3cb4f46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MechanicalTrader">
+      <UniqueIdentifier>{eb20e41d-598f-4b63-9946-e77d2dda1f6f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -134,6 +146,18 @@
     </ClCompile>
     <ClCompile Include="BitLib\Ticks.cpp">
       <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="PD_Events.cpp">
+      <Filter>Source Files\PriceDirections</Filter>
+    </ClCompile>
+    <ClCompile Include="MT_Evaluator.cpp">
+      <Filter>Source Files\MechanicalTrader</Filter>
+    </ClCompile>
+    <ClCompile Include="MT_Policy.cpp">
+      <Filter>Source Files\MechanicalTrader</Filter>
+    </ClCompile>
+    <ClCompile Include="MT_Action.cpp">
+      <Filter>Source Files\MechanicalTrader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -223,6 +247,18 @@
     </ClInclude>
     <ClInclude Include="BitLib\Ticks.h">
       <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="PD_Events.h">
+      <Filter>Header Files\PriceDirections</Filter>
+    </ClInclude>
+    <ClInclude Include="MT_Evaluator.h">
+      <Filter>Header Files\MechanicalTrader</Filter>
+    </ClInclude>
+    <ClInclude Include="MT_Policy.h">
+      <Filter>Header Files\MechanicalTrader</Filter>
+    </ClInclude>
+    <ClInclude Include="MT_Action.h">
+      <Filter>Header Files\MechanicalTrader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

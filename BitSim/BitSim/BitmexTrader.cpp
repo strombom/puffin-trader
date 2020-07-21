@@ -1,8 +1,8 @@
 #include "pch.h"
 
-#include "Logger.h"
 #include "BitmexTrader.h"
-#include "BitBotConstants.h"
+#include "BitLib/Logger.h"
+#include "BitLib/BitBotConstants.h"
 
 
 BitmexTrader::BitmexTrader(sptrLiveData live_data, sptrRL_Policy rl_policy) :

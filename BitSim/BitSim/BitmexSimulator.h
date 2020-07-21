@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 
-#include "Intervals.h"
+#include "BitLib/Intervals.h"
 #include "RL_State.h"
 #include "RL_Action.h"
 

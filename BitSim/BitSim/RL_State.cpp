@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "RL_State.h"
-#include "BitBotConstants.h"
+#include "BitLib/BitBotConstants.h"
 
 
 RL_State::RL_State(double reward, torch::Tensor features, double leverage, double delta_price, double time_since_change) : 

@@ -2,8 +2,8 @@
 #include "pch.h"
 
 #include "FE_Observations.h"
-#include "BitBotConstants.h"
-#include "Utils.h"
+#include "BitLib/BitBotConstants.h"
+#include "BitLib/Utils.h"
 
 
 struct Batch {

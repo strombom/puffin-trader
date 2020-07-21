@@ -1,9 +1,9 @@
 #pragma once
 #include "pch.h"
 
-#include "DateTime.h"
-#include "Intervals.h"
-#include "BitBaseClient.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/Intervals.h"
+#include "BitLib/BitBaseClient.h"
 #include "FE_Inference.h"
 #include "FE_Observations.h"
 

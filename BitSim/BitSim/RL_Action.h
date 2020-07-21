@@ -6,11 +6,9 @@ class RL_Action
 {
 public:
     RL_Action(void) :
-        buy(false) {}
-        //leverage(0.0),
-        //idle(true),
-        //limit_order(false),
-        //market_order(false) {}
+        buy(false),
+        stop_loss(0.0),
+        min_profit(0.0) {}
 
     RL_Action(torch::Tensor disc_action) :
         buy(disc_action[0].item().toLong() == 0) {    
@@ -22,8 +20,10 @@ public:
         //limit_order(disc_action[0].item().toLong() == 1),
         //market_order(disc_action[0].item().toLong() == 2) {}
 
-    RL_Action(bool buy) :
-        buy(buy) {}
+    RL_Action(bool buy, double stop_loss, double min_profit) :
+        buy(buy),
+        stop_loss(stop_loss),
+        min_profit(min_profit) {}
 
     //RL_Action(double leverage, bool idle, bool limit_order, bool market_order) :
     //    leverage(leverage),
@@ -36,6 +36,8 @@ public:
     torch::Tensor to_tensor_disc(void) const;
 
     bool buy;
+    double stop_loss;
+    double min_profit;
 
     //double leverage;
     //bool idle;

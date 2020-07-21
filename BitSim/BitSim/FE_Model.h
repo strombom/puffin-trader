@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 
-#include "BitBotConstants.h"
+#include "BitLib/BitBotConstants.h"
 
 
 struct FeatureEncoderImpl : public torch::nn::Module

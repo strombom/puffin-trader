@@ -1,9 +1,9 @@
 #include "pch.h"
 
-#include "Logger.h"
-#include "DateTime.h"
 #include "BitmexRestApi.h"
-#include "BitBotConstants.h"
+#include "BitLib/Logger.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/BitBotConstants.h"
 
 
 BitmexRestApi::BitmexRestApi(sptrBitmexAccount bitmex_account) :

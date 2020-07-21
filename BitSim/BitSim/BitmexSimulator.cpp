@@ -1,7 +1,7 @@
 #include "pch.h"
 
-#include "Utils.h"
 #include "BitmexSimulator.h"
+#include "BitLib/Utils.h"
 
 
 BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features) :
@@ -181,7 +181,7 @@ double BitmexSimulator::get_reward(void)
         get_reward_previous_value = value;
     }
     //const auto reward = std::log(value / get_reward_previous_value) * 1000 - 1.0; // (*1000-1 to get a suitable reward range, between -1000 and -300)
-    const auto reward = (value - get_reward_previous_value) * 1000.0 - 0.1;
+    const auto reward = (value - get_reward_previous_value) * 10000.0 - 0.01;
     get_reward_previous_value = value;
 
     //std::cout.precision(3);

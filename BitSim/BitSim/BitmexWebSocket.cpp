@@ -1,9 +1,9 @@
 #include "pch.h"
 
-#include "Logger.h"
-#include "DateTime.h"
+#include "BitLib/Logger.h"
+#include "BitLib/DateTime.h"
+#include "BitLib/BitBotConstants.h"
 #include "BitmexWebSocket.h"
-#include "BitBotConstants.h"
 
 
 BitmexWebSocket::BitmexWebSocket(sptrBitmexAccount bitmex_account) :

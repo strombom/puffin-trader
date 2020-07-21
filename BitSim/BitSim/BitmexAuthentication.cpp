@@ -1,7 +1,7 @@
 #include "pch.h"
 
-#include "BitBotConstants.h"
 #include "BitmexAuthentication.h"
+#include "BitLib/BitBotConstants.h"
 
 
 BitmexAuthentication::BitmexAuthentication(void)

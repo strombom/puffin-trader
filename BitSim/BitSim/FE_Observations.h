@@ -1,8 +1,8 @@
 #pragma once
 #include "pch.h"
 
-#include "Intervals.h"
-#include "BitBotConstants.h"
+#include "BitLib/Intervals.h"
+#include "BitLib/BitBotConstants.h"
 
 #include <string>
 

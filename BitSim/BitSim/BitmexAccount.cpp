@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "BitmexAccount.h"
-#include "Logger.h"
+#include "BitLib/Logger.h"
 
 
 BitmexOrder::BitmexOrder(time_point_ms timestamp, int size) :
