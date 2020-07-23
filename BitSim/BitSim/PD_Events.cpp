@@ -5,142 +5,133 @@
 using namespace std::chrono_literals;
 
 
-class OrderBookBuffer {
-public:
-    OrderBookBuffer(void) :
-        length(0),
-        next_idx(0),
-        order_book_bottom(0.0)
-    {
-        
-    }
-
-    void update(time_point_ms timestamp, double price)
-    {
-        if (price > order_book_bottom + 0.5) {
-            order_book_bottom = price - 0.5;
-        }
-        else if (price < order_book_bottom) {
-            order_book_bottom = price;
-        }
-
-        timestamps[next_idx] = timestamp;
-        prices[next_idx] = price;
-
-        length = std::min(length + 1, size);
-        next_idx = (next_idx + 1) % size;
-    }
-
-    std::tuple<double, double> get_price(time_point_ms timestamp)
-    {
-        auto count = 0;
-        auto idx = (next_idx - 1 + size) % size;
-        auto price_bot = std::numeric_limits<double>::max();
-        auto price_top = std::numeric_limits<double>::min();
-        while (count < length) {
-            price_bot = std::min(price_bot, prices[idx]);
-            price_top = std::max(price_top, prices[idx]);
-
-            if (timestamps[idx] < timestamp) {
-                break;
-            }
-            idx = (idx - 1 + size) % size;
-            ++count;
-        }
-        if (price_top < order_book_bottom + 0.5) {
-            price_top = order_book_bottom + 0.5;
-        }
-        else if (price_bot > order_book_bottom) {
-            price_bot = order_book_bottom;
-        }
-
-        return std::make_tuple(price_bot, price_top);
-    }
-
-private:
-    static constexpr int size = 1000;
-    std::array<time_point_ms, size> timestamps;
-    std::array<double, size> prices;
-    int length;
-    int next_idx;
-
-    double order_book_bottom;
-};
-
-class OrderBook {
-public:
-    OrderBook(time_point_ms timestamp, double price)
-    {
-        buffer.update(timestamp, price);
-    }
-
-    bool update(time_point_ms timestamp, double price, PD_Direction direction)
-    {
-        const auto [price_bot, price_top] = buffer.get_price(timestamp - 1500ms);
-        buffer.update(timestamp, price);
-        if (direction == PD_Direction::down && price > price_top) {
-            return true;
-        }
-        else if (direction == PD_Direction::up && price < price_bot) {
-            return true;
-        }
-        return false;
-    }
-
-    OrderBookBuffer buffer;
-private:
-};
-
-
-PD_Events::PD_Events(sptrTicks ticks) :
-    offset(200ms)
+PD_OrderBookBuffer::PD_OrderBookBuffer(void) :
+    length(0),
+    next_idx(0),
+    order_book_bottom(0.0)
 {
-    make_events(ticks);
+        
 }
 
-void PD_Events::make_events(sptrTicks ticks)
+void PD_OrderBookBuffer::update(time_point_ms timestamp, double price)
+{
+    if (price > order_book_bottom + 0.5) {
+        order_book_bottom = price - 0.5;
+    }
+    else if (price < order_book_bottom) {
+        order_book_bottom = price;
+    }
+
+    timestamps[next_idx] = timestamp;
+    prices[next_idx] = price;
+
+    length = std::min(length + 1, size);
+    next_idx = (next_idx + 1) % size;
+}
+
+std::tuple<double, double> PD_OrderBookBuffer::get_price(time_point_ms timestamp)
+{
+    auto count = 0;
+    auto idx = (next_idx - 1 + size) % size;
+    auto price_bot = std::numeric_limits<double>::max();
+    auto price_top = std::numeric_limits<double>::min();
+    while (count < length) {
+        price_bot = std::min(price_bot, prices[idx]);
+        price_top = std::max(price_top, prices[idx]);
+
+        if (timestamps[idx] < timestamp) {
+            break;
+        }
+        idx = (idx - 1 + size) % size;
+        ++count;
+    }
+    if (price_top < order_book_bottom + 0.5) {
+        price_top = order_book_bottom + 0.5;
+    }
+    else if (price_bot > order_book_bottom) {
+        price_bot = order_book_bottom;
+    }
+
+    return std::make_tuple(price_bot, price_top);
+}
+
+PD_OrderBook::PD_OrderBook(time_point_ms timestamp, double price)
+{
+    buffer.update(timestamp, price);
+}
+
+bool PD_OrderBook::update(time_point_ms timestamp, double price, PD_Direction direction)
+{
+    const auto [price_bot, price_top] = buffer.get_price(timestamp - 1500ms);
+    buffer.update(timestamp, price);
+    if (direction == PD_Direction::down && price > price_top) {
+        return true;
+    }
+    else if (direction == PD_Direction::up && price < price_bot) {
+        return true;
+    }
+    return false;
+}
+
+PD_Events::PD_Events(const Tick& first_tick) :
+    order_book(first_tick.timestamp, first_tick.price),
+    last_direction(PD_Direction::up)
+{
+
+}
+
+PD_Events::PD_Events(sptrTicks ticks) :
+    PD_Events(ticks->rows[0])
 {
     if (ticks->rows.size() < 2) {
         return;
     }
 
-    auto last_direction = PD_Direction{};
-    auto order_book = OrderBook{ ticks->rows[0].timestamp, ticks->rows[0].price };
+    const auto offset = 200ms;
+    order_book = PD_OrderBook{ ticks->rows[0].timestamp, ticks->rows[0].price };
     auto finding_offset = false;
 
-    for (auto&& row : ticks->rows) {
+    for (auto&& tick : ticks->rows) {
         if (finding_offset) {
-            if (row.timestamp >= events.back().timestamp + offset) {
-                events_offset.push_back(PD_Event{ row.timestamp, row.price, last_direction });
+            if (tick.timestamp >= events.back().timestamp + offset) {
+                events_offset.push_back(PD_Event{ tick.timestamp, tick.price, last_direction });
                 finding_offset = false;
             }
         }
+        auto event = append_tick(tick);
 
-        const auto executed = order_book.update(row.timestamp, row.price, last_direction);
-        if (executed) {
-            if (last_direction == PD_Direction::up) {
-                last_direction = PD_Direction::down;
-            }
-            else {
-                last_direction = PD_Direction::up;
-            }
-            events.push_back(PD_Event{ row.timestamp, row.price, last_direction });
+        if (event) {
+            events.push_back(*event);
             finding_offset = true;
         }
 
-        tick_prices.push_back(PD_Event{ row.timestamp, row.price, last_direction });
+        tick_prices.push_back(PD_Event{ tick.timestamp, tick.price, last_direction });
 
-
-        const auto [price_bot, price_top] = order_book.buffer.get_price(row.timestamp - 1500ms);
-        order_book_bot.push_back(PD_Event{ row.timestamp, price_bot, last_direction });
-        order_book_top.push_back(PD_Event{ row.timestamp, price_top, last_direction });
-
+        const auto [price_bot, price_top] = order_book.buffer.get_price(tick.timestamp - 1500ms);
+        order_book_bot.push_back(PD_Event{ tick.timestamp, price_bot, last_direction });
+        order_book_top.push_back(PD_Event{ tick.timestamp, price_top, last_direction });
     }
 
     // If no offset was found for last event, remove it
     if (events_offset.size() > events.size()) {
         events_offset.pop_back();
     }
+}
+
+sptrPD_Event PD_Events::append_tick(const Tick& tick)
+{
+    const auto executed = order_book.update(tick.timestamp, tick.price, last_direction);
+    if (executed) {
+        if (last_direction == PD_Direction::up) {
+            last_direction = PD_Direction::down;
+        }
+        else {
+            last_direction = PD_Direction::up;
+        }
+        return std::make_shared<PD_Event>(tick.timestamp, tick.price, last_direction);
+    }
+
+    return nullptr;
 }
 
 void PD_Events::plot_events(sptrIntervals intervals)

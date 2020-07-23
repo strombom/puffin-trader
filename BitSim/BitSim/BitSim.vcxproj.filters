@@ -159,6 +159,9 @@
     <ClCompile Include="MT_Action.cpp">
       <Filter>Source Files\MechanicalTrader</Filter>
     </ClCompile>
+    <ClCompile Include="MT_Simulator.cpp">
+      <Filter>Source Files\MechanicalTrader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FE_DataLoader.h">
@@ -258,6 +261,9 @@
       <Filter>Header Files\MechanicalTrader</Filter>
     </ClInclude>
     <ClInclude Include="MT_Action.h">
+      <Filter>Header Files\MechanicalTrader</Filter>
+    </ClInclude>
+    <ClInclude Include="MT_Simulator.h">
       <Filter>Header Files\MechanicalTrader</Filter>
     </ClInclude>
   </ItemGroup>

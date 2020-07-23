@@ -10,6 +10,34 @@ enum class PD_Direction {
     down
 };
 
+class PD_OrderBookBuffer {
+public:
+    PD_OrderBookBuffer(void);
+
+    void update(time_point_ms timestamp, double price);
+
+    std::tuple<double, double> get_price(time_point_ms timestamp);
+
+private:
+    static constexpr int size = 1000;
+    std::array<time_point_ms, size> timestamps;
+    std::array<double, size> prices;
+    int length;
+    int next_idx;
+
+    double order_book_bottom;
+};
+
+class PD_OrderBook {
+public:
+    PD_OrderBook(time_point_ms timestamp, double price);
+
+    bool update(time_point_ms timestamp, double price, PD_Direction direction);
+
+    PD_OrderBookBuffer buffer;
+private:
+};
+
 class PD_Event
 {
 public:
@@ -23,16 +51,22 @@ public:
     PD_Direction direction;
 };
 
+using sptrPD_Event = std::shared_ptr<PD_Event>;
+
+
 class PD_Events
 {
 public:
+    PD_Events(const Tick& first_tick);
     PD_Events(sptrTicks ticks);
 
-    void make_events(sptrTicks ticks);
+    sptrPD_Event append_tick(const Tick& tick);
+
     void plot_events(sptrIntervals intervals);
 
 private:
-    std::chrono::milliseconds offset;
+    PD_Direction last_direction;
+    PD_OrderBook order_book;
 
     std::vector<PD_Event> events;
     std::vector<PD_Event> events_offset;

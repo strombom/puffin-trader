@@ -23,7 +23,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "train_rl" };
+    const auto command = std::string{ "train_mt" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
@@ -67,6 +67,12 @@ int main()
 
         Utils::save_tensor(features, BitSim::tmp_path, "features.tensor");
     }
+    else if (command == "train_mt") {
+        auto ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+
+        auto evaluator = MT_Evaluator{ ticks };
+        evaluator.evaluate();
+    }
     else if (command == "train_rl") {
         //auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         //auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
@@ -76,12 +82,6 @@ int main()
         //std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
         //auto features = observations->get_all().flatten(1).cpu();
-
-        auto ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
-        //auto pd_events = PD_Events{ ticks };
-
-        auto evaluator = MT_Evaluator{};
-        evaluator.evaluate();
 
         //auto simulator = std::make_shared<BitmexSimulator>(ticks);
         //auto rl_trader = RL_Trader{ simulator };
