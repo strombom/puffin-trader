@@ -2,6 +2,8 @@
 
 #include "Ticks.h"
 
+#include <fstream>
+
 
 std::ostream& operator<<(std::ostream& stream, const Tick& row)
 {
@@ -30,7 +32,7 @@ std::istream& operator>>(std::istream& stream, Tick& row)
 
 Ticks::Ticks(const std::string filename_path)
 {
-    auto file = std::ifstream{ filename_path, std::ifstream::binary };
+    auto file = std::ifstream{ filename_path, std::ios::binary };
 
     auto tick = Tick{};
     while (file >> tick) {
