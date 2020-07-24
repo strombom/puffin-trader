@@ -98,7 +98,7 @@ PD_Events::PD_Events(sptrTicks ticks) :
                 finding_offset = false;
             }
         }
-        auto event = append_tick(tick);
+        auto event = step(tick);
 
         if (event) {
             events.push_back(*event);
@@ -118,7 +118,7 @@ PD_Events::PD_Events(sptrTicks ticks) :
     }
 }
 
-sptrPD_Event PD_Events::append_tick(const Tick& tick)
+sptrPD_Event PD_Events::step(const Tick& tick)
 {
     const auto executed = order_book.update(tick.timestamp, tick.price, last_direction);
     if (executed) {
@@ -168,7 +168,6 @@ void PD_Events::plot_events(sptrIntervals intervals)
         tick_file << event.price << '\n';
     }
     event_file.close();
-
 
     auto obt_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\orderbook_top.csv" };
     for (auto&& event : order_book_top) {

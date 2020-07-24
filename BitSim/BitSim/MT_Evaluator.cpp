@@ -19,12 +19,23 @@ void MT_Evaluator::evaluate(void)
     for (auto row_idx = 0; row_idx < ticks->rows.size(); ++row_idx) {
         const auto &tick = ticks->rows[row_idx];
 
-        auto event = events.append_tick(tick);
+        auto event = events.step(tick);
+        simulator.step(tick);
 
         if (event != nullptr) {
             std::cout << event->price << std::endl;
+
+
+
         }
-
-
     }
 }
+
+/*
+    event
+
+    buy/nobuy
+    stoploss
+    minprofit
+*/
+

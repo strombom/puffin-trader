@@ -60,7 +60,7 @@ public:
     PD_Events(const Tick& first_tick);
     PD_Events(sptrTicks ticks);
 
-    sptrPD_Event append_tick(const Tick& tick);
+    sptrPD_Event step(const Tick& tick);
 
     void plot_events(sptrIntervals intervals);
 

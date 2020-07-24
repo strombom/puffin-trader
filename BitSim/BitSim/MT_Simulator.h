@@ -4,10 +4,43 @@
 #include "BitLib/Ticks.h"
 
 
+enum class MT_Direction {
+    up,
+    down
+};
+
+class MT_OrderBookBuffer {
+public:
+    MT_OrderBookBuffer(void);
+
+    void step(time_point_ms timestamp, double price);
+
+    std::tuple<double, double> get_price(time_point_ms timestamp);
+
+private:
+    static constexpr int size = 1000;
+    std::array<time_point_ms, size> timestamps;
+    std::array<double, size> prices;
+    int length;
+    int next_idx;
+
+    double order_book_bottom;
+};
+
+class MT_OrderBook {
+public:
+    MT_OrderBook(time_point_ms timestamp, double price);
+
+    bool update(time_point_ms timestamp, double price, MT_Direction direction);
+
+    MT_OrderBookBuffer buffer;
+private:
+};
+
 class MT_Simulator
 {
 public:
-    MT_Simulator();
+    MT_Simulator(const Tick& first_tick);
 
     void step(const Tick& tick);
 
@@ -19,10 +52,14 @@ private:
     double pos_price;
     double pos_contracts;
     double time_since_leverage_change;
-    double orderbook_last_price;
+
+    MT_OrderBook order_book;
 
     void execute_order(double contracts, double price, double fee);
     double calculate_order_size(double leverage);
+    void market_order(double contracts, bool use_fee);
+    void limit_order(double contracts, double price, bool use_fee);
+    std::tuple<double, double, double> calculate_position_leverage(double mark_price);
 };
 
 /*
