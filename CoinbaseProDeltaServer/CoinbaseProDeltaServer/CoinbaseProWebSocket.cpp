@@ -139,8 +139,9 @@ void CoinbaseProWebSocket::websocket_worker(void)
             const auto price = std::stod(message["price"].string_value());
             const auto volume = std::stod(message["last_size"].string_value());
             const auto buy = message["side"].string_value().compare("buy") == 0;
+            const auto trade_id = (long long)message["trade_id"].number_value();
 
-            tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
+            tick_data->append(symbol, timestamp, (float)price, (float)volume, buy, trade_id);
         }
         catch (std::exception const& e) {
             connected = false;

@@ -109,7 +109,7 @@
       <AdditionalOptions>-isystem"/home/strombom/vcpkg/installed/x64-linux/include" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <LibraryDependencies>zmq;pthread;ssl;crypto</LibraryDependencies>
+      <LibraryDependencies>zmq;pthread;ssl;crypto;dl</LibraryDependencies>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -120,7 +120,7 @@
       <AdditionalOptions>-isystem"/home/strombom/vcpkg/installed/x64-linux/include" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <LibraryDependencies>zmq;pthread;ssl;crypto</LibraryDependencies>
+      <LibraryDependencies>zmq;pthread;ssl;crypto;dl</LibraryDependencies>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
