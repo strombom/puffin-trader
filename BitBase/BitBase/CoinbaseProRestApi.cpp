@@ -14,11 +14,11 @@ CoinbaseProRestApi::CoinbaseProRestApi(void)
 
 }
 
-std::tuple<sptrTicks, long long> CoinbaseProRestApi::get_aggregate_trades(const std::string& symbol, long long last_id)
+std::tuple<sptrTicks, long long> CoinbaseProRestApi::get_aggregate_trades(const std::string& symbol, long long last_trade_id)
 {
     const auto url = std::string{ "products/" } + symbol + "/trades";
     auto parameters = json11::Json::object{
-        { "after", std::to_string(last_id + BitBase::CoinbasePro::Tick::max_rows + 1) }
+        { "after", std::to_string(last_trade_id + BitBase::CoinbasePro::Tick::max_rows + 1) }
     };
 
     auto response = http_get(url, parameters).array_items();
@@ -30,11 +30,11 @@ std::tuple<sptrTicks, long long> CoinbaseProRestApi::get_aggregate_trades(const 
         const auto price = std::stof(tick["price"].string_value());
         const auto volume = std::stof(tick["size"].string_value());
         const auto buy = tick["side"].string_value().compare("buy") == 0;
-        last_id = (long long)tick["trade_id"].number_value();
+        last_trade_id = (long long)tick["trade_id"].number_value();
         ticks->rows.push_back(Tick{ timestamp, price, volume, buy });
     }
 
-    return std::make_tuple(std::move(ticks), last_id);
+    return std::make_tuple(std::move(ticks), last_trade_id);
 }
 
 json11::Json CoinbaseProRestApi::http_get(const std::string& endpoint, json11::Json parameters)

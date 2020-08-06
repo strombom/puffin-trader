@@ -13,15 +13,15 @@ BinanceRestApi::BinanceRestApi(void)
 
 }
 
-std::tuple<sptrTicks, long long> BinanceRestApi::get_aggregate_trades(const std::string& symbol, long long last_id, time_point_ms start_time)
+std::tuple<sptrTicks, long long> BinanceRestApi::get_aggregate_trades(const std::string& symbol, long long last_trade_id, time_point_ms start_time)
 {
     auto end_time = start_time + 1h - 1ms; // Difference between start time and end time must be less than one hour
     
     auto parameters = json11::Json{};
-    if (last_id >= 0) {
+    if (last_trade_id >= 0) {
         parameters = json11::Json::object{
             { "symbol", symbol },
-            { "fromId", std::to_string(last_id + 1) },
+            { "fromId", std::to_string(last_trade_id + 1) },
             { "limit", BitBase::Binance::Tick::max_rows }
         };
     }
@@ -42,11 +42,11 @@ std::tuple<sptrTicks, long long> BinanceRestApi::get_aggregate_trades(const std:
         const auto price = std::stof(tick["p"].string_value());
         const auto volume = std::stof(tick["q"].string_value());
         const auto buy = tick["m"].bool_value();
-        last_id = (long long)tick["a"].number_value();
+        last_trade_id = (long long)tick["a"].number_value();
         ticks->rows.push_back(Tick{timestamp, price, volume, buy});
     }
 
-    return std::make_tuple(std::move(ticks), last_id);
+    return std::make_tuple(std::move(ticks), last_trade_id);
 }
 
 json11::Json BinanceRestApi::http_get(const std::string& endpoint, json11::Json parameters)

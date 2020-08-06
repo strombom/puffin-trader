@@ -10,7 +10,7 @@ class CoinbaseProRestApi
 public:
     CoinbaseProRestApi(void);
 
-    std::tuple<sptrTicks, long long> get_aggregate_trades(const std::string& symbol, long long last_id);
+    std::tuple<sptrTicks, long long> get_aggregate_trades(const std::string& symbol, long long last_trade_id);
 
 private:
     CoinbaseProAuthentication authenticator;

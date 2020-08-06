@@ -71,17 +71,17 @@ void BinanceTick::tick_data_worker(void)
             fetch_more = false;
 
             for (auto&& symbol : BitBase::Binance::symbols) {
-                auto last_id = database->get_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_id", -1ll);
+                auto last_trade_id = database->get_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_id", -1ll);
                 auto timestamp_next = database->get_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_timestamp", BitBase::Binance::first_timestamp - 1ms);
                 timestamp_next += 1ms; // Do not include the latest timestamp, only newer should be fetched
 
-                if (last_id == -1) {
+                if (last_trade_id == -1) {
                     timestamp_next -= 1h;
                 }
 
-                auto [ticks, new_last_id] = rest_api->get_aggregate_trades(symbol, last_id, timestamp_next);
+                auto [ticks, new_last_trade_id] = rest_api->get_aggregate_trades(symbol, last_trade_id, timestamp_next);
 
-                if (ticks->rows.size() == 0) {
+                if (ticks->rows.size() == 0 || last_trade_id == new_last_trade_id) {
                     continue;
                 }
 
@@ -94,7 +94,7 @@ void BinanceTick::tick_data_worker(void)
                     }
                     // Potential bug, might skip multiple ticks on the same timestamp, unlikely to occur so we don't mind - 2020-06-22
                     database->extend_tick_data(BitBase::Binance::exchange_name, symbol, std::move(ticks), BitBase::Binance::first_timestamp - 1ms);
-                    database->set_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_id", new_last_id);
+                    database->set_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_id", new_last_trade_id);
                     insert_symbol_name(symbol);
                 }
             }

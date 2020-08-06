@@ -10,7 +10,7 @@ class BinanceRestApi
 public:
     BinanceRestApi(void);
 
-    std::tuple<sptrTicks, long long> get_aggregate_trades(const std::string& symbol, long long last_id, time_point_ms start_time);
+    std::tuple<sptrTicks, long long> get_aggregate_trades(const std::string& symbol, long long last_trade_id, time_point_ms start_time);
 
 private:
     BinanceAuthentication authenticator;

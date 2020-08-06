@@ -20,6 +20,7 @@ public:
     float price;
     float volume;
     bool buy;
+    long long trade_id;
 
     time_point_ms timestamp(void)
     {
@@ -112,9 +113,11 @@ void CoinbaseProLive::tick_data_worker(void)
                     auto last_timestamp = std::chrono::time_point_cast<std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>::duration>(last_timepoint);
 
                     auto tick_data = std::make_unique<Ticks>();
+                    auto last_trade_id = 0ll;
                     for (auto& tick : received_ticks) {
                         if (tick.timestamp() < last_timestamp) {
                             tick_data->rows.push_back({ tick.timestamp(), tick.price, tick.volume, tick.buy });
+                            last_trade_id = tick.trade_id;
                         }
                     }
 
@@ -122,6 +125,7 @@ void CoinbaseProLive::tick_data_worker(void)
                         logger.info("CoinbaseProLive::tick_data_worker append count(%d) (%s) (%0.1f)", (int)tick_data->rows.size(), DateTime::to_string(last_timestamp).c_str(), tick_data->rows.back().price);
 
                         database->extend_tick_data(BitBase::CoinbasePro::exchange_name, symbol, std::move(tick_data), BitBase::CoinbasePro::first_timestamp);
+                        database->set_attribute(BitBase::CoinbasePro::exchange_name, symbol, "tick_data_last_id", last_trade_id);
                         if (received_ticks.size() >= BitBase::CoinbasePro::Live::max_rows - 1) {
                             fetch_more = true;
                         }
