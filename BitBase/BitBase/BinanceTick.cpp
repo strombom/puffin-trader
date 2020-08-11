@@ -79,6 +79,10 @@ void BinanceTick::tick_data_worker(void)
                     timestamp_next -= 1h;
                 }
 
+                if (timestamp_next > std::chrono::system_clock::now() - BitBase::Binance::Live::buffer_length) {
+                    continue;
+                }
+
                 auto [ticks, new_last_trade_id] = rest_api->get_aggregate_trades(symbol, last_trade_id, timestamp_next);
 
                 if (ticks->rows.size() == 0 || last_trade_id == new_last_trade_id) {

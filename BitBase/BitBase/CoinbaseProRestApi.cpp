@@ -106,7 +106,7 @@ const std::string CoinbaseProRestApi::http_request(const boost::beast::http::req
         // These objects perform our I/O
         boost::asio::ip::tcp::resolver resolver(ioc);
         boost::beast::ssl_stream<boost::beast::tcp_stream> stream(ioc, ctx);
-
+        
         // Set SNI Hostname (many hosts need this to handshake successfully)
         if (!SSL_set_tlsext_host_name(stream.native_handle(), BitBase::CoinbasePro::Tick::rest_api_host))
         {
