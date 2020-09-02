@@ -115,7 +115,7 @@ void BitmexWebSocket::websocket_worker(void)
             if (action == "update" && table == "orderBook10" && data.is_array()) {
                 for (auto data_symbol : data.array_items()) {
                     const auto symbol = data_symbol["symbol"].string_value();
-                    const auto timestamp = DateTime::to_time_point(data_symbol["timestamp"].string_value(), "%FT%TZ");
+                    const auto timestamp_ms = DateTime::to_time_point(data_symbol["timestamp"].string_value(), "%FT%TZ");
                     const auto top_bid = data_symbol["bids"].array_items()[0].array_items();
                     const auto top_ask = data_symbol["asks"].array_items()[0].array_items();
 
@@ -124,7 +124,57 @@ void BitmexWebSocket::websocket_worker(void)
                     const auto ask_price = top_ask[0].number_value();
                     const auto ask_volume = top_ask[1].number_value();
 
-                    order_book_data->append(symbol, timestamp, (float)bid_price, (float)bid_volume, (float)ask_price, (float)ask_volume);
+                    auto append = false;
+
+                    if (previous_order_book.count(symbol) == 0) {
+                        append = true;
+                    }
+                    else {
+                        auto bid_volume_diff = std::abs(previous_order_book[symbol].bid_volume - bid_volume);
+                        auto ask_volume_diff = std::abs(previous_order_book[symbol].ask_volume - ask_volume);
+
+                        if (bid_volume == 0) {
+                            bid_volume_diff = 1;
+                        }
+                        else {
+                            bid_volume_diff /= bid_volume;
+                        }
+
+                        if (ask_volume == 0) {
+                            ask_volume_diff = 1;
+                        }
+                        else {
+                            ask_volume_diff /= ask_volume;
+                        }
+
+                        if (std::abs(previous_order_book[symbol].bid_price - bid_price) > 0.01 ||
+                            std::abs(previous_order_book[symbol].ask_price - ask_price) > 0.01 ||
+                            bid_volume_diff > 0.1 || ask_volume_diff > 0.1
+                            ) {
+                            append = true;
+                        }
+                    }
+
+                    if (append) {
+                        order_book_data->append(symbol, timestamp_ms, (float)bid_price, (float)bid_volume, (float)ask_price, (float)ask_volume);
+                        previous_order_book[symbol].timestamp_ms = timestamp_ms.time_since_epoch().count();
+                        previous_order_book[symbol].bid_price = (float)bid_price;
+                        previous_order_book[symbol].bid_volume = (float)bid_volume;
+                        previous_order_book[symbol].ask_price = (float)ask_price;
+                        previous_order_book[symbol].ask_volume = (float)ask_volume;
+                    }
+                    else {
+                        /*
+                        std::cout << "nopend " <<
+                            "sym(" << symbol << ") " <<
+                            "ts(" << DateTime::to_string(timestamp_ms) << ") " <<
+                            "bp(" << bid_price << ") " <<
+                            "bv(" << bid_volume << ") " <<
+                            "ap(" << ask_price << ") " <<
+                            "av(" << ask_volume << ") " <<
+                            std::endl;
+                        */
+                    }
                 }
             }
             else {
