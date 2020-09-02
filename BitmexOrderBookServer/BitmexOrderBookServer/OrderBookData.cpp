@@ -39,17 +39,24 @@ void OrderBookData::append(const std::string& symbol, time_point_ms timestamp, f
     buffer_next_idx.at(symbol) = (buffer_next_idx.at(symbol) + 1) % Bitmex::buffer_size;
     buffer_count.at(symbol) = std::min(buffer_count.at(symbol) + 1, Bitmex::buffer_size);
     
-    std::cout << "append " <<
-        "sym(" << symbol << ") " <<
-        "ts(" << DateTime::to_string(timestamp) << ") " <<
-        "bp(" << bid_price << ") " <<
-        "bv(" << bid_volume << ") " <<
-        "ap(" << ask_price << ") " <<
-        "av(" << ask_volume << ") " <<
-        "idx(" << buffer_next_idx.at(symbol) << ") " <<
-        "cnt(" << buffer_count.at(symbol) << ") " <<
-        std::endl;
-    
+    static auto last_timestamp_ms = std::map<std::string, time_point_ms>{};
+    if (last_timestamp_ms.count(symbol) == 0) {
+        last_timestamp_ms[symbol] = system_clock_ms_now();
+    }
+    if ((timestamp - last_timestamp_ms[symbol]) > 100ms) {
+        // Limit console prints
+        last_timestamp_ms[symbol] = timestamp;
+        std::cout << "append " <<
+            "sym(" << symbol << ") " <<
+            "ts(" << DateTime::to_string(timestamp) << ") " <<
+            "bp(" << bid_price << ") " <<
+            "bv(" << bid_volume << ") " <<
+            "ap(" << ask_price << ") " <<
+            "av(" << ask_volume << ") " <<
+            "idx(" << buffer_next_idx.at(symbol) << ") " <<
+            "cnt(" << buffer_count.at(symbol) << ") " <<
+            std::endl;
+    }
 }
 
 std::unique_ptr<std::vector<OrderBook>> OrderBookData::get(const std::string& symbol, time_point_ms timestamp, int max_rows)
@@ -62,7 +69,7 @@ std::unique_ptr<std::vector<OrderBook>> OrderBookData::get(const std::string& sy
 
     //timestamp = ticks.at(symbol).get()->at((Bitmex::buffer_size + buffer_next_idx.at(symbol) - buffer_count.at(symbol) / 2) % Bitmex::buffer_size).timestamp();
     const auto timestamp_ms = timestamp.time_since_epoch().count();
-
+    
     const auto last_idx = (Bitmex::buffer_size + buffer_next_idx.at(symbol) - 1) % Bitmex::buffer_size;
     const auto first_idx = buffer_count.at(symbol) < Bitmex::buffer_size ? 0 : buffer_next_idx.at(symbol);
     const auto read_ticks = order_book_ticks.at(symbol).get();
@@ -80,7 +87,7 @@ std::unique_ptr<std::vector<OrderBook>> OrderBookData::get(const std::string& sy
     auto idx = last_idx;
     while (true) {
         //std::cout << "search " << idx << std::endl;
-        if (read_ticks->at(idx).timestamp_ms < timestamp_ms) {
+        if (read_ticks->at(idx).timestamp_ms < (const unsigned long long)timestamp_ms) {
             if (idx != last_idx) {
                 start_idx = (idx + 1) % Bitmex::buffer_size;
             }
@@ -98,7 +105,7 @@ std::unique_ptr<std::vector<OrderBook>> OrderBookData::get(const std::string& sy
         idx = start_idx;
         while (true) {
             result.push_back(read_ticks->at(idx));
-            if (idx == last_idx || result.size() == max_rows) {
+            if (idx == last_idx || result.size() == (std::size_t)max_rows) {
                 break;
             }
             idx = (Bitmex::buffer_size + idx + 1) % Bitmex::buffer_size;
