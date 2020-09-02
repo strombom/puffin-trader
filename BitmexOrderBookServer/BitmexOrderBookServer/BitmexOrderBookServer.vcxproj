@@ -89,8 +89,8 @@
     <ClCompile Include="BitmexOrderBookServer.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="json11.cpp" />
+    <ClCompile Include="OrderBookData.cpp" />
     <ClCompile Include="Server.cpp" />
-    <ClCompile Include="TickData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BitmexConstants.h" />
@@ -98,9 +98,9 @@
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="date\date.h" />
     <ClInclude Include="json11.hpp" />
+    <ClInclude Include="OrderBookData.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Server.h" />
-    <ClInclude Include="TickData.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

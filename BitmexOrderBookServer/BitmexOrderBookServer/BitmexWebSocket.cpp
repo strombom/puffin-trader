@@ -8,10 +8,10 @@
 #include <boost/beast/core/stream_traits.hpp>
 
 
-BitmexWebSocket::BitmexWebSocket(sptrTickData tick_data) :
-    tick_data(tick_data),
-    websocket_thread_running(true),
-    connected(false)
+BitmexWebSocket::BitmexWebSocket(sptrOrderBookData order_book_data) :
+    order_book_data(order_book_data),
+    connected(false),
+    websocket_thread_running(true)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
@@ -112,25 +112,19 @@ void BitmexWebSocket::websocket_worker(void)
             const auto table = message["table"].string_value();
             const auto data = message["data"];
             
-/*
-subscribe: {"op": "subscribe", "args": ["orderBook10:XBTUSD"]}
-{"info":"Welcome to the BitMEX Realtime API.","version":"2020-08-28T23:43:16.000Z","timestamp":"2020-09-01T19:06:42.456Z","docs":"https://www.bitmex.com/app/wsAPI","limit":{"remaining":39}}
-BitmexWebSocket rcv: {"success":true,"subscribe":"orderBook10:XBTUSD","request":{"op":"subscribe","args":["orderBook10:XBTUSD"]}}
-BitmexWebSocket rcv: {"table":"orderBook10","action":"partial","keys":["symbol"],"types":{"symbol":"symbol","bids":"","asks":"","timestamp":"timestamp"},"foreignKeys":{"symbol":"instrument"},"attributes":{"symbol":"sorted"},"filter":{"symbol":"XBTUSD"},"data":[{"symbol":"XBTUSD","bids":[[12005,2875434],[12004.5,65816],[12004,267135],[12003.5,40963],[12003,351],[12002.5,22126],[12002,7496],[12001.5,124930],[12001,28151],[12000.5,9631]],"asks":[[12005.5,822789],[12006,2788],[12006.5,9321],[12007,9964],[12007.5,35349],[12008,32062],[12008.5,117476],[12009,63946],[12009.5,74958],[12010,44228]],"timestamp":"2020-09-01T19:06:42.413Z"}]}
-BitmexWebSocket rcv: {"table":"orderBook10","action":"update","data":[{"symbol":"XBTUSD","bids":[[12005,2875434],[12004.5,65816],[12004,267135],[12003.5,40963],[12003,351],[12002.5,22126],[12002,7662],[12001.5,124930],[12001,28151],[12000.5,9631]],"timestamp":"2020-09-01T19:06:42.599Z","asks":[[12005.5,822789],[12006,2788],[12006.5,9321],[12007,9964],[12007.5,35349],[12008,32062],[12008.5,117476],[12009,63946],[12009.5,74958],[12010,44228]]}]}
-*/
+            if (action == "update" && table == "orderBook10" && data.is_array()) {
+                for (auto data_symbol : data.array_items()) {
+                    const auto symbol = data_symbol["symbol"].string_value();
+                    const auto timestamp = DateTime::to_time_point(data_symbol["timestamp"].string_value(), "%FT%TZ");
+                    const auto top_bid = data_symbol["bids"].array_items()[0].array_items();
+                    const auto top_ask = data_symbol["asks"].array_items()[0].array_items();
 
-            if (action == "insert" && table == "trade" && data.is_array()) {
-                //std::cout << "BitmexWebSocket insert: " << message_string << std::endl;
+                    const auto bid_price = top_bid[0].number_value();
+                    const auto bid_volume = top_bid[1].number_value();
+                    const auto ask_price = top_ask[0].number_value();
+                    const auto ask_volume = top_ask[1].number_value();
 
-                for (auto tick : data.array_items()) {
-                    const auto symbol = tick["symbol"].string_value();
-                    const auto price = tick["price"].number_value();
-                    const auto volume = tick["size"].number_value();
-                    const auto buy = tick["side"].string_value().compare("Buy") == 0;
-                    const auto timestamp = DateTime::to_time_point(tick["timestamp"].string_value(), "%FT%TZ");
-
-                    tick_data->append(symbol, timestamp, (float)price, (float)volume, buy);
+                    order_book_data->append(symbol, timestamp, (float)bid_price, (float)bid_volume, (float)ask_price, (float)ask_volume);
                 }
             }
             else {

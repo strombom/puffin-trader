@@ -12,13 +12,13 @@
 #include <thread>
 #include <string>
 
-#include "TickData.h"
+#include "OrderBookData.h"
 
 
 class BitmexWebSocket
 {
 public:
-    BitmexWebSocket(sptrTickData tick_data);
+    BitmexWebSocket(sptrOrderBookData order_book_data);
 
     void start(void);
     void shutdown(void);
@@ -28,7 +28,7 @@ private:
     const char* port = "443";
     const char* url = "/realtime";
 
-    sptrTickData tick_data;
+    sptrOrderBookData order_book_data;
 
     bool connected;
     boost::asio::io_context ioc;
