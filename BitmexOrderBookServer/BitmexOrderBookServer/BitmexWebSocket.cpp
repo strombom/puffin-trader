@@ -149,7 +149,7 @@ void BitmexWebSocket::websocket_worker(void)
 
                         if (std::abs(previous_order_book[symbol].bid_price - bid_price) > 0.0001 ||
                             std::abs(previous_order_book[symbol].ask_price - ask_price) > 0.0001 ||
-                            bid_volume_diff > 0.1 || ask_volume_diff > 0.1
+                            bid_volume_diff > 0.25 || ask_volume_diff > 0.25
                             ) {
                             append = true;
                         }
