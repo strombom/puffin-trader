@@ -88,6 +88,7 @@ void MT_Simulator::step(const Tick& tick)
 {
     order_book.update(tick.timestamp, tick.price, tick.buy);
 
+    /*
 
     const auto prev_interval = intervals->rows[intervals_idx];
 
@@ -160,6 +161,7 @@ void MT_Simulator::step(const Tick& tick)
     }
 
     return state;
+    */
 }
 
 void MT_Simulator::market_order(double contracts)
