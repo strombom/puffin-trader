@@ -4,9 +4,19 @@
 #include "BitLib/Ticks.h"
 
 
-enum class MT_Direction {
-    up,
-    down
+class MT_Direction {
+public:
+    MT_Direction(bool __up) : _up(__up) {}
+
+    static const bool up = true;
+    static const bool down = false;
+
+    bool operator==(bool __up) {
+        return __up == _up;
+    }
+
+private:
+    bool _up;
 };
 
 class MT_OrderBookBuffer {

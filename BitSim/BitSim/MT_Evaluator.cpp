@@ -13,8 +13,9 @@ MT_Evaluator::MT_Evaluator(sptrTicks ticks) :
 
 void MT_Evaluator::evaluate(void)
 {
-    auto simulator = MT_Simulator{};
-    auto events = PD_Events{ticks->rows[0]};
+    const auto first_tick = ticks->rows[0];
+    auto simulator = MT_Simulator{ first_tick };
+    auto events = PD_Events{ first_tick };
 
     for (auto row_idx = 0; row_idx < ticks->rows.size(); ++row_idx) {
         const auto &tick = ticks->rows[row_idx];
