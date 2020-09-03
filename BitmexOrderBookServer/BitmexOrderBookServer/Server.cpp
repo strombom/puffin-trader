@@ -9,8 +9,8 @@
 #include <iostream>
 
 
-Server::Server(sptrTickData tick_data) :
-    tick_data(tick_data), server_running(true)
+Server::Server(sptrOrderBookData order_book_data) :
+    order_book_data(order_book_data), server_running(true)
 {
     server_thread_handle = std::make_unique<std::thread>(&Server::server_thread, this);
 }
@@ -60,7 +60,7 @@ void Server::server_thread(void)
             std::cout << "Rcv command: " << command_name << std::endl;
 
 
-            if (command_name == "get_ticks") {
+            if (command_name == "get_order_book_ticks") {
                 //logger.info("Server::server_thread get intervals!");
                 //const auto intervals = database->get_intervals(command["exchange"].string_value(),
                 //    command["symbol"].string_value(),
@@ -72,7 +72,7 @@ void Server::server_thread(void)
                 const auto timestamp = DateTime::to_time_point(command["timestamp_start"].string_value(), "%FT%TZ");
                 const auto max_rows = command["max_rows"].int_value();
 
-                auto ticks = tick_data->get(symbol, timestamp, max_rows);
+                auto ticks = order_book_data->get(symbol, timestamp, max_rows);
 
                 auto sbuf = msgpack::sbuffer{};
                 msgpack::pack(sbuf, ticks);

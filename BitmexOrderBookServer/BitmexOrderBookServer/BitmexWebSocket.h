@@ -12,13 +12,13 @@
 #include <thread>
 #include <string>
 
-#include "TickData.h"
+#include "OrderBookData.h"
 
 
 class BitmexWebSocket
 {
 public:
-    BitmexWebSocket(sptrTickData tick_data);
+    BitmexWebSocket(sptrOrderBookData order_book_data);
 
     void start(void);
     void shutdown(void);
@@ -28,12 +28,14 @@ private:
     const char* port = "443";
     const char* url = "/realtime";
 
-    sptrTickData tick_data;
+    sptrOrderBookData order_book_data;
 
     bool connected;
     boost::asio::io_context ioc;
     std::unique_ptr<boost::asio::ssl::context> ctx;
     std::unique_ptr<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>> websocket;
+
+    std::map<std::string, OrderBook> previous_order_book;
 
     std::atomic_bool websocket_thread_running;
     std::unique_ptr<std::thread> websocket_thread;
