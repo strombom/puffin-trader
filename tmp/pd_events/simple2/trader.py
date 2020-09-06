@@ -31,44 +31,90 @@ events_trig_price = np.array(events_trig_price)
 print(events_x)
 print(events_price)
 
-
 class Account:
-    def __init__(self):
-        self.btc = 1.0
-        self.usd = 0.0
+    def __init__(self, pos_price):
+        self.wallet_btc = 1.0
+        self.pos_price = pos_price
+        self.pos_contracts = 0.0
 
-class Position:
-    def __init__(self, price, direction):
-        self.price = price
-        self.direction = direction
+    def get_position_direction(self):
+        if self.pos_contracts >= 0:
+            return 'long'
+        else:
+            return 'short'
+
+def execute_order(account, price, side):
 
 
-account = Account()
-position = Position(events_price[0], "long")
+
+    """
+    // Fee
+    wallet -= fee * abs(order_contracts / price);
+        
+    // Realised profit and loss
+    // Wallet only changes when abs(contracts) decrease
+    if (pos_contracts > 0 && order_contracts < 0) {
+        wallet += (1 / pos_price - 1 / price) * std::min(-order_contracts, pos_contracts);
+    }
+    else if (pos_contracts < 0 && order_contracts > 0) {
+        wallet += (1 / pos_price - 1 / price) * std::max(-order_contracts, pos_contracts);
+    }
+
+    // Calculate average entry price
+    if ((pos_contracts >= 0 && order_contracts > 0) || 
+        (pos_contracts <= 0 && order_contracts < 0)) {
+        pos_price = (pos_contracts * pos_price + order_contracts * price) / (pos_contracts + order_contracts);
+    }
+    else if ((pos_contracts >= 0 && (pos_contracts + order_contracts) < 0) || 
+             (pos_contracts <= 0 && (pos_contracts + order_contracts) > 0)) {
+        pos_price = price;
+    }
+
+    // Calculate position contracts
+    pos_contracts += order_contracts;
+    """
+
 
 fee = 0.00075
 stop_loss = 0.005
 min_profit = 0.0025
 
-direction = "long"
+account = Account(events_price[0])
+
+event_type = 'top'
 for idx in range(len(events_x)):
 
     execute = False
     execution_price = 0.0
-    if direction == "long" and position.direction = "short":
-        pass
+    price = events_price[idx]
+    pos_direction = account.get_position_direction()
 
-    elif direction == "short" and position.direction = "long":
-        pass
+    if event_type == 'top':
+        if pos_direction == 'long':
+            min_profit_price = account.pos_price * (1 + min_profit)
+            if price > min_profit_price:
+                execute_order(account, events_offset[idx], 'short')
+            print("min_profit_price", min_profit_price)
+            pass
 
+        elif pos_direction == 'short':
+            pass
 
-    print(idx, events_price[idx], events_trig_price[idx], direction)
+    elif event_type == 'bot':
+        if pos_direction == 'long':
+            pass
+
+        elif pos_direction == 'short':
+            pass
+
+    print("event_type", event_type)
+    print("pos_direction", pos_direction)
+    print("price", price)
     quit()
 
-    if direction == "long":
-        direction = "short"
-    else:
-        direction = "long"
+
+    print(idx, events_price[idx], events_trig_price[idx], event_type)
+    quit()
 
 
 quit()
