@@ -31,6 +31,16 @@ events_trig_price = np.array(events_trig_price)
 print(events_x)
 print(events_price)
 
+#print(len(events_price), len(events_trig_price))
+#quit()
+
+fee = 0.00075
+stop_loss = 0.0025
+stop_loss_slippage = 0.0004
+min_profit = 0.00125
+leverage = 10.0
+
+
 class Account:
     def __init__(self, pos_price):
         self.wallet_btc = 1.0
@@ -45,6 +55,48 @@ class Account:
 
 def execute_order(account, price, side):
 
+    final_contracts = account.wallet_btc * leverage * price
+    if side == 'short':
+        final_contracts = -final_contracts
+    order_contracts = final_contracts - account.pos_contracts
+
+    #print('price', price)
+    #print('wallet_btc', account.wallet_btc)
+
+    # Fee
+    #print('fee', fee * abs(order_contracts / price))
+    account.wallet_btc -= fee * abs(order_contracts / price);
+
+    #print('wallet_btc', account.wallet_btc)
+    #print('account.pos_contracts', account.pos_contracts)
+    #print('account.pos_price', account.pos_price)
+    #print('order_contracts', order_contracts)
+
+    # Realised profit and loss, wallet only changes when abs(contracts) decrease
+    if account.pos_contracts > 0 and order_contracts < 0:
+        account.wallet_btc += (1 / account.pos_price - 1 / price) * min(-order_contracts, account.pos_contracts)
+    
+    elif account.pos_contracts < 0 and order_contracts > 0:
+        account.wallet_btc += (1 / account.pos_price - 1 / price) * max(-order_contracts, account.pos_contracts)
+
+    #print('wallet_btc', account.wallet_btc)
+
+
+    #print('final_contracts', final_contracts)
+    #print('order_contracts', order_contracts)
+
+    # Calculate average entry price
+    if (account.pos_contracts >= 0 and order_contracts > 0) or (account.pos_contracts <= 0 and order_contracts < 0):
+        account.pos_price = (account.pos_contracts * account.pos_price + order_contracts * price) / (account.pos_contracts + order_contracts)
+    
+    elif (account.pos_contracts >= 0 and (account.pos_contracts + order_contracts) < 0) or (account.pos_contracts <= 0 and (account.pos_contracts + order_contracts) > 0):
+        account.pos_price = price
+
+    #print("execute", account.wallet_btc, price, side)
+
+    account.pos_contracts += order_contracts
+    #print('account.pos_contracts', account.pos_contracts)
+    #print('account.pos_price', account.pos_price)
 
 
     """
@@ -74,10 +126,14 @@ def execute_order(account, price, side):
     pos_contracts += order_contracts;
     """
 
+class TradeLog:
+    def __init__(self, filename):
+        self.file = open(filename, 'w')
 
-fee = 0.00075
-stop_loss = 0.005
-min_profit = 0.0025
+    def append(self, btc, price):
+        self.file.write(str(btc) + ',' + str(price) + '\n')
+
+trade_log = TradeLog("trade.csv")
 
 account = Account(events_price[0])
 
@@ -88,33 +144,46 @@ for idx in range(len(events_x)):
     execution_price = 0.0
     price = events_price[idx]
     pos_direction = account.get_position_direction()
+    #print("====")
+    #print("event_type", event_type)
+    #print("pos_direction", pos_direction)
+    #print("price", price)
+
+    trade_log.append(account.wallet_btc, price)
 
     if event_type == 'top':
+        if pos_direction == 'short':
+            stop_loss_price = account.pos_price * (1 + stop_loss)
+            if price > stop_loss_price:
+                execute_order(account, stop_loss_price * (1 + stop_loss_slippage), 'long')
+
         if pos_direction == 'long':
             min_profit_price = account.pos_price * (1 + min_profit)
             if price > min_profit_price:
-                execute_order(account, events_offset[idx], 'short')
-            print("min_profit_price", min_profit_price)
-            pass
-
-        elif pos_direction == 'short':
-            pass
+                execute_order(account, events_trig_price[idx], 'short')
 
     elif event_type == 'bot':
         if pos_direction == 'long':
-            pass
+            stop_loss_price = account.pos_price * (1 - stop_loss)
+            if price < stop_loss_price:
+                execute_order(account, stop_loss_price * (1 - stop_loss_slippage), 'short')
 
-        elif pos_direction == 'short':
-            pass
+        if pos_direction == 'short':
+            min_profit_price = account.pos_price * (1 - min_profit)
+            if price < min_profit_price:
+                execute_order(account, events_trig_price[idx], 'long')
+    
 
-    print("event_type", event_type)
-    print("pos_direction", pos_direction)
-    print("price", price)
-    quit()
+    #quit()
 
 
-    print(idx, events_price[idx], events_trig_price[idx], event_type)
-    quit()
+    #print(idx, events_price[idx], events_trig_price[idx], event_type)
+    #quit()
+
+    if event_type == 'top':
+        event_type = 'bot'
+    else:
+        event_type = 'top'
 
 
 quit()
