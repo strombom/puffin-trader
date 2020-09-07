@@ -162,6 +162,9 @@
     <ClCompile Include="MT_Simulator.cpp">
       <Filter>Source Files\MechanicalTrader</Filter>
     </ClCompile>
+    <ClCompile Include="PD_Simulator.cpp">
+      <Filter>Source Files\PriceDirections</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FE_DataLoader.h">
@@ -265,6 +268,9 @@
     </ClInclude>
     <ClInclude Include="MT_Simulator.h">
       <Filter>Header Files\MechanicalTrader</Filter>
+    </ClInclude>
+    <ClInclude Include="PD_Simulator.h">
+      <Filter>Header Files\PriceDirections</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

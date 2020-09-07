@@ -1,9 +1,9 @@
 #pragma once
 #include "pch.h"
 
-#include "BitLib/Intervals.h"
 #include "RL_State.h"
 #include "RL_Action.h"
+#include "BitLib/Intervals.h"
 
 
 class BitmexSimulatorLogger
@@ -38,7 +38,7 @@ public:
     BitmexSimulator(sptrIntervals intervals, torch::Tensor features);
     
     sptrRL_State reset(int idx_episode, bool validation, double training_progress);
-    sptrRL_State step(sptrRL_Action action, bool last_step);
+    sptrRL_State step(sptrRL_Action action);
     std::tuple<double, double, double> calculate_position_leverage(double mark_price);
     
     time_point_ms get_start_timestamp(void);

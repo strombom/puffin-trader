@@ -206,6 +206,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="PD_Events.cpp" />
+    <ClCompile Include="PD_Simulator.cpp" />
     <ClCompile Include="RL_Action.cpp" />
     <ClCompile Include="RL_Algorithm.cpp" />
     <ClCompile Include="RL_Policy.cpp" />
@@ -242,6 +243,7 @@
     <ClInclude Include="MT_Simulator.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PD_Events.h" />
+    <ClInclude Include="PD_Simulator.h" />
     <ClInclude Include="RL_Action.h" />
     <ClInclude Include="RL_Algorithm.h" />
     <ClInclude Include="RL_Policy.h" />

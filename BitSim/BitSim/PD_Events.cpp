@@ -101,6 +101,9 @@ PD_Events::PD_Events(sptrTicks ticks) :
         auto event = step(tick);
 
         if (event) {
+            if (finding_offset) {
+                events_offset.push_back(PD_Event{ tick.timestamp, tick.price, last_direction });
+            }
             events.push_back(*event);
             finding_offset = true;
         }

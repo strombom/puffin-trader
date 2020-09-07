@@ -4,7 +4,7 @@
 #include "BitLib/BitBotConstants.h"
 
 
-RL_Trader::RL_Trader(sptrBitmexSimulator simulator) :
+RL_Trader::RL_Trader(sptrPD_Simulator simulator) :
 //RL_Trader::RL_Trader(sptrCartpoleSimulator simulator) :
 //RL_Trader::RL_Trader(sptrPendulumSimulator simulator) :
     simulator(simulator),
@@ -171,9 +171,8 @@ sptrRL_State RL_Trader::step(sptrRL_State state, int max_steps)
         action = rl_algorithm->get_action(state);
     }
 
-    const auto last_step = step_episode == max_steps - 1;
     const auto last_state = std::make_shared<RL_State>( RL_State{ state } );
-    auto next_state = simulator->step(action, last_step);
+    auto next_state = simulator->step(action);
     rl_algorithm->append_to_replay_buffer(last_state, action, next_state);
     return next_state;
 }

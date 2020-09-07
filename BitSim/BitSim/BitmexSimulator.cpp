@@ -78,7 +78,7 @@ time_point_ms BitmexSimulator::get_start_timestamp(void)
     return intervals->get_timestamp_start() + BitSim::interval * intervals_idx_start;
 }
 
-sptrRL_State BitmexSimulator::step(sptrRL_Action action, bool last_step)
+sptrRL_State BitmexSimulator::step(sptrRL_Action action)
 {
     const auto prev_interval = intervals->rows[intervals_idx];
 
