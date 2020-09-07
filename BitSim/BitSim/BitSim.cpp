@@ -1,7 +1,6 @@
 #include "pch.h"
 
 #include "BitmexTrader.h"
-#include "BitmexSimulator.h"
 #include "FE_Observations.h"
 #include "FE_Inference.h"
 #include "FE_Training.h"
@@ -9,6 +8,7 @@
 #include "MT_Evaluator.h"
 #include "RL_Trader.h"
 #include "PD_Events.h"
+#include "PD_Simulator.h"
 #include "LiveData.h"
 #include "BitLib/BitBotConstants.h"
 #include "BitLib\BitBaseClient.h"
@@ -23,7 +23,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "train_mt" };
+    const auto command = std::string{ "make_intervals" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
@@ -38,14 +38,23 @@ int main()
         auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         pd_events.plot_events(bitmex_intervals);
     }
-    else if (command == "make_observations") {
+    else if (command == "make_intervals") {
         auto bitbase_client = BitBaseClient();
         auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto binance_intervals = bitbase_client.get_intervals("BTCUSDT", "BINANCE", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto coinbase_intervals = bitbase_client.get_intervals("BTC-USD", "COINBASE_PRO", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         std::cout << "Intervals: " << bitmex_intervals->rows.size() << std::endl;
-        bitmex_intervals->save(BitSim::intervals_path);
-
+        bitmex_intervals->save(std::string{ BitSim::intervals_path } + "_bitmex.dat");
+        binance_intervals->save(std::string{ BitSim::intervals_path } + "_binance.dat");
+        coinbase_intervals->save(std::string{ BitSim::intervals_path } + "_coinbase.dat");
+    }
+    else if (command == "make_observations") {
+        auto bitmex_intervals = sptrIntervals{};
+        auto binance_intervals = sptrIntervals{};
+        auto coinbase_intervals = sptrIntervals{};
+        bitmex_intervals->load(std::string{ BitSim::intervals_path } + "_bitmex.dat");
+        binance_intervals->load(std::string{ BitSim::intervals_path } + "_binance.dat");
+        coinbase_intervals->load(std::string{ BitSim::intervals_path } + "_coinbase.dat");
         auto observations = std::make_shared<FE_Observations>(bitmex_intervals, binance_intervals, coinbase_intervals);
         observations->save(BitSim::observations_path);
         std::cout << "Observations: " << observations->get_all().sizes() << std::endl;
@@ -95,7 +104,7 @@ int main()
         std::cout << "features: " << features.sizes() << std::endl;
         std::cout << "intervals: " << intervals->rows.size() << std::endl;
 
-        auto simulator = std::make_shared<BitmexSimulator>(intervals, features.cpu());
+        auto simulator = std::make_shared<PD_Simulator>(intervals, features.cpu());
         auto rl_trader = RL_Trader{ simulator };
         //rl_trader.train();
         const auto idx_episode = 0;
