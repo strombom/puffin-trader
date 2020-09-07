@@ -74,3 +74,5 @@ private:
     std::vector<PD_Event> order_book_top;
     std::vector<PD_Event> order_book_bot;
 };
+
+using sptrPD_Events = std::shared_ptr<PD_Events>;
