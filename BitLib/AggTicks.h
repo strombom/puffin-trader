@@ -3,6 +3,7 @@
 
 #include "BitLib/Ticks.h"
 #include "BitLib/DateTime.h"
+#include "BitLib/BitBotConstants.h"
 
 #include <vector>
 
@@ -10,10 +11,16 @@
 class AggTick
 {
 public:
-    AggTick(void) : high(0), low(0), volume(0) {}
+    AggTick(void) : 
+        high(std::numeric_limits<float>::min()), 
+        low(std::numeric_limits<float>::max()),
+        volume(0) {}
 
     AggTick(const time_point_ms timestamp, const float high, const float low, const float volume) :
         timestamp(timestamp), high(high), low(low), volume(volume) {}
+
+    AggTick(const std::chrono::milliseconds timestamp, const float high, const float low, const float volume) :
+        timestamp(std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>{ timestamp }), high(high), low(low), volume(volume) {}
 
     friend std::ostream& operator<<(std::ostream& stream, const AggTick& row);
     friend std::istream& operator>>(std::istream& stream, AggTick& row);

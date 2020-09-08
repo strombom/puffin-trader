@@ -24,7 +24,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "get_intervals" };
+    const auto command = std::string{ "aggregate_ticks" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
