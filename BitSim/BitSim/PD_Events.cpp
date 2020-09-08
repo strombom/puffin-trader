@@ -80,6 +80,13 @@ PD_Events::PD_Events(const Tick& first_tick) :
 
 }
 
+PD_Events::PD_Events(time_point_ms timestamp, const Interval& first_interval) :
+    order_book(timestamp, first_interval.last_price),
+    last_direction(PD_Direction::up)
+{
+
+}
+
 PD_Events::PD_Events(sptrTicks ticks) :
     PD_Events(ticks->rows[0])
 {
@@ -119,6 +126,12 @@ PD_Events::PD_Events(sptrTicks ticks) :
     if (events_offset.size() > events.size()) {
         events_offset.pop_back();
     }
+}
+
+PD_Events::PD_Events(sptrIntervals intervals) :
+    PD_Events(intervals->get_timestamp_start(), intervals->rows[0])
+{
+
 }
 
 sptrPD_Event PD_Events::step(const Tick& tick)

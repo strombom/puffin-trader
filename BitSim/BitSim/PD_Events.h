@@ -58,9 +58,13 @@ class PD_Events
 {
 public:
     PD_Events(const Tick& first_tick);
+    PD_Events(time_point_ms timestamp, const Interval& first_interval);
+
     PD_Events(sptrTicks ticks);
+    PD_Events(sptrIntervals intervals);
 
     sptrPD_Event step(const Tick& tick);
+    sptrPD_Event step(const Interval& intervals);
 
     void plot_events(sptrIntervals intervals);
 

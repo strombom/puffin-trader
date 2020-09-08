@@ -15,6 +15,7 @@
 #include "BitLib/DateTime.h"
 #include "BitLib/Logger.h"
 #include "BitLib/Utils.h"
+#include "BitLib/AggTicks.h"
 
 #include <iostream>
 
@@ -23,12 +24,18 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_intervals" };
+    const auto command = std::string{ "get_intervals" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
         auto bitmex_ticks = bitbase_client.get_ticks("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end);
         bitmex_ticks->save(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+
+    }
+    else if (command == "aggregate_ticks") {
+        auto bitmex_ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+        auto bitmex_agg_ticks = AggTicks{ bitmex_ticks };
+        bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
     }
     else if (command == "find_direction_changes") {
         auto ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
@@ -38,7 +45,7 @@ int main()
         auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         pd_events.plot_events(bitmex_intervals);
     }
-    else if (command == "make_intervals") {
+    else if (command == "get_intervals") {
         auto bitbase_client = BitBaseClient();
         auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         auto binance_intervals = bitbase_client.get_intervals("BTCUSDT", "BINANCE", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);

@@ -173,6 +173,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BitLib\AggTicks.cpp" />
     <ClCompile Include="BitLib\BitBaseClient.cpp" />
     <ClCompile Include="BitLib\DateTime.cpp" />
     <ClCompile Include="BitLib\Intervals.cpp" />
@@ -215,6 +216,7 @@
     <ClCompile Include="RL_State.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BitLib\AggTicks.h" />
     <ClInclude Include="BitLib\BitBaseClient.h" />
     <ClInclude Include="BitLib\BitBotConstants.h" />
     <ClInclude Include="BitLib\DateTime.h" />
