@@ -12,7 +12,14 @@ class AggTick
 {
 public:
     AggTick(void) : 
+        timestamp(0ms),
         high(std::numeric_limits<float>::min()), 
+        low(std::numeric_limits<float>::max()),
+        volume(0) {}
+
+    AggTick(const std::chrono::milliseconds timestamp) :
+        timestamp(std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>{ timestamp }),
+        high(std::numeric_limits<float>::min()),
         low(std::numeric_limits<float>::max()),
         volume(0) {}
 

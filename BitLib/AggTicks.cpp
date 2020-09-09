@@ -33,17 +33,14 @@ std::istream& operator>>(std::istream& stream, AggTick& row)
 AggTicks::AggTicks(sptrTicks ticks)
 {
     // Round timestamp
-    const auto timestamp = (ticks->rows[0].timestamp.time_since_epoch() / BitSim::aggregate) * BitSim::aggregate;
     auto agg_tick = AggTick{};
     auto agg_tick_valid = false;
     rows.clear();
 
     for (auto&& tick : ticks->rows) {
-        if (tick.timestamp.time_since_epoch() >= timestamp + BitSim::aggregate) {
-            if (agg_tick_valid) {
+        if (agg_tick_valid && tick.timestamp >= agg_tick.timestamp + BitSim::aggregate) {
                 rows.push_back(agg_tick);
                 agg_tick_valid = false;
-            }
         }
 
         if (agg_tick_valid) {
@@ -52,7 +49,7 @@ AggTicks::AggTicks(sptrTicks ticks)
             agg_tick.volume += tick.volume;
         }
         else {
-            const auto agg_timestamp = (ticks->rows[0].timestamp.time_since_epoch() / BitSim::aggregate) * BitSim::aggregate;
+            const auto agg_timestamp = (tick.timestamp.time_since_epoch() / BitSim::aggregate) * BitSim::aggregate;
             agg_tick = AggTick{ agg_timestamp,  tick.price, tick.price, tick.volume};
             agg_tick_valid = true;
         }
