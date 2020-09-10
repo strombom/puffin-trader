@@ -52,7 +52,8 @@ public:
     friend std::ostream& operator<<(std::ostream& stream, const AggTicks& agg_ticks_data);
     friend std::istream& operator>>(std::istream& stream, AggTicks& agg_ticks_data);
 
-    void save(const std::string filename_path);
+    void save(const std::string& filename_path) const;
+    void load(const std::string& filename_path);
 };
 
 using sptrAggTicks = std::shared_ptr<AggTicks>;

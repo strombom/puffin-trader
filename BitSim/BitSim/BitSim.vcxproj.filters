@@ -165,6 +165,9 @@
     <ClCompile Include="PD_Simulator.cpp">
       <Filter>Source Files\PriceDirections</Filter>
     </ClCompile>
+    <ClCompile Include="BitLib\AggTicks.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FE_DataLoader.h">
@@ -271,6 +274,9 @@
     </ClInclude>
     <ClInclude Include="PD_Simulator.h">
       <Filter>Header Files\PriceDirections</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\AggTicks.h">
+      <Filter>Header Files\BitLib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

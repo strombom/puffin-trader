@@ -24,7 +24,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "aggregate_ticks" };
+    const auto command = std::string{ "train_rl" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
@@ -90,6 +90,9 @@ int main()
         evaluator.evaluate();
     }
     else if (command == "train_rl") {
+        auto bitmex_agg_ticks = AggTicks{};
+        bitmex_agg_ticks.load(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
+
         //auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         //auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
         //auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");

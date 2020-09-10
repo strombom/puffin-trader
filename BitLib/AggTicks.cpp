@@ -87,11 +87,21 @@ std::istream& operator>>(std::istream& stream, AggTicks& agg_ticks)
     return stream;
 }
 
-void AggTicks::save(const std::string filename_path)
+void AggTicks::save(const std::string& filename_path) const
 {
     auto file = std::ofstream{ filename_path, std::ofstream::binary };
     for (auto &&row : rows) {
         file << row;
     }
     file.close();
+}
+
+void AggTicks::load(const std::string& filename_path)
+{
+    auto data_file = std::ifstream{ filename_path, std::ios::binary };
+    auto agg_tick = AggTick{};
+    while (data_file >> agg_tick) {
+        rows.push_back(agg_tick);
+    }
+    data_file.close();
 }
