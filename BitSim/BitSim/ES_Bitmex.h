@@ -3,13 +3,14 @@
 
 #include "RL_State.h"
 #include "RL_Action.h"
+#include "ES_Simulator.h"
 #include "BitLib/Intervals.h"
 
 
-class BitmexSimulatorLogger
+class ES_BitmexLogger
 {
 public:
-    BitmexSimulatorLogger(const std::string &filename, bool enabled);
+    ES_BitmexLogger(const std::string &filename, bool enabled);
 
     void log(
         double last_price,
@@ -32,20 +33,25 @@ private:
     bool enabled;
 };
 
-class BitmexSimulator
+class ES_Bitmex
 {
 public:
-    BitmexSimulator(sptrIntervals intervals, torch::Tensor features);
+    ES_Bitmex(void);
     
-    sptrRL_State reset(int idx_episode, bool validation, double training_progress);
-    sptrRL_State step(sptrRL_Action action);
+    void reset(int idx_episode, bool validation, double training_progress);
+
+    void market_order(double contracts);
+    void limit_order(double contracts, double price);
+
+
+    //sptrRL_State step(sptrRL_Action action);
     std::tuple<double, double, double> calculate_position_leverage(double mark_price);
-    
+
     time_point_ms get_start_timestamp(void);
 
 private:
-    sptrIntervals intervals;
-    torch::Tensor features;
+    //sptrIntervals intervals;
+    //torch::Tensor features;
 
     int intervals_idx_start;
     int intervals_idx_end;
@@ -62,9 +68,7 @@ private:
 
     double get_reward_previous_value;
 
-    void market_order(double contracts);
     void market_order(double contracts, bool use_fee);
-    void limit_order(double contracts, double price);
     void limit_order(double contracts, double price, bool use_fee);
     void execute_order(double contracts, double price, double fee);
     bool is_liquidated(void);
@@ -72,7 +76,7 @@ private:
     double liquidation_price(void);
     double calculate_order_size(double leverage);
 
-    std::unique_ptr<BitmexSimulatorLogger> logger;
+    std::unique_ptr<ES_BitmexLogger> logger;
 };
 
-using sptrBitmexSimulator = std::shared_ptr<BitmexSimulator>;
+using sptrES_Bitmex = std::shared_ptr<ES_Bitmex>;

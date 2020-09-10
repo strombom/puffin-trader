@@ -2,14 +2,14 @@
 #include "PD_Simulator.h"
 
 
-PD_Simulator::PD_Simulator(sptrIntervals intervals, torch::Tensor features)
+PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks)
 {
-    simulator = std::make_shared<BitmexSimulator>(intervals, features);
+    simulator = std::make_shared<ES_Bitmex>();
 }
 
-sptrRL_State PD_Simulator::reset(int idx_episode, bool validation, double training_progress)
+sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 {
-    auto state = simulator->reset(idx_episode, validation, training_progress);
+    auto state = simulator->reset();
 
     auto tick = Tick{};
     events = std::make_shared<PD_Events>(tick);

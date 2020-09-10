@@ -1,12 +1,12 @@
 #include "pch.h"
 
-#include "BitmexSimulator.h"
+#include "ES_Bitmex.h"
 #include "BitLib/Utils.h"
 
 
-BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features) :
-    intervals(intervals),
-    features(features),
+ES_Bitmex::ES_Bitmex(void) :
+    //intervals(intervals),
+    //features(features),
     intervals_idx_start(0), intervals_idx_end(0),
     intervals_idx(0),
     wallet(0.0), pos_price(0.0), pos_contracts(0.0),
@@ -18,7 +18,7 @@ BitmexSimulator::BitmexSimulator(sptrIntervals intervals, torch::Tensor features
 
 }
 
-sptrRL_State BitmexSimulator::reset(int idx_episode, bool validation, double _training_progress)
+sptrRL_State ES_Bitmex::reset(int idx_episode, bool validation, double _training_progress)
 {
     training_progress = _training_progress;
 
@@ -369,7 +369,7 @@ bool BitmexSimulator::is_liquidated(void)
     return false;
 }
 
-BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &filename, bool enabled) : enabled(enabled)
+ES_BitmexLogger::ES_BitmexLogger(const std::string &filename, bool enabled) : enabled(enabled)
 {
     if (enabled) {
         file.open(std::string{ BitSim::tmp_path } + "\\log\\" + filename);
@@ -389,7 +389,7 @@ BitmexSimulatorLogger::BitmexSimulatorLogger(const std::string &filename, bool e
     }
 }
 
-void BitmexSimulatorLogger::log(
+void ES_BitmexLogger::log(
     double last_price, 
     double wallet, 
     double upnl,
