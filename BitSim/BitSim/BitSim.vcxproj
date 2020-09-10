@@ -191,7 +191,6 @@
     <ClCompile Include="BitmexTrader.cpp" />
     <ClCompile Include="BitmexWebSocket.cpp" />
     <ClCompile Include="BitSim.cpp" />
-    <ClCompile Include="ES_Simulator.cpp" />
     <ClCompile Include="FE_DataLoader.cpp" />
     <ClCompile Include="FE_Inference.cpp" />
     <ClCompile Include="FE_Model.cpp" />
@@ -233,7 +232,6 @@
     <ClInclude Include="ES_Bitmex.h" />
     <ClInclude Include="BitmexTrader.h" />
     <ClInclude Include="BitmexWebSocket.h" />
-    <ClInclude Include="ES_Simulator.h" />
     <ClInclude Include="FE_DataLoader.h" />
     <ClInclude Include="FE_Inference.h" />
     <ClInclude Include="FE_Model.h" />

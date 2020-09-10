@@ -3,11 +3,16 @@
 
 #include "RL_State.h"
 #include "RL_Action.h"
-#include "ES_Simulator.h"
 #include "BitLib/Intervals.h"
 
 
-class ES_Bitmex : ES_Simulator
+struct ES_State
+{
+public:
+
+};
+
+class ES_Bitmex
 {
 public:
     ES_Bitmex(void);

@@ -168,9 +168,6 @@
     <ClCompile Include="ES_Bitmex.cpp">
       <Filter>Source Files\ExchangeSimulator</Filter>
     </ClCompile>
-    <ClCompile Include="ES_Simulator.cpp">
-      <Filter>Source Files\ExchangeSimulator</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FE_DataLoader.h">
@@ -279,9 +276,6 @@
       <Filter>Header Files\BitLib</Filter>
     </ClInclude>
     <ClInclude Include="ES_Bitmex.h">
-      <Filter>Header Files\ExchangeSimulator</Filter>
-    </ClInclude>
-    <ClInclude Include="ES_Simulator.h">
       <Filter>Header Files\ExchangeSimulator</Filter>
     </ClInclude>
   </ItemGroup>
