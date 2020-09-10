@@ -90,8 +90,8 @@ int main()
         evaluator.evaluate();
     }
     else if (command == "train_rl") {
-        auto bitmex_agg_ticks = AggTicks{};
-        bitmex_agg_ticks.load(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
+        auto bitmex_agg_ticks = sptrAggTicks{};
+        bitmex_agg_ticks->load(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
 
         auto simulator = std::make_shared<PD_Simulator>(bitmex_agg_ticks);
 
@@ -109,6 +109,7 @@ int main()
         //rl_trader.train();
     }
     else if (command == "evaluate_rl") {
+        /*
         auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);
         auto features = Utils::load_tensor(BitSim::tmp_path, "features.tensor");
@@ -123,6 +124,7 @@ int main()
         const auto timestamp_start = date::sys_days(date::year{ 2020 } / 4 / 1) + 0h + 0min + 0s;
         const auto timestamp_end = date::sys_days(date::year{ 2020 } / 4 / 1) + 2h + 0min + 0s;
         rl_trader.evaluate(idx_episode, timestamp_start, timestamp_end);
+        */
     }
     else if (command == "trade_live") {
         auto live_data = std::make_shared<LiveData>();

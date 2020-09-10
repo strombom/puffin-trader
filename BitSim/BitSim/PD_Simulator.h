@@ -19,7 +19,7 @@ public:
 
 private:
     sptrPD_Events events;
-    sptrES_Simulator simulator;
+    sptrES_Bitmex simulator;
 
     sptrPD_Event find_next_event(void);
 };

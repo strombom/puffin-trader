@@ -22,9 +22,9 @@ RL_Trader::RL_Trader(sptrPD_Simulator simulator) :
 
 void RL_Trader::run_episode(int idx_episode, bool validation)
 {
-    const auto training_progress = (float)idx_episode / BitSim::Trader::n_episodes;
+    //const auto training_progress = (float)idx_episode / BitSim::Trader::n_episodes;
 
-    auto state = simulator->reset(idx_episode, validation, training_progress);
+    auto state = simulator->reset(idx_episode, validation);
     step_episode = 0;
     auto episode_reward = 0.0;
 
@@ -72,7 +72,7 @@ void RL_Trader::train(void)
 
 void RL_Trader::evaluate(int idx_episode, time_point_ms start, time_point_ms end)
 {
-    auto state = simulator->reset(idx_episode, true, 1.0);
+    auto state = simulator->reset(idx_episode, true);
     step_episode = 0;
     auto episode_reward = 0.0;
     const auto max_steps = (int)(((const std::chrono::milliseconds)(end - start)).count() / 10000);

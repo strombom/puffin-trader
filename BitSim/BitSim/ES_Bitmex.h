@@ -7,6 +7,21 @@
 #include "BitLib/Intervals.h"
 
 
+class ES_Bitmex : ES_Simulator
+{
+public:
+    ES_Bitmex(void);
+
+    void reset(void);
+
+    ES_State market_order(double price, double volume);
+
+};
+
+using sptrES_Bitmex = std::shared_ptr<ES_Bitmex>;
+
+
+/*
 class ES_BitmexLogger
 {
 public:
@@ -38,7 +53,7 @@ class ES_Bitmex
 public:
     ES_Bitmex(void);
     
-    void reset(int idx_episode, bool validation, double training_progress);
+    void reset(void);
 
     void market_order(double contracts);
     void limit_order(double contracts, double price);
@@ -80,3 +95,5 @@ private:
 };
 
 using sptrES_Bitmex = std::shared_ptr<ES_Bitmex>;
+
+*/

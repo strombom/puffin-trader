@@ -28,12 +28,6 @@
     <Filter Include="Header Files\ReinforcementLearning">
       <UniqueIdentifier>{5da6b7ff-6da3-4759-a671-ba03a74b8a9b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Simulator">
-      <UniqueIdentifier>{9337abb5-f562-48b1-9d30-2d74035128cb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Simulator">
-      <UniqueIdentifier>{a180a3d8-e32f-4824-8b32-5a87d1876a5a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Trader">
       <UniqueIdentifier>{2f9e9e0d-23cb-419f-b439-c389af5d0bfc}</UniqueIdentifier>
     </Filter>
@@ -60,6 +54,12 @@
     </Filter>
     <Filter Include="Source Files\MechanicalTrader">
       <UniqueIdentifier>{eb20e41d-598f-4b63-9946-e77d2dda1f6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ExchangeSimulator">
+      <UniqueIdentifier>{9337abb5-f562-48b1-9d30-2d74035128cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ExchangeSimulator">
+      <UniqueIdentifier>{a180a3d8-e32f-4824-8b32-5a87d1876a5a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -101,9 +101,6 @@
     </ClCompile>
     <ClCompile Include="RL_Algorithm.cpp">
       <Filter>Source Files\ReinforcementLearning</Filter>
-    </ClCompile>
-    <ClCompile Include="BitmexSimulator.cpp">
-      <Filter>Source Files\Simulator</Filter>
     </ClCompile>
     <ClCompile Include="BitmexTrader.cpp">
       <Filter>Source Files\Trader</Filter>
@@ -168,6 +165,12 @@
     <ClCompile Include="BitLib\AggTicks.cpp">
       <Filter>Source Files\BitLib</Filter>
     </ClCompile>
+    <ClCompile Include="ES_Bitmex.cpp">
+      <Filter>Source Files\ExchangeSimulator</Filter>
+    </ClCompile>
+    <ClCompile Include="ES_Simulator.cpp">
+      <Filter>Source Files\ExchangeSimulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FE_DataLoader.h">
@@ -205,9 +208,6 @@
     </ClInclude>
     <ClInclude Include="RL_Algorithm.h">
       <Filter>Header Files\ReinforcementLearning</Filter>
-    </ClInclude>
-    <ClInclude Include="BitmexSimulator.h">
-      <Filter>Header Files\Simulator</Filter>
     </ClInclude>
     <ClInclude Include="BitmexTrader.h">
       <Filter>Header Files\Trader</Filter>
@@ -277,6 +277,12 @@
     </ClInclude>
     <ClInclude Include="BitLib\AggTicks.h">
       <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="ES_Bitmex.h">
+      <Filter>Header Files\ExchangeSimulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ES_Simulator.h">
+      <Filter>Header Files\ExchangeSimulator</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,6 +4,23 @@
 #include "BitLib/Utils.h"
 
 
+ES_Bitmex::ES_Bitmex(void)
+{
+
+}
+
+void ES_Bitmex::reset(void)
+{
+
+}
+
+ES_State ES_Bitmex::market_order(double price, double volume)
+{
+    auto s = ES_State{};
+    return s;
+}
+
+/*
 ES_Bitmex::ES_Bitmex(void) :
     //intervals(intervals),
     //features(features),
@@ -108,19 +125,17 @@ sptrRL_State BitmexSimulator::step(sptrRL_Action action)
     //if (!action->idle) {
     //}
 
-    /*
-    auto order_contracts = 0.0;
-    if (!action->idle) {
-        order_contracts = calculate_order_size(action->leverage);
-
-        if (action->market_order) {
-            market_order(order_contracts);
-        }
-        else if (action->limit_order) {
-            limit_order(order_contracts, prev_interval.last_price);
-        }
-    }
-    */
+    //auto order_contracts = 0.0;
+    //if (!action->idle) {
+    //    order_contracts = calculate_order_size(action->leverage);
+    //
+    //    if (action->market_order) {
+    //        market_order(order_contracts);
+    //    }
+    //    else if (action->limit_order) {
+    //        limit_order(order_contracts, prev_interval.last_price);
+    //    }
+    //}
 
     //order_contracts = calculate_order_size(action->leverage);
     //limit_order(order_contracts, prev_interval.last_price);
@@ -226,36 +241,34 @@ double BitmexSimulator::calculate_order_size(double leverage)
     return order_contracts;
 
 
-    /*
-    auto buy_size = 0.0;
-    auto sell_size = 0.0;
+    //auto buy_size = 0.0;
+    //auto sell_size = 0.0;
 
-    const auto max_margin = BitSim::BitMex::max_leverage * wallet;
-    const auto available_margin = max_margin - position_margin;
-    const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
+    //const auto max_margin = BitSim::BitMex::max_leverage * wallet;
+    //const auto available_margin = max_margin - position_margin;
+    //const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
 
-    auto max_buy_contracts = max_margin * mark_price;
-    auto max_sell_contracts = max_margin * mark_price;
+    //auto max_buy_contracts = max_margin * mark_price;
+    //auto max_sell_contracts = max_margin * mark_price;
 
-    if (pos_contracts > 0.0) {
-        max_buy_contracts = std::max(0.0, available_margin * mark_price);
-        max_sell_contracts = std::max(0.0, max_contracts + pos_contracts);
-    }
-    else if (pos_contracts < 0.0) {
-        max_buy_contracts = std::max(0.0, max_contracts - pos_contracts);
-        max_sell_contracts = std::max(0.0, available_margin * mark_price);
-    }
+    //if (pos_contracts > 0.0) {
+    //    max_buy_contracts = std::max(0.0, available_margin * mark_price);
+    //    max_sell_contracts = std::max(0.0, max_contracts + pos_contracts);
+    //}
+    //else if (pos_contracts < 0.0) {
+    //    max_buy_contracts = std::max(0.0, max_contracts - pos_contracts);
+    //    max_sell_contracts = std::max(0.0, available_margin * mark_price);
+    //}
 
-    buy_size = std::max(0.0, buy_size - sell_size);
-    sell_size = std::max(0.0, sell_size - buy_size);
-    const auto buy_fraction = std::max(0.0, (buy_size - BitSim::BitMex::order_hysteresis) / (1.0 - BitSim::BitMex::order_hysteresis));
-    const auto sell_fraction = std::max(0.0, (sell_size - BitSim::BitMex::order_hysteresis) / (1.0 - BitSim::BitMex::order_hysteresis));
+    //buy_size = std::max(0.0, buy_size - sell_size);
+    //sell_size = std::max(0.0, sell_size - buy_size);
+    //const auto buy_fraction = std::max(0.0, (buy_size - BitSim::BitMex::order_hysteresis) / (1.0 - BitSim::BitMex::order_hysteresis));
+    //const auto sell_fraction = std::max(0.0, (sell_size - BitSim::BitMex::order_hysteresis) / (1.0 - BitSim::BitMex::order_hysteresis));
 
-    const auto buy_contracts = std::min(max_buy_contracts, max_contracts * buy_fraction);
-    const auto sell_contracts = std::min(max_sell_contracts, max_contracts * sell_fraction);
+    //const auto buy_contracts = std::min(max_buy_contracts, max_contracts * buy_fraction);
+    //const auto sell_contracts = std::min(max_sell_contracts, max_contracts * sell_fraction);
 
-    return std::make_tuple(buy_contracts, sell_contracts);
-    */
+    //return std::make_tuple(buy_contracts, sell_contracts);
 }
 
 void BitmexSimulator::market_order(double contracts)
@@ -421,3 +434,4 @@ void ES_BitmexLogger::log(
             //<< order_market << "\n";
     }
 }
+*/
