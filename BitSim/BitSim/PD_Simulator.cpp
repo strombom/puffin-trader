@@ -6,18 +6,21 @@ PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks)
 {
     simulator = std::make_shared<ES_Bitmex>();
 
-    // Find last valid agg tick
-    const auto last_valid_timestamp = agg_ticks->rows.back().timestamp - BitSim::Trader::episode_length;
-    last_valid_agg_ticks_start_idx = agg_ticks->rows.size() - 1;
-    while (last_valid_agg_ticks_start_idx > 0) {
-        if (agg_ticks->rows[last_valid_agg_ticks_start_idx].timestamp >= last_valid_timestamp) {
-            last_valid_agg_ticks_start_idx--;
-        }
-        else {
-            break;
-        }
-    }
+    const auto validation_end_timestamp = agg_ticks->rows.back().timestamp - BitSim::Trader::episode_length;
+    const auto training_end_timestamp = agg_ticks->rows.front().timestamp + (validation_end_timestamp - agg_ticks->rows.front().timestamp) * 4 / 5;
 
+    training_start_idx = 0;
+    training_end_idx = 0;
+    while (training_end_idx < agg_ticks->rows.size() && agg_ticks->rows[training_end_idx].timestamp < training_end_timestamp)
+    {
+        training_end_idx++;
+    }
+    validation_start_idx = training_end_idx + 1;
+    validation_end_idx = validation_start_idx;
+    while (validation_end_idx < agg_ticks->rows.size() && agg_ticks->rows[validation_end_idx].timestamp < validation_end_timestamp)
+    {
+        validation_end_idx++;
+    }
 }
 
 sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
@@ -28,8 +31,15 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
     //events = std::make_shared<PD_Events>(tick);
 
 
-    auto agg_ticks_idx_start = 0;
-    auto agg_ticks_idx_end = 0;
+    //agg_ticks_idx_start;
+    //agg_ticks_idx_end;
+    /*
+    const auto training_start_idx = BitSim::FeatureEncoder::observation_length - 1;
+    const auto validation_end_idx = (int)intervals->rows.size() - episode_length;
+
+    const auto training_end_idx = (int)((validation_end_idx - training_start_idx) * 4.0 / 5.0) - 1;
+    const auto validation_start_idx = training_end_idx + 1;
+    */
 
 
     auto t = torch::Tensor{};

@@ -23,7 +23,14 @@ private:
 
     sptrPD_Event find_next_event(void);
 
-    size_t last_valid_agg_ticks_start_idx;
+    size_t training_start_idx;
+    size_t training_end_idx;
+    size_t validation_start_idx;
+    size_t validation_end_idx;
+
+    size_t agg_ticks_idx_start;
+    size_t agg_ticks_idx_end;
+
 
 };
 
