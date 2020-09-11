@@ -22,6 +22,9 @@ private:
     sptrES_Bitmex simulator;
 
     sptrPD_Event find_next_event(void);
+
+    size_t last_valid_agg_ticks_start_idx;
+
 };
 
 using sptrPD_Simulator = std::shared_ptr<PD_Simulator>;
