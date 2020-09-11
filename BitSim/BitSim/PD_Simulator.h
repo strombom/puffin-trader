@@ -22,14 +22,15 @@ private:
     sptrES_Bitmex exchange;
     sptrAggTicks agg_ticks;
 
-    sptrPD_Event find_next_event(void);
-
     time_point_ms training_start;
     time_point_ms training_end;
     time_point_ms validation_start;
     time_point_ms validation_end;
 
     size_t agg_ticks_idx;
+
+    sptrPD_Event find_next_event(void);
+    torch::Tensor make_features(void);
 };
 
 using sptrPD_Simulator = std::shared_ptr<PD_Simulator>;

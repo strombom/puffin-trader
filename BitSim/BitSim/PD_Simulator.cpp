@@ -13,22 +13,6 @@ PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks) :
     training_end = agg_ticks->rows.front().timestamp + (agg_ticks->rows.back().timestamp - agg_ticks->rows.front().timestamp) * 4 / 5;
     validation_start = training_end;
     validation_end = agg_ticks->rows.back().timestamp;
-    
-
-    /*
-    training_start_idx = 0;
-    training_end_idx = 0;
-    while (training_end_idx < agg_ticks->rows.size() && agg_ticks->rows[training_end_idx].timestamp < training_end_timestamp)
-    {
-        training_end_idx++;
-    }
-    validation_start_idx = training_end_idx + 1;
-    validation_end_idx = validation_start_idx;
-    while (validation_end_idx < agg_ticks->rows.size() && agg_ticks->rows[validation_end_idx].timestamp < validation_end_timestamp)
-    {
-        validation_end_idx++;
-    }
-    */
 }
 
 sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
@@ -51,33 +35,20 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 
     exchange->reset(agg_ticks->rows[agg_ticks_idx].low);
 
-    //std::cout << "ts " << DateTime::to_string(training_start_timestamp) << std::endl;
-    //std::cout << "te " << DateTime::to_string(training_end_timestamp) << std::endl;
-    //std::cout << "vs " << DateTime::to_string(validation_start_timestamp) << std::endl;
-    //std::cout << "ve " << DateTime::to_string(validation_end_timestamp) << std::endl;
-
-
-    //auto state = simulator->reset();
-
-    //auto tick = Tick{};
-    //events = std::make_shared<PD_Events>(tick);
-
-
-    //agg_ticks_idx_start;
-    //agg_ticks_idx_end;
-    /*
-    const auto training_start_idx = BitSim::FeatureEncoder::observation_length - 1;
-    const auto validation_end_idx = (int)intervals->rows.size() - episode_length;
-
-    const auto training_end_idx = (int)((validation_end_idx - training_start_idx) * 4.0 / 5.0) - 1;
-    const auto validation_start_idx = training_end_idx + 1;
-    */
-
-
-    auto t = torch::Tensor{};
-    auto state = std::make_shared<RL_State>(0.0, t, 0.0, 0.0, 0.0);
+    const auto reward = 0.0;
+    const auto features = make_features();
+    const auto leverage = 0.0;
+    const auto delta_price = 0.0;
+    const auto time_since_change = 0.0;
+    const auto state = std::make_shared<RL_State>(reward, features, leverage, delta_price, time_since_change);
 
     return state;
+}
+
+torch::Tensor PD_Simulator::make_features(void)
+{
+    auto features = torch::Tensor{};
+    return features;
 }
 
 sptrRL_State PD_Simulator::step(sptrRL_Action action)
