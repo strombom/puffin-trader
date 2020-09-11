@@ -24,7 +24,7 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
     else {
         timestamp_start = Utils::random(training_start, training_end - BitSim::Trader::episode_length);
     }
-    auto timestamp_end = timestamp_start + BitSim::Trader::episode_length;
+    episode_end = timestamp_start + BitSim::Trader::episode_length;
 
     // Find start index
     agg_ticks_idx = 0;
@@ -33,16 +33,19 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
         agg_ticks_idx++;
     }
 
-    exchange->reset(agg_ticks->rows[agg_ticks_idx].low);
+    const auto price = agg_ticks->rows[agg_ticks_idx].low;
+    orderbook_last_price = price;
+    exchange->reset(price);
+
+    time_since_leverage_change = 0;
 
     const auto reward = 0.0;
     const auto features = make_features();
     const auto leverage = 0.0;
     const auto delta_price = 0.0;
     const auto time_since_change = 0.0;
-    const auto state = std::make_shared<RL_State>(reward, features, leverage, delta_price, time_since_change);
 
-    return state;
+    return std::make_shared<RL_State>(reward, features, leverage, delta_price, time_since_change);
 }
 
 torch::Tensor PD_Simulator::make_features(void)
@@ -53,9 +56,41 @@ torch::Tensor PD_Simulator::make_features(void)
 
 sptrRL_State PD_Simulator::step(sptrRL_Action action)
 {
-    //auto state = simulator->step(action);
-    auto t = torch::Tensor{};
-    auto state = std::make_shared<RL_State>(0.0, t, 0.0, 0.0, 0.0);
+    const auto prev_agg_tick = agg_ticks->rows[agg_ticks_idx];
+
+    if (prev_agg_tick.high > orderbook_last_price + 0.5) {
+        orderbook_last_price = prev_agg_tick.high - 0.5;
+    }
+    else if (prev_agg_tick.low < orderbook_last_price) {
+        orderbook_last_price = prev_agg_tick.low;
+    }
+    const auto mark_price = orderbook_last_price;
+
+    const auto order_leverage = action->buy ? BitSim::BitMex::max_leverage : -BitSim::BitMex::max_leverage;
+    const auto position_leverage = exchange->get_leverage(orderbook_last_price);
+
+    if (order_leverage > 0 && position_leverage < 0 ||
+        order_leverage < 0 && position_leverage > 0) {
+        time_since_leverage_change = 0;
+        const auto order_contracts = exchange->calculate_order_size(order_leverage, mark_price);
+        exchange->market_order(order_contracts, mark_price);
+    }
+    else {
+        time_since_leverage_change += 1;
+    }
+    const auto time_since_change = std::log1p(time_since_leverage_change) / 5.0;
+
+    const auto reward = 0.0;
+    const auto features = make_features();
+    const auto leverage = 0.0;
+    const auto delta_price = 0.0;
+
+    auto state = std::make_shared<RL_State>(reward, features, leverage, delta_price, time_since_change);
+
+    ++agg_ticks_idx;
+    if (agg_ticks->rows[agg_ticks_idx].timestamp >= episode_end) {
+        state->set_done();
+    }
 
     return state;
 }

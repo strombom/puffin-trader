@@ -20,6 +20,8 @@ public:
     void reset(double price);
 
     ES_State market_order(double price, double volume);
+    double get_leverage(double price);
+    double calculate_order_size(double leverage, double mark_price);
 
 private:
     double wallet;
@@ -27,7 +29,8 @@ private:
     double pos_contracts;
     double start_value;
     double previous_value;
-    double orderbook_last_price;
+
+    std::tuple<double, double, double> calculate_position_leverage(double mark_price);
 };
 
 using sptrES_Bitmex = std::shared_ptr<ES_Bitmex>;

@@ -28,6 +28,10 @@ private:
     time_point_ms validation_end;
 
     size_t agg_ticks_idx;
+    time_point_ms episode_end;
+
+    double orderbook_last_price;
+    double time_since_leverage_change;
 
     sptrPD_Event find_next_event(void);
     torch::Tensor make_features(void);

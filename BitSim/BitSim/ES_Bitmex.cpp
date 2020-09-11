@@ -16,13 +16,53 @@ void ES_Bitmex::reset(double price)
     pos_contracts = 0.0;
     start_value = wallet * price;
     previous_value = start_value;
-    orderbook_last_price = start_value;
 }
 
 ES_State ES_Bitmex::market_order(double price, double volume)
 {
     auto s = ES_State{};
     return s;
+}
+
+double ES_Bitmex::get_leverage(double price)
+{
+    const auto [_position_margin, position_leverage, _upnl] = calculate_position_leverage(price);
+    return position_leverage;
+}
+
+std::tuple<double, double, double> ES_Bitmex::calculate_position_leverage(double mark_price)
+{
+    auto position_margin = 0.0;
+    auto position_leverage = 0.0;
+    auto upnl = 0.0;
+
+    if (pos_contracts != 0.0) {
+        const auto sign = pos_contracts / abs(pos_contracts);
+        const auto entry_value = std::abs(pos_contracts / pos_price);
+        const auto mark_value = std::abs(pos_contracts / mark_price);
+
+        upnl = sign * (entry_value - mark_value);
+        position_margin = std::max(0.0, std::abs(pos_contracts / pos_price) - upnl);
+        position_leverage = sign * position_margin / wallet;
+    }
+
+    return std::make_tuple(position_margin, position_leverage, upnl);
+}
+
+double ES_Bitmex::calculate_order_size(double leverage, double mark_price)
+{
+    if (wallet == 0.0) {
+        return 0.0;
+    }
+
+    const auto [position_margin, _position_leverage, upnl] = calculate_position_leverage(mark_price);
+
+    const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
+    const auto margin = wallet * std::clamp(leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
+    const auto contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
+
+    const auto order_contracts = contracts - pos_contracts;
+    return order_contracts;
 }
 
 /*
@@ -208,25 +248,6 @@ double BitmexSimulator::get_reward(void)
     //std::cout << std::fixed << "PNL(" << position_pnl << ")" << " value(" << value << ")" << " reward(" << reward << ")" << " previous_value(" << previous_value << ")" << " next_price(" << next_price << ")" << " pos_price(" << pos_price << ")" << std::endl;
 
     return reward;
-}
-
-std::tuple<double, double, double> BitmexSimulator::calculate_position_leverage(double mark_price)
-{
-    auto position_margin = 0.0;
-    auto position_leverage = 0.0;
-    auto upnl = 0.0;
-
-    if (pos_contracts != 0.0) {
-        const auto sign = pos_contracts / abs(pos_contracts);
-        const auto entry_value = std::abs(pos_contracts / pos_price);
-        const auto mark_value = std::abs(pos_contracts / mark_price);
-
-        upnl = sign * (entry_value - mark_value);
-        position_margin = std::max(0.0, std::abs(pos_contracts / pos_price) - upnl);
-        position_leverage = sign * position_margin / wallet;
-    }
-
-    return std::make_tuple(position_margin, position_leverage, upnl);
 }
 
 double BitmexSimulator::calculate_order_size(double leverage)
