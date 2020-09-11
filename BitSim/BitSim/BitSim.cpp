@@ -94,6 +94,8 @@ int main()
         bitmex_agg_ticks->load(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
 
         auto simulator = std::make_shared<PD_Simulator>(bitmex_agg_ticks);
+        auto rl_trader = RL_Trader{ simulator };
+        rl_trader.train();
 
         //auto observations = std::make_shared<FE_Observations>(BitSim::observations_path);
         //auto intervals = std::make_shared<Intervals>(BitSim::intervals_path);

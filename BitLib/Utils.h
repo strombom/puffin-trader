@@ -1,6 +1,8 @@
 #pragma once
 #include "pch.h"
 
+#include "DateTime.h"
+
 #include <random>
 #include <string>
 
@@ -14,6 +16,8 @@ public:
 
     static double random(double min, double max);
     static int random(int min, int max);
+    static size_t random(size_t min, size_t max);
+    static time_point_ms random(time_point_ms min, time_point_ms max);
     static double random_choice(std::vector<double> choices);
 
 private:

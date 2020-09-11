@@ -1,14 +1,21 @@
 #include "pch.h"
+
+#include "BitLib/Utils.h"
 #include "PD_Simulator.h"
 
 
-PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks)
+PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks) :
+    agg_ticks(agg_ticks)
 {
     simulator = std::make_shared<ES_Bitmex>();
 
-    const auto validation_end_timestamp = agg_ticks->rows.back().timestamp - BitSim::Trader::episode_length;
-    const auto training_end_timestamp = agg_ticks->rows.front().timestamp + (validation_end_timestamp - agg_ticks->rows.front().timestamp) * 4 / 5;
+    training_start = agg_ticks->rows.front().timestamp;
+    training_end = agg_ticks->rows.front().timestamp + (agg_ticks->rows.back().timestamp - agg_ticks->rows.front().timestamp) * 4 / 5;
+    validation_start = training_end;
+    validation_end = agg_ticks->rows.back().timestamp;
+    
 
+    /*
     training_start_idx = 0;
     training_end_idx = 0;
     while (training_end_idx < agg_ticks->rows.size() && agg_ticks->rows[training_end_idx].timestamp < training_end_timestamp)
@@ -21,10 +28,32 @@ PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks)
     {
         validation_end_idx++;
     }
+    */
 }
 
 sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 {
+    auto timestamp_start = agg_ticks->rows.front().timestamp;
+    if (validation) {
+        timestamp_start = Utils::random(validation_start, validation_end);
+    }
+    else {
+        timestamp_start = Utils::random(training_start, training_end);
+    }
+    auto timestamp_end = timestamp_start + BitSim::Trader::episode_length;
+
+    agg_ticks_idx = 0;
+    while (agg_ticks_idx < agg_ticks->rows.size() && agg_ticks->rows[agg_ticks_idx].timestamp < timestamp_start)
+    {
+        agg_ticks_idx++;
+    }
+
+    //std::cout << "ts " << DateTime::to_string(training_start_timestamp) << std::endl;
+    //std::cout << "te " << DateTime::to_string(training_end_timestamp) << std::endl;
+    //std::cout << "vs " << DateTime::to_string(validation_start_timestamp) << std::endl;
+    //std::cout << "ve " << DateTime::to_string(validation_end_timestamp) << std::endl;
+
+
     //auto state = simulator->reset();
 
     //auto tick = Tick{};

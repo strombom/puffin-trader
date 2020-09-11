@@ -20,18 +20,16 @@ public:
 private:
     sptrPD_Events events;
     sptrES_Bitmex simulator;
+    sptrAggTicks agg_ticks;
 
     sptrPD_Event find_next_event(void);
 
-    size_t training_start_idx;
-    size_t training_end_idx;
-    size_t validation_start_idx;
-    size_t validation_end_idx;
+    time_point_ms training_start;
+    time_point_ms training_end;
+    time_point_ms validation_start;
+    time_point_ms validation_end;
 
-    size_t agg_ticks_idx_start;
-    size_t agg_ticks_idx_end;
-
-
+    size_t agg_ticks_idx;
 };
 
 using sptrPD_Simulator = std::shared_ptr<PD_Simulator>;

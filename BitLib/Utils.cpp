@@ -30,6 +30,19 @@ int Utils::random(int min, int max)
     return std::uniform_int_distribution<int>{min, max}(random_generator);
 }
 
+size_t Utils::random(size_t min, size_t max)
+{
+    static auto random_generator = std::mt19937{ std::random_device{}() };
+    return std::uniform_int_distribution<size_t>{min, max}(random_generator);
+}
+
+time_point_ms Utils::random(time_point_ms min, time_point_ms max)
+{
+    static auto random_generator = std::mt19937{ std::random_device{}() };
+    const auto milliseconds_since_epoch = std::uniform_int_distribution<long long>{ min.time_since_epoch().count(), max.time_since_epoch().count() }(random_generator);
+    return time_point_ms{ std::chrono::milliseconds{ milliseconds_since_epoch } };
+}
+
 double Utils::random_choice(std::vector<double> choices)
 {
     static auto random_generator = std::mt19937{ std::random_device{}() };
