@@ -7,7 +7,7 @@
 PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks) :
     agg_ticks(agg_ticks)
 {
-    simulator = std::make_shared<ES_Bitmex>();
+    exchange = std::make_shared<ES_Bitmex>();
 
     training_start = agg_ticks->rows.front().timestamp;
     training_end = agg_ticks->rows.front().timestamp + (agg_ticks->rows.back().timestamp - agg_ticks->rows.front().timestamp) * 4 / 5;
@@ -48,6 +48,8 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
     {
         agg_ticks_idx++;
     }
+
+    exchange->reset(agg_ticks->rows[agg_ticks_idx].low);
 
     //std::cout << "ts " << DateTime::to_string(training_start_timestamp) << std::endl;
     //std::cout << "te " << DateTime::to_string(training_end_timestamp) << std::endl;

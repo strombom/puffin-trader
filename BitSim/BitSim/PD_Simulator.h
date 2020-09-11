@@ -19,7 +19,7 @@ public:
 
 private:
     sptrPD_Events events;
-    sptrES_Bitmex simulator;
+    sptrES_Bitmex exchange;
     sptrAggTicks agg_ticks;
 
     sptrPD_Event find_next_event(void);

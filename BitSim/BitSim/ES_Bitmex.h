@@ -17,10 +17,17 @@ class ES_Bitmex
 public:
     ES_Bitmex(void);
 
-    void reset(void);
+    void reset(double price);
 
     ES_State market_order(double price, double volume);
 
+private:
+    double wallet;
+    double pos_price;
+    double pos_contracts;
+    double start_value;
+    double previous_value;
+    double orderbook_last_price;
 };
 
 using sptrES_Bitmex = std::shared_ptr<ES_Bitmex>;

@@ -9,9 +9,14 @@ ES_Bitmex::ES_Bitmex(void)
 
 }
 
-void ES_Bitmex::reset(void)
+void ES_Bitmex::reset(double price)
 {
-
+    wallet = 1.0;
+    pos_price = 0.0;
+    pos_contracts = 0.0;
+    start_value = wallet * price;
+    previous_value = start_value;
+    orderbook_last_price = start_value;
 }
 
 ES_State ES_Bitmex::market_order(double price, double volume)
