@@ -90,7 +90,7 @@ int main()
         evaluator.evaluate();
     }
     else if (command == "train_rl") {
-        auto bitmex_agg_ticks = sptrAggTicks{};
+        auto bitmex_agg_ticks = std::make_shared<AggTicks>();
         bitmex_agg_ticks->load(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
 
         auto simulator = std::make_shared<PD_Simulator>(bitmex_agg_ticks);
