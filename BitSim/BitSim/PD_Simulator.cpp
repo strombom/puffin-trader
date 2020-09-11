@@ -35,13 +35,14 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 {
     auto timestamp_start = agg_ticks->rows.front().timestamp;
     if (validation) {
-        timestamp_start = Utils::random(validation_start, validation_end);
+        timestamp_start = Utils::random(validation_start, validation_end - BitSim::Trader::episode_length);
     }
     else {
-        timestamp_start = Utils::random(training_start, training_end);
+        timestamp_start = Utils::random(training_start, training_end - BitSim::Trader::episode_length);
     }
     auto timestamp_end = timestamp_start + BitSim::Trader::episode_length;
 
+    // Find start index
     agg_ticks_idx = 0;
     while (agg_ticks_idx < agg_ticks->rows.size() && agg_ticks->rows[agg_ticks_idx].timestamp < timestamp_start)
     {
