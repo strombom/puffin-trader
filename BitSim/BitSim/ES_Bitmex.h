@@ -21,6 +21,7 @@ public:
 
     ES_State market_order(double price, double volume);
     double get_leverage(double price);
+    double get_position_price(void) const;
     double calculate_order_size(double leverage, double mark_price);
 
 private:

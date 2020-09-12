@@ -79,11 +79,12 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
         time_since_leverage_change += 1;
     }
     const auto time_since_change = std::log1p(time_since_leverage_change) / 5.0;
+    auto delta_price = exchange->get_position_price();
+    delta_price = (delta_price < 0 ? -1.0 : 1.0) * std::log1p(std::abs(delta_price)) / 3.0;
 
     const auto reward = 0.0;
     const auto features = make_features();
     const auto leverage = 0.0;
-    const auto delta_price = 0.0;
 
     auto state = std::make_shared<RL_State>(reward, features, leverage, delta_price, time_since_change);
 

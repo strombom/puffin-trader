@@ -30,6 +30,11 @@ double ES_Bitmex::get_leverage(double price)
     return position_leverage;
 }
 
+double ES_Bitmex::get_position_price(void) const
+{
+    return pos_price;
+}
+
 std::tuple<double, double, double> ES_Bitmex::calculate_position_leverage(double mark_price)
 {
     auto position_margin = 0.0;
