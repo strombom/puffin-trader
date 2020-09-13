@@ -90,12 +90,12 @@ void BitmexTrader::trader_worker(void)
             }
         }
         else if (trader_state == TraderState::bitbot_action) {
-            //const auto [place_order, action_leverage] = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
-            const auto buy = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
+            const auto [direction_long, stop_loss] = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
+            //const auto buy = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
             //if (place_order) {
             //if (buy) {
                 //desired_leverage = action_leverage;
-            if (buy) {
+            if (direction_long) {
                 desired_leverage = BitSim::BitMex::max_leverage;
             }
             else {

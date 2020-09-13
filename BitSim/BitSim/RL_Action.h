@@ -1,18 +1,24 @@
 #pragma once
 #include "pch.h"
 
+enum RL_Action_Direction
+{
+    dir_long,
+    dir_short
+};
 
 class RL_Action
 {
 public:
     RL_Action(void) :
-        buy(false),
-        stop_loss(0.0),
-        min_profit(0.0) {}
+        direction(RL_Action_Direction::dir_long),
+        stop_loss(0.0)
+    {}
 
-    RL_Action(torch::Tensor disc_action) :
-        buy(disc_action[0].item().toLong() == 0) {    
-    }
+    RL_Action(torch::Tensor disc_action, torch::Tensor cont_action) :
+        direction(disc_action[0].item().to<int>() == 0 ? RL_Action_Direction::dir_long : RL_Action_Direction::dir_short),
+        stop_loss(cont_action[0].item().to<double>())
+    {}
 
     //RL_Action(torch::Tensor cont_action, torch::Tensor disc_action) :
         //leverage(cont_action[0].item().to<double>()),
@@ -20,10 +26,10 @@ public:
         //limit_order(disc_action[0].item().toLong() == 1),
         //market_order(disc_action[0].item().toLong() == 2) {}
 
-    RL_Action(bool buy, double stop_loss, double min_profit) :
-        buy(buy),
-        stop_loss(stop_loss),
-        min_profit(min_profit) {}
+    RL_Action(RL_Action_Direction direction, double stop_loss) :
+        direction(direction),
+        stop_loss(stop_loss)
+    {}
 
     //RL_Action(double leverage, bool idle, bool limit_order, bool market_order) :
     //    leverage(leverage),
@@ -32,12 +38,12 @@ public:
     //    market_order(market_order) {}
 
     static std::shared_ptr<RL_Action> random(void);
-    //torch::Tensor to_tensor_cont(void) const;
+    torch::Tensor to_tensor_cont(void) const;
     torch::Tensor to_tensor_disc(void) const;
 
-    bool buy;
+    RL_Action_Direction direction;
     double stop_loss;
-    double min_profit;
+    //double min_profit;
 
     //double leverage;
     //bool idle;

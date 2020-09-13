@@ -73,6 +73,31 @@ bool PD_OrderBook::update(time_point_ms timestamp, double price, PD_Direction di
     return false;
 }
 
+PD_Events::PD_Events(sptrAggTicks agg_ticks)
+{
+    rewind();
+}
+
+const PD_Event* PD_Events::get_event(void) const
+{
+    return &events[event_idx];
+}
+
+void PD_Events::rewind(void)
+{
+    event_idx = 0;
+}
+
+bool PD_Events::step(void)
+{
+    ++event_idx;
+    if (event_idx >= events.size()) {
+        return false;
+    }
+    return true;
+}
+
+/*
 PD_Events::PD_Events(const Tick& first_tick) :
     order_book(first_tick.timestamp, first_tick.price),
     last_direction(PD_Direction::up)
@@ -201,3 +226,4 @@ void PD_Events::plot_events(sptrIntervals intervals)
     }
     obb_file.close();
 }
+*/

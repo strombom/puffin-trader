@@ -33,8 +33,8 @@ private:
     double orderbook_last_price;
     double time_since_leverage_change;
 
-    sptrPD_Event find_next_event(void);
     torch::Tensor make_features(void);
+    double calculate_reward(void);
 };
 
 using sptrPD_Simulator = std::shared_ptr<PD_Simulator>;

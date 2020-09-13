@@ -38,12 +38,14 @@ int main()
         bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
     }
     else if (command == "find_direction_changes") {
+        /*
         auto ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
         auto pd_events = PD_Events{ ticks };
 
         auto bitbase_client = BitBaseClient();
         auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
         pd_events.plot_events(bitmex_intervals);
+        */
     }
     else if (command == "get_intervals") {
         auto bitbase_client = BitBaseClient();
@@ -92,6 +94,7 @@ int main()
     else if (command == "train_rl") {
         auto bitmex_agg_ticks = std::make_shared<AggTicks>();
         bitmex_agg_ticks->load(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
+        //auto direction_changes = std::make_shared<PD_DirectionChanges>(bitmex_agg_ticks);
 
         auto simulator = std::make_shared<PD_Simulator>(bitmex_agg_ticks);
         auto rl_trader = RL_Trader{ simulator };
