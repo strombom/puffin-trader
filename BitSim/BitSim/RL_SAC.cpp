@@ -239,13 +239,13 @@ std::array<double, 6> RL_SAC::update_model(void)
         const auto next_q1_target = target_q1->forward(next_states, next_cont_actions);
         const auto next_q2_target = target_q2->forward(next_states, next_cont_actions);
 
-        //auto next_q_target_hybrid = (next_probs * (torch::min(next_q1_target, next_q2_target) - alpha * next_log_probs));
-        //auto next_q_target_split = next_q_target_hybrid.split_with_sizes({ BitSim::Trader::action_dim_continuous, BitSim::Trader::action_dim_discrete }, 1);
-        //auto next_q_target_cont = next_q_target_split.at(0);
-        //auto next_q_target_disc = next_q_target_split.at(1).sum(1).unsqueeze(-1);
-        //auto next_q_target = torch::cat({ next_q_target_cont, next_q_target_disc }, 1);        
+        auto next_q_target_hybrid = (next_probs * (torch::min(next_q1_target, next_q2_target) - alpha * next_log_probs));
+        auto next_q_target_split = next_q_target_hybrid.split_with_sizes({ BitSim::Trader::action_dim_continuous, BitSim::Trader::action_dim_discrete }, 1);
+        auto next_q_target_cont = next_q_target_split.at(0);
+        auto next_q_target_disc = next_q_target_split.at(1).sum(1).unsqueeze(-1);
+        auto next_q_target = torch::cat({ next_q_target_cont, next_q_target_disc }, 1);        
 
-        auto next_q_target = (next_probs * (torch::min(next_q1_target, next_q2_target) - alpha * next_log_probs));
+        //auto next_q_target = (next_probs * (torch::min(next_q1_target, next_q2_target) - alpha * next_log_probs));
         //std::cout << "next_q_target: " << next_q_target << std::endl;
         next_q_target = next_q_target.sum(1).unsqueeze(-1);
 
