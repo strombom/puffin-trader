@@ -10,15 +10,15 @@ PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks) :
     exchange = std::make_shared<ES_Bitmex>();
     events = std::make_shared<PD_Events>(agg_ticks);
 
-    training_start = agg_ticks->rows.front().timestamp;
-    training_end = agg_ticks->rows.front().timestamp + (agg_ticks->rows.back().timestamp - agg_ticks->rows.front().timestamp) * 4 / 5;
+    training_start = agg_ticks->agg_ticks.front().timestamp;
+    training_end = agg_ticks->agg_ticks.front().timestamp + (agg_ticks->agg_ticks.back().timestamp - agg_ticks->agg_ticks.front().timestamp) * 4 / 5;
     validation_start = training_end;
-    validation_end = agg_ticks->rows.back().timestamp;
+    validation_end = agg_ticks->agg_ticks.back().timestamp;
 }
 
 sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 {
-    auto timestamp_start = agg_ticks->rows.front().timestamp;
+    auto timestamp_start = agg_ticks->agg_ticks.front().timestamp;
     if (validation) {
         timestamp_start = Utils::random(validation_start, validation_end - BitSim::Trader::episode_length);
     }
@@ -29,15 +29,16 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 
     // Find start index
     agg_ticks_idx = 0;
-    while (agg_ticks_idx < agg_ticks->rows.size() && agg_ticks->rows[agg_ticks_idx].timestamp < timestamp_start)
+    while (agg_ticks_idx < agg_ticks->agg_ticks.size() && agg_ticks->agg_ticks[agg_ticks_idx].timestamp < timestamp_start)
     {
         agg_ticks_idx++;
     }
 
-    const auto price = agg_ticks->rows[agg_ticks_idx].low;
+    const auto price = agg_ticks->agg_ticks[agg_ticks_idx].low;
     orderbook_last_price = price;
     exchange->reset(price);
-    events->rewind();
+    pd_events_idx = BitSim::Trader::pd_events_count;
+    stop_loss = 1.0;
 
     time_since_leverage_change = 0;
 
@@ -52,8 +53,10 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 
 sptrRL_State PD_Simulator::step(sptrRL_Action action)
 {
-    const auto previous_event = events->get_event();
-    const auto previous_agg_tick = &agg_ticks->rows[previous_event->agg_tick_idx];
+    const auto previous_event = &events->events[pd_events_idx];
+    const auto previous_agg_tick = &agg_ticks->agg_ticks[previous_event->agg_tick_idx];
+
+
 
     // Stop loss?
 
@@ -92,7 +95,7 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
     //    state->set_done();
     //}
 
-    if (!events->step()) {
+    if (pd_events_idx >= agg_ticks->agg_ticks.size()) {
         state->set_done();
     }
 

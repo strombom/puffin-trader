@@ -58,9 +58,7 @@ class PD_Events
 public:
     PD_Events(sptrAggTicks agg_ticks);
 
-    void rewind(void);
-    bool step(void);
-    const PD_Event* get_event(void) const;
+    std::vector<PD_Event> events;
 
     /*
     PD_Events(const Tick& first_tick);
@@ -79,7 +77,6 @@ private:
     //PD_Direction last_direction;
     //PD_OrderBook order_book;
 
-    std::vector<PD_Event> events;
 
     size_t event_idx;
 
