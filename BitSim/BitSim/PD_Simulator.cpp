@@ -37,7 +37,7 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
     const auto price = agg_ticks->agg_ticks[agg_ticks_idx].low;
     orderbook_last_price = price;
     exchange->reset(price);
-    pd_events_idx = BitSim::Trader::pd_events_count;
+    pd_events_idx = BitSim::Trader::feature_events_count;
     stop_loss = 1.0;
 
     time_since_leverage_change = 0;
@@ -109,7 +109,29 @@ time_point_ms PD_Simulator::get_start_timestamp(void)
 
 torch::Tensor PD_Simulator::make_features(void)
 {
-    auto features = torch::Tensor{};
+    constexpr auto features_size = 2 + 2 * BitSim::Trader::feature_events_count;
+    auto features = torch::empty({ 1, features_size });
+    auto features_access = features.accessor<float, 2>();
+    
+    const auto ref_event = &events->events[pd_events_idx];
+    const auto ref_agg_tick = &agg_ticks->agg_ticks[ref_event->agg_tick_idx];
+
+    const auto ref_price = (ref_agg_tick->high + ref_agg_tick->low) / 2;
+    const auto ref_timestamp = ref_agg_tick->timestamp;
+
+    for (auto idx = 0; idx < BitSim::Trader::feature_events_count; idx++) {
+        const auto event = &events->events[pd_events_idx - (idx + 1)];
+        const auto agg_tick = &agg_ticks->agg_ticks[event->agg_tick_idx];
+        auto delta_time_ms = (ref_timestamp - agg_tick->timestamp).count();
+        auto delta_price = (ref_price - (agg_tick->high + agg_tick->low) / 2);
+
+        features_access[0][static_cast<long long>(idx) * 2 + 0] = (float)delta_time_ms;
+        features_access[0][static_cast<long long>(idx) * 2 + 1] = (float)delta_price;
+    }
+
+    features_access[0][features_size - 2] = 0.0f; // Time since last order
+    features_access[0][features_size - 1] = 0.0f; // Price diff since last order
+
     return features;
 }
 
