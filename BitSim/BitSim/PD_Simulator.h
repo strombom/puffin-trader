@@ -31,11 +31,12 @@ private:
     size_t pd_events_idx;
     time_point_ms episode_end;
 
-    double orderbook_last_price;
-    double time_since_leverage_change;
-    double stop_loss;
+    time_point_ms position_timestamp;
+    double position_price;
+    double position_direction;
+    double position_stop_loss;
 
-    torch::Tensor make_features(void);
+    torch::Tensor make_features(time_point_ms ref_timestamp, double ref_price);
     double calculate_reward(void);
 };
 
