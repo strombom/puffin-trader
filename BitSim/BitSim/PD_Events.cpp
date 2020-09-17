@@ -94,28 +94,24 @@ PD_Events::PD_Events(sptrAggTicks agg_ticks)
         }
 
         //auto event = step(agg_tick);
-        const auto executed = order_book.update(agg_tick->timestamp, agg_tick->low, last_direction);
-        if (executed) {
+        const auto executed_low = order_book.update(agg_tick->timestamp, agg_tick->low, last_direction);
+        const auto executed_high = order_book.update(agg_tick->timestamp, agg_tick->high, last_direction);
+        if (executed_low || executed_high) {
             if (last_direction == PD_Direction::up) {
                 last_direction = PD_Direction::down;
             }
             else {
                 last_direction = PD_Direction::up;
             }
-            const auto event = PD_Event{ agg_tick->timestamp, agg_tick->low, last_direction, (size_t)agg_tick_idx };
 
+            auto execution_price = executed_low ? agg_tick->low : agg_tick->high;
+            const auto event = PD_Event{ agg_tick->timestamp, execution_price, last_direction, (size_t)agg_tick_idx };
             if (finding_offset) {
                 events_offset.push_back(event);
             }
             events.push_back(event);
             finding_offset = true;
         }
-
-        //tick_prices.push_back(PD_Event{ agg_tick->timestamp, agg_tick->low, last_direction, agg_tick_idx });
-
-        //const auto [price_bot, price_top] = order_book.buffer.get_price(agg_tick->timestamp - 1500ms);
-        //order_book_bot.push_back(PD_Event{ tick.timestamp, price_bot, last_direction });
-        //order_book_top.push_back(PD_Event{ tick.timestamp, price_top, last_direction });
     }
 
     // If no offset was found for last event, remove it

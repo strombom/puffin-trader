@@ -18,7 +18,7 @@ PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks) :
 
 sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 {
-    auto timestamp_start = agg_ticks->agg_ticks.front().timestamp;
+    auto timestamp_start = time_point_ms{};
     if (validation) {
         timestamp_start = Utils::random(validation_start, validation_end - BitSim::Trader::episode_length);
     }
@@ -28,20 +28,20 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
     episode_end = timestamp_start + BitSim::Trader::episode_length;
 
     // Find start index
-    agg_ticks_idx = 0;
-    while (agg_ticks_idx < agg_ticks->agg_ticks.size() && agg_ticks->agg_ticks[agg_ticks_idx].timestamp < timestamp_start)
+    pd_events_idx = 0;
+    while (pd_events_idx < events->events.size() && events->events[pd_events_idx].timestamp < timestamp_start)
     {
-        agg_ticks_idx++;
+        pd_events_idx++;
     }
 
-    const auto price = agg_ticks->agg_ticks[agg_ticks_idx].low;
+    const auto price = agg_ticks->agg_ticks[events->events[pd_events_idx].agg_tick_idx].low;
     exchange->reset(price);
-    pd_events_idx = BitSim::Trader::feature_events_count;
+    //pd_events_idx = BitSim::Trader::feature_events_count;
 
-    position_timestamp = timestamp_start;
+    position_timestamp = events->events[pd_events_idx].timestamp;
     position_price = price;
     position_direction = 1;
-    position_stop_loss = price * (1 + position_direction * BitSim::Trader::stop_loss_range);
+    position_stop_loss = price * (1 - position_direction * BitSim::Trader::stop_loss_range);
 
     const auto reward = 0.0;
     const auto features = make_features(position_timestamp, position_price);
@@ -68,6 +68,7 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
         position_direction = order_contracts >= 0 ? 1 : -1;
         position_timestamp = agg_tick->timestamp;
         position_price = agg_tick->high;
+        position_stop_loss = position_price * (1 - position_direction * BitSim::Trader::stop_loss_range);
     }
 
     const auto time_since_change = std::log1p((agg_tick->timestamp - position_timestamp).count()) / 5.0;
@@ -81,7 +82,7 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
     auto state = std::make_shared<RL_State>(reward, features, leverage, delta_price, time_since_change);
 
     ++pd_events_idx;
-    if (pd_events_idx >= events->events.size()) {
+    if (pd_events_idx >= events->events.size() || events->events[pd_events_idx].timestamp >= episode_end) {
         state->set_done();
     }
     else {
@@ -90,15 +91,15 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
         const auto next_agg_tick = &agg_ticks->agg_ticks[next_event->agg_tick_idx];
         for (auto agg_tick_idx = event->agg_tick_idx; agg_tick_idx < next_event->agg_tick_idx; ++agg_tick_idx) {
             const auto agg_tick = &agg_ticks->agg_ticks[agg_tick_idx];
-            if (position_direction == 1 && agg_tick->high > position_stop_loss) {
+            if (position_direction == 1 && agg_tick->low < position_stop_loss) {
                 position_direction = -1;
                 position_timestamp = agg_tick->timestamp;
-                position_price = agg_tick->high;
+                position_price = agg_tick->low;
                 const auto order_contracts = exchange->calculate_order_size(-BitSim::BitMex::max_leverage, position_price);
                 exchange->market_order(order_contracts, position_price);
                 break;
             }
-            else if (position_direction == -1 && agg_tick->low < position_stop_loss) {
+            else if (position_direction == -1 && agg_tick->high > position_stop_loss) {
                 position_direction = 1;
                 position_timestamp = agg_tick->timestamp;
                 position_price = agg_tick->high;

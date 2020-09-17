@@ -27,7 +27,6 @@ private:
     time_point_ms validation_start;
     time_point_ms validation_end;
 
-    size_t agg_ticks_idx;
     size_t pd_events_idx;
     time_point_ms episode_end;
 
