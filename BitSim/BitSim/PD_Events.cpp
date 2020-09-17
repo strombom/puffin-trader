@@ -75,6 +75,53 @@ bool PD_OrderBook::update(time_point_ms timestamp, double price, PD_Direction di
 
 PD_Events::PD_Events(sptrAggTicks agg_ticks)
 {
+    if (agg_ticks->agg_ticks.size() < 2) {
+        return;
+    }
+
+    const auto offset = 200ms;
+    auto last_direction = PD_Direction::up;
+    auto order_book = PD_OrderBook{ agg_ticks->agg_ticks[0].timestamp, agg_ticks->agg_ticks[0].low };
+    auto finding_offset = false;
+
+    for (auto agg_tick_idx = 0; agg_tick_idx < agg_ticks->agg_ticks.size(); agg_tick_idx++) {
+        const auto agg_tick = &agg_ticks->agg_ticks[agg_tick_idx];
+        if (finding_offset) {
+            if (agg_tick->timestamp >= events.back().timestamp + offset) {
+                events_offset.push_back(PD_Event{ agg_tick->timestamp, agg_tick->low, last_direction, (size_t)agg_tick_idx });
+                finding_offset = false;
+            }
+        }
+
+        //auto event = step(agg_tick);
+        const auto executed = order_book.update(agg_tick->timestamp, agg_tick->low, last_direction);
+        if (executed) {
+            if (last_direction == PD_Direction::up) {
+                last_direction = PD_Direction::down;
+            }
+            else {
+                last_direction = PD_Direction::up;
+            }
+            const auto event = PD_Event{ agg_tick->timestamp, agg_tick->low, last_direction, (size_t)agg_tick_idx };
+
+            if (finding_offset) {
+                events_offset.push_back(event);
+            }
+            events.push_back(event);
+            finding_offset = true;
+        }
+
+        //tick_prices.push_back(PD_Event{ agg_tick->timestamp, agg_tick->low, last_direction, agg_tick_idx });
+
+        //const auto [price_bot, price_top] = order_book.buffer.get_price(agg_tick->timestamp - 1500ms);
+        //order_book_bot.push_back(PD_Event{ tick.timestamp, price_bot, last_direction });
+        //order_book_top.push_back(PD_Event{ tick.timestamp, price_top, last_direction });
+    }
+
+    // If no offset was found for last event, remove it
+    if (events_offset.size() > events.size()) {
+        events_offset.pop_back();
+    }
 
 }
 

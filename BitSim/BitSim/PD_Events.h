@@ -59,6 +59,7 @@ public:
     PD_Events(sptrAggTicks agg_ticks);
 
     std::vector<PD_Event> events;
+    std::vector<PD_Event> events_offset;
 
     /*
     PD_Events(const Tick& first_tick);
@@ -74,9 +75,6 @@ public:
     */
 
 private:
-    //PD_Direction last_direction;
-    //PD_OrderBook order_book;
-
 
     size_t event_idx;
 

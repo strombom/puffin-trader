@@ -57,13 +57,12 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
     const auto event = &events->events[pd_events_idx];
     const auto agg_tick = &agg_ticks->agg_ticks[event->agg_tick_idx];
 
-
     const auto mark_price = (agg_tick->high  + agg_tick->low) / 2;
     const auto order_leverage = action->direction == RL_Action_Direction::dir_long ? BitSim::BitMex::max_leverage : -BitSim::BitMex::max_leverage;
     const auto position_leverage = exchange->get_leverage(mark_price);
 
-    if (order_leverage > 0 && position_leverage < 0 ||
-        order_leverage < 0 && position_leverage > 0) {
+    if (order_leverage > 0 && position_leverage <= 0 ||
+        order_leverage < 0 && position_leverage >= 0) {
         const auto order_contracts = exchange->calculate_order_size(order_leverage, mark_price);
         exchange->market_order(order_contracts, mark_price);
         position_direction = order_contracts >= 0 ? 1 : -1;
@@ -80,12 +79,6 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
     const auto leverage = exchange->get_leverage(mark_price);
 
     auto state = std::make_shared<RL_State>(reward, features, leverage, delta_price, time_since_change);
-
-    //++agg_ticks_idx;
-    //if (agg_ticks->rows[agg_ticks_idx].timestamp >= episode_end) {
-    //    state->set_done();
-    //}
-
 
     ++pd_events_idx;
     if (pd_events_idx >= events->events.size()) {
@@ -144,8 +137,8 @@ torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double re
         features_access[0][static_cast<long long>(idx) * 2 + 1] = (float)delta_price;
     }
 
-    features_access[0][features_size - 2] = 0.0f; // Time since last order
-    features_access[0][features_size - 1] = 0.0f; // Price diff since last order
+    features_access[0][features_size - 2] = (float)(ref_timestamp - position_timestamp).count(); // Time since last order
+    features_access[0][features_size - 1] = (float)(ref_price - position_price); // Price diff since last order
 
     return features;
 }
