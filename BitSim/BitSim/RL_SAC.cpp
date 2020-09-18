@@ -137,7 +137,7 @@ RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
     length(0)
 {
     current_states = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::state_dim }).to(BitSim::Trader::device);
-    //cont_actions = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::action_dim_continuous }).to(BitSim::Trader::device);
+    cont_actions = torch::zeros({ BitSim::Trader::SAC::buffer_size, BitSim::Trader::action_dim_continuous }).to(BitSim::Trader::device);
     const auto disc_dim = BitSim::Trader::action_dim_discrete == 0 ? 0 : 1;
     disc_actions_idx = torch::zeros({ BitSim::Trader::SAC::buffer_size, disc_dim }, c10::TensorOptions{}.dtype(c10::ScalarType::Long)).to(BitSim::Trader::device);
     rewards = torch::zeros({ BitSim::Trader::SAC::buffer_size, 1 }).to(BitSim::Trader::device);
@@ -148,7 +148,7 @@ RL_SAC_ReplayBuffer::RL_SAC_ReplayBuffer(void) :
 void RL_SAC_ReplayBuffer::append(sptrRL_State current_state, sptrRL_Action action, sptrRL_State next_state)
 {
     current_states[idx] = current_state->to_tensor().squeeze();
-    //cont_actions[idx] = action->to_tensor_cont();
+    cont_actions[idx] = action->to_tensor_cont();
     disc_actions_idx[idx] = action->to_tensor_disc();
     rewards[idx] = next_state->reward;
     next_states[idx] = next_state->to_tensor().squeeze();
@@ -267,12 +267,13 @@ std::array<double, 6> RL_SAC::update_model(void)
 
     //std::cout << "q1_pred: " << q1_pred << std::endl;
     //std::cout << "q_target s: " << q_target.sizes() << std::endl;
-    //std::cout << "disc_actions_idx: " << disc_actions_idx << std::endl;
+    //std::cout << "disc_actions_idx: " << disc_actions_idx << std::endl;   
 
     //if (BitSim::Trader::action_dim_discrete > 0) {
         //if (BitSim::Trader::action_dim_continuous > 0) {
-            auto q1_split = q1_pred.split_with_sizes({ 1, 3 }, 1);
-            auto q2_split = q2_pred.split_with_sizes({ 1, 3 }, 1);
+        
+            auto q1_split = q1_pred.split_with_sizes({ 1, 2 }, 1);
+            auto q2_split = q2_pred.split_with_sizes({ 1, 2 }, 1);
             q1_split.at(1) = q1_split.at(1).gather(1, disc_actions_idx).sum(1).unsqueeze(-1);
             q2_split.at(1) = q2_split.at(1).gather(1, disc_actions_idx).sum(1).unsqueeze(-1);
             q1_pred = torch::cat(q1_split, 1);

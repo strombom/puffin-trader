@@ -71,9 +71,9 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
         position_stop_loss = position_price * (1 - position_direction * BitSim::Trader::stop_loss_range);
     }
 
-    const auto time_since_change = std::log1p((agg_tick->timestamp - position_timestamp).count()) / 5.0;
+    const auto time_since_change = (double)(agg_tick->timestamp - position_timestamp).count(); // std::log1p((agg_tick->timestamp - position_timestamp).count()) / 5.0;
     auto delta_price = exchange->get_position_price();
-    delta_price = (delta_price < 0 ? -1.0 : 1.0) * std::log1p(std::abs(delta_price)) / 3.0;
+    //delta_price = (delta_price < 0 ? -1.0 : 1.0) * std::log1p(std::abs(delta_price)) / 3.0;
 
     const auto reward = calculate_reward();
     const auto features = make_features(agg_tick->timestamp, mark_price);
@@ -120,7 +120,7 @@ time_point_ms PD_Simulator::get_start_timestamp(void)
 
 torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double ref_price)
 {
-    constexpr auto features_size = 2 + 2 * BitSim::Trader::feature_events_count;
+    constexpr auto features_size = 3 + 2 * BitSim::Trader::feature_events_count;
     auto features = torch::empty({ 1, features_size });
     auto features_access = features.accessor<float, 2>();
     
@@ -131,15 +131,21 @@ torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double re
         const auto event = &events->events[pd_events_idx - (idx + 1)];
         const auto agg_tick = &agg_ticks->agg_ticks[event->agg_tick_idx];
 
-        auto delta_time_ms = (ref_timestamp - agg_tick->timestamp).count();
-        auto delta_price = (ref_price - (agg_tick->high + agg_tick->low) / 2);
+        auto delta_time = (float)(ref_timestamp - agg_tick->timestamp).count();
+        auto delta_price = (float)(ref_price - (agg_tick->high + agg_tick->low) / 2);
 
-        features_access[0][static_cast<long long>(idx) * 2 + 0] = (float)delta_time_ms;
-        features_access[0][static_cast<long long>(idx) * 2 + 1] = (float)delta_price;
+        delta_price = delta_price / 64;
+        delta_time = (float)std::log1p(delta_time) / 8 - 1.4f;
+
+        features_access[0][static_cast<long long>(idx) * 2 + 0] = delta_time;
+        features_access[0][static_cast<long long>(idx) * 2 + 1] = delta_price;
     }
 
-    features_access[0][features_size - 2] = (float)(ref_timestamp - position_timestamp).count(); // Time since last order
-    features_access[0][features_size - 1] = (float)(ref_price - position_price); // Price diff since last order
+    const auto leverage = exchange->get_leverage(ref_price);
+
+    features_access[0][features_size - 3] = (float)std::log1p((ref_timestamp - position_timestamp).count()) / 8 - 1.4f; // Time since last order
+    features_access[0][features_size - 2] = (float)(ref_price - position_price) / 64; // Price diff since last order
+    features_access[0][features_size - 1] = (float)(leverage) / 10;
 
     return features;
 }
