@@ -70,6 +70,21 @@ double ES_Bitmex::calculate_order_size(double leverage, double mark_price)
     return order_contracts;
 }
 
+double ES_Bitmex::get_account_value(double mark_price) const
+{
+    auto position_pnl = 0.0;
+    if (pos_contracts != 0) {
+        position_pnl = pos_contracts * (1 / pos_price - 1 / mark_price);
+    }
+    return (wallet + position_pnl) * mark_price / start_value;
+
+    //const auto reward = std::log(value / get_reward_previous_value) * 1000 - 1.0; // (*1000-1 to get a suitable reward range, between -1000 and -300)
+    //const auto reward = (value - get_reward_previous_value) * 10000.0 - 0.01;
+    //get_reward_previous_value = value;
+    //std::cout.precision(3);
+    //std::cout << std::fixed << "PNL(" << position_pnl << ")" << " value(" << value << ")" << " reward(" << reward << ")" << " previous_value(" << previous_value << ")" << " next_price(" << next_price << ")" << " pos_price(" << pos_price << ")" << std::endl;
+}
+
 /*
 ES_Bitmex::ES_Bitmex(void) :
     //intervals(intervals),

@@ -23,6 +23,7 @@ public:
     double get_leverage(double price);
     double get_position_price(void) const;
     double calculate_order_size(double leverage, double mark_price);
+    double get_account_value(double mark_price) const;
 
 private:
     double wallet;

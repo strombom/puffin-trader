@@ -34,9 +34,10 @@ private:
     double position_price;
     double position_direction;
     double position_stop_loss;
+    double previous_value;
 
     torch::Tensor make_features(time_point_ms ref_timestamp, double ref_price);
-    double calculate_reward(void);
+    double calculate_reward(double mark_price);
 };
 
 using sptrPD_Simulator = std::shared_ptr<PD_Simulator>;

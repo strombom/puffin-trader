@@ -43,6 +43,8 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
     position_direction = 1;
     position_stop_loss = price * (1 - position_direction * BitSim::Trader::stop_loss_range);
 
+    previous_value = exchange->get_account_value(price);
+
     const auto reward = 0.0;
     const auto features = make_features(position_timestamp, position_price);
     const auto leverage = 0.0;
@@ -75,7 +77,7 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
     auto delta_price = exchange->get_position_price();
     //delta_price = (delta_price < 0 ? -1.0 : 1.0) * std::log1p(std::abs(delta_price)) / 3.0;
 
-    const auto reward = calculate_reward();
+    const auto reward = calculate_reward(mark_price);
     const auto features = make_features(agg_tick->timestamp, mark_price);
     const auto leverage = exchange->get_leverage(mark_price);
 
@@ -150,7 +152,10 @@ torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double re
     return features;
 }
 
-double PD_Simulator::calculate_reward(void)
+double PD_Simulator::calculate_reward(double mark_price)
 {
-    return 0.0;
+    const auto account_value = exchange->get_account_value(mark_price);
+    const auto reward = account_value - previous_value;
+    previous_value = account_value;
+    return reward;
 }
