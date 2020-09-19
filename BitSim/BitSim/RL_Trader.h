@@ -35,5 +35,6 @@ private:
     void save_params(int idx_period);
     void run_episode(int idx_episode, bool validation);
 
-    CSVLogger csv_logger;
+    CSVLogger loss_logger;
+    std::shared_ptr<CSVLogger> episode_logger;
 };

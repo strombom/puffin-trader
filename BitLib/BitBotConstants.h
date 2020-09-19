@@ -34,7 +34,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 1s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
         }
     }
 
@@ -69,7 +69,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 0>{};
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 1s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
         }
     }
 
@@ -106,7 +106,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 0>{};
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 1>{ 1s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
         }
     }
 
@@ -120,7 +120,8 @@ namespace BitBase
 
 namespace BitSim
 {
-    constexpr auto interval = 500ms;
+    constexpr auto interval = 1000ms;
+    constexpr auto aggregate = 100ms;
 
     namespace LiveData
     {
@@ -143,15 +144,15 @@ namespace BitSim
         constexpr auto n_channels = 3 * 4;
     }
 
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 7 / 16) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 7 / 18) + 0h + 0min + 0s;
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 1 / 10) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 2 / 10) + 0h + 0min + 0s;
     constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
     constexpr auto feature_encoder_weights_filename = "fe_weights_20200618.pt";
     constexpr auto policy_weights_filename = "model_9999_policy_jan_aprl_2h.net";
     constexpr auto observations_path = "C:\\development\\github\\puffin-trader\\tmp\\observations.dat";
-    constexpr auto intervals_path = "C:\\development\\github\\puffin-trader\\tmp\\intervals.dat";
+    constexpr auto intervals_path = "C:\\development\\github\\puffin-trader\\tmp\\intervals";
     constexpr auto tmp_path = "C:\\development\\github\\puffin-trader\\tmp";
 
     constexpr auto symbol = "XBTUSD";
@@ -205,13 +206,16 @@ namespace BitSim
         constexpr auto save_period = 50;
 
         constexpr auto max_steps = 2000;
-        constexpr auto episode_length = 2h;
+        constexpr auto episode_length = 4h;
 
         constexpr auto order_hysteresis = 0.1;
 
+        constexpr auto feature_events_count = 6;
+        constexpr auto stop_loss_range = 0.01;
+
         namespace SAC
         {
-            constexpr auto update_interval = episode_length / interval / 20;
+            constexpr auto update_interval = 50; // episode_length / interval / 20;
 
             constexpr auto batch_size = 512;
             constexpr auto buffer_size = 50000;
@@ -245,11 +249,14 @@ namespace BitSim
             constexpr auto gamma_discount = 0.95;
         }
 
-        constexpr auto state_dim = feature_size + 3;
+        constexpr auto state_dim = 3 + feature_events_count * 2; // feature_size + 3;
         constexpr auto action_dim_discrete = 2;
-        constexpr auto action_dim_continuous = 0;
+        constexpr auto action_dim_continuous = 1;
 
-        constexpr auto log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };
-        constexpr auto log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
+        constexpr auto loss_log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };
+        constexpr auto loss_log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
+
+        constexpr auto episode_log_names = std::array<const char*, 6>{ "mark price", "timestamp", "account value", "position price", "position direction", "position stop loss" };
+        constexpr auto episode_log_path = "C:\\development\\github\\puffin-trader\\tmp\\rl\\episode_log";
     }
 }

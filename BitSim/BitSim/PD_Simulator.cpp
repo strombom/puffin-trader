@@ -120,6 +120,24 @@ time_point_ms PD_Simulator::get_start_timestamp(void)
     return system_clock_ms_now(); // simulator->get_start_timestamp();
 }
 
+double PD_Simulator::get_mark_price(void)
+{
+    const auto event = &events->events[pd_events_idx];
+    const auto agg_tick = &agg_ticks->agg_ticks[event->agg_tick_idx];
+    return (agg_tick->high + agg_tick->low) / 2;
+}
+
+time_point_ms PD_Simulator::get_current_timestamp(void)
+{
+    const auto event = &events->events[pd_events_idx];
+    return event->timestamp;
+}
+
+double PD_Simulator::get_account_value(void)
+{
+    return exchange->get_account_value();
+}
+
 torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double ref_price)
 {
     constexpr auto features_size = 3 + 2 * BitSim::Trader::feature_events_count;
@@ -155,7 +173,12 @@ torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double re
 double PD_Simulator::calculate_reward(double mark_price)
 {
     const auto account_value = exchange->get_account_value(mark_price);
-    const auto reward = account_value - previous_value;
+    const auto reward = -1 + 0.5 * (account_value - previous_value);
     previous_value = account_value;
+
+
+    //const auto reward = std::log(value / get_reward_previous_value) * 1000 - 1.0; // (*1000-1 to get a suitable reward range, between -1000 and -300)
+    //const auto reward = (value - get_reward_previous_value) * 10000.0 - 0.01;
+
     return reward;
 }

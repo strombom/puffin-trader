@@ -16,6 +16,14 @@ public:
     sptrRL_State reset(int idx_episode, bool validation);
     sptrRL_State step(sptrRL_Action action);
     time_point_ms get_start_timestamp(void);
+    double get_mark_price(void);
+    time_point_ms get_current_timestamp(void);
+    double get_account_value(void);
+
+    time_point_ms position_timestamp;
+    double position_price;
+    double position_direction;
+    double position_stop_loss;
 
 private:
     sptrPD_Events events;
@@ -30,10 +38,6 @@ private:
     size_t pd_events_idx;
     time_point_ms episode_end;
 
-    time_point_ms position_timestamp;
-    double position_price;
-    double position_direction;
-    double position_stop_loss;
     double previous_value;
 
     torch::Tensor make_features(time_point_ms ref_timestamp, double ref_price);

@@ -10,7 +10,7 @@ RL_Trader::RL_Trader(sptrPD_Simulator simulator) :
     simulator(simulator),
     step_total(0),
     step_episode(0),
-    csv_logger(BitSim::Trader::log_names, BitSim::Trader::log_path)
+    loss_logger(BitSim::Trader::loss_log_names, BitSim::Trader::loss_log_path)
 {
     if (BitSim::Trader::algorithm == "PPO") {
         //rl_algorithm = std::make_unique<RL_PPO>();
@@ -23,10 +23,36 @@ RL_Trader::RL_Trader(sptrPD_Simulator simulator) :
 void RL_Trader::run_episode(int idx_episode, bool validation)
 {
     //const auto training_progress = (float)idx_episode / BitSim::Trader::n_episodes;
+    
+    episode_logger = std::make_shared<CSVLogger>(BitSim::Trader::episode_log_names, std::string{BitSim::Trader::episode_log_path} + "_" + std::to_string(idx_episode) + ".csv");
 
     auto state = simulator->reset(idx_episode, validation);
     step_episode = 0;
     auto episode_reward = 0.0;
+
+    /*
+    auto all_features = torch::empty({ 100000, 14 });
+    all_features[0] = state->features[0];
+    auto feature_count = 1;
+    while (!state->is_done()) {
+        auto action = rl_algorithm->get_random_action(state);
+        state = simulator->step(action);
+        all_features[feature_count] = state->features[0];
+        feature_count++;
+    }
+    std::cout << "feature_count " << feature_count << std::endl;
+    std::cout << all_features[0] << std::endl;
+    std::cout << all_features[1] << std::endl;
+    std::cout << all_features[2] << std::endl;
+    auto features_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\features.csv" };
+    for (auto idx = 0; idx < feature_count; idx++) {
+        for (auto col = 0; col < 14; col++) {
+            features_file << all_features[idx][col].item().toDouble() << ",";
+        }
+        features_file << '\n';
+    }
+    features_file.close();
+    */
 
     while (!state->is_done()) { // && step_episode < BitSim::Trader::max_steps) {
         if (!validation && BitSim::Trader::algorithm == "SAC" &&
@@ -36,6 +62,16 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
         }
         state = step(state, BitSim::Trader::max_steps);
         episode_reward += state->reward;
+
+        auto log_state = std::array<double, 6>{};
+        log_state[0] = simulator->get_mark_price();
+        log_state[1] = (double)simulator->get_current_timestamp().time_since_epoch().count();
+        log_state[2] = simulator->get_account_value();
+        log_state[3] = simulator->position_price;
+        log_state[4] = simulator->position_direction;
+        log_state[5] = simulator->position_stop_loss;
+
+        episode_logger->append_row(log_state);
 
         ++step_total;
         ++step_episode;
@@ -91,7 +127,7 @@ void RL_Trader::evaluate(int idx_episode, time_point_ms start, time_point_ms end
 void RL_Trader::update_model(int idx_episode)
 {
     auto losses = rl_algorithm->update_model();
-    csv_logger.append_row(losses);
+    loss_logger.append_row(losses);
 
     std::cout << std::setfill(' ') << std::setw(5);
     std::cout << std::fixed << std::setprecision(4);
