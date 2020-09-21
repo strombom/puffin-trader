@@ -138,6 +138,11 @@ double PD_Simulator::get_account_value(void)
     return exchange->get_account_value(get_mark_price());
 }
 
+double PD_Simulator::get_position_leverage(void)
+{
+    return exchange->get_leverage(get_mark_price());
+}
+
 torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double ref_price)
 {
     constexpr auto features_size = 3 + 2 * BitSim::Trader::feature_events_count;

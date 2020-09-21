@@ -19,6 +19,7 @@ public:
     double get_mark_price(void);
     time_point_ms get_current_timestamp(void);
     double get_account_value(void);
+    double get_position_leverage(void);
 
     time_point_ms position_timestamp;
     double position_price;

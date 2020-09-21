@@ -63,13 +63,14 @@ void RL_Trader::run_episode(int idx_episode, bool validation)
         state = step(state, BitSim::Trader::max_steps);
         episode_reward += state->reward;
 
-        auto log_state = std::array<double, 6>{};
+        auto log_state = std::array<double, 7>{};
         log_state[0] = simulator->get_mark_price();
         log_state[1] = (double)simulator->get_current_timestamp().time_since_epoch().count();
         log_state[2] = simulator->get_account_value();
         log_state[3] = simulator->position_price;
         log_state[4] = simulator->position_direction;
         log_state[5] = simulator->position_stop_loss;
+        log_state[6] = simulator->get_position_leverage();
 
         episode_logger->append_row(log_state);
 

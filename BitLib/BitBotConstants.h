@@ -256,7 +256,7 @@ namespace BitSim
         constexpr auto loss_log_names = std::array<const char*, 6>{ "total loss", "pg loss", "value loss", "entropy mean", "approx kl", "" };
         constexpr auto loss_log_path = "C:\\development\\github\\puffin-trader\\tmp\\trader_training.csv";
 
-        constexpr auto episode_log_names = std::array<const char*, 6>{ "mark price", "timestamp", "account value", "position price", "position direction", "position stop loss" };
+        constexpr auto episode_log_names = std::array<const char*, 7>{ "mark price", "timestamp", "account value", "position price", "position direction", "position stop loss", "position leverage" };
         constexpr auto episode_log_path = "C:\\development\\github\\puffin-trader\\tmp\\rl\\episode_log";
     }
 }
