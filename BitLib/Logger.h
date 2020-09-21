@@ -41,7 +41,7 @@ public:
             } else {
                 file << ",";
             }
-            file << value;
+            file << std::setprecision(13) << value;
         }
         file << std::endl;
         file.flush();
