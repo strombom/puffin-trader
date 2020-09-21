@@ -18,12 +18,6 @@ void ES_Bitmex::reset(double price)
     previous_value = start_value;
 }
 
-ES_State ES_Bitmex::market_order(double price, double volume)
-{
-    auto s = ES_State{};
-    return s;
-}
-
 double ES_Bitmex::get_leverage(double price)
 {
     const auto [_position_margin, position_leverage, _upnl] = calculate_position_leverage(price);
@@ -68,6 +62,38 @@ double ES_Bitmex::calculate_order_size(double leverage, double mark_price)
 
     const auto order_contracts = contracts - pos_contracts;
     return order_contracts;
+}
+
+void ES_Bitmex::market_order(double order_contracts, double mark_price)
+{
+    if (order_contracts == 0) {
+        return;
+    }
+
+    // Fee
+    wallet -= BitSim::BitMex::taker_fee * abs(order_contracts / mark_price);
+
+    // Realised profit and loss
+    // Wallet only changes when abs(contracts) decrease
+    if (pos_contracts > 0 && order_contracts < 0) {
+        wallet += (1 / pos_price - 1 / mark_price) * std::min(-order_contracts, pos_contracts);
+    }
+    else if (pos_contracts < 0 && order_contracts > 0) {
+        wallet += (1 / pos_price - 1 / mark_price) * std::max(-order_contracts, pos_contracts);
+    }
+
+    // Calculate average entry price
+    if ((pos_contracts >= 0 && order_contracts > 0) ||
+        (pos_contracts <= 0 && order_contracts < 0)) {
+        pos_price = (pos_contracts * pos_price + order_contracts * mark_price) / (pos_contracts + order_contracts);
+    }
+    else if ((pos_contracts >= 0 && (pos_contracts + order_contracts) < 0) ||
+        (pos_contracts <= 0 && (pos_contracts + order_contracts) > 0)) {
+        pos_price = mark_price;
+    }
+
+    // Calculate position contracts
+    pos_contracts += order_contracts;
 }
 
 double ES_Bitmex::get_account_value(double mark_price) const

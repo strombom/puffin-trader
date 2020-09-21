@@ -135,7 +135,7 @@ time_point_ms PD_Simulator::get_current_timestamp(void)
 
 double PD_Simulator::get_account_value(void)
 {
-    return exchange->get_account_value();
+    return exchange->get_account_value(get_mark_price());
 }
 
 torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double ref_price)

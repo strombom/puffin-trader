@@ -19,11 +19,11 @@ public:
 
     void reset(double price);
 
-    ES_State market_order(double price, double volume);
     double get_leverage(double price);
     double get_position_price(void) const;
     double calculate_order_size(double leverage, double mark_price);
     double get_account_value(double mark_price) const;
+    void market_order(double order_contracts, double mark_price);
 
 private:
     double wallet;
