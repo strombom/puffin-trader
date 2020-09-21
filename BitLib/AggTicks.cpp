@@ -5,27 +5,27 @@
 #include <fstream>
 
 
-std::ostream& operator<<(std::ostream& stream, const AggTick& row)
+std::ostream& operator<<(std::ostream& stream, const AggTick& agg_tick)
 {
-    const auto timestamp = row.timestamp.time_since_epoch().count();
+    const auto timestamp = agg_tick.timestamp.time_since_epoch().count();
 
     stream.write(reinterpret_cast<const char*>(&timestamp),  sizeof(timestamp));
-    stream.write(reinterpret_cast<const char*>(&row.high),  sizeof(row.high));
-    stream.write(reinterpret_cast<const char*>(&row.low), sizeof(row.low));
-    stream.write(reinterpret_cast<const char*>(&row.volume), sizeof(row.volume));
+    stream.write(reinterpret_cast<const char*>(&agg_tick.high),  sizeof(agg_tick.high));
+    stream.write(reinterpret_cast<const char*>(&agg_tick.low), sizeof(agg_tick.low));
+    stream.write(reinterpret_cast<const char*>(&agg_tick.volume), sizeof(agg_tick.volume));
 
     return stream;
 }
 
-std::istream& operator>>(std::istream& stream, AggTick& row)
+std::istream& operator>>(std::istream& stream, AggTick& agg_tick)
 {
     auto timestamp_ms = long long{};
     stream.read(reinterpret_cast<char*>(&timestamp_ms), sizeof(timestamp_ms));
-    stream.read(reinterpret_cast<char*>(&row.high), sizeof(row.high));
-    stream.read(reinterpret_cast<char*>(&row.low), sizeof(row.low));
-    stream.read(reinterpret_cast<char*>(&row.volume),   sizeof(row.volume));
+    stream.read(reinterpret_cast<char*>(&agg_tick.high), sizeof(agg_tick.high));
+    stream.read(reinterpret_cast<char*>(&agg_tick.low), sizeof(agg_tick.low));
+    stream.read(reinterpret_cast<char*>(&agg_tick.volume),   sizeof(agg_tick.volume));
 
-    row.timestamp = time_point_ms{ (std::chrono::milliseconds) timestamp_ms };
+    agg_tick.timestamp = time_point_ms{ (std::chrono::milliseconds) timestamp_ms };
 
     return stream;
 }
@@ -35,12 +35,12 @@ AggTicks::AggTicks(sptrTicks ticks)
     // Round timestamp
     auto agg_tick = AggTick{};
     auto agg_tick_valid = false;
-    rows.clear();
+    agg_ticks.clear();
 
     for (auto&& tick : ticks->rows) {
         if (agg_tick_valid && tick.timestamp >= agg_tick.timestamp + BitSim::aggregate) {
-                rows.push_back(agg_tick);
-                agg_tick_valid = false;
+            agg_ticks.push_back(agg_tick);
+            agg_tick_valid = false;
         }
 
         if (agg_tick_valid) {
@@ -62,7 +62,7 @@ AggTicks::AggTicks(const std::string filename_path)
 
     auto agg_tick = AggTick{};
     while (file >> agg_tick) {
-        rows.push_back(agg_tick);
+        agg_ticks.push_back(agg_tick);
     }
 
     file.close();
@@ -70,7 +70,7 @@ AggTicks::AggTicks(const std::string filename_path)
 
 std::ostream& operator<<(std::ostream& stream, const AggTicks& agg_ticks)
 {
-    for (auto&& row : agg_ticks.rows) {
+    for (auto&& row : agg_ticks.agg_ticks) {
         stream << row;
     }
 
@@ -81,7 +81,7 @@ std::istream& operator>>(std::istream& stream, AggTicks& agg_ticks)
 {
     auto tick = AggTick{};
     while (stream >> tick) {
-        agg_ticks.rows.push_back(tick);
+        agg_ticks.agg_ticks.push_back(tick);
     }
 
     return stream;
@@ -90,8 +90,8 @@ std::istream& operator>>(std::istream& stream, AggTicks& agg_ticks)
 void AggTicks::save(const std::string& filename_path) const
 {
     auto file = std::ofstream{ filename_path, std::ofstream::binary };
-    for (auto &&row : rows) {
-        file << row;
+    for (auto && agg_tick : agg_ticks) {
+        file << agg_tick;
     }
     file.close();
 }
@@ -101,7 +101,7 @@ void AggTicks::load(const std::string& filename_path)
     auto data_file = std::ifstream{ filename_path, std::ios::binary };
     auto agg_tick = AggTick{};
     while (data_file >> agg_tick) {
-        rows.push_back(agg_tick);
+        agg_ticks.push_back(agg_tick);
     }
     data_file.close();
 }

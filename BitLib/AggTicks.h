@@ -29,8 +29,8 @@ public:
     AggTick(const std::chrono::milliseconds timestamp, const float high, const float low, const float volume) :
         timestamp(std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>{ timestamp }), high(high), low(low), volume(volume) {}
 
-    friend std::ostream& operator<<(std::ostream& stream, const AggTick& row);
-    friend std::istream& operator>>(std::istream& stream, AggTick& row);
+    friend std::ostream& operator<<(std::ostream& stream, const AggTick& agg_tick);
+    friend std::istream& operator>>(std::istream& stream, AggTick& agg_tick);
 
     time_point_ms timestamp;
     float high;
@@ -47,7 +47,7 @@ public:
     AggTicks(sptrTicks ticks);
     AggTicks(const std::string filename_path);
 
-    std::vector<AggTick> rows;
+    std::vector<AggTick> agg_ticks;
 
     friend std::ostream& operator<<(std::ostream& stream, const AggTicks& agg_ticks_data);
     friend std::istream& operator>>(std::istream& stream, AggTicks& agg_ticks_data);
