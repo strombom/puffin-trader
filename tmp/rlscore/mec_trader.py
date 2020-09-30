@@ -14,12 +14,12 @@ filename = "../PD_Events/events.csv"
 
 maker_fee = -0.00025
 taker_fee = 0.00075
-max_leverage = 1.0
+max_leverage = 2.0
 
 
 class Event:
     def __init__(self, timestamp, price):
-        self.timestamp = (1577836800000 + int(timestamp)) / 1000
+        self.timestamp = (1596240000000 + int(timestamp)) / 1000
         self.price = price
 
     def __repr__(self):
@@ -36,8 +36,8 @@ with open(filename) as csv_file:
         #if 1577836800000 + ts < 1584006800000 or 1577836800000 + ts > 1584081300000:
         #    events.append(Event(ts, float(row[1])))
 
-        if 1577836800000 + ts < 1584006800000:
-            events.append(Event(ts, float(row[1])))
+        #if 1596240000000 + ts > 1596376000000:
+        events.append(Event(ts, float(row[1])))
 
         #if len(events) == 1000:
         #    break
@@ -84,10 +84,12 @@ class Position:
         if self.wallet == 0:
             return
 
-        sign = self.contracts / abs(self.contracts)
-        entry_value = abs(self.contracts / self.price)
-        mark_value = abs(self.contracts / mark_price)
-        upnl = sign * (mark_value - entry_value)
+        #sign = self.contracts / abs(self.contracts)
+        #entry_value = abs(self.contracts / self.price)
+        #mark_value = abs(self.contracts / mark_price)
+        #upnl = sign * (mark_value - entry_value)
+
+        upnl = (1 / self.price - 1 / mark_price) * self.contracts
 
         max_contracts = max_leverage * (self.wallet + upnl) * mark_price
         margin = self.wallet * min(max(order_leverage, -max_leverage), max_leverage)
@@ -115,29 +117,39 @@ class Position:
 
 
 def simulate(start_idx, end_idx, stop_loss, take_profit):
+    volatility = 0.01
+    volatilities = []
+    vola_prices = []
     values = []
     drawdown = 0.0
     peak_price = events[0].price
     position = Position(events[0].price, max_leverage, stop_loss, take_profit)
     for idx in range(start_idx, end_idx):
+        leverage = volatility * 60
         event = events[idx]
         if position.direction > 0 and event.price < position.stop_loss_price:
-            position.market_order(-max_leverage, position.stop_loss_price)
+            position.market_order(-leverage, position.stop_loss_price)
         elif position.direction < 0 and event.price > position.stop_loss_price:
-            position.market_order(max_leverage, position.stop_loss_price)
+            position.market_order(leverage, position.stop_loss_price)
 
         if position.direction > 0 and event.price > position.take_profit_price:
-            position.market_order(-max_leverage, event.price)
+            position.market_order(-leverage, event.price)
         elif position.direction < 0 and event.price < position.take_profit_price:
-            position.market_order(max_leverage, event.price)
+            position.market_order(leverage, event.price)
 
         peak_price = max(peak_price, event.price)
         if event.price < peak_price:
-            drawdown = max(drawdown, (peak_price - event.price / peak_price))
+            drawdown = max(drawdown, (peak_price - event.price) / peak_price)
         values.append(position.wallet * event.price) #  position.get_value(event.price))
 
+        vola_prices.append(event.price)
+        if len(vola_prices) > 250:
+            vola_prices = vola_prices[1:]
+        volatility = max(vola_prices) / min(vola_prices) - 1
+        volatilities.append(volatility)
+
         # print(f"go long, value({position.wallet * event.price} price({event.price})")
-    return position, values, drawdown
+    return position, values, drawdown, volatilities
 
 print(f"First price {events[0].price}")
 
@@ -152,15 +164,19 @@ episode_length = len(events)
 take_profit = 0.01
 valuess = []
 stop_losses = []
-for stop_loss in np.linspace(take_profit - 0.005, take_profit + 0.005, num=11): # [0.005, 0.007, 0.009, 0.011, 0.013, 0.015]:
+volatilitiess = []
+for stop_loss in [00.01]: # np.linspace(take_profit - 0.005, take_profit + 0.005, num=11): # [0.005, 0.007, 0.009, 0.011, 0.013, 0.015]:
+    take_profit = stop_loss - 0.000
     episode_data = []
-    position, values, drawdown = simulate(start_idx, start_idx + episode_length, stop_loss, take_profit)
+    position, values, drawdown, volatilities = simulate(start_idx, start_idx + episode_length, stop_loss, take_profit)
     episode_data.append([stop_loss, take_profit, position.wallet * events[-1].price, drawdown])
     valuess.append(values)
     stop_losses.append(stop_loss)
+    volatilitiess.append(volatilities)
 
 valuess = np.array(valuess)
 stop_losses = np.array(stop_losses)
+volatilitiess = np.array(volatilitiess)
 
 
 import matplotlib.pyplot as plt
@@ -176,15 +192,23 @@ for i in range(len(events)):
     prices[i] = events[i].price
 
 
-plt.plot(times, prices, color='black')
+ax1 = plt.subplot(211)
+ax2 = plt.subplot(212, sharex=ax1)
+
+
+ax1.plot(times, prices, color='black')
 
 for idx, values in enumerate(valuess):
     label = f"SL: {stop_losses[idx]:.2}"
-    plt.plot(times, values, label=label)
+    ax1.plot(times, values, label=label)
+    label = f"V: {stop_losses[idx]:.2}"
+    ax2.plot(times, volatilitiess[idx], label=label)
 
-legend = plt.legend()
+legend1 = ax1.legend()
+legend2 = ax2.legend()
 
-plt.ylim(0, 30000)
+#ax1.ylim(0, 30000)
+#ax1.ylim(0, 30000)
 plt.show()
 
 quit()
