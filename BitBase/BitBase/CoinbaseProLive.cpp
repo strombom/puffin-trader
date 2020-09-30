@@ -35,12 +35,15 @@ CoinbaseProLive::CoinbaseProLive(sptrDatabase database, tick_data_updated_callba
     database(database), tick_data_updated_callback(tick_data_updated_callback),
     state(CoinbaseProLiveState::idle), tick_data_thread_running(true)
 {
+    connect();
+    tick_data_worker_thread = std::make_unique<std::thread>(&CoinbaseProLive::tick_data_worker, this);
+}
+
+void CoinbaseProLive::connect(void) {
     zmq_client = std::make_unique<zmq::socket_t>(zmq_context, zmq::socket_type::req);
     zmq_client->setsockopt(ZMQ_RCVTIMEO, 2500);
     zmq_client->setsockopt(ZMQ_SNDTIMEO, 2500);
     zmq_client->connect(BitBase::CoinbasePro::Live::address);
-
-    tick_data_worker_thread = std::make_unique<std::thread>(&CoinbaseProLive::tick_data_worker, this);
 }
 
 CoinbaseProLiveState CoinbaseProLive::get_state(void)
@@ -101,6 +104,7 @@ void CoinbaseProLive::tick_data_worker(void)
                 }
                 catch (...) {
                     result.reset();
+                    connect();
                 }
 
                 if (result.has_value()) {

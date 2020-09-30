@@ -34,12 +34,16 @@ BitmexLive::BitmexLive(sptrDatabase database, tick_data_updated_callback_t tick_
     database(database), tick_data_updated_callback(tick_data_updated_callback),
     state(BitmexLiveState::idle), tick_data_thread_running(true)
 {
+    connect();
+    tick_data_worker_thread = std::make_unique<std::thread>(&BitmexLive::tick_data_worker, this);
+}
+
+void BitmexLive::connect(void)
+{
     zmq_client = std::make_unique<zmq::socket_t>(zmq_context, zmq::socket_type::req);
     zmq_client->setsockopt(ZMQ_RCVTIMEO, 2500);
     zmq_client->setsockopt(ZMQ_SNDTIMEO, 2500);
     zmq_client->connect(BitBase::Bitmex::Live::address);
-
-    tick_data_worker_thread = std::make_unique<std::thread>(&BitmexLive::tick_data_worker, this);
 }
 
 BitmexLiveState BitmexLive::get_state(void)
@@ -99,6 +103,7 @@ void BitmexLive::tick_data_worker(void)
                     result = zmq_client->send(message, zmq::send_flags::dontwait);
                 } catch(...) {
                     result.reset();
+                    connect();
                 }
 
                 if (result.has_value()) {

@@ -35,12 +35,17 @@ BinanceLive::BinanceLive(sptrDatabase database, tick_data_updated_callback_t tic
     database(database), tick_data_updated_callback(tick_data_updated_callback),
     state(BinanceLiveState::idle), tick_data_thread_running(true)
 {
+    connect();
+
+    tick_data_worker_thread = std::make_unique<std::thread>(&BinanceLive::tick_data_worker, this);
+}
+
+void BinanceLive::connect(void)
+{
     zmq_client = std::make_unique<zmq::socket_t>(zmq_context, zmq::socket_type::req);
     zmq_client->setsockopt(ZMQ_RCVTIMEO, 2500);
     zmq_client->setsockopt(ZMQ_SNDTIMEO, 2500);
     zmq_client->connect(BitBase::Binance::Live::address);
-
-    tick_data_worker_thread = std::make_unique<std::thread>(&BinanceLive::tick_data_worker, this);
 }
 
 BinanceLiveState BinanceLive::get_state(void)
@@ -101,6 +106,7 @@ void BinanceLive::tick_data_worker(void)
                 }
                 catch (...) {
                     result.reset();
+                    connect();
                 }
 
                 if (result.has_value()) {

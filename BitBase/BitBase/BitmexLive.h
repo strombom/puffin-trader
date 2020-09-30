@@ -44,6 +44,7 @@ private:
     zmq::context_t zmq_context;
     std::unique_ptr<zmq::socket_t> zmq_client;
 
+    void connect(void);
     void tick_data_worker(void);
 };
 

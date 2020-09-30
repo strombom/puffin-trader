@@ -23,7 +23,6 @@ public:
     BinanceLive(sptrDatabase database, tick_data_updated_callback_t tick_data_updated_callback);
 
     BinanceLiveState get_state(void);
-    void connect(void);
     void start(void);
     void shutdown(void);
 
@@ -45,6 +44,7 @@ private:
     zmq::context_t zmq_context;
     std::unique_ptr<zmq::socket_t> zmq_client;
 
+    void connect(void);
     void tick_data_worker(void);
 };
 
