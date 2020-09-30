@@ -10,3 +10,4 @@
 *.odt#
 
 old
+*.sqlite-journal
