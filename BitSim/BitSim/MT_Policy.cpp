@@ -9,20 +9,25 @@ MT_Volatility::MT_Volatility(void) :
 
 }
 
-double MT_Volatility::get_volatility(double price)
+void MT_Volatility::update(double price_low, double price_high)
 {
     if (!initialized) {
-        buffer.fill(price);
+        buffer_low.fill(price_low);
+        buffer_high.fill(price_high);
         initialized = true;
     }
-    buffer[buffer_pos] = price;
-    buffer_pos = (buffer_pos + 1) % buffer.size();
+    buffer_low[buffer_pos] = price_low;
+    buffer_high[buffer_pos] = price_high;
+    buffer_pos = (buffer_pos + 1) % buffer_low.size();
+}
 
-    const auto price_max = *std::max_element(std::begin(buffer), std::end(buffer));
-    const auto price_min = *std::max_element(std::begin(buffer), std::end(buffer));
+double MT_Volatility::get(void) const
+{
+    const auto price_min = *std::min_element(std::begin(buffer_low), std::end(buffer_low));
+    const auto price_max = *std::max_element(std::begin(buffer_high), std::end(buffer_high));
     const auto volatility = price_max / price_min - 1;
 
-    return 0.0;
+    return volatility;
 }
 
 MT_Policy::MT_Policy(void)
@@ -30,7 +35,18 @@ MT_Policy::MT_Policy(void)
 
 }
 
-std::tuple<double, double, double> MT_Policy::get_action(sptrAggTick agg_tick, double leverage)
+std::tuple<double, double, double> MT_Policy::get_action(sptrAggTick agg_tick, double position_leverage)
 {
-    return std::make_tuple(0.0, 0.0, 0.0);
+    constexpr auto stop_loss = 0.01;
+    constexpr auto take_profit = 0.01;
+
+    volatility.update(agg_tick->low, agg_tick->high);
+    const auto action_leverage = volatility.get() * 60;
+
+    const auto mark_price = (agg_tick->low + agg_tick->high) / 2;
+    const auto direction = position_leverage >= 0 ? 1 : -1;
+    const auto stop_loss_price = mark_price * (1 - direction * stop_loss);
+    const auto take_profit_price = mark_price * (1 + direction * take_profit);
+
+    return std::make_tuple(action_leverage, stop_loss_price, take_profit_price);
 }

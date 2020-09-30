@@ -153,18 +153,3 @@ void LiveData::tick_data_worker(void)
     }
     logger.info("BitmexDaily::tick_data_worker exit");
 }
-
-/*
-void LiveData::live_data_worker(void)
-{
-    while (live_data_thread_running) {
-        const auto new_ticks = bitbase_client.get_ticks(BitSim::symbol, BitSim::exchange, next_timestamp);
-
-        for (auto& tick : new_ticks->rows) {
-            auto lock = std::scoped_lock{ agg_ticks_mutex };
-            agg_ticks.insert(tick);
-            next_timestamp = tick.timestamp + 1ms;
-        }
-    }
-}
-*/
