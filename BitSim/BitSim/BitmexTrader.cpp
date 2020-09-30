@@ -5,18 +5,17 @@
 #include "BitLib/BitBotConstants.h"
 
 
-BitmexTrader::BitmexTrader(sptrLiveData live_data, sptrRL_Policy rl_policy) :
+BitmexTrader::BitmexTrader(sptrLiveData live_data, sptrMT_Policy mt_policy) :
     trader_thread_running(true),
     trader_state(TraderState::start),
-    desired_leverage(0.0),
-    desired_ask_price(0.0),
-    desired_bid_price(0.0),
+    action_leverage(0.0),
+    action_stop_loss(0.0),
+    action_take_profit(0.0),
     new_order_first_try(true),
     live_data(live_data),
-    rl_policy(rl_policy),
+    mt_policy(mt_policy),
     current_interval_timestamp(system_clock_ms_now())
 {
-
     bitmex_account = std::make_shared<BitmexAccount>();
     bitmex_rest_api = std::make_shared<BitmexRestApi>(bitmex_account);
     bitmex_websocket = std::make_shared<BitmexWebSocket>(bitmex_account);
@@ -72,25 +71,46 @@ void BitmexTrader::trader_worker(void)
             else {
                 bitmex_rest_api->delete_all();
                 std::this_thread::sleep_for(500ms);
-                trader_state = TraderState::wait_for_next_interval;
+                trader_state = TraderState::wait_for_next_agg_tick;
             }
         }
-        else if (trader_state == TraderState::wait_for_next_interval) {
-            trader_state = TraderState::wait_for_next_interval_worker;
+        else if (trader_state == TraderState::wait_for_next_agg_tick) {
+            trader_state = TraderState::wait_for_next_agg_tick_worker;
         }
-        else if (trader_state == TraderState::wait_for_next_interval_worker) {
-            const auto [has_new_data, latest_interval_timestamp, new_interval_feature] = live_data->get_next_interval(500ms);
-            if (has_new_data) {
-                current_interval_timestamp = latest_interval_timestamp;
-                current_interval_feature = new_interval_feature;
-                if (bitmex_account->count_orders() > 0) {
-                    bitmex_rest_api->delete_all();
+        else if (trader_state == TraderState::wait_for_next_agg_tick_worker) {
+            const auto agg_tick = live_data->get_next_agg_tick();
+            if (agg_tick != nullptr) {
+                const auto [leverage, stop_loss, take_profit] = mt_policy->get_action(agg_tick, bitmex_account->get_leverage());
+                action_leverage = leverage;
+                action_stop_loss = stop_loss;
+                action_take_profit = take_profit;
+
+                if (bitmex_account->get_contracts() > 0 && bitmex_account->get_mark_price() < action_stop_loss) {
+                    //position.market_order(-action_leverage, position.stop_loss_price);
+                    trader_state = TraderState::delete_orders;
                 }
-                trader_state = TraderState::bitbot_action;
+                else if (bitmex_account->get_contracts() < 0 && bitmex_account->get_mark_price() > action_stop_loss) {
+                    //position.market_order(action_leverage, position.stop_loss_price);
+                    trader_state = TraderState::delete_orders;
+                }
+                else if (bitmex_account->get_contracts() > 0 && bitmex_account->get_mark_price() > action_take_profit) {
+                    //position.market_order(-action_leverage, event.price);
+                    trader_state = TraderState::delete_orders;
+                }
+                else if (bitmex_account->get_contracts() < 0 && bitmex_account->get_mark_price() < action_take_profit) {
+                    //position.market_order(action_leverage, event.price);
+                    trader_state = TraderState::delete_orders;
+                }
+            }
+            else {
+                std::this_thread::sleep_for(20ms);
             }
         }
+        /*
         else if (trader_state == TraderState::bitbot_action) {
-            const auto [direction_long, stop_loss] = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
+
+
+            //const auto [leverage, stop_loss, take_profit] = mt_policy->get_action(agg_tick, bitmex_account->get_leverage());
             //const auto buy = rl_policy->get_action(current_interval_feature, bitmex_account->get_leverage());
             //if (place_order) {
             //if (buy) {
@@ -112,14 +132,15 @@ void BitmexTrader::trader_worker(void)
         else if (trader_state == TraderState::delete_orders) {
             trader_state = TraderState::delete_orders_worker;
         }
-        else if (trader_state == TraderState::delete_orders_worker) {
+        */
+        else if (trader_state == TraderState::delete_orders) {
             const auto success = bitmex_rest_api->delete_all();
             if (success) {
                 trader_state = TraderState::place_new_order;
             }
             else {
                 if (system_clock_ms_now() - current_interval_timestamp > 2s) {
-                    trader_state = TraderState::wait_for_next_interval;
+                    trader_state = TraderState::wait_for_next_agg_tick;
                 }
                 else {
                     // Try again after delay
@@ -132,14 +153,14 @@ void BitmexTrader::trader_worker(void)
             trader_state = TraderState::place_new_order_work;
         }
         else if (trader_state == TraderState::place_new_order_work) {
-            const auto success = limit_order();
+            const auto success = market_order();
             if (success) {
                 std::this_thread::sleep_for(1s);
                 trader_state = TraderState::order_monitoring;
             }
             else {
                 if (system_clock_ms_now() - current_interval_timestamp > 5s) {
-                    trader_state = TraderState::wait_for_next_interval;
+                    trader_state = TraderState::wait_for_next_agg_tick;
                 }
                 else if (new_order_first_try) {
                     new_order_first_try = false;
@@ -152,10 +173,10 @@ void BitmexTrader::trader_worker(void)
         else if (trader_state == TraderState::order_monitoring) {
             std::this_thread::sleep_for(150ms);
             if (system_clock_ms_now() - current_interval_timestamp > 5s) {
-                trader_state = TraderState::wait_for_next_interval;
+                trader_state = TraderState::wait_for_next_agg_tick;
             }
             else if (bitmex_account->count_orders() == 0) {
-                trader_state = TraderState::wait_for_next_interval;
+                trader_state = TraderState::wait_for_next_agg_tick;
             } 
             else if (bitmex_account->get_ask_price() != order_ask_price || bitmex_account->get_bid_price() != order_bid_price) {
                 trader_state = TraderState::delete_orders;
@@ -164,6 +185,7 @@ void BitmexTrader::trader_worker(void)
     }
 }
 
+/*
 bool BitmexTrader::limit_order(void)
 {
     const auto position_contracts = bitmex_account->get_contracts();
@@ -199,4 +221,10 @@ bool BitmexTrader::limit_order(void)
     //logger.info("Limit order s(%d) oc(%d) op(%0.1f)", success, order_contracts, order_price);
 
     return success;
+}
+*/
+
+bool BitmexTrader::market_order(void)
+{
+    return true;
 }

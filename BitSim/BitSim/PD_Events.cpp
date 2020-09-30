@@ -13,31 +13,32 @@ PD_OrderBookBuffer::PD_OrderBookBuffer(void) :
         
 }
 
-void PD_OrderBookBuffer::update(time_point_ms timestamp, double price)
+void PD_OrderBookBuffer::update(time_point_ms timestamp, float price_low, float price_high)
 {
-    if (price > order_book_bottom + 0.5) {
-        order_book_bottom = price - 0.5;
+    if (price_high > order_book_bottom + 0.5f) {
+        order_book_bottom = price_high - 0.5f;
     }
-    else if (price < order_book_bottom) {
-        order_book_bottom = price;
+    else if (price_low < order_book_bottom) {
+        order_book_bottom = price_low;
     }
 
     timestamps[next_idx] = timestamp;
-    prices[next_idx] = price;
+    prices_low[next_idx] = price_low;
+    prices_high[next_idx] = price_high;
 
     length = std::min(length + 1, size);
     next_idx = (next_idx + 1) % size;
 }
 
-std::tuple<double, double> PD_OrderBookBuffer::get_price(time_point_ms timestamp)
+std::tuple<float, float> PD_OrderBookBuffer::get_price(time_point_ms timestamp)
 {
     auto count = 0;
     auto idx = (next_idx - 1 + size) % size;
-    auto price_bot = std::numeric_limits<double>::max();
-    auto price_top = std::numeric_limits<double>::min();
+    auto price_bot = std::numeric_limits<float>::max();
+    auto price_top = std::numeric_limits<float>::min();
     while (count < length) {
-        price_bot = std::min(price_bot, prices[idx]);
-        price_top = std::max(price_top, prices[idx]);
+        price_bot = std::min(price_bot, prices_low[idx]);
+        price_top = std::max(price_top, prices_high[idx]);
 
         if (timestamps[idx] < timestamp) {
             break;
@@ -45,8 +46,8 @@ std::tuple<double, double> PD_OrderBookBuffer::get_price(time_point_ms timestamp
         idx = (idx - 1 + size) % size;
         ++count;
     }
-    if (price_top < order_book_bottom + 0.5) {
-        price_top = order_book_bottom + 0.5;
+    if (price_top < order_book_bottom + 0.5f) {
+        price_top = order_book_bottom + 0.5f;
     }
     else if (price_bot > order_book_bottom) {
         price_bot = order_book_bottom;
@@ -55,22 +56,36 @@ std::tuple<double, double> PD_OrderBookBuffer::get_price(time_point_ms timestamp
     return std::make_tuple(price_bot, price_top);
 }
 
-PD_OrderBook::PD_OrderBook(time_point_ms timestamp, double price)
+PD_OrderBook::PD_OrderBook(time_point_ms timestamp, float price_low, float price_high)
 {
-    buffer.update(timestamp, price);
+    buffer.update(timestamp, price_low, price_high);
 }
 
-bool PD_OrderBook::update(time_point_ms timestamp, double price, PD_Direction direction)
+bool PD_OrderBook::update(time_point_ms timestamp, float price_low, float price_high, PD_Direction direction)
 {
     const auto [price_bot, price_top] = buffer.get_price(timestamp - 1500ms);
-    buffer.update(timestamp, price);
-    if (direction == PD_Direction::down && price > price_top) {
+    buffer.update(timestamp, price_low, price_high);
+    if (direction == PD_Direction::down && price_high > price_top) {
         return true;
     }
-    else if (direction == PD_Direction::up && price < price_bot) {
+    else if (direction == PD_Direction::up && price_low < price_bot) {
         return true;
     }
     return false;
+}
+
+std::ostream& operator<<(std::ostream& stream, const PD_Event& event)
+{
+    const auto timestamp = event.timestamp.time_since_epoch().count();
+
+    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
+    stream.write(reinterpret_cast<const char*>(&event.price), sizeof(event.price));
+    stream.write(reinterpret_cast<const char*>(&event.price_min), sizeof(event.price_min));
+    stream.write(reinterpret_cast<const char*>(&event.price_max), sizeof(event.price_max));
+    stream.write(reinterpret_cast<const char*>(&event.direction), sizeof(event.direction));
+    stream.write(reinterpret_cast<const char*>(&event.agg_tick_idx), sizeof(event.agg_tick_idx));
+
+    return stream;
 }
 
 PD_Events::PD_Events(sptrAggTicks agg_ticks)
@@ -81,8 +96,11 @@ PD_Events::PD_Events(sptrAggTicks agg_ticks)
 
     const auto offset = 200ms;
     auto last_direction = PD_Direction::up;
-    auto order_book = PD_OrderBook{ agg_ticks->agg_ticks[0].timestamp, agg_ticks->agg_ticks[0].low };
+    auto order_book = PD_OrderBook{ agg_ticks->agg_ticks[0].timestamp, agg_ticks->agg_ticks[0].low, agg_ticks->agg_ticks[0].high };
     auto finding_offset = false;
+
+    auto price_max = std::numeric_limits<float>::min();
+    auto price_min = std::numeric_limits<float>::max();
 
     for (auto agg_tick_idx = 0; agg_tick_idx < agg_ticks->agg_ticks.size(); agg_tick_idx++) {
         const auto agg_tick = &agg_ticks->agg_ticks[agg_tick_idx];
@@ -93,10 +111,12 @@ PD_Events::PD_Events(sptrAggTicks agg_ticks)
             }
         }
 
+        price_max = std::max(price_max, agg_tick->high);
+        price_min = std::min(price_min, agg_tick->low);
+
         //auto event = step(agg_tick);
-        const auto executed_low = order_book.update(agg_tick->timestamp, agg_tick->low, last_direction);
-        const auto executed_high = order_book.update(agg_tick->timestamp, agg_tick->high, last_direction);
-        if (executed_low || executed_high) {
+        const auto executed = order_book.update(agg_tick->timestamp, agg_tick->low, agg_tick->high, last_direction);
+        if (executed) {
             if (last_direction == PD_Direction::up) {
                 last_direction = PD_Direction::down;
             }
@@ -104,13 +124,16 @@ PD_Events::PD_Events(sptrAggTicks agg_ticks)
                 last_direction = PD_Direction::up;
             }
 
-            auto execution_price = executed_low ? agg_tick->low : agg_tick->high;
-            const auto event = PD_Event{ agg_tick->timestamp, execution_price, last_direction, (size_t)agg_tick_idx };
+            auto execution_price = last_direction == PD_Direction::down ? agg_tick->low : agg_tick->high;
+            const auto event = PD_Event{ agg_tick->timestamp, execution_price, price_min, price_max, last_direction, (size_t)agg_tick_idx };
             if (finding_offset) {
                 events_offset.push_back(event);
             }
             events.push_back(event);
             finding_offset = true;
+
+            price_max = std::numeric_limits<float>::min();
+            price_min = std::numeric_limits<float>::max();
         }
     }
 
@@ -119,6 +142,46 @@ PD_Events::PD_Events(sptrAggTicks agg_ticks)
         events_offset.pop_back();
     }
 
+    plot_events(agg_ticks);
+}
+
+void PD_Events::save(const std::string& filename_path) const
+{
+    auto file = std::ofstream{ filename_path, std::ofstream::binary };
+    for (auto&& event : events) {
+        file << event;
+    }
+    file.close();
+}
+
+void PD_Events::plot_events(sptrAggTicks agg_ticks)
+{
+    auto event_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\events.csv" };
+    for (auto&& event : events) {
+        const auto timestamp = (event.timestamp.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
+        event_file << timestamp << ",";
+        event_file << event.price << ",";
+        event_file << (int)event.direction << '\n';
+    }
+    event_file.close();
+
+    auto event_offset_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\events_offset.csv" };
+    for (auto&& event : events_offset) {
+        const auto timestamp = (event.timestamp.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
+        event_offset_file << timestamp << ",";
+        event_offset_file << event.price << ",";
+        event_offset_file << (int)event.direction << '\n';
+    }
+    event_offset_file.close();
+
+    auto interval_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\agg_ticks.csv" };
+    for (auto&& agg_tick : agg_ticks->agg_ticks) {
+        const auto timestamp = (agg_tick.timestamp.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
+        interval_file << timestamp << ",";
+        interval_file << agg_tick.low << ",";
+        interval_file << agg_tick.high << '\n';
+    }
+    interval_file.close();
 }
 
 /*

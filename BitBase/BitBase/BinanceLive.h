@@ -23,6 +23,7 @@ public:
     BinanceLive(sptrDatabase database, tick_data_updated_callback_t tick_data_updated_callback);
 
     BinanceLiveState get_state(void);
+    void connect(void);
     void start(void);
     void shutdown(void);
 

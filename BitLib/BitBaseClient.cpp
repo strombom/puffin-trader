@@ -75,3 +75,10 @@ sptrTicks BitBaseClient::get_ticks(const std::string& symbol,
 
     return std::make_shared<Ticks>(ticks);
 }
+
+sptrTicks BitBaseClient::get_ticks(const std::string& symbol,
+    const std::string& exchange,
+    const time_point_ms timestamp_start)
+{
+    return get_ticks(symbol, exchange, timestamp_start, system_clock_ms_now());
+}

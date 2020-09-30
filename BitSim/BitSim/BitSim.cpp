@@ -6,6 +6,7 @@
 #include "FE_Training.h"
 #include "FE_Model.h"
 #include "MT_Evaluator.h"
+#include "MT_Policy.h"
 #include "RL_Trader.h"
 #include "PD_Events.h"
 #include "PD_Simulator.h"
@@ -24,7 +25,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "train_rl" };
+    const auto command = std::string{ "find_direction_changes" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
@@ -38,14 +39,26 @@ int main()
         bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
     }
     else if (command == "find_direction_changes") {
-        /*
-        auto ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
-        auto pd_events = PD_Events{ ticks };
+        auto agg_ticks = std::make_shared<AggTicks>(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
+        auto pd_events = PD_Events{ agg_ticks };
 
-        auto bitbase_client = BitBaseClient();
-        auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
-        pd_events.plot_events(bitmex_intervals);
+        /*
+        auto file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\events.csv" };
+        for (auto idx = 0; idx < pd_events.events.size(); idx++) {
+            const auto& event = pd_events.events[idx];
+            const auto& event_offset = pd_events.events_offset[idx];
+            file << event.timestamp.time_since_epoch().count() << ",";
+            file << event.price << ",";
+            file << event.price_min << ",";
+            file << event.price_max << ",";
+            file << event_offset.price << std::endl;
+        }
+        file.close();
         */
+
+        //auto bitbase_client = BitBaseClient();
+        //auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
+        //pd_events.plot_events(bitmex_intervals);
     }
     else if (command == "get_intervals") {
         auto bitbase_client = BitBaseClient();
@@ -132,9 +145,9 @@ int main()
         */
     }
     else if (command == "trade_live") {
-        auto live_data = std::make_shared<LiveData>();
-        auto rl_policy = std::make_shared<RL_Policy>(BitSim::policy_weights_filename);
-        auto bitmex_trader = BitmexTrader{ live_data, rl_policy };
+        auto live_data = std::make_shared<LiveData>(system_clock_ms_now() - 60s);
+        auto mt_policy = std::make_shared<MT_Policy>();
+        auto bitmex_trader = BitmexTrader{ live_data, mt_policy };
 
         live_data->start();
         bitmex_trader.start();

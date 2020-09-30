@@ -2,10 +2,8 @@
 #include "pch.h"
 
 #include "BitLib/DateTime.h"
-#include "BitLib/Intervals.h"
+#include "BitLib/AggTicks.h"
 #include "BitLib/BitBaseClient.h"
-#include "FE_Inference.h"
-#include "FE_Observations.h"
 
 #include <thread>
 
@@ -13,24 +11,20 @@
 class LiveData
 {
 public:
-    LiveData(void);
+    LiveData(time_point_ms start_time);
 
     void start(void);
     void shutdown(void);
 
-    std::tuple<bool, time_point_ms, torch::Tensor> get_next_interval(std::chrono::milliseconds timeout);
+    sptrAggTick get_next_agg_tick(void);
 
 private:
     BitBaseClient bitbase_client;
 
-    time_point_ms latest_timestamp;
-
-    sptrIntervals intervals;
-    sptrFE_Observations observations;
-    torch::Tensor features;
-    sptrFE_Inference feature_encoder;
-    std::mutex new_data_mutex;
-    std::condition_variable new_data_condition;
+    time_point_ms next_timestamp;
+    std::mutex agg_ticks_mutex;
+    AggTicks agg_ticks;
+    size_t agg_tick_idx;
 
     std::atomic_bool live_data_thread_running;
     std::unique_ptr<std::thread> live_data_thread;

@@ -40,20 +40,27 @@ public:
     static constexpr int struct_size = sizeof(timestamp) + sizeof(high) + sizeof(low) + sizeof(volume);
 };
 
+using sptrAggTick = std::shared_ptr<AggTick>;
+
 class AggTicks
 {
 public:
-    AggTicks(void) {}
+    AggTicks(void);
     AggTicks(sptrTicks ticks);
     AggTicks(const std::string filename_path);
 
     std::vector<AggTick> agg_ticks;
+
+    AggTick pending_agg_tick;
+    bool pending_agg_tick_valid;
 
     friend std::ostream& operator<<(std::ostream& stream, const AggTicks& agg_ticks_data);
     friend std::istream& operator>>(std::istream& stream, AggTicks& agg_ticks_data);
 
     void save(const std::string& filename_path) const;
     void load(const std::string& filename_path);
+
+    void insert(const Tick &tick);
 };
 
 using sptrAggTicks = std::shared_ptr<AggTicks>;

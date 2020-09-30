@@ -144,8 +144,8 @@ namespace BitSim
         constexpr auto n_channels = 3 * 4;
     }
 
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 1 / 10) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 2 / 10) + 0h + 0min + 0s;
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 4 / 1) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 9 / 26) + 0h + 0min + 0s;
     constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";

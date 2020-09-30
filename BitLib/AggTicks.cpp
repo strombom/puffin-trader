@@ -30,33 +30,41 @@ std::istream& operator>>(std::istream& stream, AggTick& agg_tick)
     return stream;
 }
 
-AggTicks::AggTicks(sptrTicks ticks)
+AggTicks::AggTicks(void) :
+    pending_agg_tick_valid(false)
 {
-    // Round timestamp
-    auto agg_tick = AggTick{};
-    auto agg_tick_valid = false;
-    agg_ticks.clear();
 
+}
+
+AggTicks::AggTicks(sptrTicks ticks) :
+    pending_agg_tick_valid(false)
+{
     for (auto&& tick : ticks->rows) {
-        if (agg_tick_valid && tick.timestamp >= agg_tick.timestamp + BitSim::aggregate) {
-            agg_ticks.push_back(agg_tick);
-            agg_tick_valid = false;
-        }
-
-        if (agg_tick_valid) {
-            agg_tick.high = std::max(agg_tick.high, tick.price);
-            agg_tick.low = std::min(agg_tick.low, tick.price);
-            agg_tick.volume += tick.volume;
-        }
-        else {
-            const auto agg_timestamp = (tick.timestamp.time_since_epoch() / BitSim::aggregate) * BitSim::aggregate;
-            agg_tick = AggTick{ agg_timestamp,  tick.price, tick.price, tick.volume};
-            agg_tick_valid = true;
-        }
+        insert(tick);
     }
 }
 
-AggTicks::AggTicks(const std::string filename_path)
+void AggTicks::insert(const Tick& tick)
+{
+    if (pending_agg_tick_valid && tick.timestamp >= pending_agg_tick.timestamp + BitSim::aggregate) {
+        agg_ticks.push_back(pending_agg_tick);
+        pending_agg_tick_valid = false;
+    }
+
+    if (pending_agg_tick_valid) {
+        pending_agg_tick.high = std::max(pending_agg_tick.high, tick.price);
+        pending_agg_tick.low = std::min(pending_agg_tick.low, tick.price);
+        pending_agg_tick.volume += tick.volume;
+    }
+    else {
+        const auto agg_timestamp = (tick.timestamp.time_since_epoch() / BitSim::aggregate) * BitSim::aggregate;
+        pending_agg_tick = AggTick{ agg_timestamp,  tick.price, tick.price, tick.volume };
+        pending_agg_tick_valid = true;
+    }
+}
+
+AggTicks::AggTicks(const std::string filename_path) :
+    pending_agg_tick_valid(false)
 {
     auto file = std::ifstream{ filename_path, std::ios::binary };
 

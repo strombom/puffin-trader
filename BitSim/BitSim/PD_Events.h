@@ -13,25 +13,26 @@ class PD_OrderBookBuffer {
 public:
     PD_OrderBookBuffer(void);
 
-    void update(time_point_ms timestamp, double price);
+    void update(time_point_ms timestamp, float price_low, float price_high);
 
-    std::tuple<double, double> get_price(time_point_ms timestamp);
+    std::tuple<float, float> get_price(time_point_ms timestamp);
 
 private:
     static constexpr int size = 1000;
     std::array<time_point_ms, size> timestamps;
-    std::array<double, size> prices;
+    std::array<float, size> prices_low;
+    std::array<float, size> prices_high;
     int length;
     int next_idx;
 
-    double order_book_bottom;
+    float order_book_bottom;
 };
 
 class PD_OrderBook {
 public:
-    PD_OrderBook(time_point_ms timestamp, double price);
+    PD_OrderBook(time_point_ms timestamp, float price_low, float price_high);
 
-    bool update(time_point_ms timestamp, double price, PD_Direction direction);
+    bool update(time_point_ms timestamp, float price_low, float price_high, PD_Direction direction);
 
     PD_OrderBookBuffer buffer;
 private:
@@ -40,12 +41,20 @@ private:
 class PD_Event
 {
 public:
-    PD_Event(time_point_ms timestamp, double price, PD_Direction direction, size_t agg_tick_idx) :
-        timestamp(timestamp), price(price), direction(direction), agg_tick_idx(agg_tick_idx)
+    PD_Event(time_point_ms timestamp, float price, float price_min, float price_max, PD_Direction direction, size_t agg_tick_idx) :
+        timestamp(timestamp), price(price), price_min(price_min), price_max(price_max), direction(direction), agg_tick_idx(agg_tick_idx)
     {}
 
+    PD_Event(time_point_ms timestamp, float price, PD_Direction direction, size_t agg_tick_idx) :
+        timestamp(timestamp), price(price), price_min(0.0f), price_max(0.0f), direction(direction), agg_tick_idx(agg_tick_idx)
+    {}
+
+    friend std::ostream& operator<<(std::ostream& stream, const AggTick& agg_tick);
+
     time_point_ms timestamp;
-    double price;
+    float price;
+    float price_min;
+    float price_max;
     PD_Direction direction;
     size_t agg_tick_idx;
 };
@@ -60,6 +69,12 @@ public:
 
     std::vector<PD_Event> events;
     std::vector<PD_Event> events_offset;
+
+    friend std::ostream& operator<<(std::ostream& stream, const PD_Events& pd_events_data);
+
+    void save(const std::string& filename_path) const;
+
+    void plot_events(sptrAggTicks agg_ticks);
 
     /*
     PD_Events(const Tick& first_tick);

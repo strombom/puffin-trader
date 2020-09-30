@@ -4,20 +4,12 @@
 #include "LiveData.h"
 
 
-LiveData::LiveData(void) :
+LiveData::LiveData(time_point_ms start_time) :
     live_data_thread_running(true),
-    latest_timestamp(BitSim::timestamp_start)
+    next_timestamp(start_time),
+    agg_tick_idx(0)
 {
-    feature_encoder = std::make_shared<FE_Inference>(BitSim::tmp_path, BitSim::feature_encoder_weights_filename);
 
-    const auto timestamp_now = system_clock_ms_now();
-    const auto timestamp_start = timestamp_now - BitSim::LiveData::intervals_buffer_length - (timestamp_now - BitSim::timestamp_start) % BitSim::interval;
-    intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_start, BitSim::interval);
-    observations = std::make_shared<FE_Observations>(intervals, intervals, intervals);
-    features = feature_encoder->forward(observations->get_all());
-
-    logger.info("LiveData::LiveData: Intervals (%d): %s", intervals->rows.size(), DateTime::to_string_iso_8601(intervals->timestamp_start).c_str());
-    logger.info("LiveData::LiveData: Observations (%d)", observations->size());
 }
 
 void LiveData::start(void)
@@ -36,36 +28,24 @@ void LiveData::shutdown(void)
     catch (...) {}
 }
 
-std::tuple<bool, time_point_ms, torch::Tensor> LiveData::get_next_interval(std::chrono::milliseconds timeout)
+sptrAggTick LiveData::get_next_agg_tick(void)
 {
-    auto new_data_lock = std::unique_lock<std::mutex>{ new_data_mutex };
-    const auto has_new_data = new_data_condition.wait_for(new_data_lock, timeout) == std::cv_status::no_timeout;
-    return std::make_tuple(has_new_data, latest_timestamp, features[features.size(0) - 1][0]);
+    auto lock = std::scoped_lock{ agg_ticks_mutex };
+    if (agg_ticks.agg_ticks.size() > agg_tick_idx) {
+        // TODO: If agg_tick_idx, remove elements from beginning of agg_ticks
+        return std::make_shared<AggTick>(agg_ticks.agg_ticks[agg_tick_idx++]);
+    }
+    return nullptr;
 }
 
 void LiveData::live_data_worker(void)
 {
     while (live_data_thread_running) {
-        std::this_thread::sleep_for(100ms);
+        const auto new_ticks = bitbase_client.get_ticks(BitSim::symbol, BitSim::exchange, next_timestamp);
 
-        const auto timestamp_next = intervals->get_timestamp_last() + BitSim::interval;
-        const auto new_intervals = bitbase_client.get_intervals(BitSim::symbol, BitSim::exchange, timestamp_next, BitSim::interval);
-
-        if (new_intervals->rows.size() > 0) {
-            intervals->rotate_insert(new_intervals);
-            observations->rotate_insert(intervals, new_intervals->rows.size());
-
-            // Encode new features
-            const auto new_observations_size = std::min(new_intervals->rows.size(), observations->size());
-            const auto new_observations = observations->get_tail((int)new_observations_size);
-            const auto new_features = feature_encoder->forward(new_observations);
-            if (new_features.size(0) < features.size(0)) {
-                features.roll(-new_features.size(0), 0);
-            }
-            features.slice(0, features.size(0) - new_features.size(0)) = new_features;
-            logger.info("LiveData::live_data_worker: New features %s int(%d) obs(%d) feat(%d)", DateTime::to_string_iso_8601(new_intervals->timestamp_start).c_str(), new_intervals->rows.size(), new_observations_size, new_features.size(0));
-
-            new_data_condition.notify_one();
+        for (auto& tick : new_ticks->rows) {
+            auto lock = std::scoped_lock{ agg_ticks_mutex };
+            agg_ticks.insert(tick);
         }
     }
 }
