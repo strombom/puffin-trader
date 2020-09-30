@@ -32,6 +32,7 @@ private:
     AggTicks agg_ticks;
     size_t agg_tick_idx;
 
+    void live_data_connect(void);
     void tick_data_worker(void);
 
     //BitBaseClient bitbase_client;
