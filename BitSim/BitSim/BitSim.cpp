@@ -25,7 +25,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "find_direction_changes" };
+    const auto command = std::string{ "trade_live" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
