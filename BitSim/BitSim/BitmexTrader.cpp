@@ -228,5 +228,27 @@ bool BitmexTrader::limit_order(void)
 
 bool BitmexTrader::market_order(void)
 {
-    return true;
+    const auto position_contracts = bitmex_account->get_contracts();
+    const auto mark_price = bitmex_account->get_mark_price();
+    const auto wallet = bitmex_account->get_wallet();
+    const auto upnl = bitmex_account->get_upnl();
+
+    if (wallet == 0.0) {
+        return true;
+    }
+
+    const auto max_contracts = BitSim::BitMex::max_leverage * (wallet + upnl) * mark_price;
+    const auto margin = wallet * std::clamp(action_leverage, -BitSim::BitMex::max_leverage, BitSim::BitMex::max_leverage);
+    const auto desired_contracts = std::clamp(margin * mark_price, -max_contracts, max_contracts);
+    const auto order_contracts = int(desired_contracts - position_contracts);
+
+    if (order_contracts == 0) {
+        return true;
+    }
+
+    auto success = bitmex_rest_api->market_order(order_contracts);
+
+    logger.info("Market order s(%d) oc(%d)", success, order_contracts);
+
+    return success;
 }

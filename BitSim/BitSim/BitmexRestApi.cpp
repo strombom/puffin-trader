@@ -12,6 +12,45 @@ BitmexRestApi::BitmexRestApi(sptrBitmexAccount bitmex_account) :
 
 }
 
+bool BitmexRestApi::market_order(int contracts)
+{
+    logger.info("BitmexRestApi::market_order contracts(%d)", contracts);
+
+    const auto side = contracts > 0 ? "Buy" : "Sell";
+
+    json11::Json parameters = json11::Json::object{
+        { "symbol", "XBTUSD" },
+        { "side", side },
+        { "orderQty", std::abs(contracts) },
+        { "ordType", "Market" }
+    };
+
+    auto response = http_post("order", parameters);
+
+    //logger.info("Response: %s", response.dump().c_str());
+
+    if (response["ordStatus"].string_value() == "New" ||
+        response["ordStatus"].string_value() == "Partially filled") {
+
+        const auto order_id = response["orderID"].string_value();
+        const auto symbol = response["symbol"].string_value();
+        const auto timestamp = DateTime::to_time_point_ms(response["timestamp"].string_value(), "%FT%TZ");
+        const auto buy = (response["side"].string_value() == "Buy");
+        const auto order_size = response["orderQty"].int_value();
+        const auto price = response["price"].number_value();
+
+        bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
+
+        return true;
+    }
+    else if (response["ordStatus"].string_value() == "Filled") {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 bool BitmexRestApi::limit_order(int contracts, double price)
 {
     logger.info("BitmexRestApi::limit_order contracts(%d)", contracts);
@@ -33,7 +72,7 @@ bool BitmexRestApi::limit_order(int contracts, double price)
 
     if (response["ordStatus"].string_value() == "New" ||
         response["ordStatus"].string_value() == "Partially filled") {
-        
+
         const auto order_id = response["orderID"].string_value();
         const auto symbol = response["symbol"].string_value();
         const auto timestamp = DateTime::to_time_point_ms(response["timestamp"].string_value(), "%FT%TZ");
@@ -42,7 +81,7 @@ bool BitmexRestApi::limit_order(int contracts, double price)
         const auto price = response["price"].number_value();
 
         bitmex_account->insert_order(symbol, order_id, timestamp, buy, order_size, price);
-        
+
 
         return true;
     }

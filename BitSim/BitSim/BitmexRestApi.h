@@ -10,6 +10,7 @@ class BitmexRestApi
 public:
     BitmexRestApi(sptrBitmexAccount bitmex_account);
 
+    bool market_order(int contracts);
     bool limit_order(int contracts, double price);
     bool delete_all(void);
 
