@@ -84,7 +84,7 @@ void BitmexTrader::trader_worker(void)
                 action_stop_loss = stop_loss;
                 action_take_profit = take_profit;
 
-                if (leverage > 0.01) {
+                if (leverage > 1.2) {
                     const auto contracts = bitmex_account->get_contracts();
                     const auto mark_price = bitmex_account->get_mark_price();
                     if (contracts > 0 && (mark_price < action_stop_loss || mark_price > action_take_profit)) {
