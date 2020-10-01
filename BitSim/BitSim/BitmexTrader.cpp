@@ -76,11 +76,13 @@ void BitmexTrader::trader_worker(void)
                 bitmex_account->get_bid_price() != 0.0 &&
                 bitmex_account->get_wallet() != 0.0) {
                 std::this_thread::sleep_for(100ms);
+                action_stop_loss = bitmex_account->get_mark_price() * (1 - 0.01);
+                action_take_profit = bitmex_account->get_mark_price() * (1 + 0.01);
+                trader_state = TraderState::wait_for_next_agg_tick;
             }
             else {
                 //bitmex_rest_api->delete_all();
-                std::this_thread::sleep_for(500ms);
-                trader_state = TraderState::wait_for_next_agg_tick;
+                std::this_thread::sleep_for(100ms);
             }
         }
         else if (trader_state == TraderState::wait_for_next_agg_tick) {
@@ -92,8 +94,7 @@ void BitmexTrader::trader_worker(void)
                 const auto [has_event, leverage, stop_loss, take_profit] = mt_policy->get_action(agg_tick, bitmex_account->get_leverage());
 
                 if (has_event) {
-                    action_stop_loss = stop_loss;
-                    action_take_profit = take_profit;
+                    std::cout << "New PD_Event (" << DateTime::to_string_iso_8601(system_clock_ms_now()) << ") leverage(" << leverage << ") " << bitmex_account->get_mark_price() << " sl(" << action_stop_loss << ") tp(" << action_take_profit << ")" << std::endl;
                 }
 
                 if (leverage > 1.2 && warmup_done) {
@@ -101,10 +102,14 @@ void BitmexTrader::trader_worker(void)
                     const auto mark_price = bitmex_account->get_mark_price();
                     if (contracts > 0 && (mark_price < action_stop_loss || (has_event && mark_price > action_take_profit))) {
                         action_leverage = -leverage;
+                        action_stop_loss = stop_loss;
+                        action_take_profit = take_profit;
                         trader_state = TraderState::delete_orders;
                     }
                     else if (contracts <= 0 && (mark_price > action_stop_loss || (has_event && mark_price < action_take_profit))) {
                         action_leverage = leverage;
+                        action_stop_loss = stop_loss;
+                        action_take_profit = take_profit;
                         trader_state = TraderState::delete_orders;
                     }
                 }
