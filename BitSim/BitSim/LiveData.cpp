@@ -75,6 +75,7 @@ sptrAggTick LiveData::get_next_agg_tick(void)
     return nullptr;
 }
 
+
 void LiveData::tick_data_worker(void)
 {
     while (tick_data_thread_running) {

@@ -81,25 +81,18 @@ void BitmexTrader::trader_worker(void)
             const auto agg_tick = live_data->get_next_agg_tick();
             if (agg_tick != nullptr) {
                 const auto [leverage, stop_loss, take_profit] = mt_policy->get_action(agg_tick, bitmex_account->get_leverage());
-                action_leverage = leverage;
                 action_stop_loss = stop_loss;
                 action_take_profit = take_profit;
 
-                if (std::abs(action_leverage) > 0.01) {
-                    if (bitmex_account->get_contracts() > 0 && bitmex_account->get_mark_price() < action_stop_loss) {
-                        //position.market_order(-action_leverage, position.stop_loss_price);
+                if (leverage > 0.01) {
+                    const auto contracts = bitmex_account->get_contracts();
+                    const auto mark_price = bitmex_account->get_mark_price();
+                    if (contracts > 0 && (mark_price < action_stop_loss || mark_price > action_take_profit)) {
+                        action_leverage = -leverage;
                         trader_state = TraderState::delete_orders;
                     }
-                    else if (bitmex_account->get_contracts() <= 0 && bitmex_account->get_mark_price() > action_stop_loss) {
-                        //position.market_order(action_leverage, position.stop_loss_price);
-                        trader_state = TraderState::delete_orders;
-                    }
-                    else if (bitmex_account->get_contracts() > 0 && bitmex_account->get_mark_price() > action_take_profit) {
-                        //position.market_order(-action_leverage, event.price);
-                        trader_state = TraderState::delete_orders;
-                    }
-                    else if (bitmex_account->get_contracts() <= 0 && bitmex_account->get_mark_price() < action_take_profit) {
-                        //position.market_order(action_leverage, event.price);
+                    else if (contracts <= 0 && (mark_price > action_stop_loss || mark_price < action_take_profit)) {
+                        action_leverage = leverage;
                         trader_state = TraderState::delete_orders;
                     }
                 }
