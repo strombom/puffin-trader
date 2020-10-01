@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 
+#include "PD_Events.h"
 #include "BitLib/AggTicks.h"
 
 
@@ -10,6 +11,7 @@ public:
     MT_Volatility(void);
 
     void update(double price_low, double price_high);
+    void update_last_value(double price_low, double price_high);
     double get(void) const;
 
 private:
@@ -25,10 +27,11 @@ class MT_Policy
 public:
     MT_Policy(void);
 
-    std::tuple<double, double, double> get_action(sptrAggTick agg_tick, double position_leverage);
+    std::tuple<bool, double, double, double> get_action(sptrAggTick agg_tick, double position_leverage);
 
 private:
     MT_Volatility volatility;
+    PD_Events pd_events;
 
 };
 

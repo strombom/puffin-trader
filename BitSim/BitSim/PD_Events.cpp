@@ -2,9 +2,6 @@
 #include "PD_Events.h"
 
 
-using namespace std::chrono_literals;
-
-
 PD_OrderBookBuffer::PD_OrderBookBuffer(void) :
     length(0),
     next_idx(0),
@@ -56,6 +53,11 @@ std::tuple<float, float> PD_OrderBookBuffer::get_price(time_point_ms timestamp)
     return std::make_tuple(price_bot, price_top);
 }
 
+PD_OrderBook::PD_OrderBook(void)
+{
+
+}
+
 PD_OrderBook::PD_OrderBook(time_point_ms timestamp, float price_low, float price_high)
 {
     buffer.update(timestamp, price_low, price_high);
@@ -88,19 +90,47 @@ std::ostream& operator<<(std::ostream& stream, const PD_Event& event)
     return stream;
 }
 
+PD_Events::PD_Events(void) :
+    last_direction(PD_Direction::up),
+    price_min(std::numeric_limits<float>::max()),
+    price_max(std::numeric_limits<float>::min())
+{
+
+}
+
+sptrPD_Event PD_Events::update(sptrAggTick agg_tick)
+{
+    price_max = std::max(price_max, agg_tick->high);
+    price_min = std::min(price_min, agg_tick->low);
+
+    const auto executed = order_book.update(agg_tick->timestamp, agg_tick->low, agg_tick->high, last_direction);
+    if (executed) {
+        if (last_direction == PD_Direction::up) {
+            last_direction = PD_Direction::down;
+        }
+        else {
+            last_direction = PD_Direction::up;
+        }
+
+        auto execution_price = last_direction == PD_Direction::down ? agg_tick->low : agg_tick->high;
+        const auto event = PD_Event{ agg_tick->timestamp, execution_price, price_min, price_max, last_direction, 0 };
+
+        price_max = std::numeric_limits<float>::min();
+        price_min = std::numeric_limits<float>::max();
+
+        return std::make_shared<PD_Event>(event);
+    }
+
+    return nullptr;
+}
+
 PD_Events::PD_Events(sptrAggTicks agg_ticks)
 {
     if (agg_ticks->agg_ticks.size() < 2) {
         return;
     }
 
-    const auto offset = 200ms;
-    auto last_direction = PD_Direction::up;
-    auto order_book = PD_OrderBook{ agg_ticks->agg_ticks[0].timestamp, agg_ticks->agg_ticks[0].low, agg_ticks->agg_ticks[0].high };
     auto finding_offset = false;
-
-    auto price_max = std::numeric_limits<float>::min();
-    auto price_min = std::numeric_limits<float>::max();
 
     for (auto agg_tick_idx = 0; agg_tick_idx < agg_ticks->agg_ticks.size(); agg_tick_idx++) {
         const auto agg_tick = &agg_ticks->agg_ticks[agg_tick_idx];
@@ -141,8 +171,6 @@ PD_Events::PD_Events(sptrAggTicks agg_ticks)
     if (events_offset.size() > events.size()) {
         events_offset.pop_back();
     }
-
-    plot_events(agg_ticks);
 }
 
 void PD_Events::save(const std::string& filename_path) const
@@ -183,6 +211,7 @@ void PD_Events::plot_events(sptrAggTicks agg_ticks)
     }
     interval_file.close();
 }
+
 
 /*
 PD_Events::PD_Events(const Tick& first_tick) :

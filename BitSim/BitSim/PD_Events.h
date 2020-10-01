@@ -3,6 +3,8 @@
 
 #include "BitLib/AggTicks.h"
 
+using namespace std::chrono_literals;
+
 
 enum class PD_Direction {
     up,
@@ -30,6 +32,7 @@ private:
 
 class PD_OrderBook {
 public:
+    PD_OrderBook(void);
     PD_OrderBook(time_point_ms timestamp, float price_low, float price_high);
 
     bool update(time_point_ms timestamp, float price_low, float price_high, PD_Direction direction);
@@ -65,6 +68,7 @@ using sptrPD_Event = std::shared_ptr<PD_Event>;
 class PD_Events
 {
 public:
+    PD_Events(void);
     PD_Events(sptrAggTicks agg_ticks);
 
     std::vector<PD_Event> events;
@@ -76,6 +80,8 @@ public:
 
     void plot_events(sptrAggTicks agg_ticks);
 
+    sptrPD_Event update(sptrAggTick agg_tick);
+
     /*
     PD_Events(const Tick& first_tick);
     PD_Events(time_point_ms timestamp, const Interval& first_interval);
@@ -83,15 +89,19 @@ public:
     PD_Events(sptrTicks ticks);
     PD_Events(sptrIntervals intervals);
 
-    sptrPD_Event step(const Tick& tick);
     sptrPD_Event step(const Interval& intervals);
 
     void plot_events(sptrIntervals intervals);
     */
 
 private:
-
     size_t event_idx;
+
+    const std::chrono::milliseconds offset = 200ms;
+    PD_Direction last_direction;
+    PD_OrderBook order_book;
+    float price_min;
+    float price_max;
 
     //std::vector<PD_Event> events_offset;
     //std::vector<PD_Event> tick_prices;

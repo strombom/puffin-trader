@@ -80,11 +80,14 @@ void BitmexTrader::trader_worker(void)
         else if (trader_state == TraderState::wait_for_next_agg_tick_worker) {
             const auto agg_tick = live_data->get_next_agg_tick();
             if (agg_tick != nullptr) {
-                const auto [leverage, stop_loss, take_profit] = mt_policy->get_action(agg_tick, bitmex_account->get_leverage());
-                action_stop_loss = stop_loss;
-                action_take_profit = take_profit;
+                const auto [has_event, leverage, stop_loss, take_profit] = mt_policy->get_action(agg_tick, bitmex_account->get_leverage());
 
-                if (leverage > 0.01) {
+                if (has_event) {
+                    action_stop_loss = stop_loss;
+                    action_take_profit = take_profit;
+                }
+
+                if (leverage > 2.0) {
                     const auto contracts = bitmex_account->get_contracts();
                     const auto mark_price = bitmex_account->get_mark_price();
                     if (contracts > 0 && (mark_price < action_stop_loss || mark_price > action_take_profit)) {

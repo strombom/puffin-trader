@@ -130,7 +130,7 @@ namespace BitSim
 
     namespace BitBase
     {
-        constexpr auto address = "tcp://localhost:31001";
+        constexpr auto address = "tcp://192.168.1.65:31001";
     }
 
     namespace FeatureEncoder
@@ -145,7 +145,7 @@ namespace BitSim
     }
 
     constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 4 / 1) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 9 / 26) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 10 / 1) + 0h + 0min + 0s;
     constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
