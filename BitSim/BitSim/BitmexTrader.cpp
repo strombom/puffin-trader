@@ -69,7 +69,7 @@ void BitmexTrader::trader_worker(void)
                 std::this_thread::sleep_for(100ms);
             }
             else {
-                bitmex_rest_api->delete_all();
+                //bitmex_rest_api->delete_all();
                 std::this_thread::sleep_for(500ms);
                 trader_state = TraderState::wait_for_next_agg_tick;
             }
