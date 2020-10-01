@@ -137,7 +137,7 @@ void LiveData::tick_data_worker(void)
                         }
 
                         if (tick_data->rows.size() > 0) {
-                            logger.info("BitmexLive::tick_data_worker append count(%d) (%s) (%0.1f)", (int)tick_data->rows.size(), DateTime::to_string(last_timestamp).c_str(), tick_data->rows.back().price);
+                            //logger.info("BitmexLive::tick_data_worker append count(%d) (%s) (%0.1f)", (int)tick_data->rows.size(), DateTime::to_string(last_timestamp).c_str(), tick_data->rows.back().price);
                         }
                     }
                     else {

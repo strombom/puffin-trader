@@ -41,6 +41,9 @@ void BitmexTrader::shutdown(void)
 
 void BitmexTrader::trader_worker(void)
 {
+    auto warmup_done = false;
+    const auto warmup_timeout = system_clock_ms_now() + 2s;
+
     while (trader_thread_running) {
 
         /*
@@ -60,6 +63,12 @@ void BitmexTrader::trader_worker(void)
         std::this_thread::sleep_for(100ms);
         continue;
         */
+
+        if (!warmup_done) {
+            if (system_clock_ms_now() > warmup_timeout) {
+                warmup_done = true;
+            }
+        }
 
         if (trader_state == TraderState::start) {
             if (bitmex_account->get_mark_price() != 0.0 &&
@@ -87,7 +96,7 @@ void BitmexTrader::trader_worker(void)
                     action_take_profit = take_profit;
                 }
 
-                if (leverage > 1.2) {
+                if (leverage > 1.2 && warmup_done) {
                     const auto contracts = bitmex_account->get_contracts();
                     const auto mark_price = bitmex_account->get_mark_price();
                     if (contracts > 0 && (mark_price < action_stop_loss || (has_event && mark_price > action_take_profit))) {

@@ -113,12 +113,14 @@ sptrPD_Event PD_Events::update(sptrAggTick agg_tick)
         }
 
         auto execution_price = last_direction == PD_Direction::down ? agg_tick->low : agg_tick->high;
-        const auto event = PD_Event{ agg_tick->timestamp, execution_price, price_min, price_max, last_direction, 0 };
+        const auto event = std::make_shared<PD_Event>(agg_tick->timestamp, execution_price, price_min, price_max, last_direction, 0);
 
         price_max = std::numeric_limits<float>::min();
         price_min = std::numeric_limits<float>::max();
 
-        return std::make_shared<PD_Event>(event);
+        std::cout << "New PD_Event (" << DateTime::to_string_iso_8601(system_clock_ms_now()) << ") " << execution_price << std::endl;
+
+        return event;
     }
 
     return nullptr;
