@@ -118,8 +118,6 @@ sptrPD_Event PD_Events::update(sptrAggTick agg_tick)
         price_max = std::numeric_limits<float>::min();
         price_min = std::numeric_limits<float>::max();
 
-        std::cout << "New PD_Event (" << DateTime::to_string_iso_8601(system_clock_ms_now()) << ") " << execution_price << std::endl;
-
         return event;
     }
 

@@ -58,6 +58,8 @@ std::tuple<bool, double, double, double> MT_Policy::get_action(sptrAggTick agg_t
         const auto stop_loss_price = mark_price * (1 - direction * stop_loss);
         const auto take_profit_price = mark_price * (1 + direction * take_profit);
 
+        std::cout << "New PD_Event (" << DateTime::to_string_iso_8601(pd_event->timestamp) << ") leverage(" << action_leverage << ") " << pd_event->price << " sl(" << stop_loss_price << ") tp(" << take_profit_price << ")" << std::endl;
+
         return std::make_tuple(true, action_leverage, stop_loss_price, take_profit_price);
     }
 
