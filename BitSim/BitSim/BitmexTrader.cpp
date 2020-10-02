@@ -97,7 +97,7 @@ void BitmexTrader::trader_worker(void)
                     std::cout << "New PD_Event (" << DateTime::to_string_iso_8601(system_clock_ms_now()) << ") leverage(" << leverage << ") " << bitmex_account->get_mark_price() << " sl(" << action_stop_loss << ") tp(" << action_take_profit << ")" << std::endl;
                 }
 
-                if (leverage > 2.0 && warmup_done) {
+                if (leverage > 3.0 && warmup_done) {
                     const auto contracts = bitmex_account->get_contracts();
                     const auto mark_price = bitmex_account->get_mark_price();
                     if (contracts > 0 && (mark_price < action_stop_loss || (has_event && mark_price > action_take_profit))) {
