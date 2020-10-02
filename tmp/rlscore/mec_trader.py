@@ -18,13 +18,14 @@ filename = "../PD_Events/events.csv"
 maker_fee = -0.00025
 taker_fee = 0.00075
 
-settings = {'max_leverage': 20.0,
+settings = {'max_leverage': 10.0,
             'volatility_buffer_length': 250,
-            'leverage_factor': 60,
+            'leverage_factor': 100,
             'take_profit': 0.01,
             'data_first_timestamp': string_to_timestamp("2020-04-01 00:00:00.000"),
-            'start_timestamp': string_to_timestamp("2020-07-01 00:00:00.000"),
-            'max_order_value': 10.0
+            'start_timestamp': string_to_timestamp("2020-08-01 00:00:00.000"),
+            'max_order_value': 1000.0,
+            'min_leverage': 3.0
             }
 
 class Event:
@@ -149,10 +150,9 @@ def simulate(start_idx, end_idx, stop_loss, take_profit):
 
         event = events[idx]
         leverage = volatility * settings['leverage_factor']
-        if volatility < 0.02:
-            leverage = 0
 
-        if leverage > 0:
+        if leverage > settings['min_leverage']:
+            leverage = 10
             if position.direction > 0 and event.price < position.stop_loss_price:
                 position.market_order(-leverage, position.stop_loss_price)
             elif position.direction < 0 and event.price > position.stop_loss_price:
@@ -162,6 +162,8 @@ def simulate(start_idx, end_idx, stop_loss, take_profit):
                 position.market_order(-leverage, event.price)
             elif position.direction < 0 and event.price < position.take_profit_price:
                 position.market_order(leverage, event.price)
+        else:
+            leverage = 0
 
         peak_price = max(peak_price, event.price)
         if event.price < peak_price:
