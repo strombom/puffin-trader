@@ -145,7 +145,7 @@ int main()
         */
     }
     else if (command == "trade_live") {
-        auto live_data = std::make_shared<LiveData>(system_clock_ms_now() - 60min);
+        auto live_data = std::make_shared<LiveData>(system_clock_ms_now() - 24h);
         auto mt_policy = std::make_shared<MT_Policy>();
         auto bitmex_trader = BitmexTrader{ live_data, mt_policy };
 
