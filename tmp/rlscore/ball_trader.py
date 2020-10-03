@@ -1,72 +1,88 @@
 
 import sys
-import csv
 import numpy as np
-from datetime import datetime
-
 import matplotlib.pyplot as plt
+
 from matplotlib import cm
-from matplotlib.ticker import LinearLocator
+from matplotlib.ticker import LinearLocator, MultipleLocator, FormatStrFormatter, AutoMinorLocator
 
-def string_to_timestamp(date):
-    return datetime.timestamp(datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f"))
+from misc import calc_volatilities, calc_volatilities_regr
+from misc import read_events, string_to_timestamp
 
-
-filename = "../PD_Events/events.csv"
 
 
 maker_fee = -0.00025
 taker_fee = 0.00075
 
-settings = {'max_leverage': 10.0,
-            'volatility_buffer_length': 250,
-            'leverage_factor': 100,
-            'take_profit': 0.05,
-            'stop_loss': 0.05,
+settings = {'volatility_buffer_length': 250,
+            'events_filepath': '../PD_Events/events.csv',
             'data_first_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
             'start_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
-            'end_timestamp': string_to_timestamp("2020-02-01 00:00:00.000"),
-            'max_order_value': 10.0,
-            'min_leverage_take_profit': 0.5,
-            'min_leverage_stop_loss': 1.0
+            'end_timestamp': string_to_timestamp("2020-01-04 00:00:00.000")
             }
 
-class Event:
-    def __init__(self, timestamp, price):
-        self.timestamp = timestamp
-        self.price = price
+events = read_events(settings)
 
-    def __repr__(self):
-        return f"Event({self.timestamp}, {self.price})"
+volatilities = calc_volatilities(events, settings)
+volatilities_regr = calc_volatilities_regr(events, settings)
 
 
-events = []
-with open(filename) as csv_file:
-    for row in csv.reader(csv_file):
+times = np.zeros(len(events))
+prices = np.zeros(len(events))
+for i in range(len(events)):
+    times[i] = events[i].timestamp
+    prices[i] = events[i].price
+volatilities = np.array(volatilities)
+volatilities_regr = np.array(volatilities_regr)
 
-        ts = (settings['data_first_timestamp'] * 1000 + int(row[0])) / 1000
+ax1 = plt.subplot(211)
+ax2 = plt.subplot(212, sharex=ax1) # Volatility
+#ax3 = plt.subplot(313, sharex=ax1) # Leverage
 
-        #if 1584000000000 < 1577836800000 + ts < 1584080000000:
-        #    events.append(Event(ts, float(row[1])))
+ax1.plot(times, prices, color='black')
+ax1.grid(axis='y', which='both')
+ax1.yaxis.set_minor_locator(MultipleLocator(10))
+ax1.yaxis.set_major_locator(MultipleLocator(100))
 
-        #if 1577836800000 + ts < 1584006800000 or 1577836800000 + ts > 1584081300000:
-        #    events.append(Event(ts, float(row[1])))
+ax2.plot(times, volatilities)
+ax2.plot(times, volatilities_regr)
 
-        if ts > settings['start_timestamp']:
-            events.append(Event(ts, float(row[1])))
+#for idx, values in enumerate(times):
+#    label = f"SL: {stop_losses[idx]}"
+#    #ax2.plot(times, walletss[idx], label=label)
+#    #ax2.set_yscale('log')
+#    #label = f"SL: {stop_losses[idx]}"
+#    #ax3.plot(times, leveragess[idx], label=label)
 
-        if ts > settings['end_timestamp']:
-            break
+#legend1 = ax1.legend()
+#legend2 = ax2.legend()
 
-        #if len(events) == 1000:
-        #    break
+#ax1.ylim(0, 30000)
+#ax1.ylim(0, 30000)
+plt.show()
 
-#events = events[-3000:]
+quit()
 
-timestamp_start = datetime.fromtimestamp(events[0].timestamp)
-timestamp_end = datetime.fromtimestamp(events[-1].timestamp)
-print(timestamp_start)
-print(timestamp_end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 quit()
 
