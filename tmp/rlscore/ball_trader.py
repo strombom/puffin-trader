@@ -6,15 +6,15 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, MultipleLocator, FormatStrFormatter, AutoMinorLocator
 
-from misc import calc_volatilities, calc_volatilities_regr
+from misc import calc_volatilities, calc_volatilities_regr, calc_directions
 from misc import read_events, string_to_timestamp
-
+from trading import Position
 
 
 maker_fee = -0.00025
 taker_fee = 0.00075
 
-settings = {'volatility_buffer_length': 250,
+settings = {'volatility_buffer_length': 50,
             'events_filepath': '../PD_Events/events.csv',
             'data_first_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
             'start_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
@@ -25,150 +25,10 @@ events = read_events(settings)
 
 volatilities = calc_volatilities(events, settings)
 volatilities_regr = calc_volatilities_regr(events, settings)
+directions, velocities = calc_directions(events, settings)
 
 
-times = np.zeros(len(events))
-prices = np.zeros(len(events))
-for i in range(len(events)):
-    times[i] = events[i].timestamp
-    prices[i] = events[i].price
-volatilities = np.array(volatilities)
-volatilities_regr = np.array(volatilities_regr)
-
-ax1 = plt.subplot(211)
-ax2 = plt.subplot(212, sharex=ax1) # Volatility
-#ax3 = plt.subplot(313, sharex=ax1) # Leverage
-
-ax1.plot(times, prices, color='black')
-ax1.grid(axis='y', which='both')
-ax1.yaxis.set_minor_locator(MultipleLocator(10))
-ax1.yaxis.set_major_locator(MultipleLocator(100))
-
-ax2.plot(times, volatilities)
-ax2.plot(times, volatilities_regr)
-
-#for idx, values in enumerate(times):
-#    label = f"SL: {stop_losses[idx]}"
-#    #ax2.plot(times, walletss[idx], label=label)
-#    #ax2.set_yscale('log')
-#    #label = f"SL: {stop_losses[idx]}"
-#    #ax3.plot(times, leveragess[idx], label=label)
-
-#legend1 = ax1.legend()
-#legend2 = ax2.legend()
-
-#ax1.ylim(0, 30000)
-#ax1.ylim(0, 30000)
-plt.show()
-
-quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-quit()
-
-class Position:
-    def __init__(self, mark_price, initial_leverage, take_profit, min_profit):
-        self.wallet = 1.0
-        self.price = mark_price
-        self.contracts = 0 #initial_leverage * self.wallet * self.price
-        self.take_profit = take_profit
-        self.min_profit = min_profit
-        self._update()
-
-    def _update(self):
-        if self.contracts == 0:
-            self.direction = 1
-        else:
-            self.direction = self.contracts / abs(self.contracts)
-        self.take_profit_price = self.price * (1 + self.direction * take_profit)
-        self.stop_loss_price = self.price * (1 - self.direction * stop_loss)
-
-        if self.wallet < 0.2:
-            self.wallet = 0
-            self.contracts = 0
-            return
-
-    def get_leverage(self, mark_price):
-        if self.wallet == 0:
-            return 0
-        value = self.contracts / mark_price
-        leverage = value / self.wallet
-        return leverage
-
-    def get_value(self, mark_price):
-        if self.wallet == 0:
-            return 0
-        upnl = self.contracts * (1 / self.price - 1 / mark_price)
-        return (self.wallet + upnl) * mark_price
-
-    def market_order(self, order_leverage, mark_price, timestamp):
-
-        # print('market_order', wallet, pos_price, pos_contracts, order_contracts, mark_price)
-        if self.wallet == 0:
-            return
-
-        upnl = self.contracts * (1 / self.price - 1 / mark_price)
-
-        #if timestamp > 1578035300:
-        #    print("a")
-        #elif timestamp > 1578416400:
-        #    print("a")
-
-        max_contracts = settings['max_leverage'] * (self.wallet + upnl) * mark_price
-        max_contracts = min(max_contracts, settings['max_order_value'] * mark_price)
-
-        margin = self.wallet * min(max(order_leverage, -settings['max_leverage']), settings['max_leverage'])
-        order_contracts = min(max(margin * mark_price, -max_contracts), max_contracts) - self.contracts
-
-        # Fee
-        fee = taker_fee * abs(order_contracts) / mark_price
-        self.wallet -= fee
-
-        # Realised profit and loss
-        # Wallet only changes when abs(contracts) decrease
-        realised = self.wallet
-        if (self.contracts > 0) and (order_contracts < 0):
-            self.wallet += (1 / self.price - 1 / mark_price) * min(-order_contracts, self.contracts)
-        elif (self.contracts < 0) and (order_contracts > 0):
-            self.wallet += (1 / self.price - 1 / mark_price) * max(-order_contracts, self.contracts)
-
-        realised = self.wallet - realised
-        #if realised != 0:
-        #    print("realise", self.wallet, realised, fee, realised - fee)
-
-        # Calculate average entry price
-        if (self.contracts >= 0 and order_contracts > 0) or (self.contracts <= 0 and order_contracts < 0):
-            self.price = (self.contracts * self.price + order_contracts * mark_price) / (self.contracts + order_contracts)
-        elif (self.contracts >= 0 and self.contracts + order_contracts < 0) or (self.contracts <= 0 and self.contracts + order_contracts > 0):
-            self.price = mark_price
-
-        #print(f"t({datetime.fromtimestamp(timestamp)}) price({mark_price}) contr({order_contracts})")
-
-        # Calculate position contracts
-        self.contracts += order_contracts
-        self._update()
-
-
+"""
 def simulate(start_idx, end_idx, stop_loss, take_profit, min_leverage_stop_loss=3.0, min_leverage_take_profit=2.0):
     volatility = 0.0
     wallets = []
@@ -218,6 +78,118 @@ def simulate(start_idx, end_idx, stop_loss, take_profit, min_leverage_stop_loss=
 
         # print(f"go long, value({position.wallet * event.price} price({event.price})")
     return position, values, drawdown, volatilities, leverages, wallets
+
+"""
+
+
+
+offset_min = 10
+offset_ref = 20
+k = 0.01
+
+side = -1
+ball = events[0].price + side * offset_ref
+balls = []
+
+
+for idx in range(len(events)):
+    event = events[idx]
+
+    offset = ball - event.price
+
+    if (side == 1 and event.price > ball) or (side == -1 and event.price < ball):
+        if abs(offset) < offset_min:
+            offset = side * -offset_min
+        else:
+            offset = -offset
+        side = -side
+
+    k = volatilities[idx] * 10
+
+    offset = side * offset_ref * k + offset * (1 - k)
+    ball = event.price + offset
+
+
+
+    balls.append(ball)
+
+
+    #if side == 1 and
+
+
+balls = np.array(balls)
+
+
+
+
+
+
+times = np.zeros(len(events))
+prices = np.zeros(len(events))
+for i in range(len(events)):
+    times[i] = events[i].timestamp
+    prices[i] = events[i].price
+
+ax1 = plt.subplot(211)
+ax2 = plt.subplot(212, sharex=ax1) # Volatility
+#ax3 = plt.subplot(313, sharex=ax1) # Leverage
+
+ax1.plot(times, prices, color='black')
+ax1.plot(times, balls, color='green')
+ax1.grid(axis='y', which='both')
+ax1.yaxis.set_minor_locator(MultipleLocator(10))
+ax1.yaxis.set_major_locator(MultipleLocator(100))
+
+
+print(volatilities.shape)
+print(directions.shape)
+print(velocities.shape)
+ax2.plot(times, 10 * volatilities, label="vol")
+ax2.plot(times, 10 * volatilities_regr, label="volreg")
+ax2.plot(times, 0.05 * directions, label="dir")
+ax2.plot(times, 0.1 * velocities, label="vel")
+ax2.grid(axis='y', which='both')
+legend2 = ax2.legend()
+
+#for idx, values in enumerate(times):
+#    label = f"SL: {stop_losses[idx]}"
+#    #ax2.plot(times, walletss[idx], label=label)
+#    #ax2.set_yscale('log')
+#    #label = f"SL: {stop_losses[idx]}"
+#    #ax3.plot(times, leveragess[idx], label=label)
+
+#legend1 = ax1.legend()
+#legend2 = ax2.legend()
+
+#ax1.ylim(0, 30000)
+#ax1.ylim(0, 30000)
+plt.show()
+
+quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+quit()
+
 
 #print(f"First price {events[0].price}")
 

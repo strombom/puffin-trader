@@ -66,6 +66,7 @@ def calc_volatilities(events, settings):
         vola_prices[-1] = event.price
         volatility = max(vola_prices) / min(vola_prices) - 1
         volatilities.append(volatility)
+    volatilities = np.array(volatilities)[:, 0]
 
     with open('cache_volatilities.pickle', 'wb') as f:
         data = {
@@ -101,6 +102,7 @@ def calc_volatilities_regr(events, settings):
         z = vola_prices - y + np.mean(vola_prices)
         volatility = max(z) / min(z) - 1
         volatilities.append(volatility)
+    volatilities = np.array(volatilities)[:, 0]
 
     with open('cache_volatilities_regr.pickle', 'wb') as f:
         data = {
@@ -111,3 +113,39 @@ def calc_volatilities_regr(events, settings):
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
     return volatilities
+
+def calc_directions(events, settings):
+    try:
+        with open('cache_directions.pickle', 'rb') as f:
+            data = pickle.load(f)
+            if data['start_timestamp'] == settings['start_timestamp'] and data['end_timestamp'] == settings['end_timestamp']:
+                return data['data']
+    except:
+        pass
+
+    buffer_length = settings['volatility_buffer_length']
+    x = np.arange(buffer_length).reshape((buffer_length, 1))
+    dir_prices = np.ones((buffer_length, 1)) * events[0].price
+    directions = []
+
+    for event in events:
+        dir_prices[:-1] = dir_prices[1:]
+        dir_prices[-1] = event.price
+        regressor = LinearRegression()
+        regressor.fit(x, dir_prices)  # actually produces the linear eqn for the data
+        direction = regressor.coef_[0]
+        directions.append(direction)
+    directions = np.array(directions)[:, 0]
+
+    velocities = np.zeros(directions.shape[0])
+    velocities[2:] = directions[2:] - directions[:-2]
+
+    with open('cache_directions.pickle', 'wb') as f:
+        data = {
+            'start_timestamp': settings['start_timestamp'],
+            'end_timestamp': settings['end_timestamp'],
+            'data': (directions, velocities)
+        }
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+    return directions, velocities
