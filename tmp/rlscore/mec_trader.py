@@ -21,11 +21,13 @@ taker_fee = 0.00075
 settings = {'max_leverage': 10.0,
             'volatility_buffer_length': 250,
             'leverage_factor': 100,
-            'take_profit': 0.01,
-            'data_first_timestamp': string_to_timestamp("2020-04-01 00:00:00.000"),
-            'start_timestamp': string_to_timestamp("2020-08-01 00:00:00.000"),
+            'take_profit': 0.003,
+            'stop_loss': 0.0015,
+            'data_first_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
+            'start_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
             'max_order_value': 1000.0,
-            'min_leverage': 3.0
+            'min_leverage_take_profit': 1.5,
+            'min_leverage_stop_loss': 4.5
             }
 
 class Event:
@@ -84,6 +86,8 @@ class Position:
             return
 
     def get_leverage(self):
+        if self.wallet == 0:
+            return 0
         value = self.contracts / self.price
         leverage = value / self.wallet
         return leverage
@@ -97,7 +101,7 @@ class Position:
         upnl = sign * (mark_value - entry_value)
         return (self.wallet + upnl) * mark_price
 
-    def market_order(self, order_leverage, mark_price):
+    def market_order(self, order_leverage, mark_price, timestamp):
 
         # print('market_order', wallet, pos_price, pos_contracts, order_contracts, mark_price)
         if self.wallet == 0:
@@ -132,12 +136,14 @@ class Position:
         elif (self.contracts >= 0 and self.contracts + order_contracts < 0) or (self.contracts <= 0 and self.contracts + order_contracts > 0):
             self.price = mark_price
 
+        #print(f"t({datetime.fromtimestamp(timestamp)}) price({mark_price}) contr({order_contracts})")
+
         # Calculate position contracts
         self.contracts += order_contracts
         self._update()
 
 
-def simulate(start_idx, end_idx, stop_loss, take_profit):
+def simulate(start_idx, end_idx, stop_loss, take_profit, min_leverage_stop_loss=3.0, min_leverage_take_profit=2.0):
     volatility = 0.0
     volatilities = []
     leverages = []
@@ -147,23 +153,25 @@ def simulate(start_idx, end_idx, stop_loss, take_profit):
     peak_price = events[0].price
     position = Position(events[0].price, settings['max_leverage'], stop_loss, take_profit)
     for idx in range(start_idx, end_idx):
-
         event = events[idx]
         leverage = volatility * settings['leverage_factor']
 
-        if leverage > settings['min_leverage']:
-            leverage = 10
-            if position.direction > 0 and event.price < position.stop_loss_price:
-                position.market_order(-leverage, position.stop_loss_price)
-            elif position.direction < 0 and event.price > position.stop_loss_price:
-                position.market_order(leverage, position.stop_loss_price)
+        if leverage > settings['min_leverage_stop_loss'] and position.direction > 0 and event.price < position.stop_loss_price:
+            leverage = -2
+            position.market_order(leverage, position.stop_loss_price, event.timestamp)
 
-            if position.direction > 0 and event.price > position.take_profit_price:
-                position.market_order(-leverage, event.price)
-            elif position.direction < 0 and event.price < position.take_profit_price:
-                position.market_order(leverage, event.price)
-        else:
-            leverage = 0
+        elif leverage > settings['min_leverage_stop_loss'] and position.direction < 0 and event.price > position.stop_loss_price:
+            leverage = 1
+            position.market_order(leverage, position.stop_loss_price, event.timestamp)
+
+        elif leverage > settings['min_leverage_take_profit'] and position.direction > 0 and event.price > position.take_profit_price:
+            leverage = -2
+            position.market_order(leverage, event.price, event.timestamp)
+
+        elif leverage > settings['min_leverage_take_profit'] and position.direction < 0 and event.price < position.take_profit_price:
+            leverage = 1
+            position.market_order(leverage, event.price, event.timestamp)
+
 
         peak_price = max(peak_price, event.price)
         if event.price < peak_price:
@@ -181,7 +189,7 @@ def simulate(start_idx, end_idx, stop_loss, take_profit):
         # print(f"go long, value({position.wallet * event.price} price({event.price})")
     return position, values, drawdown, volatilities, leverages
 
-print(f"First price {events[0].price}")
+#print(f"First price {events[0].price}")
 
 #for stop_loss in [0.005, 0.0075, 0.01, 0.0125, 0.015, 0.0175, 0.02, 0.0225, 0.025, 0.0275, 0.03, 0.0325, 0.035, 0.0375, 0.04]:
 #    for take_profit in [0.005, 0.01, 0.015, 0.020, 0.025, 0.030, 0.035]:
@@ -195,14 +203,19 @@ valuess = []
 stop_losses = []
 volatilitiess = []
 leveragess = []
-stop_loss = settings['take_profit']
+take_profit = settings['take_profit']
+stop_loss = settings['stop_loss']
+min_leverage_stop_loss = 4.5
+min_leverage_take_profit = 1.5
 
 # np.linspace(take_profit - 0.005, take_profit + 0.005, num=11): # [0.005, 0.007, 0.009, 0.011, 0.013, 0.015]:
 #for vbl in [200, 210, 220, 230, 240, 250, 260]:
+#for stop_loss in np.linspace(0.001, 0.004, 7):
 for a in [1]:
-    take_profit = stop_loss - 0.000
+    #take_profit = stop_loss
+
     episode_data = []
-    position, values, drawdown, volatilities, leverages = simulate(start_idx, start_idx + episode_length, stop_loss, take_profit)
+    position, values, drawdown, volatilities, leverages = simulate(start_idx, start_idx + episode_length, stop_loss, take_profit, min_leverage_stop_loss, min_leverage_take_profit)
     episode_data.append([stop_loss, take_profit, position.wallet * events[-1].price, drawdown])
     valuess.append(values)
     stop_losses.append(stop_loss)
@@ -236,10 +249,11 @@ ax1.plot(times, prices, color='black')
 
 for idx, values in enumerate(valuess):
     label = f"SL: {stop_losses[idx]}"
-    ax1.plot(times, values, label=label)
-    label = f"V: {stop_losses[idx]}"
-    ax2.plot(times, volatilitiess[idx], label=label)
-    label = f"V: {stop_losses[idx]}"
+    ax2.plot(times, values, label=label)
+    ax2.set_yscale('log')
+    #label = f"V: {stop_losses[idx]}"
+    #ax2.plot(times, volatilitiess[idx], label=label)
+    label = f"SL: {stop_losses[idx]}"
     ax3.plot(times, leveragess[idx], label=label)
 
 legend1 = ax1.legend()
