@@ -48,15 +48,12 @@ std::tuple<bool, double, double, double> MT_Policy::get_action(sptrAggTick agg_t
     const auto action_leverage = volatility.get() * 100;
 
     if (pd_event != nullptr) {
-        constexpr auto stop_loss = 0.01;
-        constexpr auto take_profit = 0.01;
-
         volatility.update(agg_tick->low, agg_tick->high);
 
         const auto mark_price = (agg_tick->low + agg_tick->high) / 2;
         const auto direction = position_leverage >= 0 ? 1 : -1;
-        const auto stop_loss_price = mark_price * (1 - direction * stop_loss);
-        const auto take_profit_price = mark_price * (1 + direction * take_profit);
+        const auto stop_loss_price = mark_price * (1 - direction * BitSim::Trader::Mech::stop_loss);
+        const auto take_profit_price = mark_price * (1 + direction * BitSim::Trader::Mech::take_profit);
 
         return std::make_tuple(true, action_leverage, stop_loss_price, take_profit_price);
     }

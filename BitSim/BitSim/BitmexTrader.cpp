@@ -76,8 +76,8 @@ void BitmexTrader::trader_worker(void)
                 bitmex_account->get_bid_price() != 0.0 &&
                 bitmex_account->get_wallet() != 0.0) {
                 std::this_thread::sleep_for(100ms);
-                action_stop_loss = bitmex_account->get_mark_price() * (1 - 0.01);
-                action_take_profit = bitmex_account->get_mark_price() * (1 + 0.01);
+                action_stop_loss = bitmex_account->get_mark_price() * (1 - BitSim::Trader::Mech::stop_loss);
+                action_take_profit = bitmex_account->get_mark_price() * (1 + BitSim::Trader::Mech::take_profit);
                 trader_state = TraderState::wait_for_next_agg_tick;
             }
             else {
@@ -97,17 +97,29 @@ void BitmexTrader::trader_worker(void)
                     std::cout << "New PD_Event (" << DateTime::to_string_iso_8601(system_clock_ms_now()) << ") leverage(" << leverage << ") " << bitmex_account->get_mark_price() << " sl(" << action_stop_loss << ") tp(" << action_take_profit << ")" << std::endl;
                 }
 
-                if (leverage > 3.0 && warmup_done) {
-                    const auto contracts = bitmex_account->get_contracts();
-                    const auto mark_price = bitmex_account->get_mark_price();
-                    if (contracts > 0 && (mark_price < action_stop_loss || (has_event && mark_price > action_take_profit))) {
-                        action_leverage = -BitSim::BitMex::leverage;
-                        action_stop_loss = stop_loss;
-                        action_take_profit = take_profit;
-                        trader_state = TraderState::delete_orders;
+                const auto contracts = bitmex_account->get_contracts();
+                const auto mark_price = bitmex_account->get_mark_price();
+
+                if (warmup_done) {
+                    auto trade = false;
+                    if (contracts > 0 && (mark_price < action_stop_loss || mark_price > action_take_profit)) {
+                        if (leverage > BitSim::Trader::Mech::min_leverage_stop_loss || (has_event && leverage > BitSim::Trader::Mech::min_leverage_take_profit)) {
+                            trade = true;
+                        }
                     }
-                    else if (contracts <= 0 && (mark_price > action_stop_loss || (has_event && mark_price < action_take_profit))) {
-                        action_leverage = BitSim::BitMex::leverage;
+                    else if (contracts <= 0 && (mark_price > action_stop_loss || mark_price < action_take_profit)) {
+                        if (leverage > BitSim::Trader::Mech::min_leverage_stop_loss || (has_event && leverage > BitSim::Trader::Mech::min_leverage_take_profit)) {
+                            trade = true;
+                        }
+                    }
+                    
+                    if (trade) {
+                        if (contracts > 0) {
+                            action_leverage = -BitSim::BitMex::leverage;
+                        }
+                        else {
+                            action_leverage = BitSim::BitMex::leverage;
+                        }
                         action_stop_loss = stop_loss;
                         action_take_profit = take_profit;
                         trader_state = TraderState::delete_orders;
