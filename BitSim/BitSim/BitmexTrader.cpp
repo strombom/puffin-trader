@@ -101,13 +101,13 @@ void BitmexTrader::trader_worker(void)
                     const auto contracts = bitmex_account->get_contracts();
                     const auto mark_price = bitmex_account->get_mark_price();
                     if (contracts > 0 && (mark_price < action_stop_loss || (has_event && mark_price > action_take_profit))) {
-                        action_leverage = -leverage;
+                        action_leverage = -BitSim::BitMex::leverage;
                         action_stop_loss = stop_loss;
                         action_take_profit = take_profit;
                         trader_state = TraderState::delete_orders;
                     }
                     else if (contracts <= 0 && (mark_price > action_stop_loss || (has_event && mark_price < action_take_profit))) {
-                        action_leverage = leverage;
+                        action_leverage = BitSim::BitMex::leverage;
                         action_stop_loss = stop_loss;
                         action_take_profit = take_profit;
                         trader_state = TraderState::delete_orders;
