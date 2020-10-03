@@ -9,7 +9,7 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 
 def string_to_timestamp(date):
-    return datetime.timestamp(datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f")) * 1000
+    return datetime.timestamp(datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f"))
 
 
 filename = "../PD_Events/events.csv"
@@ -25,6 +25,7 @@ settings = {'max_leverage': 10.0,
             'stop_loss': 0.05,
             'data_first_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
             'start_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
+            'end_timestamp': string_to_timestamp("2020-02-01 00:00:00.000"),
             'max_order_value': 10.0,
             'min_leverage_take_profit': 0.5,
             'min_leverage_stop_loss': 1.0
@@ -32,7 +33,7 @@ settings = {'max_leverage': 10.0,
 
 class Event:
     def __init__(self, timestamp, price):
-        self.timestamp = (settings['data_first_timestamp'] + int(timestamp)) / 1000
+        self.timestamp = timestamp
         self.price = price
 
     def __repr__(self):
@@ -42,15 +43,20 @@ class Event:
 events = []
 with open(filename) as csv_file:
     for row in csv.reader(csv_file):
-        ts = int(row[0])
+
+        ts = (settings['data_first_timestamp'] * 1000 + int(row[0])) / 1000
+
         #if 1584000000000 < 1577836800000 + ts < 1584080000000:
         #    events.append(Event(ts, float(row[1])))
 
         #if 1577836800000 + ts < 1584006800000 or 1577836800000 + ts > 1584081300000:
         #    events.append(Event(ts, float(row[1])))
 
-        if settings['data_first_timestamp'] + ts > settings['start_timestamp']:
+        if ts > settings['start_timestamp']:
             events.append(Event(ts, float(row[1])))
+
+        if ts > settings['end_timestamp']:
+            break
 
         #if len(events) == 1000:
         #    break
@@ -62,6 +68,7 @@ timestamp_end = datetime.fromtimestamp(events[-1].timestamp)
 print(timestamp_start)
 print(timestamp_end)
 
+quit()
 
 class Position:
     def __init__(self, mark_price, initial_leverage, take_profit, min_profit):
