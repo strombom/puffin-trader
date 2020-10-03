@@ -18,16 +18,16 @@ filename = "../PD_Events/events.csv"
 maker_fee = -0.00025
 taker_fee = 0.00075
 
-settings = {'max_leverage': 2.0,
+settings = {'max_leverage': 10.0,
             'volatility_buffer_length': 250,
             'leverage_factor': 100,
-            'take_profit': 0.003,
-            'stop_loss': 0.0015,
+            'take_profit': 0.01,
+            'stop_loss': 0.01,
             'data_first_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
             'start_timestamp': string_to_timestamp("2020-01-01 00:00:00.000"),
-            'max_order_value': 100.0,
-            'min_leverage_take_profit': 1.5,
-            'min_leverage_stop_loss': 4.5
+            'max_order_value': 10.0,
+            'min_leverage_take_profit': 0.1,
+            'min_leverage_stop_loss': 0.1
             }
 
 class Event:
@@ -106,6 +106,11 @@ class Position:
 
         upnl = self.contracts * (1 / self.price - 1 / mark_price)
 
+        #if timestamp > 1578035300:
+        #    print("a")
+        #elif timestamp > 1578416400:
+        #    print("a")
+
         max_contracts = settings['max_leverage'] * (self.wallet + upnl) * mark_price
         max_contracts = min(max_contracts, settings['max_order_value'] * mark_price)
 
@@ -156,19 +161,21 @@ def simulate(start_idx, end_idx, stop_loss, take_profit, min_leverage_stop_loss=
         leverage = volatility * settings['leverage_factor']
 
         if leverage > settings['min_leverage_stop_loss'] and position.direction > 0 and event.price < position.stop_loss_price:
-            leverage = -10 #-3
-            position.market_order(leverage, position.stop_loss_price, event.timestamp)
+            leverage = -leverage #-3
+            mark_price = event.price #min(events[idx - 1].price, position.stop_loss_price)
+            position.market_order(leverage, mark_price, event.timestamp)
 
         elif leverage > settings['min_leverage_stop_loss'] and position.direction < 0 and event.price > position.stop_loss_price:
-            leverage = 10
-            position.market_order(leverage, position.stop_loss_price, event.timestamp)
+            leverage = leverage
+            mark_price = event.price #max(events[idx - 1].price, position.stop_loss_price)
+            position.market_order(leverage, mark_price, event.timestamp)
 
         elif leverage > settings['min_leverage_take_profit'] and position.direction > 0 and event.price > position.take_profit_price:
-            leverage = -10 #-3
+            leverage = -leverage #-3
             position.market_order(leverage, event.price, event.timestamp)
 
         elif leverage > settings['min_leverage_take_profit'] and position.direction < 0 and event.price < position.take_profit_price:
-            leverage = 10
+            leverage = leverage
             position.market_order(leverage, event.price, event.timestamp)
 
 
