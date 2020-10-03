@@ -45,7 +45,7 @@ std::tuple<bool, double, double, double> MT_Policy::get_action(sptrAggTick agg_t
     const auto pd_event = pd_events.update(agg_tick);
 
     volatility.update_last_value(agg_tick->low, agg_tick->high);
-    const auto action_leverage = volatility.get() * 60;
+    const auto action_leverage = volatility.get() * 100;
 
     if (pd_event != nullptr) {
         constexpr auto stop_loss = 0.01;
