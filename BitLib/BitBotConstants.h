@@ -144,8 +144,8 @@ namespace BitSim
         constexpr auto n_channels = 3 * 4;
     }
 
-    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 4 / 1) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 10 / 1) + 0h + 0min + 0s;
+    constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 1 / 1) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 5 / 1) + 0h + 0min + 0s;
     constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";
@@ -194,6 +194,15 @@ namespace BitSim
             constexpr auto rest_api_host = "www.bitmex.com";
             constexpr auto rest_api_port = "443";
             constexpr auto rest_api_url = "/api/v1/";
+        }
+
+        namespace Mech
+        {
+            constexpr auto take_profit = 0.003;
+            constexpr auto stop_loss = 0.0015;
+            constexpr auto min_leverage_take_profit = 1.5;
+            constexpr auto min_leverage_stop_loss = 4.5;
+            constexpr auto volatility_buffer_length = 250;
         }
 
 #ifdef TORCH_API
