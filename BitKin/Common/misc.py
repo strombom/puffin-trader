@@ -19,7 +19,7 @@ class Event:
 
 def read_events(settings):
     try:
-        with open('cache_events.pickle', 'rb') as f:
+        with open('cache/events.pickle', 'rb') as f:
             data = pickle.load(f)
             if data['start_timestamp'] == settings['start_timestamp'] and data['end_timestamp'] == settings['end_timestamp']:
                 print(datetime.fromtimestamp(data['data'][0].timestamp), '-', datetime.fromtimestamp(data['data'][-1].timestamp))
@@ -36,7 +36,7 @@ def read_events(settings):
             if ts > settings['end_timestamp']:
                 break
 
-    with open('cache_events.pickle', 'wb') as f:
+    with open('cache/events.pickle', 'wb') as f:
         data = {
             'start_timestamp': settings['start_timestamp'],
             'end_timestamp': settings['end_timestamp'],
@@ -50,7 +50,7 @@ def read_events(settings):
 
 def calc_volatilities(events, settings):
     try:
-        with open('cache_volatilities.pickle', 'rb') as f:
+        with open(f"cache/volatilities_{settings['volatility_buffer_length']}.pickle", 'rb') as f:
             data = pickle.load(f)
             if data['start_timestamp'] == settings['start_timestamp'] and data['end_timestamp'] == settings['end_timestamp']:
                 return data['data']
@@ -68,7 +68,7 @@ def calc_volatilities(events, settings):
         volatilities.append(volatility)
     volatilities = np.array(volatilities)[:, 0]
 
-    with open('cache_volatilities.pickle', 'wb') as f:
+    with open(f"cache/volatilities_{settings['volatility_buffer_length']}.pickle", 'wb') as f:
         data = {
             'start_timestamp': settings['start_timestamp'],
             'end_timestamp': settings['end_timestamp'],
@@ -81,7 +81,7 @@ def calc_volatilities(events, settings):
 
 def calc_volatilities_regr(events, settings):
     try:
-        with open('cache_volatilities_regr.pickle', 'rb') as f:
+        with open(f"cache/volatilities_regr_{settings['volatility_buffer_length']}.pickle", 'rb') as f:
             data = pickle.load(f)
             if data['start_timestamp'] == settings['start_timestamp'] and data['end_timestamp'] == settings['end_timestamp']:
                 return data['data']
@@ -104,7 +104,7 @@ def calc_volatilities_regr(events, settings):
         volatilities.append(volatility)
     volatilities = np.array(volatilities)[:, 0]
 
-    with open('cache_volatilities_regr.pickle', 'wb') as f:
+    with open(f"cache/volatilities_regr_{settings['volatility_buffer_length']}.pickle", 'wb') as f:
         data = {
             'start_timestamp': settings['start_timestamp'],
             'end_timestamp': settings['end_timestamp'],
@@ -116,7 +116,7 @@ def calc_volatilities_regr(events, settings):
 
 def calc_directions(events, settings):
     try:
-        with open('cache_directions.pickle', 'rb') as f:
+        with open(f"cache/directions_{settings['volatility_buffer_length']}.pickle", 'rb') as f:
             data = pickle.load(f)
             if data['start_timestamp'] == settings['start_timestamp'] and data['end_timestamp'] == settings['end_timestamp']:
                 return data['data']
@@ -140,7 +140,7 @@ def calc_directions(events, settings):
     velocities = np.zeros(directions.shape[0])
     velocities[2:] = directions[2:] - directions[:-2]
 
-    with open('cache_directions.pickle', 'wb') as f:
+    with open(f"cache/directions_{settings['volatility_buffer_length']}.pickle", 'wb') as f:
         data = {
             'start_timestamp': settings['start_timestamp'],
             'end_timestamp': settings['end_timestamp'],
