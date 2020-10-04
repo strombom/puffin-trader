@@ -44,22 +44,25 @@ private:
 class PD_Event
 {
 public:
-    PD_Event(time_point_ms timestamp, float price, float price_min, float price_max, PD_Direction direction, size_t agg_tick_idx) :
-        timestamp(timestamp), price(price), price_min(price_min), price_max(price_max), direction(direction), agg_tick_idx(agg_tick_idx)
-    {}
-
-    PD_Event(time_point_ms timestamp, float price, PD_Direction direction, size_t agg_tick_idx) :
-        timestamp(timestamp), price(price), price_min(0.0f), price_max(0.0f), direction(direction), agg_tick_idx(agg_tick_idx)
+    PD_Event(PD_Direction direction, time_point_ms timestamp_delta, time_point_ms timestamp_overshoot, float price_delta, float price_overshoot, size_t agg_tick_idx_delta, size_t agg_tick_idx_overshoot) :
+        direction(direction),
+        timestamp_delta(timestamp_delta),
+        timestamp_overshoot(timestamp_overshoot),
+        price_delta(price_delta),
+        price_overshoot(price_overshoot),
+        agg_tick_idx_delta(agg_tick_idx_delta),
+        agg_tick_idx_overshoot(agg_tick_idx_overshoot)
     {}
 
     friend std::ostream& operator<<(std::ostream& stream, const AggTick& agg_tick);
 
-    time_point_ms timestamp;
-    float price;
-    float price_min;
-    float price_max;
     PD_Direction direction;
-    size_t agg_tick_idx;
+    time_point_ms timestamp_delta;
+    time_point_ms timestamp_overshoot;
+    float price_delta;
+    float price_overshoot;
+    size_t agg_tick_idx_delta;
+    size_t agg_tick_idx_overshoot;
 };
 
 using sptrPD_Event = std::shared_ptr<PD_Event>;
@@ -72,7 +75,7 @@ public:
     PD_Events(double delta, sptrAggTicks agg_ticks);
 
     std::vector<PD_Event> events;
-    std::vector<PD_Event> events_offset;
+    //std::vector<PD_Event> events_offset;
 
     friend std::ostream& operator<<(std::ostream& stream, const PD_Events& pd_events_data);
 

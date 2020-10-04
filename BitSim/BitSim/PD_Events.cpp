@@ -78,14 +78,16 @@ bool PD_OrderBook::update(time_point_ms timestamp, float price_low, float price_
 
 std::ostream& operator<<(std::ostream& stream, const PD_Event& event)
 {
-    const auto timestamp = event.timestamp.time_since_epoch().count();
+    const auto timestamp_delta = event.timestamp_delta.time_since_epoch().count();
+    const auto timestamp_overshoot = event.timestamp_overshoot.time_since_epoch().count();
 
-    stream.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
-    stream.write(reinterpret_cast<const char*>(&event.price), sizeof(event.price));
-    stream.write(reinterpret_cast<const char*>(&event.price_min), sizeof(event.price_min));
-    stream.write(reinterpret_cast<const char*>(&event.price_max), sizeof(event.price_max));
     stream.write(reinterpret_cast<const char*>(&event.direction), sizeof(event.direction));
-    stream.write(reinterpret_cast<const char*>(&event.agg_tick_idx), sizeof(event.agg_tick_idx));
+    stream.write(reinterpret_cast<const char*>(&timestamp_delta), sizeof(timestamp_delta));
+    stream.write(reinterpret_cast<const char*>(&timestamp_overshoot), sizeof(timestamp_overshoot));
+    stream.write(reinterpret_cast<const char*>(&event.price_delta), sizeof(event.price_delta));
+    stream.write(reinterpret_cast<const char*>(&event.price_overshoot), sizeof(event.price_overshoot));
+    stream.write(reinterpret_cast<const char*>(&event.agg_tick_idx_delta), sizeof(event.agg_tick_idx_delta));
+    stream.write(reinterpret_cast<const char*>(&event.agg_tick_idx_overshoot), sizeof(event.agg_tick_idx_overshoot));
 
     return stream;
 }
@@ -106,6 +108,51 @@ PD_Events::PD_Events(double delta, sptrAggTicks agg_ticks) :
         return;
     }
 
+    auto direction = 1;
+    auto overshoot_price = agg_ticks->agg_ticks[0].low;
+    auto overshoot_agg_tick_idx = 0;
+    auto delta_price = overshoot_price * (1 + delta);
+
+    for (auto agg_tick_idx = 1; agg_tick_idx < agg_ticks->agg_ticks.size(); agg_tick_idx++) {
+        const auto agg_tick = &agg_ticks->agg_ticks[agg_tick_idx];
+
+        if (direction == 1) {
+            if (agg_tick->low < overshoot_price) {
+                overshoot_price = agg_tick->low;
+                overshoot_agg_tick_idx = agg_tick_idx;
+            }
+            else if (agg_tick->high >= delta_price) {
+                const auto timestamp_overshoot = agg_ticks->agg_ticks[overshoot_agg_tick_idx].timestamp;
+                auto event = PD_Event{ PD_Direction::up, agg_tick->timestamp, timestamp_overshoot, agg_tick->high, overshoot_price, (size_t)agg_tick_idx, (size_t)overshoot_agg_tick_idx };
+                events.push_back(event);
+                overshoot_price = agg_tick->high;
+                overshoot_agg_tick_idx = agg_tick_idx;
+                direction = -1;
+            }
+        }
+        else if (direction == -1) {
+            if (agg_tick->high > overshoot_price) {
+                overshoot_price = agg_tick->high;
+                overshoot_agg_tick_idx = agg_tick_idx;
+            }
+            else if (agg_tick->low < overshoot_price * (1 - delta)) {
+                const auto timestamp_overshoot = agg_ticks->agg_ticks[overshoot_agg_tick_idx].timestamp;
+                auto event = PD_Event{ PD_Direction::down, agg_tick->timestamp, timestamp_overshoot, agg_tick->low, overshoot_price, (size_t)agg_tick_idx, (size_t)overshoot_agg_tick_idx };
+                events.push_back(event);
+                overshoot_price = agg_tick->low;
+                overshoot_agg_tick_idx = agg_tick_idx;
+                direction = 1;
+            }
+        }
+    }
+
+
+
+
+
+
+
+    /*
     auto finding_offset = false;
 
     for (auto agg_tick_idx = 0; agg_tick_idx < agg_ticks->agg_ticks.size(); agg_tick_idx++) {
@@ -147,10 +194,12 @@ PD_Events::PD_Events(double delta, sptrAggTicks agg_ticks) :
     if (events_offset.size() > events.size()) {
         events_offset.pop_back();
     }
+    */
 }
 
 sptrPD_Event PD_Events::update(sptrAggTick agg_tick)
 {
+    /*
     price_max = std::max(price_max, agg_tick->high);
     price_min = std::min(price_min, agg_tick->low);
 
@@ -171,6 +220,7 @@ sptrPD_Event PD_Events::update(sptrAggTick agg_tick)
 
         return event;
     }
+    */
 
     return nullptr;
 }
@@ -188,10 +238,15 @@ void PD_Events::plot_events(sptrAggTicks agg_ticks, const std::string& filename)
 {
     auto event_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\" + filename + ".csv" };
     for (auto&& event : events) {
-        const auto timestamp = (event.timestamp.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
-        event_file << timestamp << ",";
-        event_file << event.price << ",";
-        event_file << (int)event.direction << '\n';
+        const auto timestamp_delta = (event.timestamp_delta.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
+        const auto timestamp_overshoot = (event.timestamp_overshoot.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
+        event_file << (int)event.direction << ',';
+        event_file << timestamp_delta << ",";
+        event_file << timestamp_overshoot << ",";
+        event_file << event.price_delta << ",";
+        event_file << event.price_overshoot << ",";
+        event_file << event.agg_tick_idx_delta << ",";
+        event_file << event.agg_tick_idx_overshoot << "\n";
     }
     event_file.close();
 

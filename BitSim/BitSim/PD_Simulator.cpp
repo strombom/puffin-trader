@@ -18,6 +18,7 @@ PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks) :
 
 sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 {
+    /*
     auto timestamp_start = time_point_ms{};
     if (validation) {
         timestamp_start = Utils::random(validation_start, validation_end - BitSim::Trader::episode_length);
@@ -45,6 +46,7 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 
     previous_value = exchange->get_account_value(price);
 
+    */
     const auto reward = 0.0;
     const auto features = make_features(position_timestamp, position_price);
     const auto leverage = 0.0;
@@ -56,6 +58,7 @@ sptrRL_State PD_Simulator::reset(int idx_episode, bool validation)
 
 sptrRL_State PD_Simulator::step(sptrRL_Action action)
 {
+    /*
     const auto event = &events->events[pd_events_idx];
     const auto agg_tick = &agg_ticks->agg_ticks[event->agg_tick_idx];
 
@@ -113,6 +116,8 @@ sptrRL_State PD_Simulator::step(sptrRL_Action action)
     }
 
     return state;
+    */
+    return nullptr;
 }
 
 time_point_ms PD_Simulator::get_start_timestamp(void)
@@ -122,15 +127,18 @@ time_point_ms PD_Simulator::get_start_timestamp(void)
 
 double PD_Simulator::get_mark_price(void)
 {
+    /*
     const auto event = &events->events[pd_events_idx];
     const auto agg_tick = &agg_ticks->agg_ticks[event->agg_tick_idx];
     return (agg_tick->high + agg_tick->low) / 2;
+    */
+    return 0.0;
 }
 
 time_point_ms PD_Simulator::get_current_timestamp(void)
 {
     const auto event = &events->events[pd_events_idx];
-    return event->timestamp;
+    return event->timestamp_delta;
 }
 
 double PD_Simulator::get_account_value(void)
@@ -145,6 +153,7 @@ double PD_Simulator::get_position_leverage(void)
 
 torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double ref_price)
 {
+    /*
     constexpr auto features_size = 3 + 2 * BitSim::Trader::feature_events_count;
     auto features = torch::empty({ 1, features_size });
     auto features_access = features.accessor<float, 2>();
@@ -172,6 +181,8 @@ torch::Tensor PD_Simulator::make_features(time_point_ms ref_timestamp, double re
     features_access[0][features_size - 2] = (float)(ref_price - position_price) / 64; // Price diff since last order
     features_access[0][features_size - 1] = (float)(leverage) / 10;
 
+    */
+    auto features = torch::empty({ 1, 1 });
     return features;
 }
 
