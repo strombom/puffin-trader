@@ -35,7 +35,8 @@ double MT_Volatility::get(void) const
     return volatility;
 }
 
-MT_Policy::MT_Policy(void)
+MT_Policy::MT_Policy(void) :
+    pd_events(0.5)
 {
 
 }

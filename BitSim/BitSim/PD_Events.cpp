@@ -90,7 +90,8 @@ std::ostream& operator<<(std::ostream& stream, const PD_Event& event)
     return stream;
 }
 
-PD_Events::PD_Events(void) :
+PD_Events::PD_Events(double delta) :
+    delta(delta),
     last_direction(PD_Direction::up),
     price_min(std::numeric_limits<float>::max()),
     price_max(std::numeric_limits<float>::min())
@@ -98,33 +99,8 @@ PD_Events::PD_Events(void) :
 
 }
 
-sptrPD_Event PD_Events::update(sptrAggTick agg_tick)
-{
-    price_max = std::max(price_max, agg_tick->high);
-    price_min = std::min(price_min, agg_tick->low);
-
-    const auto executed = order_book.update(agg_tick->timestamp, agg_tick->low, agg_tick->high, last_direction);
-    if (executed) {
-        if (last_direction == PD_Direction::up) {
-            last_direction = PD_Direction::down;
-        }
-        else {
-            last_direction = PD_Direction::up;
-        }
-
-        auto execution_price = last_direction == PD_Direction::down ? agg_tick->low : agg_tick->high;
-        const auto event = std::make_shared<PD_Event>(agg_tick->timestamp, execution_price, price_min, price_max, last_direction, 0);
-
-        price_max = std::numeric_limits<float>::min();
-        price_min = std::numeric_limits<float>::max();
-
-        return event;
-    }
-
-    return nullptr;
-}
-
-PD_Events::PD_Events(sptrAggTicks agg_ticks)
+PD_Events::PD_Events(double delta, sptrAggTicks agg_ticks) :
+    delta(delta)
 {
     if (agg_ticks->agg_ticks.size() < 2) {
         return;
@@ -173,6 +149,32 @@ PD_Events::PD_Events(sptrAggTicks agg_ticks)
     }
 }
 
+sptrPD_Event PD_Events::update(sptrAggTick agg_tick)
+{
+    price_max = std::max(price_max, agg_tick->high);
+    price_min = std::min(price_min, agg_tick->low);
+
+    const auto executed = order_book.update(agg_tick->timestamp, agg_tick->low, agg_tick->high, last_direction);
+    if (executed) {
+        if (last_direction == PD_Direction::up) {
+            last_direction = PD_Direction::down;
+        }
+        else {
+            last_direction = PD_Direction::up;
+        }
+
+        auto execution_price = last_direction == PD_Direction::down ? agg_tick->low : agg_tick->high;
+        const auto event = std::make_shared<PD_Event>(agg_tick->timestamp, execution_price, price_min, price_max, last_direction, 0);
+
+        price_max = std::numeric_limits<float>::min();
+        price_min = std::numeric_limits<float>::max();
+
+        return event;
+    }
+
+    return nullptr;
+}
+
 void PD_Events::save(const std::string& filename_path) const
 {
     auto file = std::ofstream{ filename_path, std::ofstream::binary };
@@ -182,9 +184,9 @@ void PD_Events::save(const std::string& filename_path) const
     file.close();
 }
 
-void PD_Events::plot_events(sptrAggTicks agg_ticks)
+void PD_Events::plot_events(sptrAggTicks agg_ticks, const std::string& filename)
 {
-    auto event_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\events.csv" };
+    auto event_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\" + filename + ".csv" };
     for (auto&& event : events) {
         const auto timestamp = (event.timestamp.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
         event_file << timestamp << ",";
@@ -193,6 +195,7 @@ void PD_Events::plot_events(sptrAggTicks agg_ticks)
     }
     event_file.close();
 
+    /*
     auto event_offset_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\pd_events\\events_offset.csv" };
     for (auto&& event : events_offset) {
         const auto timestamp = (event.timestamp.time_since_epoch() - BitSim::timestamp_start.time_since_epoch()).count();
@@ -210,6 +213,7 @@ void PD_Events::plot_events(sptrAggTicks agg_ticks)
         interval_file << agg_tick.high << '\n';
     }
     interval_file.close();
+    */
 }
 
 

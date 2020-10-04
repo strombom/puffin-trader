@@ -68,8 +68,8 @@ using sptrPD_Event = std::shared_ptr<PD_Event>;
 class PD_Events
 {
 public:
-    PD_Events(void);
-    PD_Events(sptrAggTicks agg_ticks);
+    PD_Events(double delta);
+    PD_Events(double delta, sptrAggTicks agg_ticks);
 
     std::vector<PD_Event> events;
     std::vector<PD_Event> events_offset;
@@ -78,7 +78,7 @@ public:
 
     void save(const std::string& filename_path) const;
 
-    void plot_events(sptrAggTicks agg_ticks);
+    void plot_events(sptrAggTicks agg_ticks, const std::string& filename);
 
     sptrPD_Event update(sptrAggTick agg_tick);
 
@@ -98,6 +98,8 @@ private:
     size_t event_idx;
 
     const std::chrono::milliseconds offset = 200ms;
+    const double delta;
+
     PD_Direction last_direction;
     PD_OrderBook order_book;
     float price_min;

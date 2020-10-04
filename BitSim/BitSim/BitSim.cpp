@@ -25,7 +25,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "trade_live" };
+    const auto command = std::string{ "find_direction_changes" };
 
     if (command == "download_ticks") {
         auto bitbase_client = BitBaseClient();
@@ -39,8 +39,23 @@ int main()
         bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
     }
     else if (command == "find_direction_changes") {
+        /*
+        {
+            auto bitbase_client = BitBaseClient();
+            auto bitmex_ticks = bitbase_client.get_ticks("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end);
+            bitmex_ticks->save(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+        }
+
+        auto bitmex_ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+        auto bitmex_agg_ticks = AggTicks{ bitmex_ticks };
+        bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
+
+        */
         auto agg_ticks = std::make_shared<AggTicks>(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
-        auto pd_events = PD_Events{ agg_ticks };
+        for (auto delta : BitSim::PriceDirection::deltas) {
+            auto pd_events = PD_Events{ delta, agg_ticks };
+            pd_events.plot_events(agg_ticks, std::string{ "events_" } + std::to_string(delta));
+        }
 
         /*
         auto file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\events.csv" };

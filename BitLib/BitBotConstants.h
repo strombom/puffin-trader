@@ -180,6 +180,11 @@ namespace BitSim
         constexpr auto order_hysteresis = 0.1;
     }
 
+    namespace PriceDirection
+    {
+        constexpr auto deltas = std::array<double, 7>{ {0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0} };
+    }
+
     namespace Trader
     {
         namespace Bitmex

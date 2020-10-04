@@ -8,7 +8,7 @@ PD_Simulator::PD_Simulator(sptrAggTicks agg_ticks) :
     agg_ticks(agg_ticks)
 {
     exchange = std::make_shared<ES_Bitmex>();
-    events = std::make_shared<PD_Events>(agg_ticks);
+    events = std::make_shared<PD_Events>(0.5, agg_ticks);
 
     training_start = agg_ticks->agg_ticks.front().timestamp;
     training_end = agg_ticks->agg_ticks.front().timestamp + (agg_ticks->agg_ticks.back().timestamp - agg_ticks->agg_ticks.front().timestamp) * 4 / 5;
