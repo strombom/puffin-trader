@@ -118,29 +118,37 @@ PD_Events::PD_Events(double delta, sptrAggTicks agg_ticks) :
 
         if (direction == 1) {
             if (agg_tick->low < overshoot_price) {
+                // Update overshoot price
                 overshoot_price = agg_tick->low;
                 overshoot_agg_tick_idx = agg_tick_idx;
+                delta_price = overshoot_price * (1 + delta);
             }
             else if (agg_tick->high >= delta_price) {
+                // Found delta
                 const auto timestamp_overshoot = agg_ticks->agg_ticks[overshoot_agg_tick_idx].timestamp;
                 auto event = PD_Event{ PD_Direction::up, agg_tick->timestamp, timestamp_overshoot, agg_tick->high, overshoot_price, (size_t)agg_tick_idx, (size_t)overshoot_agg_tick_idx };
                 events.push_back(event);
                 overshoot_price = agg_tick->high;
                 overshoot_agg_tick_idx = agg_tick_idx;
+                delta_price = overshoot_price * (1 - delta);
                 direction = -1;
             }
         }
         else if (direction == -1) {
             if (agg_tick->high > overshoot_price) {
+                // Update overshoot price
                 overshoot_price = agg_tick->high;
                 overshoot_agg_tick_idx = agg_tick_idx;
+                delta_price = overshoot_price * (1 - delta);
             }
             else if (agg_tick->low < overshoot_price * (1 - delta)) {
+                // Found delta
                 const auto timestamp_overshoot = agg_ticks->agg_ticks[overshoot_agg_tick_idx].timestamp;
                 auto event = PD_Event{ PD_Direction::down, agg_tick->timestamp, timestamp_overshoot, agg_tick->low, overshoot_price, (size_t)agg_tick_idx, (size_t)overshoot_agg_tick_idx };
                 events.push_back(event);
                 overshoot_price = agg_tick->low;
                 overshoot_agg_tick_idx = agg_tick_idx;
+                delta_price = overshoot_price * (1 + delta);
                 direction = 1;
             }
         }
