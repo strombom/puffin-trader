@@ -44,25 +44,25 @@ private:
 class PD_Event
 {
 public:
-    PD_Event(PD_Direction direction, time_point_ms timestamp_overshoot, time_point_ms timestamp_delta, float price_overshoot, float price_delta, size_t agg_tick_idx_overshoot, size_t agg_tick_idx_delta) :
+    PD_Event(PD_Direction direction, time_point_ms timestamp_delta, time_point_ms timestamp_overshoot, float price_delta, float price_overshoot, size_t agg_tick_idx_delta, size_t agg_tick_idx_overshoot) :
         direction(direction),
-        timestamp_overshoot(timestamp_overshoot),
         timestamp_delta(timestamp_delta),
-        price_overshoot(price_overshoot),
+        timestamp_overshoot(timestamp_overshoot),
         price_delta(price_delta),
-        agg_tick_idx_overshoot(agg_tick_idx_overshoot),
-        agg_tick_idx_delta(agg_tick_idx_delta)
+        price_overshoot(price_overshoot),
+        agg_tick_idx_delta(agg_tick_idx_delta),
+        agg_tick_idx_overshoot(agg_tick_idx_overshoot)
     {}
 
     friend std::ostream& operator<<(std::ostream& stream, const AggTick& agg_tick);
 
     PD_Direction direction;
-    time_point_ms timestamp_overshoot;
     time_point_ms timestamp_delta;
-    float price_overshoot;
+    time_point_ms timestamp_overshoot;
     float price_delta;
-    size_t agg_tick_idx_overshoot;
+    float price_overshoot;
     size_t agg_tick_idx_delta;
+    size_t agg_tick_idx_overshoot;
 };
 
 using sptrPD_Event = std::shared_ptr<PD_Event>;
