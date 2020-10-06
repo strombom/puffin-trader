@@ -9,44 +9,80 @@ from sklearn.linear_model import LinearRegression
 def string_to_timestamp(date):
     return datetime.timestamp(datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f"))
 
-class Event:
-    def __init__(self, timestamp, price):
-        self.timestamp = timestamp
-        self.price = price
+
+class Coastline:
+    def __init__(self, timestamps_overshoot, timestamps_delta, prices_overshoot, prices_delta):
+        self.timestamps_overshoot = timestamps_overshoot
+        self.timestamps_delta = timestamps_delta
+        self.prices_overshoot = prices_overshoot
+        self.prices_delta = prices_delta
 
     def __repr__(self):
-        return f"Event({self.timestamp}, {self.price})"
+        return "a"
+        #return f"Event({self.timestamp}, {self.price})"
 
-def read_events(settings):
+
+def read_coastlines(settings):
+    coastlines = {}
     try:
-        with open('cache/events.pickle', 'rb') as f:
+        with open(f"cache/coastlines.pickle", 'rb') as f:
             data = pickle.load(f)
-            if data['start_timestamp'] == settings['start_timestamp'] and data['end_timestamp'] == settings['end_timestamp']:
-                print(datetime.fromtimestamp(data['data'][0].timestamp), '-', datetime.fromtimestamp(data['data'][-1].timestamp))
+            if data['start_timestamp'] == settings['start_timestamp'] and \
+               data['end_timestamp'] == settings['end_timestamp'] and \
+               data['deltas'] == settings['deltas']:
+                #print(datetime.fromtimestamp(data['data'][0].timestamp), '-', datetime.fromtimestamp(data['data'][-1].timestamp))
                 return data['data']
     except:
         pass
 
-    events = []
-    with open(settings['events_filepath']) as csv_file:
-        for row in csv.reader(csv_file):
-            ts = (settings['data_first_timestamp'] * 1000 + int(row[0])) / 1000
-            if ts > settings['start_timestamp']:
-                events.append(Event(ts, float(row[1])))
-            if ts > settings['end_timestamp']:
-                break
+    for delta in settings['deltas']:
+        # PD_Direction direction,
+        # time_point_ms timestamp_delta, time_point_ms timestamp_overshoot,
+        # float price_delta, float price_overshoot,
+        # size_t agg_tick_idx_delta, size_t agg_tick_idx_overshoot
 
-    with open('cache/events.pickle', 'wb') as f:
-        data = {
-            'start_timestamp': settings['start_timestamp'],
-            'end_timestamp': settings['end_timestamp'],
-            'data': events
-        }
-        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+        timestamps_overshoot = []
+        timestamps_delta = []
+        prices_overshoot = []
+        prices_delta = []
+        with open(settings['events_filepath'] + f"_{delta:.6f}.csv") as csv_file:
+            for row in csv.reader(csv_file):
+                direction = int(row[0])
+                ts_overshoot = (settings['data_first_timestamp'] * 1000 + int(row[1])) / 1000
+                ts_delta = (settings['data_first_timestamp'] * 1000 + int(row[2])) / 1000
+                price_overshoot = float(row[3])
+                price_delta = float(row[4])
 
-    print(datetime.fromtimestamp(events[0].timestamp), '-', datetime.fromtimestamp(events[-1].timestamp))
+                if ts_overshoot > settings['start_timestamp']:
+                    timestamps_overshoot.append(ts_overshoot)
+                    prices_overshoot.append(price_overshoot)
+                if ts_overshoot > settings['end_timestamp']:
+                    break
 
-    return events
+                if ts_delta > settings['start_timestamp']:
+                    timestamps_delta.append(ts_delta)
+                    prices_delta.append(price_delta)
+                if ts_delta > settings['end_timestamp']:
+                    break
+
+        timestamps_overshoot = np.array(timestamps_overshoot)
+        timestamps_delta = np.array(timestamps_delta)
+        prices_overshoot = np.array(prices_overshoot)
+        prices_delta = np.array(prices_delta)
+
+        coastlines[delta] = Coastline(timestamps_overshoot, timestamps_delta, prices_overshoot, prices_delta)
+
+        with open(f"cache/coastlines.pickle", 'wb') as f:
+            data = {
+                'start_timestamp': settings['start_timestamp'],
+                'end_timestamp': settings['end_timestamp'],
+                'deltas': settings['deltas'],
+                'data': coastlines
+            }
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+    return coastlines
+
 
 def calc_volatilities(events, settings):
     try:
