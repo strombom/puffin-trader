@@ -7,19 +7,23 @@ from sklearn.linear_model import LinearRegression
 
 
 def string_to_timestamp(date):
-    return datetime.timestamp(datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f"))
+    return datetime.timestamp(datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f'))
+
+
+def timestamp_to_string(timestamp):
+    return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')
 
 
 class Coastline:
-    def __init__(self, timestamps_overshoot, timestamps_delta, prices_overshoot, prices_delta):
-        self.timestamps_overshoot = timestamps_overshoot
+    def __init__(self, directions, timestamps_delta, timestamps_overshoot, prices_delta, prices_overshoot):
+        self.directions = directions
         self.timestamps_delta = timestamps_delta
-        self.prices_overshoot = prices_overshoot
+        self.timestamps_overshoot = timestamps_overshoot
         self.prices_delta = prices_delta
+        self.prices_overshoot = prices_overshoot
 
     def __repr__(self):
-        return "a"
-        #return f"Event({self.timestamp}, {self.price})"
+        return f"CoastLine({timestamp_to_string(self.timestamps_delta[0])} {self.directions.shape[0]})"
 
 
 def read_coastlines(settings):
@@ -41,36 +45,35 @@ def read_coastlines(settings):
         # float price_delta, float price_overshoot,
         # size_t agg_tick_idx_delta, size_t agg_tick_idx_overshoot
 
-        timestamps_overshoot = []
+        directions = []
         timestamps_delta = []
-        prices_overshoot = []
+        timestamps_overshoot = []
         prices_delta = []
+        prices_overshoot = []
         with open(settings['events_filepath'] + f"_{delta:.6f}.csv") as csv_file:
             for row in csv.reader(csv_file):
                 direction = int(row[0])
-                ts_overshoot = (settings['data_first_timestamp'] * 1000 + int(row[1])) / 1000
-                ts_delta = (settings['data_first_timestamp'] * 1000 + int(row[2])) / 1000
-                price_overshoot = float(row[3])
-                price_delta = float(row[4])
+                ts_delta = (settings['data_first_timestamp'] * 1000 + int(row[1])) / 1000
+                ts_overshoot = (settings['data_first_timestamp'] * 1000 + int(row[2])) / 1000
+                price_delta = float(row[3])
+                price_overshoot = float(row[4])
 
-                if ts_overshoot > settings['start_timestamp']:
+                if ts_delta > settings['start_timestamp'] and ts_overshoot < settings['end_timestamp']:
+                    directions.append(direction)
+                    timestamps_delta.append(ts_delta)
+                    prices_delta.append(price_delta)
                     timestamps_overshoot.append(ts_overshoot)
                     prices_overshoot.append(price_overshoot)
                 if ts_overshoot > settings['end_timestamp']:
                     break
 
-                if ts_delta > settings['start_timestamp']:
-                    timestamps_delta.append(ts_delta)
-                    prices_delta.append(price_delta)
-                if ts_delta > settings['end_timestamp']:
-                    break
-
-        timestamps_overshoot = np.array(timestamps_overshoot)
+        directions = np.array(directions)
         timestamps_delta = np.array(timestamps_delta)
-        prices_overshoot = np.array(prices_overshoot)
+        timestamps_overshoot = np.array(timestamps_overshoot)
         prices_delta = np.array(prices_delta)
+        prices_overshoot = np.array(prices_overshoot)
 
-        coastlines[delta] = Coastline(timestamps_overshoot, timestamps_delta, prices_overshoot, prices_delta)
+        coastlines[delta] = Coastline(directions, timestamps_delta, timestamps_overshoot, prices_delta, prices_overshoot)
 
         with open(f"cache/coastlines.pickle", 'wb') as f:
             data = {
