@@ -1,11 +1,8 @@
 
-from enum import Enum
 import math
+from enum import Enum
 
-
-class RunnerDirection(Enum):
-    up = 1
-    down = 2
+from Common import Direction
 
 
 class RunnerEvent(Enum):
@@ -22,7 +19,7 @@ class CoastlineRunner:
         self.delta_down = delta_down
         self.delta_star_up = delta_star_up
         self.delta_star_down = delta_star_down
-        self.direction = RunnerDirection.up
+        self.direction = Direction.up
         self.extreme_price = 0
         self.reference_price = 0
         self.initialized = False
@@ -34,9 +31,9 @@ class CoastlineRunner:
             self._update_thresholds()
             self.initialized = True
 
-        if self.direction == RunnerDirection.up:
+        if self.direction == Direction.up:
             if mark_price.ask <= self.direction_change_threshold:
-                self.direction = RunnerDirection.down
+                self.direction = Direction.down
                 self.extreme_price = mark_price.ask
                 self.reference_price = mark_price.ask
                 self._update_thresholds()
@@ -50,9 +47,9 @@ class CoastlineRunner:
                     self._update_thresholds()
                     return RunnerEvent.overshoot_down
 
-        elif self.direction == RunnerDirection.down:
+        elif self.direction == Direction.down:
             if mark_price.bid >= self.direction_change_threshold:
-                self.direction = RunnerDirection.up
+                self.direction = Direction.up
                 self.extreme_price = mark_price.bid
                 self.reference_price = mark_price.bid
                 self._update_thresholds()
@@ -70,7 +67,7 @@ class CoastlineRunner:
         return RunnerEvent.nothing
 
     def _update_thresholds(self):
-        if self.direction == RunnerDirection.up:
+        if self.direction == Direction.up:
             self.overshoot_threshold = math.exp(math.log(self.extreme_price) + self.delta_star_up)
             self.direction_change_threshold = math.exp(math.log(self.reference_price) - self.delta_down)
         else:
