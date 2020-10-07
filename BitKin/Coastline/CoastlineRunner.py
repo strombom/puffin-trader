@@ -2,15 +2,7 @@
 import math
 from enum import Enum
 
-from Common import Direction
-
-
-class RunnerEvent(Enum):
-    nothing = 0
-    direction_change_up = 1
-    direction_change_down = -1
-    overshoot_up = 2
-    overshoot_down = 3
+from Common import Direction, RunnerEvent
 
 
 class CoastlineRunner:

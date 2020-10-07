@@ -1,13 +1,12 @@
 
 import math
 
-from Common import Direction
-from CoastlineRunner import RunnerEvent
+from Common import Direction, RunnerEvent
 
 
 class Liquidity:
     def __init__(self, delta, delta_star, alpha):
-        self.direction = Direction.up
+        self.direction = Direction.down
         self.delta_up = delta
         self.delta_down = delta
         self.delta_star = delta_star
@@ -20,6 +19,8 @@ class Liquidity:
                   - self.h1 * self.h1
         self.liquidity = 0.0
         self.surprise = 0.0
+        self.extreme_price = 0
+        self.reference_price = 0
 
     def get_liquidity(self):
         return self.liquidity
@@ -35,7 +36,39 @@ class Liquidity:
             self.liquidity = 1.0 - self.cumnorm(math.sqrt(self.alpha) * (self.surprise - self.h1) / math.sqrt(self.h2))
 
     def step(self, mark_price):
-        return 0.0
+        if self.extreme_price == 0 or self.reference_price == 0:
+            self.extreme_price = mark_price.mid
+            self.reference_price = mark_price.mid
+
+        if self.direction == Direction.up:
+            if math.log(mark_price.ask / self.extreme_price) <= -self.delta_down:
+                self.direction = Direction.down
+                self.extreme_price = mark_price.ask
+                self.reference_price = mark_price.ask
+                return RunnerEvent.direction_change_down
+
+            if mark_price.bid > self.extreme_price:
+                self.extreme_price = mark_price.bid
+
+            if math.log(self.reference_price / self.extreme_price) <= -self.delta_star:
+                self.reference_price = self.extreme_price
+                return RunnerEvent.overshoot_up
+
+        else:
+            if math.log(mark_price.bid / self.extreme_price) >= self.delta_up:
+                self.direction = Direction.up
+                self.extreme_price = mark_price.bid
+                self.reference_price = mark_price.bid
+                return RunnerEvent.direction_change_up
+
+            if mark_price.ask < self.extreme_price:
+                self.extreme_price = mark_price.ask
+
+            if math.log(self.reference_price / self.extreme_price) >= self.delta_star:
+                self.reference_price = self.extreme_price
+                return RunnerEvent.overshoot_down
+
+        return RunnerEvent.nothing
 
     def cumnorm(self, x):
         if x > 6.0:
