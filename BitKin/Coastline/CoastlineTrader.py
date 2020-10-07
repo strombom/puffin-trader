@@ -3,11 +3,6 @@ from CoastlineRunner import CoastlineRunner
 from Common import OrderSide
 
 
-class Liquidity:
-    def __init__(self, delta, delta_star, alpha):
-        pass
-
-
 class CoastlineTrader:
     def __init__(self, delta, direction):
         self.delta = delta
