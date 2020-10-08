@@ -4,7 +4,7 @@ from enum import Enum
 
 class Direction(Enum):
     up = 1
-    down = 2
+    down = -1
 
 
 class OrderSide(Enum):
@@ -13,11 +13,11 @@ class OrderSide(Enum):
 
 
 class RunnerEvent(Enum):
-    nothing = 0
-    direction_change_up = 1
-    direction_change_down = -1
     overshoot_up = 2
-    overshoot_down = 3
+    direction_change_up = 1
+    nothing = 0
+    direction_change_down = -1
+    overshoot_down = -2
 
 
 class EventType(Enum):

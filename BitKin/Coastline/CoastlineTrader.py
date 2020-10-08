@@ -109,4 +109,9 @@ class CoastlineTrader:
             self.current_unit_size = self.reference_unit_size * 0.25
 
     def find_balanced_orders(self, threshold, direction):
-        return []
+        balanced_orders = []
+        for order in self.unbalanced_filled_orders:
+            if (direction == Direction.up and order.price - threshold >= self.delta * order.price) or \
+               (direction == Direction.down and threshold - order.price >= self.delta * order.price):
+                balanced_orders.append(order)
+        return balanced_orders
