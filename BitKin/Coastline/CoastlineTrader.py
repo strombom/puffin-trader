@@ -72,14 +72,25 @@ class CoastlineTrader:
                 self.sell_order = None
                 self.buy_order = LimitOrder(side=OrderSide.long, price=mark_price, volume=cascade_volume, event_type=runner.get_lower_event_type())
             else:
-                self.buy_order = LimitOrder(side=OrderSide.long, price=mark_price, volume=cascade_volume, event_type=runner.get_upper_event_type())
-                balanced_filled_orders = self.find_balanced_filled_orders(runner.get_expected_upper_threshold(), Direction.down)
-                if len(balanced_filled_orders) > 0:
+                self.buy_order = LimitOrder(side=OrderSide.long, price=mark_price, volume=cascade_volume, event_type=buy_event_type)
+                balanced_orders = self.find_balanced_orders(runner.get_expected_upper_threshold(), Direction.down)
+                if len(balanced_orders) > 0:
                     self.sell_order = LimitOrder(side=OrderSide.short, price=mark_price, volume=0, event_type=sell_event_type)
-                    self.sell_order.balance_orders(balanced_filled_orders)
+                    self.sell_order.balance_orders(balanced_orders)
                 else:
                     self.sell_order = None
-
+        else:
+            if len(self.unbalanced_filled_orders) == 0:
+                self.buy_order = None
+                self.sell_order = LimitOrder(side=OrderSide.short, price=mark_price, volume=cascade_volume, event_type=runner.get_upper_event_type())
+            else:
+                balanced_orders = self.find_balanced_orders(runner.get_expected_lower_threshold(), Direction.down)
+                if len(balanced_orders) > 0:
+                    self.buy_order = LimitOrder(side=OrderSide.long, price=mark_price, volume=0, event_type=buy_event_type)
+                    self.buy_order.balance_orders(balanced_orders)
+                else:
+                    self.buy_order = None
+                self.sell_order = LimitOrder(side=OrderSide.short, price=mark_price, volume=cascade_volume, event_type=sell_event_type)
 
     def select_current_runner(self):
         if abs(self.inventory) < 15:
@@ -97,5 +108,5 @@ class CoastlineTrader:
         else:
             self.current_unit_size = self.reference_unit_size * 0.25
 
-    def find_balanced_filled_orders(self, threshold, direction):
+    def find_balanced_orders(self, threshold, direction):
         return []
