@@ -18,3 +18,9 @@ class RunnerEvent(Enum):
     direction_change_down = -1
     overshoot_up = 2
     overshoot_down = 3
+
+
+class EventType(Enum):
+    direction_change = 1
+    overshoot = 2
+
