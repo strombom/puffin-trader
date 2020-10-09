@@ -26,6 +26,36 @@ class Coastline:
         return f"CoastLine({timestamp_to_string(self.timestamps_delta[0])} {self.directions.shape[0]})"
 
 
+class AggTick:
+    def __init__(self, low, high):
+        self.low = low
+        self.high = high
+        self.mid = (low + high) / 2
+
+    def __repr__(self):
+        return f'AggTick({self.low}, {self.high})'
+
+
+def read_agg_ticks(filepath):
+    try:
+        with open(f"cache/agg_ticks.pickle", 'rb') as f:
+            data = pickle.load(f)
+            return data
+    except:
+        pass
+
+    agg_ticks = []
+    with open(filepath, 'r') as csv_file:
+        for row in csv.reader(csv_file):
+            agg_ticks.append(AggTick(low=float(row[2]), high=float(row[1])))
+
+    with open(f"cache/agg_ticks.pickle", 'wb') as f:
+        data = agg_ticks
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+    return agg_ticks
+
+
 def read_coastlines(settings):
     coastlines = {}
     try:
