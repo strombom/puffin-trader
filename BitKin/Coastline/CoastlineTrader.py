@@ -1,28 +1,29 @@
 
 from CoastlineRunner import CoastlineRunner
 from Liquidity import Liquidity
-from LimitOrder import LimitOrder, LimitOrderLevel
+from LimitOrder import LimitOrder
 from Common import Direction, OrderSide, EventType
 
 
 class CoastlineTrader:
-    def __init__(self, delta, direction):
+    def __init__(self, delta, order_side):
         self.delta = delta
         self.reference_unit_size = 1.0
         self.current_unit_size = self.reference_unit_size
         self.inventory = 0.0
-        self.direction = direction
+        self.order_side = order_side
         self.liquidity = Liquidity(delta, delta * 2.525729, 50.0)
         self.unbalanced_filled_orders = []
         self.sell_order = None
         self.buy_order = None
+        self.realized_profit = 0.0
         self.runners = []
         self.init_runners()
         self.initialized = False
 
     def init_runners(self):
         self.runners.append(CoastlineRunner(delta_up=self.delta, delta_down=self.delta, delta_star_up=self.delta, delta_star_down=self.delta))
-        if self.direction == OrderSide.long:
+        if self.order_side == OrderSide.long:
             self.runners.append(CoastlineRunner(delta_up=0.75 * self.delta, delta_down=1.50 * self.delta, delta_star_up=0.75 * self.delta, delta_star_down=0.75 * self.delta))
             self.runners.append(CoastlineRunner(delta_up=0.50 * self.delta, delta_down=2.00 * self.delta, delta_star_up=0.50 * self.delta, delta_star_down=0.50 * self.delta))
         else:
@@ -43,6 +44,9 @@ class CoastlineTrader:
             self.put_orders(mark_price)
             self.initialized = True
             return
+
+        self.evaluate_buy_orders(mark_price)
+        self.evaluate_sell_orders(mark_price)
 
     def put_orders(self, mark_price):
         if self.liquidity.get_liquidity() >= 0.5:
@@ -67,30 +71,30 @@ class CoastlineTrader:
             sell_event_type = EventType.direction_change
             sell_delta = runner.delta_up
 
-        if self.direction == Direction.up:
+        if self.order_side == OrderSide.long:
             if len(self.unbalanced_filled_orders) == 0:
                 self.sell_order = None
-                self.buy_order = LimitOrder(side=OrderSide.long, price=mark_price, volume=cascade_volume, event_type=runner.get_lower_event_type())
+                self.buy_order = LimitOrder(side=OrderSide.long, price=runner.get_expected_lower_threshold(), volume=cascade_volume, event_type=runner.get_lower_event_type())
             else:
-                self.buy_order = LimitOrder(side=OrderSide.long, price=mark_price, volume=cascade_volume, event_type=buy_event_type)
+                self.buy_order = LimitOrder(side=OrderSide.long, price=runner.get_expected_lower_threshold(), volume=cascade_volume, event_type=buy_event_type)
                 balanced_orders = self.find_balanced_orders(runner.get_expected_upper_threshold(), Direction.down)
                 if len(balanced_orders) > 0:
-                    self.sell_order = LimitOrder(side=OrderSide.short, price=mark_price, volume=0, event_type=sell_event_type)
+                    self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=0, event_type=sell_event_type)
                     self.sell_order.balance_orders(balanced_orders)
                 else:
                     self.sell_order = None
         else:
             if len(self.unbalanced_filled_orders) == 0:
                 self.buy_order = None
-                self.sell_order = LimitOrder(side=OrderSide.short, price=mark_price, volume=cascade_volume, event_type=runner.get_upper_event_type())
+                self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=cascade_volume, event_type=runner.get_upper_event_type())
             else:
                 balanced_orders = self.find_balanced_orders(runner.get_expected_lower_threshold(), Direction.down)
                 if len(balanced_orders) > 0:
-                    self.buy_order = LimitOrder(side=OrderSide.long, price=mark_price, volume=0, event_type=buy_event_type)
+                    self.buy_order = LimitOrder(side=OrderSide.long, price=runner.get_expected_lower_threshold(), volume=0, event_type=buy_event_type)
                     self.buy_order.balance_orders(balanced_orders)
                 else:
                     self.buy_order = None
-                self.sell_order = LimitOrder(side=OrderSide.short, price=mark_price, volume=cascade_volume, event_type=sell_event_type)
+                self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=cascade_volume, event_type=sell_event_type)
 
     def select_current_runner(self):
         if abs(self.inventory) < 15:
@@ -115,3 +119,22 @@ class CoastlineTrader:
                (direction == Direction.down and threshold - order.price >= self.delta * order.price):
                 balanced_orders.append(order)
         return balanced_orders
+
+    def evaluate_buy_orders(self, mark_price):
+        if self.buy_order is not None and mark_price.ask < self.buy_order.price:
+            self.inventory += self.buy_order.volume
+            if self.order_side == OrderSide.long:
+                self.unbalanced_filled_orders.append(self.buy_order)
+            else:
+                self.realized_profit += self.buy_order.get_pnl()
+                print("a")
+            pass
+            #makeBuyFilled(price);
+            #cancelSellLimitOrder
+        pass
+
+    def evaluate_sell_orders(self, mark_price):
+        if self.sell_order is not None and mark_price.bid > self.buy_order.price:
+            pass
+
+        pass
