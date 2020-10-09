@@ -4,6 +4,8 @@ sys.path.append("../Common")
 
 
 from Common import OrderSide
+from OrderBook import make_order_books
+from misc import read_agg_ticks
 from CoastlineTrader import CoastlineTrader
 
 
@@ -15,12 +17,9 @@ class Price:
 
 
 if __name__ == '__main__':
-    print("hej")
+    agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
+    order_books = make_order_books(agg_ticks)
+
     trader = CoastlineTrader(0.0025, OrderSide.long)
-
-    prices = [Price(ask=10010, bid=10000),
-              Price(ask=10030, bid=10020),
-              Price(ask=10050, bid=10040)]
-
-    for mark_price in prices:
-        trader.step(mark_price)
+    for order_book in order_books:
+        trader.step(order_book)
