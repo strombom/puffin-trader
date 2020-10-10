@@ -3,17 +3,11 @@ import sys
 sys.path.append("../Common")
 
 
+import matplotlib.pyplot as plt
 from Common import OrderSide
 from OrderBook import make_order_books
 from misc import read_agg_ticks
 from CoastlineTrader import CoastlineTrader
-
-
-class Price:
-    def __init__(self, ask, bid):
-        self.ask = ask
-        self.bid = bid
-        self.mid = (ask + bid) / 2
 
 
 if __name__ == '__main__':
