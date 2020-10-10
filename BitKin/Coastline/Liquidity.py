@@ -27,13 +27,15 @@ class Liquidity:
 
     def update(self, mark_price):
         event = self.step(mark_price)
-        if event != RunnerEvent.nothing:
-            if event == RunnerEvent.direction_change_up or event == RunnerEvent.direction_change_down:
-                k = 0.08338161
-            else:
-                k = 2.525729
-            self.surprise = self.alpha_weight * k + (1.0 - self.alpha_weight) * self.surprise
-            self.liquidity = 1.0 - self.cumnorm(math.sqrt(self.alpha) * (self.surprise - self.h1) / math.sqrt(self.h2))
+        if event == RunnerEvent.nothing:
+            return
+
+        if event == RunnerEvent.direction_change_up or event == RunnerEvent.direction_change_down:
+            k = 0.08338161
+        else:
+            k = 2.525729
+        self.surprise = self.alpha_weight * k + (1.0 - self.alpha_weight) * self.surprise
+        self.liquidity = 1.0 - self.cumnorm(math.sqrt(self.alpha) * (self.surprise - self.h1) / math.sqrt(self.h2))
 
     def step(self, mark_price):
         if self.extreme_price == 0 or self.reference_price == 0:
