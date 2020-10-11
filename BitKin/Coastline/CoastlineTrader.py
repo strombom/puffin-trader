@@ -2,7 +2,7 @@
 from CoastlineRunner import CoastlineRunner
 from Liquidity import Liquidity
 from LimitOrder import LimitOrder
-from Common import Direction, OrderSide, EventType
+from Common import Direction, OrderSide, EventType, RunnerEvent
 
 
 class CoastlineTrader:
@@ -48,6 +48,41 @@ class CoastlineTrader:
         self.evaluate_buy_orders(mark_price)
         self.evaluate_sell_orders(mark_price)
 
+        runner_idx = self.select_current_runner()
+        runner = self.runners[runner_idx]
+
+        if events[runner_idx] != RunnerEvent.nothing:
+            self.buy_order, self.sell_order = None, None
+            self.put_orders(mark_price)
+            return
+
+        target_abs_pnl = 10.0
+        if self.get_pnl(mark_price) >= target_abs_pnl:
+            self.close_position(mark_price)
+            self.put_orders(mark_price)
+        else:
+            if self.buy_order is not None:
+                self.correct_buy_order(runner.direction_change_threshold)
+            if self.buy_order is not None:
+                self.correct_sell_order(runner.direction_change_threshold)
+
+    def get_pnl(self, mark_price):
+        upnl = 0
+        if len(self.unbalanced_filled_orders) > 0:
+            if self.order_side == OrderSide.long:
+                market_price = mark_price.bid
+            else:
+                market_price = mark_price.ask
+
+            for order in self.unbalanced_filled_orders:
+                if order.side == OrderSide.long:
+                    price_move = market_price - order.price
+                else:
+                    price_move = order.price - market_price
+                upnl = price_move / order.price * order.volume
+
+        return self.realized_profit + upnl
+
     def put_orders(self, mark_price):
         if self.liquidity.get_liquidity() >= 0.5:
             cascade_coef = 1.0
@@ -58,7 +93,7 @@ class CoastlineTrader:
 
         cascade_volume = self.current_unit_size * cascade_coef
 
-        runner = self.select_current_runner()
+        runner = self.runners[self.select_current_runner()]
 
         if runner.direction == Direction.up:
             buy_event_type = EventType.direction_change
@@ -98,11 +133,11 @@ class CoastlineTrader:
 
     def select_current_runner(self):
         if abs(self.inventory) < 15:
-            return self.runners[0]
+            return 0
         elif abs(self.inventory) < 30:
-            return self.runners[1]
+            return 1
         else:
-            return self.runners[2]
+            return 2
 
     def update_unit_size(self):
         if abs(self.inventory) < 15:
@@ -123,18 +158,31 @@ class CoastlineTrader:
     def evaluate_buy_orders(self, mark_price):
         if self.buy_order is not None and mark_price.ask < self.buy_order.price:
             self.inventory += self.buy_order.volume
+            self.update_unit_size()
             if self.order_side == OrderSide.long:
                 self.unbalanced_filled_orders.append(self.buy_order)
             else:
                 self.realized_profit += self.buy_order.get_pnl()
                 print("a")
-            pass
+
+            if len(self.unbalanced_filled_orders) == 0:
+                self.close_position(mark_price)
+
+            self.buy_order = None
             #makeBuyFilled(price);
             #cancelSellLimitOrder
-        pass
+            self.sell_order = None
 
     def evaluate_sell_orders(self, mark_price):
         if self.sell_order is not None and mark_price.bid > self.buy_order.price:
             pass
+        pass
 
+    def close_position(self, mark_price):
+        pass
+
+    def correct_buy_order(self, direction_change_threshold):
+        pass
+
+    def correct_sell_order(self, direction_change_threshold):
         pass
