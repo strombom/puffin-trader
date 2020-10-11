@@ -60,6 +60,8 @@ void CoinbaseProTick::insert_symbol_name(const std::string& symbol_name)
 
 void CoinbaseProTick::tick_data_worker(void)
 {
+    // TODO: Make a state that finds the last_trade_id if database is out of sync 
+
     while (tick_data_thread_running) {
         {
             auto tick_data_lock = std::unique_lock<std::mutex>{ tick_data_mutex };
