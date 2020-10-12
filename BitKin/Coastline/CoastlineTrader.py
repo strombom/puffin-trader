@@ -62,9 +62,39 @@ class CoastlineTrader:
             self.put_orders(mark_price)
         else:
             if self.buy_order is not None:
-                self.correct_buy_order(runner.direction_change_threshold)
+                self.balance_buy_order(runner.direction_change_threshold)
             if self.buy_order is not None:
-                self.correct_sell_order(runner.direction_change_threshold)
+                self.balance_sell_order(runner.direction_change_threshold)
+
+    def balance_buy_order(self, direction_change_threshold):
+        if self.buy_order.side != OrderSide.long or direction_change_threshold <= self.buy_order.price or \
+                (self.order_side == OrderSide.short and len(self.unbalanced_filled_orders) == 0):
+            return
+
+        if self.order_side == OrderSide.short and len(self.unbalanced_filled_orders) > 1:
+            balanced_orders = self.find_balanced_orders(direction_change_threshold, Direction.up)
+            if len(balanced_orders) == 0:
+                self.buy_order = None
+            else:
+                self.buy_order.price = direction_change_threshold
+                self.buy_order.balance_orders(balanced_orders)
+        else:
+            self.buy_order.price = direction_change_threshold
+
+    def balance_sell_order(self, direction_change_threshold):
+        if self.sell_order.side != OrderSide.short or direction_change_threshold >= self.sell_order.price or \
+                (self.order_side == OrderSide.long and len(self.unbalanced_filled_orders) == 0):
+            return
+
+        if self.order_side == OrderSide.long or len(self.unbalanced_filled_orders) > 1:
+            balanced_orders = self.find_balanced_orders(direction_change_threshold, Direction.down)
+            if len(balanced_orders) == 0:
+                self.sell_order = None
+            else:
+                self.sell_order.price = direction_change_threshold
+                self.sell_order.balance_orders(balanced_orders)
+        else:
+            self.sell_order.price = direction_change_threshold
 
     def get_pnl(self, mark_price):
         upnl = 0
@@ -179,10 +209,4 @@ class CoastlineTrader:
         pass
 
     def close_position(self, mark_price):
-        pass
-
-    def correct_buy_order(self, direction_change_threshold):
-        pass
-
-    def correct_sell_order(self, direction_change_threshold):
         pass
