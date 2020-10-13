@@ -43,7 +43,7 @@ class Position:
         order_contracts = contracts - self.contracts
         return order_contracts
 
-    def limit_order(self, order_contracts, mark_price):
+    def order(self, order_contracts, mark_price, fee):
         # print('market_order', wallet, pos_price, pos_contracts, order_contracts, mark_price)
         if self.wallet == 0:
             return
@@ -55,9 +55,7 @@ class Position:
             order_contracts = max_contracts - self.contracts
 
         # Fee
-        maker_fee = -0.0025
-        fee = maker_fee * abs(order_contracts) / mark_price
-        self.wallet -= fee
+        self.wallet -= fee * abs(order_contracts) / mark_price
 
         # Realised profit and loss
         # Wallet only changes when abs(contracts) decrease
@@ -81,3 +79,10 @@ class Position:
 
         # Calculate position contracts
         self.contracts += order_contracts
+
+
+    def limit_order(self, order_contracts, mark_price):
+        self.order(order_contracts, mark_price, -0.0025)
+
+    def market_order(self, order_contracts, mark_price):
+        self.order(order_contracts, mark_price, 0.0075)
