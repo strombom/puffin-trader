@@ -17,6 +17,7 @@ class CoastlineTrader:
         self.sell_order = None
         self.buy_order = None
         self.realized_profit = 0.0
+        self.position_realized_profit = 0.0
         self.runners = []
         self.init_runners()
         self.initialized = False
@@ -57,7 +58,7 @@ class CoastlineTrader:
             return
 
         target_abs_pnl = 10.0
-        if self.get_pnl(mark_price) >= target_abs_pnl:
+        if self.get_upnl(mark_price) + self.position_realized_profit >= target_abs_pnl:
             self.close_position(mark_price)
             self.put_orders(mark_price)
         else:
@@ -77,7 +78,7 @@ class CoastlineTrader:
                 self.buy_order = None
             else:
                 self.buy_order.price = direction_change_threshold
-                self.buy_order.balance_orders(balanced_orders)
+                self.buy_order.set_balanced_orders(balanced_orders)
         else:
             self.buy_order.price = direction_change_threshold
 
@@ -92,26 +93,9 @@ class CoastlineTrader:
                 self.sell_order = None
             else:
                 self.sell_order.price = direction_change_threshold
-                self.sell_order.balance_orders(balanced_orders)
+                self.sell_order.set_balanced_orders(balanced_orders)
         else:
             self.sell_order.price = direction_change_threshold
-
-    def get_pnl(self, mark_price):
-        upnl = 0
-        if len(self.unbalanced_filled_orders) > 0:
-            if self.order_side == OrderSide.long:
-                market_price = mark_price.bid
-            else:
-                market_price = mark_price.ask
-
-            for order in self.unbalanced_filled_orders:
-                if order.side == OrderSide.long:
-                    price_move = market_price - order.price
-                else:
-                    price_move = order.price - market_price
-                upnl = price_move / order.price * order.volume
-
-        return self.realized_profit + upnl
 
     def put_orders(self, mark_price):
         if self.liquidity.get_liquidity() >= 0.5:
@@ -143,22 +127,22 @@ class CoastlineTrader:
             else:
                 self.buy_order = LimitOrder(side=OrderSide.long, price=runner.get_expected_lower_threshold(), volume=cascade_volume, event_type=buy_event_type)
                 balanced_orders = self.find_balanced_orders(runner.get_expected_upper_threshold(), Direction.down)
-                if len(balanced_orders) > 0:
-                    self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=0, event_type=sell_event_type)
-                    self.sell_order.balance_orders(balanced_orders)
-                else:
+                if len(balanced_orders) == 0:
                     self.sell_order = None
+                else:
+                    self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=0, event_type=sell_event_type)
+                    self.sell_order.set_balanced_orders(balanced_orders)
         else:
             if len(self.unbalanced_filled_orders) == 0:
                 self.buy_order = None
                 self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=cascade_volume, event_type=runner.get_upper_event_type())
             else:
                 balanced_orders = self.find_balanced_orders(runner.get_expected_lower_threshold(), Direction.down)
-                if len(balanced_orders) > 0:
-                    self.buy_order = LimitOrder(side=OrderSide.long, price=runner.get_expected_lower_threshold(), volume=0, event_type=buy_event_type)
-                    self.buy_order.balance_orders(balanced_orders)
-                else:
+                if len(balanced_orders) == 0:
                     self.buy_order = None
+                else:
+                    self.buy_order = LimitOrder(side=OrderSide.long, price=runner.get_expected_lower_threshold(), volume=0, event_type=buy_event_type)
+                    self.buy_order.set_balanced_orders(balanced_orders)
                 self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=cascade_volume, event_type=sell_event_type)
 
     def select_current_runner(self):
@@ -192,21 +176,61 @@ class CoastlineTrader:
             if self.order_side == OrderSide.long:
                 self.unbalanced_filled_orders.append(self.buy_order)
             else:
-                self.realized_profit += self.buy_order.get_pnl()
-                print("a")
+                self.position_realized_profit += self.buy_order.get_relative_pnl()
+                for balanced_order in self.buy_order.balanced_orders:
+                    if balanced_order in self.unbalanced_filled_orders:
+                        self.unbalanced_filled_orders.remove(balanced_order)
 
             if len(self.unbalanced_filled_orders) == 0:
                 self.close_position(mark_price)
 
             self.buy_order = None
-            #makeBuyFilled(price);
-            #cancelSellLimitOrder
             self.sell_order = None
 
     def evaluate_sell_orders(self, mark_price):
         if self.sell_order is not None and mark_price.bid > self.buy_order.price:
-            pass
-        pass
+            self.inventory -= self.sell_order.volume
+            self.update_unit_size()
+            if self.order_side == OrderSide.short:
+                self.unbalanced_filled_orders.append(self.sell_order)
+            else:
+                self.position_ += self.sell_order.get_relative_pnl()
+                for balanced_order in self.sell_order.balanced_orders:
+                    if balanced_order in self.unbalanced_filled_orders:
+                        self.unbalanced_filled_orders.remove(balanced_order)
+
+            if len(self.unbalanced_filled_orders) == 0:
+                self.close_position(mark_price)
+
+            self.sell_order = None
+            self.buy_order = None
+
+    def get_upnl(self, mark_price):
+        if len(self.unbalanced_filled_orders) == 0:
+            return 0.0
+
+        if self.order_side == OrderSide.long:
+            market_price = mark_price.bid
+        else:
+            market_price = mark_price.ask
+
+        upnl = 0.0
+        for order in self.unbalanced_filled_orders:
+            if order.side == OrderSide.long:
+                price_move = market_price - order.price
+            else:
+                price_move = order.price - market_price
+            upnl += price_move / order.price * order.volume
+
+        return upnl
 
     def close_position(self, mark_price):
-        pass
+        # Close positions with market order
+        self.realized_profit += self.get_upnl(mark_price)
+        self.realized_profit += self.position_realized_profit
+        self.position_realized_profit = 0.0
+        self.unbalanced_filled_orders = []
+        self.inventory = 0.0
+        self.buy_order = None
+        self.sell_order = None
+        self.update_unit_size()
