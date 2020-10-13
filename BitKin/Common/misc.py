@@ -45,9 +45,13 @@ def read_agg_ticks(filepath):
         pass
 
     agg_ticks = []
+    prev_ask, prev_bid = 0, 0
     with open(filepath, 'r') as csv_file:
         for row in csv.reader(csv_file):
-            agg_ticks.append(AggTick(low=float(row[2]), high=float(row[1])))
+            ask, bid = float(row[1]), float(row[2])
+            if ask != prev_ask or bid != prev_bid:
+                agg_ticks.append(AggTick(low=bid, high=ask))
+                prev_ask, prev_bid = ask, bid
 
     with open(f"cache/agg_ticks.pickle", 'wb') as f:
         data = agg_ticks
