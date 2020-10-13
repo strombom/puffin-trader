@@ -64,7 +64,7 @@ class CoastlineTrader:
         else:
             if self.buy_order is not None:
                 self.balance_buy_order(runner.direction_change_threshold)
-            if self.buy_order is not None:
+            if self.sell_order is not None:
                 self.balance_sell_order(runner.direction_change_threshold)
 
     def balance_buy_order(self, direction_change_threshold):
@@ -98,9 +98,10 @@ class CoastlineTrader:
             self.sell_order.price = direction_change_threshold
 
     def put_orders(self, mark_price):
-        if self.liquidity.get_liquidity() >= 0.5:
+        liquidity = self.liquidity.get_liquidity()
+        if liquidity >= 0.5:
             cascade_coef = 1.0
-        elif self.liquidity.get_liquidity() >= 0.1:
+        elif liquidity >= 0.1:
             cascade_coef = 0.5
         else:
             cascade_coef = 0.1
@@ -111,14 +112,10 @@ class CoastlineTrader:
 
         if runner.direction == Direction.up:
             buy_event_type = EventType.direction_change
-            buy_delta = runner.delta_down
             sell_event_type = EventType.overshoot
-            sell_delta = runner.delta_star_up
         else:
             buy_event_type = EventType.overshoot
-            buy_delta = runner.delta_star_down
             sell_event_type = EventType.direction_change
-            sell_delta = runner.delta_up
 
         if self.order_side == OrderSide.long:
             if len(self.unbalanced_filled_orders) == 0:
@@ -188,13 +185,13 @@ class CoastlineTrader:
             self.sell_order = None
 
     def evaluate_sell_orders(self, mark_price):
-        if self.sell_order is not None and mark_price.bid > self.buy_order.price:
+        if self.sell_order is not None and mark_price.bid > self.sell_order.price:
             self.inventory -= self.sell_order.volume
             self.update_unit_size()
             if self.order_side == OrderSide.short:
                 self.unbalanced_filled_orders.append(self.sell_order)
             else:
-                self.position_ += self.sell_order.get_relative_pnl()
+                self.position_realized_profit += self.sell_order.get_relative_pnl()
                 for balanced_order in self.sell_order.balanced_orders:
                     if balanced_order in self.unbalanced_filled_orders:
                         self.unbalanced_filled_orders.remove(balanced_order)
