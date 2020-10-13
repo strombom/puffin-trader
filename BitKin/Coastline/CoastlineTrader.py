@@ -77,10 +77,10 @@ class CoastlineTrader:
             if len(balanced_orders) == 0:
                 self.buy_order = None
             else:
-                self.buy_order.price = direction_change_threshold
+                self.buy_order.price = round(direction_change_threshold * 2) / 2
                 self.buy_order.set_balanced_orders(balanced_orders)
         else:
-            self.buy_order.price = direction_change_threshold
+            self.buy_order.price = round(direction_change_threshold * 2) / 2
 
     def balance_sell_order(self, direction_change_threshold):
         if self.sell_order.side != OrderSide.short or direction_change_threshold >= self.sell_order.price or \
@@ -92,10 +92,10 @@ class CoastlineTrader:
             if len(balanced_orders) == 0:
                 self.sell_order = None
             else:
-                self.sell_order.price = direction_change_threshold
+                self.sell_order.price = round(direction_change_threshold * 2) / 2
                 self.sell_order.set_balanced_orders(balanced_orders)
         else:
-            self.sell_order.price = direction_change_threshold
+            self.sell_order.price = round(direction_change_threshold * 2) / 2
 
     def put_orders(self, mark_price):
         liquidity = self.liquidity.get_liquidity()
