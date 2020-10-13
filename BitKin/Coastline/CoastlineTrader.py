@@ -15,8 +15,8 @@ class Logger:
         self.file = open('trades.csv', 'w')
 
     def write_line(self, order_type, price, volume):
-        print(f'log {order_type} {volume} @ {price}')
-        self.file.write(f'{order_type},{volume},{price}\n')
+        print(f'log {order_type} {volume} @ {price} c:{self.simulator.contracts} w:{self.simulator.wallet}')
+        self.file.write(f'{order_type},{volume},{price},{self.simulator.contracts},{self.simulator.wallet}\n')
 
 
 class CoastlineTrader:
