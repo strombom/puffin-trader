@@ -1,0 +1,88 @@
+
+import csv
+import matplotlib.pyplot as plt
+#from matplotlib.ticker import LinearLocator, MultipleLocator, FormatStrFormatter, AutoMinorLocator
+
+
+filepath = 'trades.csv'
+
+actions = {'dc_0': ([], []),
+           'dc_1': ([], []),
+           'dc_2': ([], []),
+           'os_0': ([], []),
+           'os_1': ([], []),
+           'os_2': ([], []),
+           'limit_order_buy': ([], []),
+           'limit_order_sell': ([], []),
+           'market_order_buy': ([], []),
+           'market_order_sell': ([], []),
+           'wallet': ([], []),
+           'contracts': ([], [])}
+
+with open(filepath, 'r') as csv_file:
+    for x, row in enumerate(csv.reader(csv_file)):
+        action_name = row[0]
+        if 'RunnerEvent' in action_name:
+
+            runner_idx = int(row[1])
+            ask, bid = float(row[2]), float(row[3])
+            if 'up' in action_name:
+                price = ask
+            else:
+                price = bid
+            if 'direction_change' in action_name:
+                key = 'dc_'
+            else:
+                key = 'os_'
+            key += str(runner_idx)
+
+            actions[key][0].append(x)
+            actions[key][1].append(price)
+
+        elif 'limit_' in action_name or 'market_' in action_name:
+            actions['contracts'][0].append(x)
+            actions['contracts'][1].append(float(row[3]))
+            actions['wallet'][0].append(x)
+            actions['wallet'][1].append(float(row[4]))
+
+            price = float(row[2])
+            if 'limit_' in action_name:
+                key = 'limit_order'
+            else:
+                key = 'market_order'
+            if 'buy' in action_name:
+                key += '_buy'
+            else:
+                key += '_sell'
+
+            actions[key][0].append(x)
+            actions[key][1].append(price)
+
+
+for key in actions:
+    print(key, actions[key])
+    #print(actions[key][1])
+
+ax1 = plt.subplot(111)
+#ax2 = plt.subplot(212, sharex=ax1)
+
+for key in ['dc_0', 'dc_1', 'dc_2']:
+    action = actions[key]
+    ax1.plot(action[0], action[1])
+
+for key in ['os_0', 'os_1', 'os_2']:
+    action = actions[key]
+    ax1.scatter(action[0], action[1])
+
+
+ax1.scatter(actions['market_order_buy'][0], actions['market_order_buy'][1], marker='P')
+ax1.scatter(actions['market_order_sell'][0], actions['market_order_sell'][1], marker='X')
+ax1.scatter(actions['limit_order_buy'][0], actions['limit_order_buy'][1], marker='+')
+ax1.scatter(actions['limit_order_sell'][0], actions['limit_order_sell'][1], marker='x')
+
+
+
+plt.show()
+
+quit()
+

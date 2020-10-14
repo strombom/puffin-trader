@@ -20,7 +20,8 @@ class Logger:
 
     def event(self, event_idx, event, mark_price, selected):
         print(f'log event {event_idx} {event} {mark_price} {selected}')
-        self.file.write(f'event,{event_idx},{event},{mark_price},{selected}\n')
+        self.file.write(f'{event},{event_idx},{mark_price.ask},{mark_price.bid},{selected}\n')
+
 
 class CoastlineTrader:
     def __init__(self, delta, order_side, initial_price):
