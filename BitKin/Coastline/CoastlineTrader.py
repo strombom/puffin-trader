@@ -14,10 +14,13 @@ class Logger:
         self.simulator = simulator
         self.file = open('trades.csv', 'w')
 
-    def write_line(self, order_type, price, volume):
+    def order(self, order_type, price, volume):
         print(f'log {order_type} {volume} @ {price} c:{self.simulator.contracts} w:{self.simulator.wallet}')
         self.file.write(f'{order_type},{volume},{price},{self.simulator.contracts},{self.simulator.wallet}\n')
 
+    def event(self, event_idx, event, mark_price, selected):
+        print(f'log event {event_idx} {event} {mark_price} {selected}')
+        self.file.write(f'event,{event_idx},{event},{mark_price},{selected}\n')
 
 class CoastlineTrader:
     def __init__(self, delta, order_side, initial_price):
@@ -68,8 +71,14 @@ class CoastlineTrader:
         runner_idx = self.select_current_runner()
         runner = self.runners[runner_idx]
 
+        for idx, event in enumerate(events):
+            if idx == runner_idx:
+                continue
+            if event != RunnerEvent.nothing:
+                self.logger.event(idx, event, mark_price, False)
+
         if events[runner_idx] != RunnerEvent.nothing:
-            print(f'Event({runner_idx}) {mark_price.mid} {runner.direction}')
+            self.logger.event(runner_idx, events[runner_idx], mark_price, True)
             self.buy_order, self.sell_order = None, None
             self.put_orders(mark_price)
             return
@@ -186,7 +195,7 @@ class CoastlineTrader:
     def evaluate_buy_orders(self, mark_price):
         if self.buy_order is not None and mark_price.ask < self.buy_order.price:
             self.bitmex_simulator.limit_order(order_contracts=self.buy_order.volume * mark_price.ask, mark_price=mark_price.ask)
-            self.logger.write_line('limit_buy', mark_price.ask, self.buy_order.volume)
+            self.logger.order('limit_buy', mark_price.ask, self.buy_order.volume)
             self.inventory += self.buy_order.volume
             self.update_unit_size()
             if self.order_side == OrderSide.long:
@@ -206,7 +215,7 @@ class CoastlineTrader:
     def evaluate_sell_orders(self, mark_price):
         if self.sell_order is not None and mark_price.bid > self.sell_order.price:
             self.bitmex_simulator.limit_order(order_contracts=-self.sell_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.write_line('limit_sell', mark_price.bid, self.sell_order.volume)
+            self.logger.order('limit_sell', mark_price.bid, self.sell_order.volume)
             self.inventory -= self.sell_order.volume
             self.update_unit_size()
             if self.order_side == OrderSide.short:
@@ -246,10 +255,10 @@ class CoastlineTrader:
         # Close positions with market order
         if self.buy_order is not None:
             self.bitmex_simulator.market_order(order_contracts=self.buy_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.write_line('market_buy', mark_price.ask, self.buy_order.volume)
+            self.logger.order('market_buy', mark_price.ask, self.buy_order.volume)
         if self.sell_order is not None:
             self.bitmex_simulator.market_order(order_contracts=-self.buy_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.write_line('market_sell', mark_price.bid, self.buy_order.volume)
+            self.logger.order('market_sell', mark_price.bid, self.buy_order.volume)
 
         self.realized_profit += self.get_upnl(mark_price)
         self.realized_profit += self.position_realized_profit
