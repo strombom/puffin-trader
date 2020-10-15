@@ -27,13 +27,14 @@ class Coastline:
 
 
 class AggTick:
-    def __init__(self, low, high):
+    def __init__(self, timestamp, low, high):
+        self.timestamp = timestamp
         self.low = low
         self.high = high
         self.mid = (low + high) / 2
 
     def __repr__(self):
-        return f'AggTick({self.low}, {self.high})'
+        return f'AggTick({self.timestamp} {self.low}, {self.high})'
 
 
 def read_agg_ticks(filepath):
@@ -48,10 +49,13 @@ def read_agg_ticks(filepath):
     prev_ask, prev_bid = 0, 0
     with open(filepath, 'r') as csv_file:
         for row in csv.reader(csv_file):
+            timestamp = datetime.fromtimestamp(float(row[0]) / 1000)
             ask, bid = float(row[1]), float(row[2])
             if ask != prev_ask or bid != prev_bid:
-                agg_ticks.append(AggTick(low=bid, high=ask))
+                agg_ticks.append(AggTick(timestamp=timestamp, low=bid, high=ask))
                 prev_ask, prev_bid = ask, bid
+            if len(agg_ticks) > 1000000:
+                break
 
     with open(f"cache/agg_ticks.pickle", 'wb') as f:
         data = agg_ticks
