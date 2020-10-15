@@ -3,6 +3,10 @@ import csv
 import matplotlib.pyplot as plt
 #from matplotlib.ticker import LinearLocator, MultipleLocator, FormatStrFormatter, AutoMinorLocator
 
+from OrderBook import make_order_books
+
+
+order_books = make_order_books(None, None)
 
 filepath = 'trades.csv'
 
@@ -21,11 +25,13 @@ actions = {'dc_0': ([], []),
 
 with open(filepath, 'r') as csv_file:
     for x, row in enumerate(csv.reader(csv_file)):
-        action_name = row[0]
+        timestamp = row[0]
+        action_name = row[1]
         if 'RunnerEvent' in action_name:
+            #timestamp =
 
-            runner_idx = int(row[1])
-            ask, bid = float(row[2]), float(row[3])
+            runner_idx = int(row[2])
+            ask, bid = float(row[3]), float(row[4])
             if 'up' in action_name:
                 price = ask
             else:
@@ -41,11 +47,11 @@ with open(filepath, 'r') as csv_file:
 
         elif 'limit_' in action_name or 'market_' in action_name:
             actions['contracts'][0].append(x)
-            actions['contracts'][1].append(float(row[3]))
+            actions['contracts'][1].append(float(row[4]))
             actions['wallet'][0].append(x)
-            actions['wallet'][1].append(float(row[4]))
+            actions['wallet'][1].append(float(row[5]))
 
-            price = float(row[2])
+            price = float(row[3])
             if 'limit_' in action_name:
                 key = 'limit_order'
             else:
@@ -63,8 +69,10 @@ for key in actions:
     print(key, actions[key])
     #print(actions[key][1])
 
-ax1 = plt.subplot(111)
-#ax2 = plt.subplot(212, sharex=ax1)
+plt.figure()
+ax1 = plt.subplot(311)
+ax2 = plt.subplot(312, sharex=ax1)
+ax3 = plt.subplot(313, sharex=ax1)
 
 for key in ['dc_0', 'dc_1', 'dc_2']:
     action = actions[key]
@@ -80,7 +88,8 @@ ax1.scatter(actions['market_order_sell'][0], actions['market_order_sell'][1], ma
 ax1.scatter(actions['limit_order_buy'][0], actions['limit_order_buy'][1], marker='+')
 ax1.scatter(actions['limit_order_sell'][0], actions['limit_order_sell'][1], marker='x')
 
-
+ax2.plot(actions['wallet'][0], actions['wallet'][1])
+ax3.plot(actions['contracts'][0], actions['contracts'][1])
 
 plt.show()
 
