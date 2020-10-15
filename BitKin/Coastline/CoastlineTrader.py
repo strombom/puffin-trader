@@ -14,13 +14,13 @@ class Logger:
         self.simulator = simulator
         self.file = open('trades.csv', 'w')
 
-    def order(self, order_type, price, volume):
-        print(f'log {order_type} {volume} @ {price} c:{self.simulator.contracts} w:{self.simulator.wallet}')
-        self.file.write(f'{order_type},{volume},{price},{self.simulator.contracts},{self.simulator.wallet}\n')
+    def order(self, timestamp, order_type, price, volume):
+        print(f'log {timestamp} {order_type} {volume} @ {price} c:{self.simulator.contracts} w:{self.simulator.wallet}')
+        self.file.write(f'{timestamp},{order_type},{volume},{price},{self.simulator.contracts},{self.simulator.wallet}\n')
 
-    def event(self, event_idx, event, mark_price, selected):
-        print(f'log event {event_idx} {event} {mark_price} {selected}')
-        self.file.write(f'{event},{event_idx},{mark_price.ask},{mark_price.bid},{selected}\n')
+    def event(self, timestamp, event_idx, event, mark_price, selected):
+        print(f'log event {timestamp} {event_idx} {event} {mark_price} {selected}')
+        self.file.write(f'{timestamp},{event},{event_idx},{mark_price.ask},{mark_price.bid},{selected}\n')
 
 
 class CoastlineTrader:
@@ -76,10 +76,10 @@ class CoastlineTrader:
             if idx == runner_idx:
                 continue
             if event != RunnerEvent.nothing:
-                self.logger.event(idx, event, mark_price, False)
+                self.logger.event(mark_price.timestamp, idx, event, mark_price, False)
 
         if events[runner_idx] != RunnerEvent.nothing:
-            self.logger.event(runner_idx, events[runner_idx], mark_price, True)
+            self.logger.event(mark_price.timestamp, runner_idx, events[runner_idx], mark_price, True)
             self.buy_order, self.sell_order = None, None
             self.put_orders(mark_price)
             return
@@ -196,7 +196,7 @@ class CoastlineTrader:
     def evaluate_buy_orders(self, mark_price):
         if self.buy_order is not None and mark_price.ask < self.buy_order.price:
             self.bitmex_simulator.limit_order(order_contracts=self.buy_order.volume * mark_price.ask, mark_price=mark_price.ask)
-            self.logger.order('limit_buy', mark_price.ask, self.buy_order.volume)
+            self.logger.order(mark_price.timestamp, 'limit_buy', mark_price.ask, self.buy_order.volume)
             self.inventory += self.buy_order.volume
             self.update_unit_size()
             if self.order_side == OrderSide.long:
@@ -216,7 +216,7 @@ class CoastlineTrader:
     def evaluate_sell_orders(self, mark_price):
         if self.sell_order is not None and mark_price.bid > self.sell_order.price:
             self.bitmex_simulator.limit_order(order_contracts=-self.sell_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.order('limit_sell', mark_price.bid, self.sell_order.volume)
+            self.logger.order(mark_price.timestamp, 'limit_sell', mark_price.bid, self.sell_order.volume)
             self.inventory -= self.sell_order.volume
             self.update_unit_size()
             if self.order_side == OrderSide.short:
@@ -256,10 +256,10 @@ class CoastlineTrader:
         # Close positions with market order
         if self.buy_order is not None:
             self.bitmex_simulator.market_order(order_contracts=self.buy_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.order('market_buy', mark_price.ask, self.buy_order.volume)
+            self.logger.order(mark_price.timestamp, 'market_buy', mark_price.ask, self.buy_order.volume)
         if self.sell_order is not None:
             self.bitmex_simulator.market_order(order_contracts=-self.buy_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.order('market_sell', mark_price.bid, self.buy_order.volume)
+            self.logger.order(mark_price.timestamp, 'market_sell', mark_price.bid, self.buy_order.volume)
 
         self.realized_profit += self.get_upnl(mark_price)
         self.realized_profit += self.position_realized_profit
