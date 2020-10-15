@@ -10,6 +10,10 @@ def string_to_timestamp(date):
     return datetime.timestamp(datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f'))
 
 
+def string_to_datetime(date):
+    return datetime.fromtimestamp(string_to_timestamp(date))
+
+
 def timestamp_to_string(timestamp):
     return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')
 
@@ -45,17 +49,25 @@ def read_agg_ticks(filepath):
     except:
         pass
 
+    timestamp_start = string_to_datetime("2020-02-05 00:00:00.000")
+    timestamp_end = string_to_datetime("2020-03-05 00:00:00.000")
+
     agg_ticks = []
     prev_ask, prev_bid = 0, 0
     with open(filepath, 'r') as csv_file:
         for row in csv.reader(csv_file):
             timestamp = datetime.fromtimestamp(float(row[0]) / 1000)
+            if timestamp < timestamp_start:
+                continue
+            if timestamp >= timestamp_end:
+                break
+
             ask, bid = float(row[1]), float(row[2])
             if ask != prev_ask or bid != prev_bid:
                 agg_ticks.append(AggTick(timestamp=timestamp, low=bid, high=ask))
                 prev_ask, prev_bid = ask, bid
-            if len(agg_ticks) > 1000000:
-                break
+            #if len(agg_ticks) > 1000000:
+            #    break
 
     with open(f"cache/agg_ticks.pickle", 'wb') as f:
         data = agg_ticks
