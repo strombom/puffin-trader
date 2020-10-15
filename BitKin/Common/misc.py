@@ -6,12 +6,12 @@ from datetime import datetime
 from sklearn.linear_model import LinearRegression
 
 
-def string_to_timestamp(date):
-    return datetime.timestamp(datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f'))
+def string_to_timestamp(date, fmt='%Y-%m-%d %H:%M:%S.%f'):
+    return datetime.timestamp(datetime.strptime(date, fmt))
 
 
-def string_to_datetime(date):
-    return datetime.fromtimestamp(string_to_timestamp(date))
+def string_to_datetime(date, fmt='%Y-%m-%d %H:%M:%S.%f'):
+    return datetime.fromtimestamp(string_to_timestamp(date, fmt))
 
 
 def timestamp_to_string(timestamp):
