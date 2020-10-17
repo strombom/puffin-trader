@@ -27,6 +27,12 @@ class OrderBook:
         return f'OrderBook({self.timestamp} {self.ask}, {self.bid})'
 
 
+def order_books_to_csv(order_books, filename):
+    with open(filename, 'w') as f:
+        for order_book in order_books:
+            f.write(f'{order_book.timestamp},{order_book.ask},{order_book.bid}\n')
+
+
 def make_order_books(agg_ticks, interval):
     try:
         with open(f"cache/order_books.pickle", 'rb') as f:
