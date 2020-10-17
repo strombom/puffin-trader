@@ -1,6 +1,6 @@
 
 
-class Position:
+class BitmexSimulator:
     def __init__(self, settings, mark_price, initial_leverage=0):
         self.settings = settings
         self.wallet = 1.0

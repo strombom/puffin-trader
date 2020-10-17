@@ -2,7 +2,7 @@
 import sys
 sys.path.append("../Common")
 
-from BitmexSimulator import Position
+from BitmexSimulator import BitmexSimulator
 from CoastlineRunner import CoastlineRunner
 from Liquidity import Liquidity
 from LimitOrder import LimitOrder
@@ -23,6 +23,11 @@ class Logger:
         self.file.write(f'{timestamp},{event},{event_idx},{mark_price.ask},{mark_price.bid},{selected}\n')
 
 
+class Position:
+    def __init__(self):
+        pass
+
+
 class CoastlineTrader:
     def __init__(self, delta, order_side, initial_price):
         self.delta = delta
@@ -39,17 +44,22 @@ class CoastlineTrader:
         self.runners = []
         self.init_runners()
         self.initialized = False
-        self.bitmex_simulator = Position({'max_leverage': 10}, initial_price)
+        self.bitmex_simulator = BitmexSimulator({'max_leverage': 10}, initial_price)
         self.logger = Logger(self.bitmex_simulator)
 
     def init_runners(self):
-        self.runners.append(CoastlineRunner(delta_up=self.delta, delta_down=self.delta, delta_star_up=self.delta, delta_star_down=self.delta))
+        self.runners.append(CoastlineRunner(delta_up=self.delta, delta_down=self.delta,
+                                            delta_star_up=self.delta, delta_star_down=self.delta))
         if self.order_side == OrderSide.long:
-            self.runners.append(CoastlineRunner(delta_up=0.75 * self.delta, delta_down=1.50 * self.delta, delta_star_up=0.75 * self.delta, delta_star_down=0.75 * self.delta))
-            self.runners.append(CoastlineRunner(delta_up=0.50 * self.delta, delta_down=2.00 * self.delta, delta_star_up=0.50 * self.delta, delta_star_down=0.50 * self.delta))
+            self.runners.append(CoastlineRunner(delta_up=0.75 * self.delta, delta_down=1.50 * self.delta,
+                                                delta_star_up=0.75 * self.delta, delta_star_down=0.75 * self.delta))
+            self.runners.append(CoastlineRunner(delta_up=0.50 * self.delta, delta_down=2.00 * self.delta,
+                                                delta_star_up=0.50 * self.delta, delta_star_down=0.50 * self.delta))
         else:
-            self.runners.append(CoastlineRunner(delta_up=1.50 * self.delta, delta_down=0.75 * self.delta, delta_star_up=0.75 * self.delta, delta_star_down=0.75 * self.delta))
-            self.runners.append(CoastlineRunner(delta_up=2.00 * self.delta, delta_down=0.50 * self.delta, delta_star_up=0.50 * self.delta, delta_star_down=0.50 * self.delta))
+            self.runners.append(CoastlineRunner(delta_up=1.50 * self.delta, delta_down=0.75 * self.delta,
+                                                delta_star_up=0.75 * self.delta, delta_star_down=0.75 * self.delta))
+            self.runners.append(CoastlineRunner(delta_up=2.00 * self.delta, delta_down=0.50 * self.delta,
+                                                delta_star_up=0.50 * self.delta, delta_star_down=0.50 * self.delta))
 
     def step(self, mark_price):
         #print("step", mark_price.ask, mark_price.mid, mark_price.bid)
@@ -194,9 +204,9 @@ class CoastlineTrader:
         return balanced_orders
 
     def evaluate_buy_orders(self, mark_price):
-        if self.buy_order is not None and mark_price.ask < self.buy_order.price:
-            self.bitmex_simulator.limit_order(order_contracts=self.buy_order.volume * mark_price.ask, mark_price=mark_price.ask)
-            self.logger.order(mark_price.timestamp, 'limit_buy', mark_price.ask, self.buy_order.volume)
+        if self.buy_order is not None and mark_price.bid < self.buy_order.price:
+            self.bitmex_simulator.limit_order(order_contracts=self.buy_order.volume * self.buy_order.price, mark_price=self.buy_order.price)
+            self.logger.order(mark_price.timestamp, 'limit_buy', self.buy_order.price, self.buy_order.volume)
             self.inventory += self.buy_order.volume
             self.update_unit_size()
             if self.order_side == OrderSide.long:
@@ -214,9 +224,9 @@ class CoastlineTrader:
             self.sell_order = None
 
     def evaluate_sell_orders(self, mark_price):
-        if self.sell_order is not None and mark_price.bid > self.sell_order.price:
-            self.bitmex_simulator.limit_order(order_contracts=-self.sell_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.order(mark_price.timestamp, 'limit_sell', mark_price.bid, self.sell_order.volume)
+        if self.sell_order is not None and mark_price.ask > self.sell_order.price:
+            self.bitmex_simulator.limit_order(order_contracts=-self.sell_order.volume * self.sell_order.price, mark_price=self.sell_order.price)
+            self.logger.order(mark_price.timestamp, 'limit_sell', self.sell_order.price, self.sell_order.volume)
             self.inventory -= self.sell_order.volume
             self.update_unit_size()
             if self.order_side == OrderSide.short:
@@ -254,12 +264,19 @@ class CoastlineTrader:
 
     def close_position(self, mark_price):
         # Close positions with market order
-        if self.buy_order is not None:
-            self.bitmex_simulator.market_order(order_contracts=self.buy_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.order(mark_price.timestamp, 'market_buy', mark_price.ask, self.buy_order.volume)
-        if self.sell_order is not None:
-            self.bitmex_simulator.market_order(order_contracts=-self.buy_order.volume * mark_price.bid, mark_price=mark_price.bid)
-            self.logger.order(mark_price.timestamp, 'market_sell', mark_price.bid, self.buy_order.volume)
+        if self.bitmex_simulator.contracts < 0:
+            self.logger.order(mark_price.timestamp, 'market_buy', mark_price.ask, -self.bitmex_simulator.contracts / mark_price.ask)
+            self.bitmex_simulator.market_order(order_contracts=-self.bitmex_simulator.contracts, mark_price=mark_price.ask)
+        else:
+            self.logger.order(mark_price.timestamp, 'market_buy', mark_price.bid, -self.bitmex_simulator.contracts / mark_price.bid)
+            self.bitmex_simulator.market_order(order_contracts=-self.bitmex_simulator.contracts, mark_price=mark_price.bid)
+
+        #if self.buy_order is not None:
+        #    self.bitmex_simulator.market_order(order_contracts=self.buy_order.volume * mark_price.bid, mark_price=sell_price)
+        #    self.logger.order(mark_price.timestamp, 'market_buy', mark_price.ask, self.buy_order.volume)
+        #if self.sell_order is not None:
+        #    self.bitmex_simulator.market_order(order_contracts=-self.sell_order.volume * mark_price.bid, mark_price=sell_price)
+        #    self.logger.order(mark_price.timestamp, 'market_sell', mark_price.bid, self.sell_order.volume)
 
         self.realized_profit += self.get_upnl(mark_price)
         self.realized_profit += self.position_realized_profit
