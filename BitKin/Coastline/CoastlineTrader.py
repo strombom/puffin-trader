@@ -15,8 +15,8 @@ class Logger:
         self.file = open('trades.csv', 'w')
 
     def order(self, timestamp, order_type, price, volume):
-        print(f'log {timestamp} {order_type} {volume} @ {price} c:{self.simulator.contracts} w:{self.simulator.wallet}')
-        self.file.write(f'{timestamp},{order_type},{volume},{price},{self.simulator.contracts},{self.simulator.wallet}\n')
+        print(f'log {timestamp} {order_type} {volume} @ {price} l:{self.simulator.get_leverage(price)} w:{self.simulator.wallet} v:{self.simulator.get_value(price)}')
+        self.file.write(f'{timestamp},{order_type},{volume},{price},{self.simulator.get_leverage(price)},{self.simulator.wallet},{self.simulator.get_value(price)}\n')
 
     def event(self, timestamp, event_idx, event, mark_price, selected):
         print(f'log event {timestamp} {event_idx} {event} {mark_price} {selected}')
@@ -105,34 +105,38 @@ class CoastlineTrader:
                 self.balance_sell_order(runner.direction_change_threshold)
 
     def balance_buy_order(self, direction_change_threshold):
-        if self.buy_order.side != OrderSide.long or direction_change_threshold <= self.buy_order.price or \
-                (self.order_side == OrderSide.short and len(self.unbalanced_filled_orders) == 0):
+        if self.buy_order.event_type != EventType.direction_change or \
+           direction_change_threshold <= self.buy_order.price or \
+           (self.order_side != OrderSide.long and len(self.unbalanced_filled_orders) == 0):
             return
 
-        if self.order_side == OrderSide.short and len(self.unbalanced_filled_orders) > 1:
-            balanced_orders = self.find_balanced_orders(direction_change_threshold, Direction.up)
-            if len(balanced_orders) == 0:
-                self.buy_order = None
-            else:
-                self.buy_order.price = round(direction_change_threshold * 2) / 2
-                self.buy_order.set_balanced_orders(balanced_orders)
+        if len(self.unbalanced_filled_orders) == 0 or self.order_side == OrderSide.long:
+            self.buy_order.price = round(direction_change_threshold * 2) / 2
+            return
+
+        balanced_orders = self.find_balanced_orders(direction_change_threshold, Direction.up)
+        if len(balanced_orders) == 0:
+            self.buy_order = None
         else:
             self.buy_order.price = round(direction_change_threshold * 2) / 2
+            self.buy_order.set_balanced_orders(balanced_orders)
 
     def balance_sell_order(self, direction_change_threshold):
-        if self.sell_order.side != OrderSide.short or direction_change_threshold >= self.sell_order.price or \
-                (self.order_side == OrderSide.long and len(self.unbalanced_filled_orders) == 0):
+        if self.sell_order.event_type != EventType.direction_change or \
+           direction_change_threshold >= self.sell_order.price or \
+           (self.order_side != OrderSide.short and len(self.unbalanced_filled_orders) == 0):
             return
 
-        if self.order_side == OrderSide.long or len(self.unbalanced_filled_orders) > 1:
-            balanced_orders = self.find_balanced_orders(direction_change_threshold, Direction.down)
-            if len(balanced_orders) == 0:
-                self.sell_order = None
-            else:
-                self.sell_order.price = round(direction_change_threshold * 2) / 2
-                self.sell_order.set_balanced_orders(balanced_orders)
+        if len(self.unbalanced_filled_orders) == 0 or self.order_side == OrderSide.short:
+            self.sell_order.price = round(direction_change_threshold * 2) / 2
+            return
+
+        balanced_orders = self.find_balanced_orders(direction_change_threshold, Direction.down)
+        if len(balanced_orders) == 0:
+            self.sell_order = None
         else:
             self.sell_order.price = round(direction_change_threshold * 2) / 2
+            self.sell_order.set_balanced_orders(balanced_orders)
 
     def put_orders(self, mark_price):
         liquidity = self.liquidity.get_liquidity()
@@ -171,7 +175,7 @@ class CoastlineTrader:
                 self.buy_order = None
                 self.sell_order = LimitOrder(side=OrderSide.short, price=runner.get_expected_upper_threshold(), volume=cascade_volume, event_type=runner.get_upper_event_type())
             else:
-                balanced_orders = self.find_balanced_orders(runner.get_expected_lower_threshold(), Direction.down)
+                balanced_orders = self.find_balanced_orders(runner.get_expected_lower_threshold(), Direction.up)
                 if len(balanced_orders) == 0:
                     self.buy_order = None
                 else:
@@ -204,7 +208,7 @@ class CoastlineTrader:
         return balanced_orders
 
     def evaluate_buy_orders(self, mark_price):
-        if self.buy_order is not None and mark_price.bid < self.buy_order.price:
+        if self.buy_order is not None and mark_price.ask < self.buy_order.price:
             self.bitmex_simulator.limit_order(order_contracts=self.buy_order.volume * self.buy_order.price, mark_price=self.buy_order.price)
             self.logger.order(mark_price.timestamp, 'limit_buy', self.buy_order.price, self.buy_order.volume)
             self.inventory += self.buy_order.volume
@@ -224,7 +228,7 @@ class CoastlineTrader:
             self.sell_order = None
 
     def evaluate_sell_orders(self, mark_price):
-        if self.sell_order is not None and mark_price.ask > self.sell_order.price:
+        if self.sell_order is not None and mark_price.bid > self.sell_order.price:
             self.bitmex_simulator.limit_order(order_contracts=-self.sell_order.volume * self.sell_order.price, mark_price=self.sell_order.price)
             self.logger.order(mark_price.timestamp, 'limit_sell', self.sell_order.price, self.sell_order.volume)
             self.inventory -= self.sell_order.volume
@@ -244,9 +248,6 @@ class CoastlineTrader:
             self.buy_order = None
 
     def get_upnl(self, mark_price):
-        if len(self.unbalanced_filled_orders) == 0:
-            return 0.0
-
         if self.order_side == OrderSide.long:
             market_price = mark_price.bid
         else:
