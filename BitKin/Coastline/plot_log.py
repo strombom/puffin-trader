@@ -13,7 +13,7 @@ from OrderBook import make_order_books
 
 order_books = make_order_books(None, None)
 
-filepath = 'trades.csv'
+filepath = 'alphaengine_trades.csv'
 
 actions = {'dc_0': ([], []),
            'dc_1': ([], []),
@@ -27,12 +27,14 @@ actions = {'dc_0': ([], []),
            'market_order_sell': ([], []),
            'wallet': ([], []),
            'contracts': ([], []),
+           'value': ([], []),
            'ask': ([], []),
            'bid': ([], [])}
 
 with open(filepath, 'r') as csv_file:
     prev_contracts = 0
     prev_wallet = 1
+    prev_value = 0
 
     for x, row in enumerate(csv.reader(csv_file)):
         timestamp = string_to_datetime(row[0], fmt='%Y-%m-%d %H:%M:%S')
@@ -59,6 +61,8 @@ with open(filepath, 'r') as csv_file:
             actions[key][1].append(price)
 
         elif 'limit_' in action_name or 'market_' in action_name:
+            price = float(row[3])
+
             actions['contracts'][0].append(timestamp)
             actions['contracts'][1].append(prev_contracts)
             actions['contracts'][0].append(timestamp)
@@ -71,7 +75,14 @@ with open(filepath, 'r') as csv_file:
             actions['wallet'][1].append(float(row[5]))
             prev_wallet = float(row[5])
 
-            price = float(row[3])
+            if prev_value == 0:
+                prev_value = price * prev_wallet
+            actions['value'][0].append(timestamp)
+            actions['value'][1].append(prev_value)
+            actions['value'][0].append(timestamp)
+            actions['value'][1].append(float(row[6]))
+            prev_value = float(row[6])
+
             if 'limit_' in action_name:
                 key = 'limit_order'
             else:
@@ -121,6 +132,10 @@ ax2.plot(actions['wallet'][0], actions['wallet'][1], color='green')
 ax2b = ax2.twinx()
 ax2b.set_ylabel('contracts', color='blue')
 ax2b.plot(actions['contracts'][0], actions['contracts'][1], color='blue')
+
+ax2c = ax2.twinx()
+ax2c.set_ylabel('value', color='blue')
+ax2c.plot(actions['value'][0], actions['value'][1], color='red')
 
 #fig, ax=plt.subplots(num=10, clear=True)
 plt.show()
