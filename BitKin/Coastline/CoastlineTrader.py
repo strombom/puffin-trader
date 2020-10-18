@@ -268,15 +268,15 @@ class CoastlineTrader:
         if self.bitmex_simulator.contracts < 0:
             self.logger.order(mark_price.timestamp, 'market_buy', mark_price.ask, -self.bitmex_simulator.contracts / mark_price.ask)
             self.bitmex_simulator.market_order(order_contracts=-self.bitmex_simulator.contracts, mark_price=mark_price.ask)
-        else:
+        elif self.bitmex_simulator.contracts > 0:
             self.logger.order(mark_price.timestamp, 'market_sell', mark_price.bid, -self.bitmex_simulator.contracts / mark_price.bid)
             self.bitmex_simulator.market_order(order_contracts=-self.bitmex_simulator.contracts, mark_price=mark_price.bid)
 
         #if self.buy_order is not None:
-        #    self.bitmex_simulator.market_order(order_contracts=self.buy_order.volume * mark_price.bid, mark_price=sell_price)
+        #    self.bitmex_simulator.market_order(order_contracts=self.buy_order.volume * mark_price.ask, mark_price=mark_price.ask)
         #    self.logger.order(mark_price.timestamp, 'market_buy', mark_price.ask, self.buy_order.volume)
-        #if self.sell_order is not None:
-        #    self.bitmex_simulator.market_order(order_contracts=-self.sell_order.volume * mark_price.bid, mark_price=sell_price)
+        #elif self.sell_order is not None:
+        #    self.bitmex_simulator.market_order(order_contracts=-self.sell_order.volume * mark_price.bid, mark_price=mark_price.bid)
         #    self.logger.order(mark_price.timestamp, 'market_sell', mark_price.bid, self.sell_order.volume)
 
         self.realized_profit += self.get_upnl(mark_price)

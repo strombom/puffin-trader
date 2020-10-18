@@ -39,6 +39,7 @@ class Liquidity:
 
     def step(self, mark_price):
         if self.extreme_price == 0 or self.reference_price == 0:
+            self.direction = Direction.down
             self.extreme_price = mark_price.mid
             self.reference_price = mark_price.mid
 

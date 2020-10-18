@@ -23,6 +23,7 @@ class CoastlineRunner:
             self._update_direction_change_threshold()
             self._update_overshoot_threshold()
             self.initialized = True
+            return RunnerEvent.nothing
 
         if self.direction == Direction.up:
             if mark_price.ask <= self.direction_change_threshold:
@@ -55,7 +56,6 @@ class CoastlineRunner:
                 self._update_direction_change_threshold()
                 if mark_price.ask < self.overshoot_threshold:
                     self.reference_price = mark_price.ask
-                    self.extreme_price = mark_price.ask
                     self._update_overshoot_threshold()
                     return RunnerEvent.overshoot_down
 
