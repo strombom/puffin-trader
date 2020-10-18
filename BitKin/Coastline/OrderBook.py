@@ -30,7 +30,7 @@ class OrderBook:
 def order_books_to_csv(order_books, filename):
     with open(filename, 'w') as f:
         for order_book in order_books:
-            f.write(f'{order_book.timestamp},{order_book.ask},{order_book.bid}\n')
+            f.write(f'{int(datetime.timestamp(order_book.timestamp))},{order_book.ask},{order_book.bid}\n')
 
 
 def make_order_books(agg_ticks, interval):
