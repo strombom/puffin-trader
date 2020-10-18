@@ -63,15 +63,15 @@ class CoastlineRunner:
 
     def _update_direction_change_threshold(self):
         if self.direction == Direction.up:
-            self.direction_change_threshold = math.exp(math.log(self.reference_price) - self.delta_down)
+            self.direction_change_threshold = math.exp(math.log(self.extreme_price) - self.delta_down)
         else:
-            self.direction_change_threshold = math.exp(math.log(self.reference_price) + self.delta_up)
+            self.direction_change_threshold = math.exp(math.log(self.extreme_price) + self.delta_up)
 
     def _update_overshoot_threshold(self):
         if self.direction == Direction.up:
-            self.overshoot_threshold = math.exp(math.log(self.extreme_price) + self.delta_star_up)
+            self.overshoot_threshold = math.exp(math.log(self.reference_price) + self.delta_star_up)
         else:
-            self.overshoot_threshold = math.exp(math.log(self.extreme_price) - self.delta_star_down)
+            self.overshoot_threshold = math.exp(math.log(self.reference_price) - self.delta_star_down)
 
     def get_upper_event_type(self):
         if self.direction_change_threshold > self.overshoot_threshold:
@@ -86,13 +86,7 @@ class CoastlineRunner:
             return EventType.overshoot
 
     def get_expected_upper_threshold(self):
-        if self.direction_change_threshold > self.overshoot_threshold:
-            return self.direction_change_threshold
-        else:
-            return self.overshoot_threshold
+        return max(self.direction_change_threshold, self.overshoot_threshold)
 
     def get_expected_lower_threshold(self):
-        if self.direction_change_threshold < self.overshoot_threshold:
-            return self.direction_change_threshold
-        else:
-            return self.overshoot_threshold
+        return min(self.direction_change_threshold, self.overshoot_threshold)
