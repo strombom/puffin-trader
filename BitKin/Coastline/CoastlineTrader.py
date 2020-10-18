@@ -268,7 +268,7 @@ class CoastlineTrader:
             self.logger.order(mark_price.timestamp, 'market_buy', mark_price.ask, -self.bitmex_simulator.contracts / mark_price.ask)
             self.bitmex_simulator.market_order(order_contracts=-self.bitmex_simulator.contracts, mark_price=mark_price.ask)
         else:
-            self.logger.order(mark_price.timestamp, 'market_buy', mark_price.bid, -self.bitmex_simulator.contracts / mark_price.bid)
+            self.logger.order(mark_price.timestamp, 'market_sell', mark_price.bid, -self.bitmex_simulator.contracts / mark_price.bid)
             self.bitmex_simulator.market_order(order_contracts=-self.bitmex_simulator.contracts, mark_price=mark_price.bid)
 
         #if self.buy_order is not None:
