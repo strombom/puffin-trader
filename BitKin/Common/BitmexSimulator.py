@@ -82,7 +82,7 @@ class BitmexSimulator:
 
 
     def limit_order(self, order_contracts, mark_price):
-        self.order(order_contracts, mark_price, -0.0025)
+        self.order(order_contracts, mark_price, -0.00025)
 
     def market_order(self, order_contracts, mark_price):
-        self.order(order_contracts, mark_price, 0.0075)
+        self.order(order_contracts, mark_price, 0.00075)
