@@ -8,21 +8,27 @@ class BitmexSimulator:
         self.contracts = initial_leverage * self.wallet * self.price
 
     def get_leverage(self, mark_price):
-        if self.wallet == 0:
+        if self.wallet < 0.1:
+            self.wallet = 0.0
+            self.contracts = 0.0
             return 0
         value = self.contracts / mark_price
         leverage = value / self.wallet
         return leverage
 
     def get_value(self, mark_price):
-        if self.wallet == 0:
+        if self.wallet < 0.1:
+            self.wallet = 0.0
+            self.contracts = 0.0
             return 0
         upnl = self.contracts * (1 / self.price - 1 / mark_price)
         return (self.wallet + upnl) * mark_price
 
     def calculate_order_size(self, leverage, mark_price):
-        if self.wallet == 0.0:
-            return 0.0
+        if self.wallet < 0.1:
+            self.wallet = 0.0
+            self.contracts = 0.0
+            return 0
 
         position_margin = 0.0
         position_leverage = 0.0
@@ -45,8 +51,10 @@ class BitmexSimulator:
 
     def order(self, order_contracts, mark_price, fee):
         # print('market_order', wallet, pos_price, pos_contracts, order_contracts, mark_price)
-        if self.wallet == 0:
-            return
+        if self.wallet < 0.1:
+            self.wallet = 0.0
+            self.contracts = 0.0
+            return 0
 
         upnl = self.contracts * (1 / self.price - 1 / mark_price)
 
@@ -79,7 +87,6 @@ class BitmexSimulator:
 
         # Calculate position contracts
         self.contracts += order_contracts
-
 
     def limit_order(self, order_contracts, mark_price):
         self.order(order_contracts, mark_price, -0.00025)
