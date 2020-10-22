@@ -14,6 +14,7 @@ from OrderBook import make_order_books
 order_books = make_order_books(None, None)
 
 filepath = 'alphaengine_trades.csv'
+#¤filepath = 'trades.csv'
 
 actions = {'dc_0': ([], []),
            'dc_1': ([], []),
@@ -29,7 +30,8 @@ actions = {'dc_0': ([], []),
            'contracts': ([], []),
            'value': ([], []),
            'ask': ([], []),
-           'bid': ([], [])}
+           'bid': ([], []),
+           'liquidity': ([], [])}
 
 with open(filepath, 'r') as csv_file:
     prev_contracts = 0
@@ -42,7 +44,7 @@ with open(filepath, 'r') as csv_file:
         if 'RunnerEvent' in action_name:
             #timestamp =
 
-            if row[5] == 'False':
+            if row[6] == 'False':
                 continue
 
             runner_idx = int(row[2])
@@ -59,6 +61,9 @@ with open(filepath, 'r') as csv_file:
 
             actions[key][0].append(timestamp)
             actions[key][1].append(price)
+
+            actions['liquidity'][0].append(timestamp)
+            actions['liquidity'][1].append(float(row[5]))
 
         elif 'limit_' in action_name or 'market_' in action_name:
             price = float(row[3])
@@ -119,7 +124,7 @@ ax1.scatter(actions['limit_order_sell'][0], actions['limit_order_sell'][1], mark
 
 for key in ['dc_0', 'dc_1', 'dc_2']:
     action = actions[key]
-    ax1.plot(action[0], action[1])
+    #ax1.plot(action[0], action[1])
 
 for key in ['os_0', 'os_1', 'os_2']:
     action = actions[key]
@@ -134,8 +139,12 @@ ax2b.set_ylabel('contracts', color='blue')
 ax2b.plot(actions['contracts'][0], actions['contracts'][1], color='blue')
 
 ax2c = ax2.twinx()
-ax2c.set_ylabel('value', color='blue')
+ax2c.set_ylabel('value', color='red')
 ax2c.plot(actions['value'][0], actions['value'][1], color='red')
+
+ax2d = ax2.twinx()
+ax2d.set_ylabel('value', color='orange')
+ax2d.plot(actions['liquidity'][0], actions['liquidity'][1], color='orange')
 
 #fig, ax=plt.subplots(num=10, clear=True)
 plt.show()

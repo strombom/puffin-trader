@@ -3,7 +3,6 @@ import csv
 import pickle
 import numpy as np
 from datetime import datetime
-from sklearn.linear_model import LinearRegression
 
 
 def string_to_timestamp(date, fmt='%Y-%m-%d %H:%M:%S.%f'):
@@ -50,7 +49,7 @@ def read_agg_ticks(filepath):
         pass
 
     timestamp_start = string_to_datetime("2020-02-05 00:00:00.000")
-    timestamp_end = string_to_datetime("2020-03-05 00:00:00.000")
+    timestamp_end = string_to_datetime("2020-04-05 00:00:00.000")
 
     agg_ticks = []
     prev_ask, prev_bid = 0, 0
@@ -177,6 +176,8 @@ def calc_volatilities_regr(events, settings):
     except:
         pass
 
+    from sklearn.linear_model import LinearRegression
+
     buffer_length = settings['volatility_buffer_length']
     x = np.arange(buffer_length).reshape((buffer_length, 1))
     vola_prices = np.ones((buffer_length, 1)) * events[0].price
@@ -211,6 +212,8 @@ def calc_directions(events, settings):
                 return data['data']
     except:
         pass
+
+    from sklearn.linear_model import LinearRegression
 
     buffer_length = settings['volatility_buffer_length']
     x = np.arange(buffer_length).reshape((buffer_length, 1))
