@@ -6,6 +6,7 @@ import numpy as np
 from enum import Enum
 from datetime import timedelta
 import matplotlib.pyplot as plt
+import matplotlib
 sys.path.append("../Common")
 
 #import matplotlib.pyplot as plt
@@ -63,9 +64,9 @@ class Runner:
         return RunnerEvent.nothing, 0, 0, 0, 0
 
     def _append(self, dc_timestamp):
-        self.dc_times.append(dc_timestamp)
+        self.dc_times.append(dc_timestamp.timestamp())
         self.dc_prices.append(self.delta_price)
-        self.os_times.append(self.extreme_timestamp)
+        self.os_times.append(self.extreme_timestamp.timestamp())
         self.os_prices.append(self.extreme_price)
 
 
@@ -75,10 +76,12 @@ if __name__ == '__main__':
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
         order_books = make_order_books(agg_ticks, timedelta(minutes=1))
 
+    #order_books = order_books[:10000]
     print(order_books[0])
     print(order_books[-1])
 
-    deltas = [0.0027, 0.0033, 0.0039, 0.0047, 0.0056, 0.0068, 0.0082, 0.010, 0.012, 0.015]
+    deltas = [0.0027, 0.0033, 0.0039, 0.0047, 0.0056, 0.0068, 0.0082, 0.010, 0.012, 0.015, 0.018, 0.022, 0.027, 0.033, 0.039, 0.047]
+    deltas = [0.0015, 0.0016, 0.0018, 0.0020, 0.0022, 0.0024, 0.0027, 0.0030, 0.0033, 0.0036, 0.0039, 0.0043, 0.0047, 0.0051, 0.0056, 0.0062, 0.0068, 0.0075, 0.0082, 0.0091, 0.010, 0.011, 0.012, 0.013, 0.015, 0.018, 0.020, 0.022, 0.024, 0.027, 0.030, 0.033, 0.036, 0.039, 0.043, 0.047, 0.051]
     runners = []
     for delta in deltas:
         runners.append(Runner(delta=delta, order_book=order_books[0]))
@@ -87,21 +90,58 @@ if __name__ == '__main__':
         for runner in runners:
             runner.step(order_book)
 
-    x_prices = []
-    y_prices_a = []
-    y_prices_b = []
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+
+
+    x_prices, y_prices_a, y_prices_b = [], [], []
     for order_book in order_books:
-        x_prices.append(order_book.timestamp)
+        x_prices.append(order_book.timestamp.timestamp())
         y_prices_a.append(order_book.ask)
         y_prices_b.append(order_book.bid)
-    plt.plot(x_prices, y_prices_a, color='blue', alpha=0.3)
-    plt.plot(x_prices, y_prices_b, color='blue', alpha=0.3)
+    #ax1.plot(x_prices, y_prices_a, color='blue', alpha=0.4)
+    #ax1.plot(x_prices, y_prices_b, color='blue', alpha=0.4)
 
-    #for idx, runner in enumerate(runners):
+    for runner in [runners[0]]:
+        ax1.plot(runner.os_times, runner.os_prices)
+
+    for idx, runner in enumerate(runners):
+        dc_x, dc_y = np.array(runner.dc_times), np.array(runner.dc_prices)
+        dc_y = np.ones(len(dc_x)) * idx
+        points = np.array([dc_x, dc_y]).transpose().reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+        os_y = np.array(runner.dc_prices)
+        directions = os_y[:-1] - os_y[1:]
+
+        color_map = matplotlib.colors.ListedColormap(('red', 'green'))
+        boundary_norm = matplotlib.colors.BoundaryNorm([-1000, 0, 1000], color_map.N)
+        line_collection = matplotlib.collections.LineCollection(segments, cmap=color_map, norm=boundary_norm)
+        line_collection.set_array(directions)
+        line_collection.set_linewidth(8)
+
+        line = ax2.add_collection(line_collection)
+        #fig.colorbar(line, ax=ax2)
+
+        ax2.set_xlim(dc_x[0], dc_x[-1])
+        ax2.set_ylim(-1, idx + 1)
+
+        #print(color_map)
+        #ys = np.ones(len(xs))
+
+        #¤segments =
+
+        #ax2.plot(xs, ys)
+
+
+        #break
+
     #    #plt.plot(runner.os_times, runner.os_prices)
     #    plt.plot(runner.dc_times, runner.dc_prices)
     #    if runner == 4:
     #        break
+
+
+
 
     plt.show()
 
