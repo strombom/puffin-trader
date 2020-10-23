@@ -35,7 +35,7 @@ def order_books_to_csv(order_books, filename):
 
 def make_order_books(agg_ticks, interval):
     try:
-        with open(f"cache/order_books.pickle", 'rb') as f:
+        with open(f"../Coastline/cache/order_books.pickle", 'rb') as f:
             data = pickle.load(f)
             return data
     except:
@@ -68,7 +68,7 @@ def make_order_books(agg_ticks, interval):
         ask_max = max(ask_max, ask)
         bid_min = min(bid_min, bid)
 
-    with open(f"cache/order_books.pickle", 'wb') as f:
+    with open(f"../Coastline/cache/order_books.pickle", 'wb') as f:
         data = order_books
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
