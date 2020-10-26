@@ -10,11 +10,10 @@ def plot_process(conn):
     @sleep_and_retry
     @limits(calls=1, period=0.1)
     def on_mouse_move(event):
-        pass
-        #q.put('x', float(event.xdata))
         conn.send(('x', event.xdata))
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+    fig.tight_layout()
     cid = fig.canvas.mpl_connect('motion_notify_event', on_mouse_move)
 
     while True:
@@ -24,6 +23,14 @@ def plot_process(conn):
             break
 
         elif cmd == 'plot':
+            x, ie_prices, target_direction, measured_direction = payload
+            ax1.plot(x, ie_prices)
+            for idx in range(target_direction.shape[0]):
+                ax2.fill_between(x, 1 * idx, target_direction[idx])
+            for idx in range(measured_direction.shape[0]):
+                ax3.fill_between(x, 1 * idx, measured_direction[idx])
+
+        elif cmd == 'show':
             plt.show()
             conn.send(('quit', None))
 
@@ -49,6 +56,9 @@ class Plot:
 
     def plot(self, payload):
         self.conn.send(('plot', payload))
+
+    def show(self):
+        self.conn.send(('show', None))
 
 
 if __name__ == '__main__':

@@ -5,13 +5,14 @@ from logging import _addHandlerRef
 import numpy as np
 from enum import Enum
 from datetime import timedelta
-import matplotlib.pyplot as plt
-import matplotlib
+#import matplotlib.pyplot as plt
+#import matplotlib
 sys.path.append("../Common")
 
 #import matplotlib.pyplot as plt
 from OrderBook import make_order_books, order_books_to_csv
 from misc import read_agg_ticks
+from plot import Plot
 
 
 class Direction(Enum):
@@ -140,9 +141,6 @@ if __name__ == '__main__':
     #plt.show()
     """
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
-
-
     target_direction = np.zeros((len(deltas), len(runner_clock.ie_times)))
     measured_direction = np.zeros((len(deltas), len(runner_clock.ie_times)))
     TMV = np.zeros((len(deltas), len(runner_clock.ie_times)))
@@ -186,10 +184,22 @@ if __name__ == '__main__':
             else:
                 measured_direction[idx_runner, idx_clock] = idx_runner * 1 + 0
 
-    print(target_direction)
     x = np.arange(len(runner_clock.ie_times))
-    #plt.plot(x, target_direction[0])
 
+    plot = Plot()
+    plot.plot((x, runner_clock.ie_prices, target_direction, measured_direction))
+    plot.show()
+    plot.print('abc')
+    while True:
+        cmd, payload = plot.get()
+        if cmd == 'quit':
+            break
+        elif cmd == 'x':
+            print("got x", payload)
+    plot.shutdown()
+
+    """
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
     ax1.plot(x, runner_clock.ie_prices)
 
     for idx in range(len(runners)):
@@ -199,6 +209,7 @@ if __name__ == '__main__':
 
     fig.tight_layout()
     plt.show()
+    """
 
     quit()
 
