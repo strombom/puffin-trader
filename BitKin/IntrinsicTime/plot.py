@@ -26,9 +26,9 @@ def plot_process(conn):
             x, ie_prices, target_direction, measured_direction = payload
             ax1.plot(x, ie_prices)
             for idx in range(target_direction.shape[0]):
-                ax2.fill_between(x, 1 * idx, target_direction[idx])
+                ax2.fill_between(x, 1 * idx, 1 * idx + target_direction[idx])
             for idx in range(measured_direction.shape[0]):
-                ax3.fill_between(x, 1 * idx, measured_direction[idx])
+                ax3.fill_between(x, 1 * idx, 1 * idx + measured_direction[idx])
 
         elif cmd == 'show':
             plt.show()

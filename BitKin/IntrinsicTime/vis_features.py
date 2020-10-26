@@ -11,7 +11,7 @@ def vis_process(conn):
     pygame.init()
 
     clock = pygame.time.Clock()
-    display_size = (600, 400)
+    display_size = (600, 600)
     game_display = pygame.display.set_mode(display_size)
     pygame.display.set_caption('Directions')
     display_rect = pygame.Rect((0, 0), display_size)
@@ -43,14 +43,14 @@ def vis_process(conn):
                 y = area[1] + ypos * rect_size[1]
                 for xpos in range(shape[1]):
                     x = area[0] + xpos * rect_size[0]
-                    if directions[ypos, xpos] == 0:
-                        color = (240, 10, 10)
+                    if directions[shape[0] - 1 - ypos, xpos] == 0:
+                        color = (250, 250, 250)
                     else:
-                        color = (10, 230, 10)
+                        color = (40, 90, 40)
                     game_display.fill(color, (x, y, rect_size[0] + 1, rect_size[1] + 1))
 
-        draw_directions(measured_direction, (10, 10, display_size[0] - 10, 200 - 10))
-        draw_directions(target_direction, (10, 210, display_size[0] - 10, 400 - 10))
+        draw_directions(target_direction, (10, 10, display_size[0] - 10, 300 - 10))
+        draw_directions(measured_direction, (10, 310, display_size[0] - 10, 600 - 10))
 
         pygame.display.update()
 

@@ -164,9 +164,9 @@ if __name__ == '__main__':
             if idx_os >= len(runner.os_times):
                 break
             if direction == Direction.up:
-                target_direction[idx_runner, idx_clock] = idx_runner * 1 + 1
+                target_direction[idx_runner, idx_clock] = 1
             else:
-                target_direction[idx_runner, idx_clock] = idx_runner * 1 + 0
+                target_direction[idx_runner, idx_clock] = 0
 
     # Measured direction
     for idx_runner, runner in enumerate(runners):
@@ -182,13 +182,11 @@ if __name__ == '__main__':
             if idx_dc >= len(runner.dc_times):
                 break
             if direction == Direction.up:
-                measured_direction[idx_runner, idx_clock] = idx_runner * 1 + 1
+                measured_direction[idx_runner, idx_clock] = 1
             else:
-                measured_direction[idx_runner, idx_clock] = idx_runner * 1 + 0
+                measured_direction[idx_runner, idx_clock] = 0
 
     x = np.arange(len(runner_clock.ie_times))
-
-
 
 
     vis = VisFeatures()
@@ -197,16 +195,25 @@ if __name__ == '__main__':
     plot = Plot()
     plot.plot((x, runner_clock.ie_prices, target_direction, measured_direction))
     plot.show()
-    plot.print('abc')
     while True:
         cmd, payload = plot.get()
         if cmd == 'quit':
             break
-        elif cmd == 'x':
-            measured_direction = np.random.randint(2, size=(19, 200))
-            target_direction = np.random.randint(2, size=(19, 200))
-            vis.update_data(measured_direction, target_direction)
-            print("got x", payload)
+        elif cmd == 'x' and payload is not None:
+            feature_length = 50
+            #md_feature = np.zeros((19, feature_length))
+            #td_feature = np.zeros((19, feature_length))
+            x = int(payload) - feature_length
+            max_x = measured_direction.shape[1] - feature_length
+            x = max(min(x, max_x), 0)
+            md_feature = measured_direction[:, x:x + feature_length]
+            td_feature = target_direction[:, x:x + feature_length]
+
+            #feature = target_direction[:, x:x + feature_length]
+
+
+            vis.update_data(md_feature, td_feature)
+            #print("got x", payload)
     plot.shutdown()
 
     """
