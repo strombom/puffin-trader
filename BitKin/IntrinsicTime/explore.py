@@ -7,12 +7,14 @@ from enum import Enum
 from datetime import timedelta
 #import matplotlib.pyplot as plt
 #import matplotlib
+
 sys.path.append("../Common")
 
 #import matplotlib.pyplot as plt
 from OrderBook import make_order_books, order_books_to_csv
 from misc import read_agg_ticks
 from plot import Plot
+from IntrinsicTime.vis_features import VisFeatures
 
 
 class Direction(Enum):
@@ -186,6 +188,12 @@ if __name__ == '__main__':
 
     x = np.arange(len(runner_clock.ie_times))
 
+
+
+
+    vis = VisFeatures()
+    vis.start()
+
     plot = Plot()
     plot.plot((x, runner_clock.ie_prices, target_direction, measured_direction))
     plot.show()
@@ -195,6 +203,9 @@ if __name__ == '__main__':
         if cmd == 'quit':
             break
         elif cmd == 'x':
+            measured_direction = np.random.randint(2, size=(19, 200))
+            target_direction = np.random.randint(2, size=(19, 200))
+            vis.update_data(measured_direction, target_direction)
             print("got x", payload)
     plot.shutdown()
 
