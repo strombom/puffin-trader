@@ -5,13 +5,13 @@ from multiprocessing import Process, Pipe
 
 
 def vis_process(conn):
-    measured_direction = np.random.randint(2, size=(19, 200))
     target_direction = np.random.randint(2, size=(19, 200))
+    direction_change = np.random.randint(2, size=(19, 200))
 
     pygame.init()
 
     clock = pygame.time.Clock()
-    display_size = (600, 600)
+    display_size = (600, 900)
     game_display = pygame.display.set_mode(display_size)
     pygame.display.set_caption('Directions')
     display_rect = pygame.Rect((0, 0), display_size)
@@ -25,7 +25,7 @@ def vis_process(conn):
                 break
 
             elif cmd == 'update_data':
-                measured_direction, target_direction = payload
+                target_direction, direction_change = payload
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -50,7 +50,8 @@ def vis_process(conn):
                     game_display.fill(color, (x, y, rect_size[0] + 1, rect_size[1] + 1))
 
         draw_directions(target_direction, (10, 10, display_size[0] - 10, 300 - 10))
-        draw_directions(measured_direction, (10, 310, display_size[0] - 10, 600 - 10))
+        draw_directions(direction_change, (10, 310, display_size[0] - 10, 600 - 10))
+        #draw_directions(direction_change, (10, 610, display_size[0] - 10, 900 - 10))
 
         pygame.display.update()
 
@@ -64,8 +65,8 @@ class VisFeatures:
         self.conn, conn_remote = Pipe()
         self.p = Process(target=vis_process, args=(conn_remote, ))
 
-    def update_data(self, measured_direction, target_direction):
-        self.conn.send(('update_data', (measured_direction, target_direction)))
+    def update_data(self, target_direction, direction_change):
+        self.conn.send(('update_data', (target_direction, direction_change)))
 
     def start(self):
         self.p.start()
