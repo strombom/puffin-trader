@@ -1,5 +1,6 @@
 
 import sys
+import math
 import numpy as np
 from datetime import timedelta
 
@@ -18,7 +19,7 @@ if __name__ == '__main__':
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
         order_books = make_order_books(agg_ticks, timedelta(minutes=1))
 
-    order_books = order_books[:5000]
+    order_books = order_books[:1000]
     print(order_books[0])
     print(order_books[-1])
 
@@ -45,9 +46,6 @@ if __name__ == '__main__':
     target_direction = np.zeros((len(deltas), len(runner_clock.ie_times)))
     measured_direction = np.zeros((len(deltas), len(runner_clock.ie_times)))
     direction_changes = np.zeros((len(deltas), len(runner_clock.ie_times)))
-    TMV = np.zeros((len(deltas), len(runner_clock.ie_times)))
-    print(TMV.shape)
-    print(len(order_books))
     #quit()
 
     # Target direction
@@ -101,6 +99,38 @@ if __name__ == '__main__':
             if found: #runner.dc_times[idx_dc] == timestamp:
                 direction_changes[idx_runner, idx_clock] = 1
 
+    TMV = np.zeros((len(deltas), len(runner_clock.ie_times)))
+    R = np.zeros((len(deltas), len(runner_clock.ie_times)))
+    # TMV
+    for idx_runner, runner in enumerate(runners):
+        idx_dc = 0
+        ref_price = runner_clock.ie_prices[0]
+        ref_time = runner_clock.ie_times[0]
+
+        for idx_clock, timestamp in enumerate(runner_clock.ie_times):
+            while idx_dc < len(runner.os_times) and runner.dc_times[idx_dc] < timestamp:
+                idx_dc += 1
+                ref_price = runner.os_prices[idx_dc - 1]
+                ref_time = runner.os_times[idx_dc - 1]
+            if idx_dc >= len(runner.os_times):
+                break
+
+            price = runner_clock.ie_prices[idx_clock]
+            timestamp = runner_clock.ie_times[idx_clock]
+            tmv = (price - ref_price) / (ref_price * deltas[idx_runner])
+            if timestamp != ref_time:
+                r = 1000 * tmv / (timestamp - ref_time)
+            else:
+                r = 0
+            TMV[idx_runner, idx_clock] = math.log(1 + abs(tmv))
+            R[idx_runner, idx_clock] = math.log(1 + abs(r))
+            #print(idx_clock, price, idx_dc, ref_price, tmv, r)
+            #pass
+
+    print(TMV.shape)
+    print(TMV)
+    print(len(order_books))
+
     feature_length = 100
     features = np.empty((len(runner_clock.ie_times) - feature_length, len(deltas), feature_length))
     print(features.shape)
@@ -108,42 +138,39 @@ if __name__ == '__main__':
     """
     for idx_runner, runner in enumerate(runners):
         for idx_clock in range(feature_length, len(runner_clock.ie_times)):
-
-
             found_overshoot = False
             for idx_feature in range(feature_length - 1, -1, -1):
                 idx = idx_clock - idx_feature
                 timestamp = runner_clock.ie_times[idx]
-
                 if not found_overshoot:
-
                     pass
                 else:
                     pass
-
-
                 print(idx)
-
             quit()
             pass
     """
 
     """
+    import matplotlib.pyplot as plt
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     x_prices, y_prices_a, y_prices_b = [], [], []
     for order_book in order_books:
         x_prices.append(order_book.timestamp.timestamp())
         y_prices_a.append(order_book.ask)
         y_prices_b.append(order_book.bid)
-    plt.plot(x_prices, y_prices_a, color='green', alpha=0.4)
-    plt.plot(x_prices, y_prices_b, color='green', alpha=0.4)
-    for runner in [runners[0]]:
-        plt.scatter(runner.ie_times, runner.ie_prices, color='orange', s=100)
-        plt.plot(runner.os_times, runner.os_prices, color='green')
-        plt.scatter(runner.os_times, runner.os_prices, color='green')
-        plt.scatter(runner.dc_times, runner.dc_prices, color='red')
-
-    plt.scatter(runner_clock.ie_times, runner_clock.ie_prices, color='blue', s=20)
-    #plt.show()
+    ax1.plot(x_prices, y_prices_a, color='green', alpha=0.4)
+    ax1.plot(x_prices, y_prices_b, color='green', alpha=0.4)
+    for idx_runner, runner in enumerate([runners[0]]):
+        ax1.scatter(runner.ie_times, runner.ie_prices, color='orange', s=100)
+        ax1.plot(runner.os_times, runner.os_prices, color='green')
+        ax1.scatter(runner.os_times, runner.os_prices, color='green')
+        ax1.scatter(runner.dc_times, runner.dc_prices, color='red')
+        ax2.plot(runner_clock.ie_times, TMV[idx_runner])
+        ax2.plot(runner_clock.ie_times, R[idx_runner])
+    ax1.scatter(runner_clock.ie_times, runner_clock.ie_prices, color='blue', s=20)
+    plt.show()
+    quit()
     """
 
     x = np.arange(len(runner_clock.ie_times))
@@ -166,6 +193,7 @@ if __name__ == '__main__':
             x = max(min(x, max_x), 0)
             md_feature = measured_direction[:, x:x + feature_length]
             td_feature = target_direction[:, x:x + feature_length]
+            tmv_feature = TMV[:, x:x + feature_length]
 
             dc_feature = measured_direction[:, x:x + feature_length].copy()
             dirs = direction_changes[:, x:x + feature_length]
@@ -176,7 +204,7 @@ if __name__ == '__main__':
                 if idx >= 0:
                     dc_feature[runner_idx, 0: idx] = td_feature[runner_idx, 0: idx]
 
-            vis.update_data(td_feature, dc_feature)
+            vis.update_data(td_feature, dc_feature, tmv_feature)
     plot.shutdown()
 
     """

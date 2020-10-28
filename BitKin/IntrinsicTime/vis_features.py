@@ -1,12 +1,15 @@
 
 import pygame
 import numpy as np
+from time import sleep
+from datetime import datetime, timedelta
 from multiprocessing import Process, Pipe
 
 
 def vis_process(conn):
     target_direction = np.random.randint(2, size=(19, 200))
     direction_change = np.random.randint(2, size=(19, 200))
+    tmv = np.random.randint(2, size=(19, 200))
 
     pygame.init()
 
@@ -19,13 +22,12 @@ def vis_process(conn):
 
     running = True
     while running:
-        if conn.poll():
+        while conn.poll():
             cmd, payload = conn.recv()
             if cmd == 'quit':
                 break
-
             elif cmd == 'update_data':
-                target_direction, direction_change = payload
+                target_direction, direction_change, tmv = payload
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -49,13 +51,31 @@ def vis_process(conn):
                         color = (40, 90, 40)
                     game_display.fill(color, (x, y, rect_size[0] + 1, rect_size[1] + 1))
 
+        def draw_tmv(data, area):
+            shape = data.shape
+            rect_size = ((area[2] - area[0]) / shape[1], (area[3] - area[1]) / shape[0])
+            for ypos in range(shape[0]):
+                y = area[1] + ypos * rect_size[1]
+                for xpos in range(shape[1]):
+                    x = area[0] + xpos * rect_size[0]
+                    c = min(255, data[shape[0] - 1 - ypos, xpos] * 255)
+                    color = (c, 255, 255)
+
+                    #if data[shape[0] - 1 - ypos, xpos] == 0:
+                    #    color = (250, 250, 250)
+                    #else:
+                    #    color = (40, 90, 40)
+                    game_display.fill(color, (x, y, rect_size[0] + 1, rect_size[1] + 1))
+
+        print("Draw start")
         draw_directions(target_direction, (10, 10, display_size[0] - 10, 300 - 10))
         draw_directions(direction_change, (10, 310, display_size[0] - 10, 600 - 10))
-        #draw_directions(direction_change, (10, 610, display_size[0] - 10, 900 - 10))
+        draw_tmv(tmv, (10, 610, display_size[0] - 10, 900 - 10))
+        print("Draw done")
 
         pygame.display.update()
 
-        clock.tick(20)
+        clock.tick(10)
 
     pygame.quit()
 
@@ -65,8 +85,8 @@ class VisFeatures:
         self.conn, conn_remote = Pipe()
         self.p = Process(target=vis_process, args=(conn_remote, ))
 
-    def update_data(self, target_direction, direction_change):
-        self.conn.send(('update_data', (target_direction, direction_change)))
+    def update_data(self, target_direction, direction_change, tmv):
+        self.conn.send(('update_data', (target_direction, direction_change, tmv)))
 
     def start(self):
         self.p.start()
