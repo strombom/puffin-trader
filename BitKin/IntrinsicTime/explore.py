@@ -19,7 +19,7 @@ if __name__ == '__main__':
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
         order_books = make_order_books(agg_ticks, timedelta(minutes=1))
 
-    order_books = order_books[:1000]
+    order_books = order_books[:10000]
     print(order_books[0])
     print(order_books[-1])
 
@@ -120,10 +120,15 @@ if __name__ == '__main__':
             tmv = (price - ref_price) / (ref_price * deltas[idx_runner])
             if timestamp != ref_time:
                 r = 1000 * tmv / (timestamp - ref_time)
+                r = math.log(1 + abs(r)) * r / abs(r)
             else:
                 r = 0
-            TMV[idx_runner, idx_clock] = math.log(1 + abs(tmv))
-            R[idx_runner, idx_clock] = math.log(1 + abs(r))
+
+            if tmv != 0:
+                tmv = math.log(1 + abs(tmv)) * tmv / abs(tmv)
+
+            TMV[idx_runner, idx_clock] = tmv
+            R[idx_runner, idx_clock] = r
             #print(idx_clock, price, idx_dc, ref_price, tmv, r)
             #pass
 
@@ -194,6 +199,7 @@ if __name__ == '__main__':
             md_feature = measured_direction[:, x:x + feature_length]
             td_feature = target_direction[:, x:x + feature_length]
             tmv_feature = TMV[:, x:x + feature_length]
+            ret_feature = R[:, x:x + feature_length]
 
             dc_feature = measured_direction[:, x:x + feature_length].copy()
             dirs = direction_changes[:, x:x + feature_length]
@@ -204,7 +210,7 @@ if __name__ == '__main__':
                 if idx >= 0:
                     dc_feature[runner_idx, 0: idx] = td_feature[runner_idx, 0: idx]
 
-            vis.update_data(td_feature, dc_feature, tmv_feature)
+            vis.update_data(dc_feature, tmv_feature, ret_feature)
     plot.shutdown()
 
     """
