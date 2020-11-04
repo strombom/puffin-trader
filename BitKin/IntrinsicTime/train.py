@@ -65,15 +65,17 @@ class Inner(nn.Module):
 
 
 class DC_Model(nn.Module):
-    def __init__(self, n_timesteps):
+    def __init__(self, n_timesteps, device):
         super(DC_Model, self).__init__()
         self.n_timesteps = n_timesteps
         self.inner = Inner()
+        self.device = device
+        self.to(device)
 
     def forward(self, x):
         x = norm.forward(torch.reshape(x, shape=(x.shape[0], x.shape[1], x.shape[2], 1))).squeeze()
 
-        prediction = torch.empty((x.shape[0], 19, self.n_timesteps))
+        prediction = torch.empty((x.shape[0], 19, self.n_timesteps)).to(self.device)
         prediction[:, :, 0] = x[:, 0:19, 0]
         #prediction.names = ['C', 'T']
 
@@ -85,9 +87,9 @@ class DC_Model(nn.Module):
 
 
 class DC_Dataset(Dataset):
-    def __init__(self, features_np, targets_np):
-        self.features = torch.from_numpy(features_np).float()
-        self.targets = torch.from_numpy(targets_np).float()
+    def __init__(self, features_np, targets_np, device):
+        self.features = torch.from_numpy(features_np).float().to(device)
+        self.targets = torch.from_numpy(targets_np).float().to(device)
         #self.targets.names = ['N', 'C', 'T']
         #self.features.names = ['N', 'C', 'T']
 
@@ -119,26 +121,42 @@ def make_train_step(model, loss_fn, optimizer):
 #n_feature_types = 3
 #n_timesteps =
 
-dc_model = DC_Model(n_timesteps=features.shape[2])
-
-dataset = DC_Dataset(features, targets)
-
-dataloader = DataLoader(dataset=dataset, batch_size=16, shuffle=True)
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#device = 'cpu'
+print(f'device: {device}')
 
 learning_rate = 1e-1
-n_epochs = 5
+n_epochs = 20
+
+dc_model = DC_Model(n_timesteps=features.shape[2], device=device)
+
+n_train = int(features.shape[0] * 0.8)
+n_validation = features.shape[0] - n_train
+dataset_train = DC_Dataset(features[0:n_train], targets[0:n_train], device)
+dataset_validation = DC_Dataset(features[n_train:], targets[n_train:], device)
+
+dataloader_train = DataLoader(dataset=dataset_train, batch_size=16, shuffle=True)
+dataloader_validation = DataLoader(dataset=dataset_validation, batch_size=16, shuffle=False)
+
 loss_fn = nn.MSELoss(reduction='mean')
 optimizer = optim.SGD(dc_model.parameters(), lr=learning_rate)
 train_step = make_train_step(model=dc_model, loss_fn=loss_fn, optimizer=optimizer)
 
 for epoch in range(n_epochs):
     losses = []
-    for x, y in dataloader:
+    for x, y in dataloader_train:
         loss = train_step(x, y)
         losses.append(loss)
-    print(epoch, statistics.mean(losses))
 
+    with torch.no_grad():
+        val_losses = []
+        for x, y in dataloader_validation:
+            dc_model.eval()
+            y_hat = dc_model(x)
+            val_loss = loss_fn(y, y_hat).item()
+            val_losses.append(val_loss)
 
+    print(f'{epoch} train({statistics.mean(losses)}) val({statistics.mean(val_losses)})')
 
 print("deltas", len(deltas), deltas)
 print("targets", targets.shape)
@@ -146,9 +164,6 @@ print("features", features.shape)
 
 quit()
 
-
-
-print(net)
 
 # Normalization
 if False:
