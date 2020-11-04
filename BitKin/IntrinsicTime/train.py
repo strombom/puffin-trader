@@ -3,10 +3,11 @@ import pickle
 import torch
 import torchvision
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-from torch.utils.tensorboard import SummaryWriter
-from torch.autograd import Variable
+from torch.utils.data import Dataset
+#import torch.nn.functional as F
+#import numpy as np
+#from torch.utils.tensorboard import SummaryWriter
+#from torch.autograd import Variable
 
 import warnings
 warnings.simplefilter("ignore", UserWarning)
@@ -82,25 +83,37 @@ class Net(nn.Module):
         return prediction
 
 
+class DC_Dataset(Dataset):
+    def __init__(self, features_np, targets_np):
+        self.features = torch.from_numpy(features_np).float()
+        self.targets = torch.from_numpy(targets_np).float()
+        #self.targets.names = ['N', 'C', 'T']
+        #self.features.names = ['N', 'C', 'T']
+
+    def __getitem__(self, idx):
+        return self.features[idx], self.targets[idx]
+
+    def __len__(self):
+        return len(self.targets)
+
 
 # (batches, feature_types, deltas, timesteps)
-
 #deltas, order_books, runners, runner_clock, target_direction, measured_direction, TMV, RET
 
-targets = torch.from_numpy(targets).float()
-features = torch.from_numpy(features).float()
-#targets.names = ['N', 'C', 'T']
-#features.names = ['N', 'C', 'T']
+dataset = DC_Dataset(features, targets)
 
 n_batches = 1
 n_deltas = len(deltas)
 n_feature_types = 3
-n_timesteps = features.size(2)
+n_timesteps = features.shape[2]
 
 
 print("deltas", len(deltas), deltas)
 print("targets", targets.shape)
 print("features", features.shape)
+
+
+
 
 net = Net(n_timesteps)
 
@@ -113,8 +126,12 @@ if False:
     print("features_mean", features_mean.shape, features_mean)
     print("features_std", features_std.shape, features_std)
 
-prediction = net.forward(features[100])
-print("prediction", prediction)
+print("feature", dataset[302][0])
+print("prediction", dataset[302][1])
+prediction = net.forward(dataset[302][0])
+print("target", prediction)
+
+quit()
 
 #loss_fn = torch.nn.MSELoss(reduction='sum')
 
