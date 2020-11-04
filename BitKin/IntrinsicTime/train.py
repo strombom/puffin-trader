@@ -1,9 +1,11 @@
 import pickle
 
+import statistics
 import torch
 import torchvision
 import torch.nn as nn
-from torch.utils.data import Dataset
+from torch import optim
+from torch.utils.data import Dataset, DataLoader
 #import torch.nn.functional as F
 #import numpy as np
 #from torch.utils.tensorboard import SummaryWriter
@@ -57,28 +59,27 @@ class Inner(nn.Module):
         )
 
     def forward(self, x, prev_prediction):
-        x = torch.cat((x, prev_prediction))
-        x = torch.reshape(x, (77, ))
+        x = torch.cat((x, prev_prediction), dim=1)
         x = self.model.forward(x)
         return x
 
 
-class Net(nn.Module):
+class DC_Model(nn.Module):
     def __init__(self, n_timesteps):
-        super(Net, self).__init__()
+        super(DC_Model, self).__init__()
         self.n_timesteps = n_timesteps
         self.inner = Inner()
 
     def forward(self, x):
-        x = norm.forward(torch.reshape(x, shape=(58, 10, 1))).squeeze()
+        x = norm.forward(torch.reshape(x, shape=(x.shape[0], x.shape[1], x.shape[2], 1))).squeeze()
 
-        prediction = torch.empty((19, self.n_timesteps))
-        prediction[:, 0] = x[0:19, 0]
+        prediction = torch.empty((x.shape[0], 19, self.n_timesteps))
+        prediction[:, :, 0] = x[:, 0:19, 0]
         #prediction.names = ['C', 'T']
 
-        prediction[:, 0] = self.inner.forward(x[:, 0], x[0:19, 0])
+        prediction[:, :, 0] = self.inner.forward(x[:, :, 0], x[:, 0:19, 0])
         for step_idx in range(1, self.n_timesteps):
-            prediction[:, step_idx] = self.inner.forward(x[:, step_idx], prediction[:, step_idx - 1])
+            prediction[:, :, step_idx] = self.inner.forward(x[:, :, step_idx], prediction[:, :, step_idx - 1])
 
         return prediction
 
@@ -97,25 +98,55 @@ class DC_Dataset(Dataset):
         return len(self.targets)
 
 
+def make_train_step(model, loss_fn, optimizer):
+    def train_step_fn(x, y):
+        model.train()
+        y_hat = model(x)
+        loss = loss_fn(y, y_hat)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        return loss.item()
+
+    return train_step_fn
+
+
 # (batches, feature_types, deltas, timesteps)
 #deltas, order_books, runners, runner_clock, target_direction, measured_direction, TMV, RET
 
+#n_batches = 1
+#n_deltas = len(deltas)
+#n_feature_types = 3
+#n_timesteps =
+
+dc_model = DC_Model(n_timesteps=features.shape[2])
+
 dataset = DC_Dataset(features, targets)
 
-n_batches = 1
-n_deltas = len(deltas)
-n_feature_types = 3
-n_timesteps = features.shape[2]
+dataloader = DataLoader(dataset=dataset, batch_size=16, shuffle=True)
+
+learning_rate = 1e-1
+n_epochs = 5
+loss_fn = nn.MSELoss(reduction='mean')
+optimizer = optim.SGD(dc_model.parameters(), lr=learning_rate)
+train_step = make_train_step(model=dc_model, loss_fn=loss_fn, optimizer=optimizer)
+
+for epoch in range(n_epochs):
+    losses = []
+    for x, y in dataloader:
+        loss = train_step(x, y)
+        losses.append(loss)
+    print(epoch, statistics.mean(losses))
+
 
 
 print("deltas", len(deltas), deltas)
 print("targets", targets.shape)
 print("features", features.shape)
 
+quit()
 
 
-
-net = Net(n_timesteps)
 
 print(net)
 
