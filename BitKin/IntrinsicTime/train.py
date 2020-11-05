@@ -45,16 +45,19 @@ class Inner(nn.Module):
             torch.nn.Linear(77, 500),
             torch.nn.Dropout(0.3),
             torch.nn.SELU(),
-            torch.nn.Linear(500, 500),
+            torch.nn.Linear(500, 400),
             torch.nn.Dropout(0.3),
             torch.nn.SELU(),
-            torch.nn.Linear(500, 500),
+            torch.nn.Linear(400, 300),
             torch.nn.Dropout(0.3),
             torch.nn.SELU(),
-            torch.nn.Linear(500, 500),
+            torch.nn.Linear(300, 200),
             torch.nn.Dropout(0.3),
             torch.nn.SELU(),
-            torch.nn.Linear(500, 19),
+            torch.nn.Linear(200, 100),
+            torch.nn.Dropout(0.3),
+            torch.nn.SELU(),
+            torch.nn.Linear(100, 19),
             torch.nn.Tanh()
         )
 
@@ -125,8 +128,8 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #device = 'cpu'
 print(f'device: {device}')
 
-learning_rate = 1e-1
-n_epochs = 20
+learning_rate = 1e-2
+n_epochs = 200
 
 dc_model = DC_Model(n_timesteps=features.shape[2], device=device)
 
@@ -135,8 +138,8 @@ n_validation = features.shape[0] - n_train
 dataset_train = DC_Dataset(features[0:n_train], targets[0:n_train], device)
 dataset_validation = DC_Dataset(features[n_train:], targets[n_train:], device)
 
-dataloader_train = DataLoader(dataset=dataset_train, batch_size=16, shuffle=True)
-dataloader_validation = DataLoader(dataset=dataset_validation, batch_size=16, shuffle=False)
+dataloader_train = DataLoader(dataset=dataset_train, batch_size=128, shuffle=True)
+dataloader_validation = DataLoader(dataset=dataset_validation, batch_size=1024, shuffle=False)
 
 loss_fn = nn.MSELoss(reduction='mean')
 optimizer = optim.SGD(dc_model.parameters(), lr=learning_rate)
