@@ -14,7 +14,7 @@ if __name__ == '__main__':
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
         order_books = make_order_books(agg_ticks, timedelta(minutes=1))
 
-    order_books = order_books[:50000]
+    order_books = order_books[:10000]
     print(order_books[0])
     print(order_books[-1])
 

@@ -19,7 +19,7 @@ if __name__ == '__main__':
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
         order_books = make_order_books(agg_ticks, timedelta(minutes=1))
 
-    order_books = order_books[:10000]
+    order_books = order_books[:40000]
     print(order_books[0])
     print(order_books[-1])
 
@@ -184,6 +184,11 @@ if __name__ == '__main__':
     vis = VisFeatures()
     vis.start()
 
+    #print("target_direction", target_direction.shape)
+    #print("measured_direction", measured_direction.shape)
+    #quit()
+
+
     plot = Plot()
     plot.plot((x, runner_clock.ie_prices, target_direction, measured_direction))
     plot.show()
@@ -210,6 +215,9 @@ if __name__ == '__main__':
                 if idx >= 0:
                     dc_feature[runner_idx, 0: idx] = td_feature[runner_idx, 0: idx]
 
+            print("dc_feature", dc_feature.shape)
+            print("tmv_feature", tmv_feature.shape)
+            print("ret_feature", ret_feature.shape)
             vis.update_data(dc_feature, tmv_feature, ret_feature)
     plot.shutdown()
 

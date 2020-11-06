@@ -4,6 +4,7 @@ import torch
 import torchvision
 import torch.nn as nn
 from torch.utils.data import Dataset
+import torch.nn.functional as F
 
 
 norm = torchvision.transforms.Normalize(mean=[ 0.5533,  0.5563,  0.5872,  0.5788,  0.5771,  0.5916,  0.5669,  0.5585,
@@ -22,32 +23,48 @@ norm = torchvision.transforms.Normalize(mean=[ 0.5533,  0.5563,  0.5872,  0.5788
                                                0.4234, 0.3888, 0.3376, 0.3059, 0.2776, 0.2552, 0.1699, 0.1398, 0.1294,
                                                0.1117, 0.0615, 0.0539, 0.3192])
 
+norm = torchvision.transforms.Normalize(mean=[ 0.5533,  0.5563,  0.5872,  0.5788,  0.5771,  0.5916,  0.5669,  0.5585,
+                                               0.5965,  0.5861,  0.6195,  0.6159,  0.5876,  0.6443,  0.5022,  0.5607,
+                                               0.5544,  0.7234,  0.6282],
+                                        std=[  0.4972, 0.4968, 0.4924, 0.4938, 0.4940, 0.4916, 0.4955, 0.4966, 0.4906,
+                                               0.4926, 0.4855, 0.4864, 0.4923, 0.4788, 0.5000, 0.4963, 0.4971, 0.4473,
+                                               0.4833])
+
+
+class Mish(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        #inlining this saves 1 second per epoch (V100 GPU) vs having a temp x and then returning x(!)
+        return x * ( torch.tanh(F.softplus(x)))
+
 
 class DcModelInner(nn.Module):
     def __init__(self):
         super(DcModelInner, self).__init__()
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(77, 500),
-            torch.nn.Dropout(0.3),
-            torch.nn.SELU(),
-            torch.nn.Linear(500, 400),
-            torch.nn.Dropout(0.3),
-            torch.nn.SELU(),
-            torch.nn.Linear(400, 300),
-            torch.nn.Dropout(0.3),
-            torch.nn.SELU(),
-            torch.nn.Linear(300, 200),
-            torch.nn.Dropout(0.3),
-            torch.nn.SELU(),
-            torch.nn.Linear(200, 100),
-            torch.nn.Dropout(0.3),
-            torch.nn.SELU(),
-            torch.nn.Linear(100, 19),
-            torch.nn.Tanh()
+            torch.nn.Linear(19, 200),  # 77
+            torch.nn.AlphaDropout(0.3),
+            Mish(),
+            #torch.nn.Linear(500, 400),
+            #torch.nn.AlphaDropout(0.3),
+            #torch.nn.ReLU6(),
+            #torch.nn.Linear(400, 300),
+            #torch.nn.AlphaDropout(0.3),
+            #torch.nn.ReLU6(),
+            #torch.nn.Linear(300, 200),
+            #torch.nn.AlphaDropout(0.3),
+            #torch.nn.ReLU6(),
+            #torch.nn.Linear(200, 100),
+            #torch.nn.AlphaDropout(0.3),
+            #torch.nn.ReLU6(),
+            torch.nn.Linear(200, 19),
+            torch.nn.Sigmoid()
         )
 
-    def forward(self, x, prev_prediction):
-        x = torch.cat((x, prev_prediction), dim=1)
+    def forward(self, x):
+        #x = torch.cat((x, prev_prediction), dim=1)
         x = self.model.forward(x)
         return x
 
@@ -61,6 +78,23 @@ class DcModel(nn.Module):
         self.to(device)
 
     def forward(self, x):
+
+        #print("x", x.shape)
+        #x = norm.forward(torch.reshape(x, shape=(x.shape[0], x.shape[1], x.shape[2], 1))).squeeze(3)
+
+        prediction = torch.empty((x.shape[0], 19, self.n_timesteps)).to(self.device)
+        #prediction[:, :, 0] = x[:, 0:19, 0]
+        #prediction.names = ['C', 'T']
+
+        #prediction[:, :, 0] = self.inner.forward(x[:, :, 0], x[:, 0:19, 0])
+        for step_idx in range(self.n_timesteps):
+            prediction[:, :, step_idx] = self.inner.forward(x[:, :, step_idx])
+            # self.inner.forward(x[:, :, step_idx], x[:, :, step_idx])
+
+        return prediction
+
+        """
+        #print("x", x.shape)
         x = norm.forward(torch.reshape(x, shape=(x.shape[0], x.shape[1], x.shape[2], 1))).squeeze(3)
 
         prediction = torch.empty((x.shape[0], 19, self.n_timesteps)).to(self.device)
@@ -69,9 +103,13 @@ class DcModel(nn.Module):
 
         prediction[:, :, 0] = self.inner.forward(x[:, :, 0], x[:, 0:19, 0])
         for step_idx in range(1, self.n_timesteps):
+            #print("1", x[:, :, step_idx])
+            #print("2", prediction[:, :, step_idx - 1])
+            #quit()
             prediction[:, :, step_idx] = self.inner.forward(x[:, :, step_idx], prediction[:, :, step_idx - 1])
 
         return prediction
+        """
 
 
 class DcDataset(Dataset):

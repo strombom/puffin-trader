@@ -5,6 +5,8 @@ import torch
 #import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader
+from torch_lr_finder import LRFinder
+from pytorch_ranger import Ranger
 
 from dc_model import DcModel, DcDataset
 
@@ -24,15 +26,21 @@ with open(f"cache/intrinsic_time_data.pickle", 'rb') as f:
 deltas, order_books, runners, runner_clock, targets, features = data
 
 
-def make_train_step(model, loss_fn, optimizer):
+def make_train_step(model, loss_fn, optimizer, scheduler):
     def train_step_fn(x, y):
         model.train()
         y_hat = model(x)
-        loss = loss_fn(y, y_hat)
+
+        #print("y", y)
+        #print("y_hat", y_hat)
+        #quit()
+
+        loss = loss_fn(y_hat, y)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        #torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         optimizer.zero_grad()
+        scheduler.step()
         return loss.item()
 
     return train_step_fn
@@ -50,28 +58,50 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #device = 'cpu'
 print(f'device: {device}')
 
-learning_rate = 1e-2
-n_epochs = 50
+
 
 dc_model = DcModel(n_timesteps=features.shape[2], device=device)
+
+features = features[:, 0:19, :]
 
 n_train = int(features.shape[0] * 0.8)
 n_validation = features.shape[0] - n_train
 dataset_train = DcDataset(features[0:n_train], targets[0:n_train], device)
 dataset_validation = DcDataset(features[n_train:], targets[n_train:], device)
 
-dataloader_train = DataLoader(dataset=dataset_train, batch_size=128, shuffle=True)
+learning_rate = 2.6 # 4.2e-1
+n_epochs = 50
+batch_size = 128
+total_steps = n_epochs * (features.shape[0] // batch_size + 1)
+
+dataloader_train = DataLoader(dataset=dataset_train, batch_size=batch_size, shuffle=True)
 dataloader_validation = DataLoader(dataset=dataset_validation, batch_size=1024, shuffle=False)
 
-loss_fn = torch.nn.MSELoss(reduction='mean')
+
+loss_fn = torch.nn.BCELoss(reduce='mean')
+#loss_fn = torch.nn.MSELoss()
 #loss_fn = torch.nn.MultiLabelMarginLoss(reduction='mean')
-optimizer = optim.SGD(dc_model.parameters(), lr=learning_rate)
-train_step = make_train_step(model=dc_model, loss_fn=loss_fn, optimizer=optimizer)
+#optimizer = optim.SGD(dc_model.parameters(), lr=learning_rate)
+optimizer = Ranger(dc_model.parameters(), lr=learning_rate)
+
+if False:
+    lr_finder = LRFinder(dc_model, optimizer, loss_fn, device=device)
+    lr_finder.range_test(train_loader=dataloader_train, end_lr=100, num_iter=100)
+    lr_finder.plot()
+    lr_finder.reset()
+    quit()
+
+scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, learning_rate, total_steps=total_steps)
+train_step = make_train_step(model=dc_model, loss_fn=loss_fn, optimizer=optimizer, scheduler=scheduler)
+
 
 for epoch in range(n_epochs):
     losses = []
     for x, y in dataloader_train:
-        #print("xshape", x.shape)
+        #print("xshape", x[0].shape)
+        #print("yshape", y[0].shape)
+        #print(x[0])
+        #print(y[0])
         #quit()
         loss = train_step(x, y)
         losses.append(loss)
