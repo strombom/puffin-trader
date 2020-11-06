@@ -125,7 +125,7 @@ if __name__ == '__main__':
             RET[idx_runner, idx_clock] = r
 
 
-    feature_length = 10
+    feature_length = 100
     # (batches, feature_types, deltas, timesteps)
 
     features = np.zeros((len(runner_clock.ie_times) - feature_length, 3 * len(deltas) + 1, feature_length))

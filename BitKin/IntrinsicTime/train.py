@@ -30,6 +30,7 @@ def make_train_step(model, loss_fn, optimizer):
         y_hat = model(x)
         loss = loss_fn(y, y_hat)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         optimizer.zero_grad()
         return loss.item()
@@ -50,7 +51,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'device: {device}')
 
 learning_rate = 1e-2
-n_epochs = 200
+n_epochs = 50
 
 dc_model = DcModel(n_timesteps=features.shape[2], device=device)
 
@@ -63,14 +64,15 @@ dataloader_train = DataLoader(dataset=dataset_train, batch_size=128, shuffle=Tru
 dataloader_validation = DataLoader(dataset=dataset_validation, batch_size=1024, shuffle=False)
 
 loss_fn = torch.nn.MSELoss(reduction='mean')
+#loss_fn = torch.nn.MultiLabelMarginLoss(reduction='mean')
 optimizer = optim.SGD(dc_model.parameters(), lr=learning_rate)
 train_step = make_train_step(model=dc_model, loss_fn=loss_fn, optimizer=optimizer)
 
 for epoch in range(n_epochs):
     losses = []
     for x, y in dataloader_train:
-        print("xshape", x.shape)
-        quit()
+        #print("xshape", x.shape)
+        #quit()
         loss = train_step(x, y)
         losses.append(loss)
 
