@@ -11,6 +11,7 @@ from Common.misc import read_agg_ticks
 from IntrinsicTime.plot import Plot
 from IntrinsicTime.vis_features import VisFeatures
 from IntrinsicTime.runner import Runner, Direction
+from IntrinsicTime.e_series import make_e_series_range
 
 
 if __name__ == '__main__':
@@ -19,16 +20,13 @@ if __name__ == '__main__':
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
         order_books = make_order_books(agg_ticks, timedelta(minutes=1))
 
-    order_books = order_books[:40000]
+    order_books = order_books[:10000]
     print(order_books[0])
     print(order_books[-1])
 
-    #deltas = [0.0027, 0.0033, 0.0039, 0.0047, 0.0056, 0.0068, 0.0082, 0.010, 0.012, 0.015, 0.018, 0.022, 0.027, 0.033, 0.039, 0.047]
-    # 0.00051, 0.00056, 0.00062, 0.00068, 0.00075, 0.00082, 0.00091, 0.0010, 0.0011, 0.0012, 0.0013, 0.0015, 0.0016, 0.0018, 0.0020, 0.0022, 0.0024, 0.0027, 0.0030,
-    deltas = [0.0033, 0.0036, 0.0039, 0.0043, 0.0047, 0.0051, 0.0056, 0.0062, 0.0068, 0.0075, 0.0082, 0.0091, 0.010, 0.011, 0.012, 0.013, 0.015, 0.018, 0.020] #] #, 0.022, 0.024, 0.027, 0.030, 0.033, 0.036, 0.039, 0.043, 0.047, 0.051]
-    delta_clock = 0.001
+    deltas = make_e_series_range(0.003, 0.02, 192)
+    delta_clock = 0.0022
 
-    #deltas = [0.005]
     runners = []
     for delta in deltas:
         runners.append(Runner(delta=delta, order_book=order_books[0]))
@@ -39,9 +37,11 @@ if __name__ == '__main__':
     print("current_time", current_time)
 
     for order_book in order_books:
-        runner_clock.step(order_book)
         for runner in runners:
             event = runner.step(order_book)
+
+    for order_book in order_books:
+        runner_clock.step(order_book)
 
     target_direction = np.zeros((len(deltas), len(runner_clock.ie_times)))
     measured_direction = np.zeros((len(deltas), len(runner_clock.ie_times)))
@@ -107,12 +107,17 @@ if __name__ == '__main__':
         ref_price = runner_clock.ie_prices[0]
         ref_time = runner_clock.ie_times[0]
 
+        #print("os", len(runner.os_times))
+        #print("dc", len(runner.dc_times))
+        #for idx in range(3):
+        #    print(f'os {runner.os_times[idx]} dc {runner.dc_times[idx]}')
+
         for idx_clock, timestamp in enumerate(runner_clock.ie_times):
             while idx_dc < len(runner.os_times) and runner.dc_times[idx_dc] < timestamp:
                 idx_dc += 1
                 ref_price = runner.os_prices[idx_dc - 1]
                 ref_time = runner.os_times[idx_dc - 1]
-            if idx_dc >= len(runner.os_times):
+            if idx_dc >= len(runner.os_times) - 1:
                 break
 
             price = runner_clock.ie_prices[idx_clock]
@@ -124,21 +129,24 @@ if __name__ == '__main__':
             else:
                 r = 0
 
-            if tmv != 0:
-                tmv = math.log(1 + abs(tmv)) * tmv / abs(tmv)
+            #if tmv != 0:
+            #    tmv = math.log(1 + abs(tmv)) * tmv / abs(tmv)
 
-            TMV[idx_runner, idx_clock] = tmv
-            R[idx_runner, idx_clock] = r
+            TMV[idx_runner, idx_clock] = tmv / 5
+            R[idx_runner, idx_clock] = r / 5
             #print(idx_clock, price, idx_dc, ref_price, tmv, r)
             #pass
 
-    print(TMV.shape)
-    print(TMV)
-    print(len(order_books))
+    #print(TMV.shape)
+    #print(TMV)
+    #print(len(order_books))
 
-    feature_length = 100
+    print(f"TMV {np.min(TMV)} {np.max(TMV)}")
+    print(f"R {np.min(R)} {np.max(R)}")
+
+    feature_length = 50
     features = np.empty((len(runner_clock.ie_times) - feature_length, len(deltas), feature_length))
-    print(features.shape)
+    #print(features.shape)
     #quit()
     """
     for idx_runner, runner in enumerate(runners):
@@ -156,6 +164,7 @@ if __name__ == '__main__':
             pass
     """
 
+
     """
     import matplotlib.pyplot as plt
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
@@ -171,12 +180,16 @@ if __name__ == '__main__':
         ax1.plot(runner.os_times, runner.os_prices, color='green')
         ax1.scatter(runner.os_times, runner.os_prices, color='green')
         ax1.scatter(runner.dc_times, runner.dc_prices, color='red')
-        ax2.plot(runner_clock.ie_times, TMV[idx_runner])
-        ax2.plot(runner_clock.ie_times, R[idx_runner])
-    ax1.scatter(runner_clock.ie_times, runner_clock.ie_prices, color='blue', s=20)
+        ax2.plot(runner_clock.ie_times, TMV[idx_runner], color='orange', label='TMV')
+        ax2.plot(runner_clock.ie_times, R[idx_runner], color='blue', label='R')
+    ax1.scatter(runner_clock.ie_times, runner_clock.ie_prices, color='blue', alpha=0.3, s=20)
+    ax2.legend()
+    ax1.grid(axis='both', color='0.95')
+    ax2.grid(axis='both', color='0.95')
     plt.show()
     quit()
     """
+
 
     x = np.arange(len(runner_clock.ie_times))
 
@@ -215,9 +228,9 @@ if __name__ == '__main__':
                 if idx >= 0:
                     dc_feature[runner_idx, 0: idx] = td_feature[runner_idx, 0: idx]
 
-            print("dc_feature", dc_feature.shape)
-            print("tmv_feature", tmv_feature.shape)
-            print("ret_feature", ret_feature.shape)
+            #print("dc_feature", dc_feature.shape)
+            #print("tmv_feature", tmv_feature.shape)
+            #print("ret_feature", ret_feature.shape)
             vis.update_data(dc_feature, tmv_feature, ret_feature)
     plot.shutdown()
 
