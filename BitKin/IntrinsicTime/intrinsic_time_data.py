@@ -6,7 +6,7 @@ from datetime import timedelta
 from Common.OrderBook import make_order_books
 from Common.misc import read_agg_ticks
 from IntrinsicTime.runner import Runner, Direction
-
+from IntrinsicTime.e_series import make_e_series_range
 
 if __name__ == '__main__':
     order_books = make_order_books(None, None)
@@ -14,13 +14,15 @@ if __name__ == '__main__':
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/agg_ticks.csv')
         order_books = make_order_books(agg_ticks, timedelta(minutes=1))
 
-    order_books = order_books[:10000]
+    print(f'order books {len(order_books)}')
+    #order_books = order_books[:40000]
     print(order_books[0])
     print(order_books[-1])
 
     #deltas = [0.0027, 0.0033, 0.0039, 0.0047, 0.0056, 0.0068, 0.0082, 0.010, 0.012, 0.015, 0.018, 0.022, 0.027, 0.033, 0.039, 0.047]
     # 0.00051, 0.00056, 0.00062, 0.00068, 0.00075, 0.00082, 0.00091, 0.0010, 0.0011, 0.0012, 0.0013, 0.0015, 0.0016, 0.0018, 0.0020, 0.0022, 0.0024, 0.0027, 0.0030,
-    deltas = [0.0033, 0.0036, 0.0039, 0.0043, 0.0047, 0.0051, 0.0056, 0.0062, 0.0068, 0.0075, 0.0082, 0.0091, 0.010, 0.011, 0.012, 0.013, 0.015, 0.018, 0.020] #] #, 0.022, 0.024, 0.027, 0.030, 0.033, 0.036, 0.039, 0.043, 0.047, 0.051]
+    #deltas = [0.0033, 0.0036, 0.0039, 0.0043, 0.0047, 0.0051, 0.0056, 0.0062, 0.0068, 0.0075, 0.0082, 0.0091, 0.010, 0.011, 0.012, 0.013, 0.015, 0.018, 0.020] #] #, 0.022, 0.024, 0.027, 0.030, 0.033, 0.036, 0.039, 0.043, 0.047, 0.051]
+    deltas = make_e_series_range(0.003, 0.01, 192)
     delta_clock = 0.001
 
     #deltas = [0.005]
@@ -97,12 +99,12 @@ if __name__ == '__main__':
 
     # TMV
     for idx_runner, runner in enumerate(runners):
-        idx_dc = 0
+        idx_dc = 1
         ref_price = runner_clock.ie_prices[0]
         ref_time = runner_clock.ie_times[0]
 
         for idx_clock, timestamp in enumerate(runner_clock.ie_times):
-            while idx_dc < len(runner.os_times) and runner.dc_times[idx_dc] < timestamp:
+            while idx_dc < len(runner.os_times) and runner.dc_times[idx_dc - 1] < timestamp:
                 idx_dc += 1
                 ref_price = runner.os_prices[idx_dc - 1]
                 ref_time = runner.os_times[idx_dc - 1]
