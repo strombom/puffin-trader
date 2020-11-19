@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import datetime
 
-from BitMexSim.bitmex_sim import BitMexSim
+from BitmexSim.bitmex_sim import BitmexSim
 from MuZero.games.abstract_game import AbstractGame
 
 
@@ -118,7 +118,11 @@ class BitZero(AbstractGame):
     """
 
     def __init__(self, seed=None):
-        self.env = BitMexSim()
+        super().__init__(seed)
+        self.config = MuZeroConfig()
+        self.env = BitmexSim(max_steps=self.config.max_moves)
+        if seed is not None:
+            self.env.seed(seed)
 
     def step(self, action):
         """
@@ -131,7 +135,7 @@ class BitZero(AbstractGame):
             The new observation, the reward and a boolean if the game has ended.
         """
         observation, reward, done, _ = self.env.step(action)
-        return numpy.array([[observation]]), reward, done
+        return np.array([[observation]]), reward, done
 
     def legal_actions(self):
         """
