@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import datetime
 
-from BitmexSim.bitmex_sim import BitmexSim
+from BitmexSim.bitmex_env import BitmexSim
 from MuZero.games.abstract_game import AbstractGame
 
 

@@ -11,7 +11,7 @@ from IntrinsicTime.runner import Runner, Direction
 
 
 if __name__ == "__main__":
-    end_timestamp = string_to_datetime("2020-01-01 10:00:00.0")
+    end_timestamp = string_to_datetime("2020-01-05 00:00:00.0")
 
     order_books = make_order_books(None, None)
     if order_books is None:

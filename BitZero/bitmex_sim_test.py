@@ -1,21 +1,21 @@
 
 import numpy as np
 
-from BitmexSim.bitmex_sim import BitmexSim
+from BitmexSim.bitmex_env import BitmexEnv
 
 
 if __name__ == '__main__':
-    bitsim = BitmexSim(max_steps=100)
+    bitmex_env = BitmexEnv(max_steps=100)
 
-    bitsim.reset()
+    bitmex_env.reset()
 
-    observation, reward, done = bitsim.step(None)
+    observation, reward, done = bitmex_env.step(None)
 
     observation = np.array([[observation]])
 
-    bitsim.render()
+    bitmex_env.render()
 
-    bitsim.close()
+    bitmex_env.close()
 
     print('a')
 
