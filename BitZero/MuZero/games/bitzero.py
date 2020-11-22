@@ -4,8 +4,8 @@ import numpy as np
 import torch
 import datetime
 
-from BitmexSim.bitmex_env import BitmexSim
 from MuZero.games.abstract_game import AbstractGame
+from BitmexSim.bitmex_env import BitmexEnv, BitmexActions
 
 
 class MuZeroConfig:
@@ -16,21 +16,21 @@ class MuZeroConfig:
         self.max_num_gpus = 1  # Fix the maximum number of GPUs to use. It's usually faster to use a single GPU (set it to 1) if it has enough memory. None will use every GPUs available
 
         ### Game
-        self.observation_shape = (1, 1, 8)  # Dimensions of the game observation, must be 3D (channel, height, width). For a 1D array, please reshape it to (1, 1, length of array)
+        self.observation_shape = (1, 1, 185)  # Dimensions of the game observation, must be 3D (channel, height, width). For a 1D array, please reshape it to (1, 1, length of array)
         self.action_space = list(range(3))  # Fixed list of all possible actions. You should only edit the length
         self.players = list(range(1))  # List of players. You should only edit the length
-        self.stacked_observations = 0  # Number of previous observations and previous actions to add to the current observation
+        self.stacked_observations = 32  # Number of previous observations and previous actions to add to the current observation
 
         # Evaluate
         self.muzero_player = 0  # Turn Muzero begins to play (0: MuZero plays first, 1: MuZero plays second)
         self.opponent = None  # Hard coded agent that MuZero faces to assess his progress in multiplayer games. It doesn't influence training. None, "random" or "expert" if implemented in the Game class
 
         ### Self-Play
-        self.num_workers = 1  # Number of simultaneous threads/workers self-playing to feed the replay buffer
+        self.num_workers = 4  # Number of simultaneous threads/workers self-playing to feed the replay buffer
         self.selfplay_on_gpu = False
-        self.max_moves = 700  # Maximum number of moves if game is not finished before
-        self.num_simulations = 50  # Number of future moves self-simulated
-        self.discount = 0.999  # Chronological discount of the reward
+        self.max_moves = 400  # Maximum number of moves if game is not finished before
+        self.num_simulations = 4  # Number of future moves self-simulated
+        self.discount = 0.99  # Chronological discount of the reward
         self.temperature_threshold = None  # Number of moves before dropping the temperature given by visit_softmax_temperature_fn to 0 (ie selecting the best action). If None, visit_softmax_temperature_fn is used every time
 
         # Root prior exploration noise
@@ -87,7 +87,7 @@ class MuZeroConfig:
         ### Replay Buffer
         self.replay_buffer_size = 2000  # Number of self-play games to keep in the replay buffer
         self.num_unroll_steps = 10  # Number of game moves to keep for every batch element
-        self.td_steps = 30  # Number of steps in the future to take into account for calculating the target value
+        self.td_steps = 4  # Number of steps in the future to take into account for calculating the target value
         self.PER = True  # Prioritized Replay (See paper appendix Training), select in priority the elements in the replay buffer which are unexpected for the network
         self.PER_alpha = 0.5  # How much prioritization is used, 0 corresponding to the uniform case, paper suggests 1
 
@@ -112,15 +112,18 @@ class MuZeroConfig:
         return 0.35
 
 
-class BitZero(AbstractGame):
+class Game(AbstractGame):
     """
     Inherit this class for muzero to play
     """
 
+    def expert_agent(self):
+        pass
+
     def __init__(self, seed=None):
         super().__init__(seed)
         self.config = MuZeroConfig()
-        self.env = BitmexSim(max_steps=self.config.max_moves)
+        self.env = BitmexEnv(max_steps=self.config.max_moves)
         if seed is not None:
             self.env.seed(seed)
 
@@ -157,7 +160,7 @@ class BitZero(AbstractGame):
         Returns:
             Initial observation of the game.
         """
-        return numpy.array([[self.env.reset()]])
+        return np.array([[self.env.reset()]])
 
     def close(self):
         """
@@ -170,7 +173,7 @@ class BitZero(AbstractGame):
         Display the game observation.
         """
         self.env.render()
-        input("Press enter to take a step ")
+        #input("Press enter to take a step ")
 
     def action_to_string(self, action_number):
         """

@@ -11,12 +11,14 @@ from IntrinsicTime.runner import Runner, Direction
 
 
 if __name__ == "__main__":
-    end_timestamp = string_to_datetime("2020-01-05 00:00:00.0")
+    start_timestamp = string_to_datetime("2020-03-01 00:00:00.0")
+    end_timestamp = string_to_datetime("2020-07-01 00:00:00.0")
 
     order_books = make_order_books(None, None)
     if order_books is None:
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/',
                                    ['agg_ticks_1.csv', 'agg_ticks_2.csv', 'agg_ticks_3.csv'],
+                                   start_timestamp=start_timestamp,
                                    end_timestamp=end_timestamp)
         print(f'Agg ticks ({len(agg_ticks)}) {agg_ticks[0].timestamp} - {agg_ticks[-1].timestamp}')
         order_books = make_order_books(agg_ticks, timedelta(seconds=5))
@@ -132,6 +134,10 @@ if __name__ == "__main__":
 
     with open(f"cache/intrinsic_time_data.pickle", 'wb') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+    print(len(deltas), deltas)
+    print(len(runner_clock.ie_times))
+    print(len(runners[-1].ie_times))
 
     quit()
 

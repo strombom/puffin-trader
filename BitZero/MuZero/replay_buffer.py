@@ -5,7 +5,7 @@ import numpy
 import ray
 import torch
 
-import models
+from MuZero import models
 
 
 @ray.remote

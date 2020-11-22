@@ -12,12 +12,12 @@ import ray
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-import diagnose_model
-import models
-import replay_buffer
-import self_play
-import shared_storage
-import trainer
+from MuZero import diagnose_model
+from MuZero import models
+from MuZero import replay_buffer
+from MuZero import self_play
+from MuZero import shared_storage
+from MuZero import trainer
 
 
 class MuZero:
@@ -41,7 +41,7 @@ class MuZero:
     def __init__(self, game_name, config=None, split_resources_in=1):
         # Load the game and the config from the module with the game name
         try:
-            game_module = importlib.import_module("games." + game_name)
+            game_module = importlib.import_module("MuZero.games." + game_name)
             self.Game = game_module.Game
             self.config = game_module.MuZeroConfig()
         except ModuleNotFoundError as err:
@@ -572,21 +572,25 @@ if __name__ == "__main__":
         games = [
             filename[:-3]
             for filename in sorted(
-                os.listdir(os.path.dirname(os.path.realpath(__file__)) + "/games")
+                os.listdir(os.path.dirname(os.path.realpath(__file__)) + "/MuZero/games")
             )
             if filename.endswith(".py") and filename != "abstract_game.py"
         ]
         for i in range(len(games)):
             print(f"{i}. {games[i]}")
-        choice = input("Enter a number to choose the game: ")
+        #choice = input("Enter a number to choose the game: ")
+        choice = 0
         valid_inputs = [str(i) for i in range(len(games))]
-        while choice not in valid_inputs:
-            choice = input("Invalid input, enter a number listed above: ")
+        #while choice not in valid_inputs:
+        #    choice = input("Invalid input, enter a number listed above: ")
 
         # Initialize MuZero
         choice = int(choice)
         game_name = games[choice]
         muzero = MuZero(game_name)
+
+        #checkpoint_path = 'C:\\development\\github\puffin-trader\\BitZero\\MuZero\\results\\bitzero\\2020-11-20--19-00-50\\model_184500_15.checkpoint'
+        #muzero.load_model(checkpoint_path=checkpoint_path, replay_buffer_path=None)
 
         while True:
             # Configure running options

@@ -13,6 +13,8 @@ if __name__ == '__main__':
 
     observation = np.array([[observation]])
 
+    print("observation", observation.shape)
+
     bitmex_env.render()
 
     bitmex_env.close()
