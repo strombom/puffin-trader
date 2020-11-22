@@ -32,13 +32,10 @@ class BitmexEnv:
         self.step_count = 0
         self.step_idx = 0
         self.start_price = 0.0
+        self.previous_value = 0.0
 
         self.max_leverage = 10.0
         self.simulator = None
-        self.action = BitmexActions.nop
-        self.action_price = 0.0
-
-        self.previous_value = 0.0
 
         self.log = {}
         self.reset()
@@ -54,25 +51,6 @@ class BitmexEnv:
         #print('clock_TMV', self.clock_TMV.shape)
         #print('clock_R', self.clock_R.shape)
 
-        mark_price = self.runner_clock.ie_prices[self.step_idx]
-
-        price_max = self.runner_clock.ie_prices_max[self.step_idx]
-        price_min = self.runner_clock.ie_prices_min[self.step_idx]
-
-        # Evaluate limit order
-        order_leverage = 0.0
-        if self.action == BitmexActions.limit_buy_near or self.action == BitmexActions.limit_buy_delta:
-            if price_min < self.action_price:
-                order_leverage = self.max_leverage
-
-        if self.action == BitmexActions.limit_sell_near or self.action == BitmexActions.limit_sell_near:
-            if price_max > self.action_price:
-                order_leverage = -self.max_leverage
-
-        if order_leverage != 0.0:
-            order_size = self.simulator.calculate_order_size(leverage=order_leverage, mark_price=self.action_price)
-            self.simulator.market_order(order_contracts=order_size, mark_price=self.action_price)
-
         # Evaluate market order
         order_leverage = 0.0
         if action == BitmexActions.market_buy:
@@ -81,46 +59,58 @@ class BitmexEnv:
             order_leverage = -self.max_leverage
 
         if order_leverage != 0.0:
+            mark_price = self.runner_clock.ie_prices[self.step_idx]
             order_size = self.simulator.calculate_order_size(leverage=order_leverage, mark_price=mark_price)
             self.simulator.market_order(order_contracts=order_size, mark_price=mark_price)
 
-        value = self.simulator.get_value(mark_price=mark_price)
+        # Evaluate limit order
+        order_leverage, action_price = 0.0, 0.0
+        if action == BitmexActions.limit_buy_near:
+            action_price = self.runner_clock.ie_prices[self.step_idx] - 0.5
+        elif action == BitmexActions.limit_buy_delta:
+            action_price = self.runner_clock.ie_prices[self.step_idx + 1] + 0.5
+        elif action == BitmexActions.limit_sell_near:
+            action_price = self.runner_clock.ie_prices[self.step_idx] + 0.5
+        elif action == BitmexActions.limit_sell_near:
+            action_price = self.runner_clock.ie_prices[self.step_idx + 1] - 0.5
+
+        if action == BitmexActions.limit_buy_near or action == BitmexActions.limit_buy_delta:
+            if self.runner_clock.ie_prices_min[self.step_idx + 1] < action_price:
+                order_leverage = self.max_leverage
+        elif action == BitmexActions.limit_sell_near or action == BitmexActions.limit_sell_near:
+            if self.runner_clock.ie_prices_max[self.step_idx + 1] > action_price:
+                order_leverage = -self.max_leverage
+
+        if order_leverage != 0.0:
+            order_size = self.simulator.calculate_order_size(leverage=order_leverage, mark_price=action_price)
+            self.simulator.market_order(order_contracts=order_size, mark_price=action_price)
+
+        # Calculate reward
+        value = self.simulator.get_value(mark_price=self.runner_clock.ie_prices[self.step_idx + 1])
         reward = (value - self.previous_value) / self.previous_value * 100
         self.previous_value = value
 
+        # Next step
         self.step_idx += 1
         done = self.step_idx == len(self.runner_clock.ie_prices)
         if value < self.start_price * 0.1:
             done = True
 
+        mark_price = self.runner_clock.ie_prices[self.step_idx]
         leverage = self.simulator.get_leverage(mark_price=mark_price)
         observation = np.concatenate((self.clock_TMV[:, self.step_idx], self.clock_R[:, self.step_idx], [leverage]))
-
-        self.action = action
-        if self.action == BitmexActions.limit_buy_near:
-            self.action_price = mark_price - 0.5
-        elif self.action == BitmexActions.limit_buy_delta:
-            self.action_price = mark_price * (1 - self.deltas[0]) + 0.5
-        elif self.action == BitmexActions.limit_sell_near:
-            self.action_price = mark_price + 0.5
-        elif self.action == BitmexActions.limit_sell_near:
-            self.action_price = mark_price * (1 + self.deltas[0]) - 0.5
-        else:
-            self.action_price = 0.0
 
         self.log['timestamp'].append(self.runner_clock.ie_times[self.step_idx])
         self.log['price'].append(mark_price)
         self.log['leverage'].append(self.simulator.get_leverage(mark_price=mark_price))
-        self.log['value'].append(new_value)
-        self.log['action'].append(self.action)
-        self.log['action_price'].append(self.action_price)
+        self.log['value'].append(value)
+        self.log['action'].append(action)
+        self.log['action_price'].append(action_price)
 
         return observation, reward, done, None
 
     def reset(self):
         self.step_count = 0
-        self.action = BitmexActions.nop
-        self.action_price = 0.0
 
         filepath = f'log/log_{datetime.now().strftime("%Y-%d-%m_%H%M%S")}.csv'
         with open(filepath, 'w') as f:
