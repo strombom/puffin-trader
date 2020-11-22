@@ -17,9 +17,9 @@ class MuZeroConfig:
 
         ### Game
         self.observation_shape = (1, 1, 185)  # Dimensions of the game observation, must be 3D (channel, height, width). For a 1D array, please reshape it to (1, 1, length of array)
-        self.action_space = list(range(3))  # Fixed list of all possible actions. You should only edit the length
+        self.action_space = list(range(7))  # Fixed list of all possible actions. You should only edit the length
         self.players = list(range(1))  # List of players. You should only edit the length
-        self.stacked_observations = 32  # Number of previous observations and previous actions to add to the current observation
+        self.stacked_observations = 10  # Number of previous observations and previous actions to add to the current observation
 
         # Evaluate
         self.muzero_player = 0  # Turn Muzero begins to play (0: MuZero plays first, 1: MuZero plays second)
@@ -87,7 +87,7 @@ class MuZeroConfig:
         ### Replay Buffer
         self.replay_buffer_size = 2000  # Number of self-play games to keep in the replay buffer
         self.num_unroll_steps = 10  # Number of game moves to keep for every batch element
-        self.td_steps = 4  # Number of steps in the future to take into account for calculating the target value
+        self.td_steps = 5  # Number of steps in the future to take into account for calculating the target value
         self.PER = True  # Prioritized Replay (See paper appendix Training), select in priority the elements in the replay buffer which are unexpected for the network
         self.PER_alpha = 0.5  # How much prioritization is used, 0 corresponding to the uniform case, paper suggests 1
 
@@ -151,7 +151,7 @@ class Game(AbstractGame):
         Returns:
             An array of integers, subset of the action space.
         """
-        return list(range(3))
+        return list(range(7))
 
     def reset(self):
         """
@@ -188,6 +188,10 @@ class Game(AbstractGame):
         actions = {
             0: "Hodl",
             1: "Market buy",
-            2: "Market sell"
+            2: "Market sell",
+            3: "Limit buy near",
+            4: "Limit sell near",
+            5: "Limit buy delta",
+            6: "Limit sell delta"
         }
         return f"{action_number}. {actions[action_number]}"

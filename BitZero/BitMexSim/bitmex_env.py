@@ -37,7 +37,12 @@ class BitmexEnv:
         self.max_leverage = 10.0
         self.simulator = None
 
-        self.log = {}
+        self.log = {'timestamp': [],
+                    'price': [],
+                    'leverage': [],
+                    'value': [],
+                    'action': [],
+                    'action_price': []}
         self.reset()
 
     def seed(self, seed):
