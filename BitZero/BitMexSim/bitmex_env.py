@@ -117,7 +117,7 @@ class BitmexEnv:
     def reset(self):
         self.step_count = 0
 
-        filepath = f'log/log_{datetime.now().strftime("%Y-%d-%m_%H%M%S")}.csv'
+        filepath = f'log/log_{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.csv'
         with open(filepath, 'w') as f:
             for idx in range(len(self.log['timestamp'])):
                 f.write(f'{self.log["timestamp"][idx]},')
