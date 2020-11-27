@@ -1,6 +1,8 @@
 *.csv
 .idea
 venv
+cache
+log/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
