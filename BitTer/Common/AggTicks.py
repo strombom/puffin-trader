@@ -15,7 +15,7 @@ class AggTick:
         return f'AggTick({self.timestamp} {self.low}, {self.high})'
 
 
-def read_agg_ticks(path, filenames, start_timestamp=None, end_timestamp=None):
+def read_agg_ticks(path, filenames, start_timestamp=None, end_timestamp=None, ignore_date_ranges=[]):
     try:
         with open(f"cache/agg_ticks.pickle", 'rb') as f:
             data = pickle.load(f)
@@ -36,6 +36,14 @@ def read_agg_ticks(path, filenames, start_timestamp=None, end_timestamp=None):
                     continue
                 if end_timestamp is not None and timestamp >= end_timestamp:
                     break
+
+                ignore = False
+                for start_ignore, end_ignore in ignore_date_ranges:
+                    if start_ignore < timestamp < end_ignore:
+                        ignore = True
+                        break
+                if ignore:
+                    continue
 
                 ask, bid = float(row[1]), float(row[2])
                 if ask != prev_ask or bid != prev_bid:
