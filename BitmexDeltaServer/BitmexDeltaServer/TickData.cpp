@@ -78,7 +78,7 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
     auto idx = last_idx;
     while (true) {
         //std::cout << "search " << idx << std::endl;
-        if (read_ticks->at(idx).timestamp_ms < timestamp_ms) {
+        if (read_ticks->at(idx).timestamp_ms < (unsigned long long) timestamp_ms) {
             if (idx != last_idx) {
                 start_idx = (idx + 1) % Bitmex::buffer_size;
             }
@@ -96,7 +96,7 @@ std::unique_ptr<std::vector<Tick>> TickData::get(const std::string& symbol, time
         idx = start_idx;
         while (true) {
             result.push_back(read_ticks->at(idx));
-            if (idx == last_idx || result.size() == max_rows) {
+            if (idx == last_idx || result.size() == (size_t) max_rows) {
                 break;
             }
             idx = (Bitmex::buffer_size + idx + 1) % Bitmex::buffer_size;
