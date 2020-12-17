@@ -9,8 +9,8 @@
 
 CoinbaseProWebSocket::CoinbaseProWebSocket(sptrTickData tick_data) :
     tick_data(tick_data),
-    websocket_thread_running(true),
-    connected(false)
+    connected(false),
+    websocket_thread_running(true)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }

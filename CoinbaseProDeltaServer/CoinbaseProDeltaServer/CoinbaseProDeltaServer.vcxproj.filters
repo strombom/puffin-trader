@@ -71,5 +71,6 @@
     <ClInclude Include="BitLib\Logger.h">
       <Filter>Headers\BitLib</Filter>
     </ClInclude>
+    <ClInclude Include="zmq.hpp" />
   </ItemGroup>
 </Project>

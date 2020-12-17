@@ -101,6 +101,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Server.h" />
     <ClInclude Include="TickData.h" />
+    <ClInclude Include="zmq.hpp" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -122,6 +123,26 @@
     <Link>
       <LibraryDependencies>zmq;pthread;ssl;crypto;dl</LibraryDependencies>
       <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/x64-linux/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>/home/strombom/vcpkg/installed/arm64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/arm64-linux/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LibraryDependencies>zmq;pthread;ssl;crypto;dl</LibraryDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>/home/strombom/vcpkg/installed/arm64-linux/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>/home/strombom/apps/vcpkg/installed/arm64-linux/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LibraryDependencies>zmq;pthread;ssl;crypto;dl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
