@@ -1,12 +1,12 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class Direction(Enum):
+class Direction(IntEnum):
     up = 1
     down = -1
 
 
-class RunnerEvent(Enum):
+class RunnerEvent(IntEnum):
     change_up = 1
     nothing = 0
     change_down = -1

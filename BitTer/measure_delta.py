@@ -50,8 +50,8 @@ if __name__ == '__main__':
         print(ie_os_delta_up)
         print(ie_os_delta_down)
 
-        plt.hist(ie_os_delta_up, bins=450, label='up')
-        plt.hist(ie_os_delta_down, bins=450, label='down')
+        plt.hist(ie_os_delta_up, bins=1000, label='up')
+        plt.hist(ie_os_delta_down, bins=1000, label='down')
 
         plt.legend()
         plt.show()
