@@ -42,34 +42,24 @@ if __name__ == '__main__':
     #print("shape", tmv_pos.shape)
 
     #plt.subplot(2, 1, 1)
-    #plt.plot(clock_TMV[3], label=f'TMV {3}')
+    for idx in range(len(deltas)):
+        # plt.plot(clock_TMV[idx], label=f'TMV {idx}')
+        plt.hist(clock_TMV[idx], bins=200, label=f'TMV {idx}')
+
     #plt.plot(clock_R[3], label=f'R {3}')
     #plt.legend()
 
     # #plt.subplot(2, 1, 2)
-    tmv_pos = np.log1p(clock_TMV.clip(min=0)) / 3
-    tmv_neg = np.log1p(-clock_TMV.clip(max=0)) / 3
-    # #plt.plot(tmv_pos[3] - tmv_neg[3], label=f'TMV {3}')
-    # plt.plot(tmv_pos[0], label=f'TMV p {3}')
-    # plt.plot(-tmv_neg[0], label=f'TMV n {3}')
-    #
-    #r_pos = np.log1p(clock_R.clip(min=0))
-    #r_neg = np.log1p(-clock_R.clip(max=0))
-    # #plt.plot(r_pos[3] - r_neg[3], label=f'R {3}')
-    # plt.plot(r_pos[0], label=f'R p {3}')
-    # plt.plot(-r_neg[0], label=f'R n {3}')
+    #tmv_pos = np.log1p(clock_TMV.clip(min=0)) / 3
+    #tmv_neg = np.log1p(-clock_TMV.clip(max=0)) / 3
 
     #plt.plot(, label=f'TMVn {3}')
     #plt.plot(clock_R[3], label=f'R {3}')
 
     #plt.hist(tmv_pos, bins=400)
-    for idx in range(len(deltas)):
-        #k = 0.5 / (0.1344193 * deltas[idx] ** -0.54606854 - 0.89771839 + 0.14)
-        #print(k)
-        a = clock_R[idx]  # (r_pos[idx] - r_neg[idx]) #* k
-        plt.hist(a, bins=200, label=f'R {idx}')
+    #for idx in range(len(deltas)):
+    #    plt.hist(clock_R[idx], bins=200, label=f'R {idx}')
 
-    #plt.hist(tmv_neg[15], bins=200)
     #plt.hist(clock_TMV[0], bins=100)
     #plt.plot(runner_clock.ie_times, runner_clock.ie_prices)
     #plt.plot(runner_clock.os_times, runner_clock.os_prices)
