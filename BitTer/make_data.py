@@ -15,8 +15,8 @@ if __name__ == "__main__":
 
     ignore_date_ranges = []
     # [(string_to_datetime("2020-03-13 03:00:00.0"), string_to_datetime("2020-03-13 04:00:00.0"))]
-    start_timestamp = string_to_datetime("2020-01-01 00:00:00.0")
-    end_timestamp = string_to_datetime("2020-02-01 00:00:00.0")
+    start_timestamp = string_to_datetime("2020-05-08 00:00:00.0")
+    end_timestamp = string_to_datetime("2020-09-08 00:00:00.0")
 
     order_books = make_order_books(None, None)
     if order_books is None:
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # delta_clock = 0.0022
     # deltas = make_e_series_range(delta_clock, 0.02, 96)
-    delta_clock = 0.0022
+    delta_clock = 0.00215
     #deltas = [delta_clock]
     deltas = make_e_series_range(delta_clock, 0.04, 48)
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
             price = runner_clock.ie_prices[idx_clock]
             timestamp = runner_clock.ie_times[idx_clock]
 
-            while idx_dc + 1 < len(runner.os_times) and runner.dc_times[idx_dc + 1] <= timestamp:
+            while idx_dc + 1 < len(runner.os_times) and timestamp >= runner.dc_times[idx_dc + 1]:
                 idx_dc += 1
                 ref_price = runner.os_prices[idx_dc]
                 ref_time = runner.os_times[idx_dc]
@@ -147,30 +147,46 @@ if __name__ == "__main__":
 
     print("TMV, R done")
 
-    # prices = np.empty(len(order_books))
-    # asks = np.empty(len(order_books))
-    # bids = np.empty(len(order_books))
-    # times = np.empty(len(order_books))
-    # for idx, order_book in enumerate(order_books):
-    #     prices[idx] = order_book.mid
-    #     asks[idx] = order_book.ask
-    #     bids[idx] = order_book.bid
-    #     times[idx] = datetime.timestamp(order_book.timestamp)
-    #
-    # plt.plot(times, prices, label=f'price')
-    # plt.plot(times, asks, label=f'ask')
-    # plt.plot(times, bids, label=f'bid')
-    #
-    # for i in [0, 3]:
-    #     plt.plot(runners[i].os_times, runners[i].os_prices, label=f'OS {i}')
-    #     plt.scatter(runners[i].os_times, runners[i].os_prices, label=f'OS {i}', s=10**2)
-    #     plt.scatter(runners[i].dc_times, runners[i].dc_prices, label=f'DC {i}', s=8**2)
-    #     plt.scatter(runners[i].ie_times, runners[i].ie_prices, label=f'IE {i}', s=6**2)
-    #
+    # ax1 = plt.subplot(2, 1, 1)
+    # plt.scatter(runners[0].ie_times[0:n], runners[0].ie_prices[0:n], label='IE')
+    # plt.scatter(runners[0].os_times[0:n], runners[0].os_prices[0:n], label='OS')
+    # plt.plot(runners[0].os_times[0:n], runners[0].os_prices[0:n], label='OS')
     # plt.legend()
+    #
+    # ax2 = plt.subplot(2, 1, 2, sharex=ax1)
+    # plt.plot(runners[0].ie_times[0:n], clock_TMV[0][0:n], label='TMV')
+    # plt.scatter(runners[0].ie_times[0:n], clock_TMV[0][0:n], label='TMV')
+    # plt.legend()
+    #
     # plt.show()
 
-    #quit()
+    prices = np.empty(len(order_books))
+    asks = np.empty(len(order_books))
+    bids = np.empty(len(order_books))
+    times = np.empty(len(order_books))
+    for idx, order_book in enumerate(order_books):
+        prices[idx] = order_book.mid
+        asks[idx] = order_book.ask
+        bids[idx] = order_book.bid
+        times[idx] = datetime.timestamp(order_book.timestamp)
+
+    ax1 = plt.subplot(2, 1, 1)
+    ax1.grid(True)
+    plt.plot(times, prices, label=f'price')
+    plt.plot(times, asks, label=f'ask')
+    plt.plot(times, bids, label=f'bid')
+    for i in [0]:
+        plt.plot(runners[i].os_times, runners[i].os_prices, label=f'OS {i}')
+        plt.scatter(runners[i].os_times, runners[i].os_prices, label=f'OS {i}', s=10**2)
+        plt.scatter(runners[i].dc_times, runners[i].dc_prices, label=f'DC {i}', s=8**2)
+        plt.scatter(runners[i].ie_times, runners[i].ie_prices, label=f'IE {i}', s=6**2)
+    plt.legend()
+
+    ax2 = plt.subplot(2, 1, 2, sharex=ax1)
+    ax2.grid(True)
+    plt.plot(runner_clock.ie_times, clock_TMV[0], label=f'TMV')
+    plt.legend()
+    plt.show()
 
     data = (deltas,
             order_books,
