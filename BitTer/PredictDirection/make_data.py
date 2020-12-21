@@ -25,6 +25,10 @@ if __name__ == '__main__':
     #(60, 22641)
     n_history = 50
 
+
+
+
+
     print(clock_TMV[0][0:10])
     print(runners[0].ie_prices[0:10])
 
@@ -37,8 +41,11 @@ if __name__ == '__main__':
     plt.legend()
 
     ax2 = plt.subplot(2, 1, 2, sharex=ax1)
+    ax2.grid(axis='y', which='both')
     plt.plot(runners[0].ie_times[0:n], clock_TMV[0][0:n], label='TMV')
     plt.scatter(runners[0].ie_times[0:n], clock_TMV[0][0:n], label='TMV')
+    plt.plot(runners[0].ie_times[0:n], clock_R[0][0:n], label='R')
+    plt.scatter(runners[0].ie_times[0:n], clock_R[0][0:n], label='R')
     plt.legend()
 
     plt.show()

@@ -16,7 +16,7 @@ class MuZeroConfig:
         self.max_num_gpus = 1  # Fix the maximum number of GPUs to use. It's usually faster to use a single GPU (set it to 1) if it has enough memory. None will use every GPUs available
 
         ### Game
-        self.observation_shape = (1, 1, 121)  # Dimensions of the game observation, must be 3D (channel, height, width). For a 1D array, please reshape it to (1, 1, length of array)
+        self.observation_shape = (1, 1, 123)  # Dimensions of the game observation, must be 3D (channel, height, width). For a 1D array, please reshape it to (1, 1, length of array)
         self.action_space = list(range(3))  # Fixed list of all possible actions. You should only edit the length
         self.players = list(range(1))  # List of players. You should only edit the length
         self.stacked_observations = 64  # Number of previous observations and previous actions to add to the current observation
@@ -29,7 +29,7 @@ class MuZeroConfig:
         self.num_workers = 2  # Number of simultaneous threads/workers self-playing to feed the replay buffer
         self.selfplay_on_gpu = False
         self.max_moves = 400  # Maximum number of moves if game is not finished before
-        self.num_simulations = 10  # Number of future moves self-simulated
+        self.num_simulations = 20  # Number of future moves self-simulated
         self.discount = 0.999  # Chronological discount of the reward
         self.temperature_threshold = None  # Number of moves before dropping the temperature given by visit_softmax_temperature_fn to 0 (ie selecting the best action). If None, visit_softmax_temperature_fn is used every time
 
@@ -86,8 +86,8 @@ class MuZeroConfig:
 
         ### Replay Buffer
         self.replay_buffer_size = 2000  # Number of self-play games to keep in the replay buffer
-        self.num_unroll_steps = 2  # Number of game moves to keep for every batch element
-        self.td_steps = 2  # Number of steps in the future to take into account for calculating the target value
+        self.num_unroll_steps = 20  # Number of game moves to keep for every batch element
+        self.td_steps = 4  # Number of steps in the future to take into account for calculating the target value
         self.PER = True  # Prioritized Replay (See paper appendix Training), select in priority the elements in the replay buffer which are unexpected for the network
         self.PER_alpha = 0.5  # How much prioritization is used, 0 corresponding to the uniform case, paper suggests 1
 

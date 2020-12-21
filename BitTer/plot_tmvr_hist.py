@@ -42,8 +42,8 @@ if __name__ == '__main__':
     #print("shape", tmv_pos.shape)
 
     #plt.subplot(2, 1, 1)
-    for idx in range(len(deltas)):
-        # plt.plot(clock_TMV[idx], label=f'TMV {idx}')
+    for idx in [0]:  # range(len(deltas)):
+        #plt.plot(clock_TMV[idx], label=f'TMV {idx}')
         plt.hist(clock_TMV[idx], bins=200, label=f'TMV {idx}')
 
     #plt.plot(clock_R[3], label=f'R {3}')
