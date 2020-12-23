@@ -1,5 +1,6 @@
 
 import pickle
+import numpy as np
 import matplotlib.pyplot as plt
 
 from IntrinsicTime.runner import Runner
@@ -19,18 +20,30 @@ if __name__ == '__main__':
     #with open(f'tmp.pickle', 'rb') as f:
     #    deltas, clock_TMV, clock_R = pickle.load(f)
 
-    print(len(deltas), deltas)
-    print(clock_TMV.shape)
+    def make_dataset(idx_start, idx_end):
+        data_x = np.concatenate((clock_TMV[:, idx_start: idx_end], clock_R[:, idx_start: idx_end]), axis=0)
+        data_y = np.where(data_x[0] > 0.0, 1, -1)
 
-    #(60, 22641)
-    n_history = 50
+        data_x = data_x[:, :-1].transpose()
+        data_y = data_y[1:]
 
+        data_x = np.expand_dims(data_x, 0)
+        data_y = np.reshape(data_y, (1, data_y.shape[0], 1))
 
+        return data_x, data_y
 
+    val_idx = clock_TMV.shape[1] * 5 // 6
+    data_train = make_dataset(0, val_idx - 1)
+    data_val = make_dataset(val_idx, clock_TMV.shape[1] - 1)
 
+    print("Train", data_train[0].shape, data_train[1].shape)
+    print("Val", data_val[0].shape, data_val[1].shape)
+    quit()
 
-    print(clock_TMV[0][0:10])
-    print(runners[0].ie_prices[0:10])
+    with open(f'training_data.pickle', 'wb') as f:
+        pickle.dump((data_train, data_val), f)
+
+    quit()
 
     n = 100
 
@@ -49,9 +62,3 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.show()
-
-    #for idx in range(clock_TMV.shape[1] - n_history):
-
-
-
-
