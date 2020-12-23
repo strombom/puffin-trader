@@ -28,11 +28,12 @@ if __name__ == '__main__':
         data_x = data_x[:, :-1].transpose()
         data_y = data_y[1:]
 
-        data_x = np.expand_dims(data_x, 0)
-        data_y = np.reshape(data_y, (1, data_y.shape[0], 1))
+        #data_x = np.expand_dims(data_x, 0)
+        #data_y = np.reshape(data_y, (1, data_y.shape[0], 1))
+        data_y = np.reshape(data_y, (data_y.shape[0], 1))
 
-        data_x = torch.from_numpy(data_x)
-        data_y = torch.from_numpy(data_y)
+        data_x = torch.from_numpy(data_x).float()
+        data_y = torch.from_numpy(data_y).float()
 
         return data_x, data_y
 
