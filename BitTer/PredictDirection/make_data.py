@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     def make_dataset(idx_start, idx_end):
         data_x = np.concatenate((clock_TMV[:, idx_start: idx_end], clock_R[:, idx_start: idx_end]), axis=0)
-        data_y = np.where(data_x[0] > 0.0, 0, 1)
+        data_y = np.where(data_x[0] > 0.0, 1, 0)
 
         data_x = data_x[:, :-1].transpose()
         data_y = data_y[1:]
