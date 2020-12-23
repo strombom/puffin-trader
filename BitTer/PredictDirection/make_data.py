@@ -1,4 +1,5 @@
 
+import torch
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,13 +23,16 @@ if __name__ == '__main__':
 
     def make_dataset(idx_start, idx_end):
         data_x = np.concatenate((clock_TMV[:, idx_start: idx_end], clock_R[:, idx_start: idx_end]), axis=0)
-        data_y = np.where(data_x[0] > 0.0, 1, -1)
+        data_y = np.where(data_x[0] > 0.0, 0, 1)
 
         data_x = data_x[:, :-1].transpose()
         data_y = data_y[1:]
 
         data_x = np.expand_dims(data_x, 0)
         data_y = np.reshape(data_y, (1, data_y.shape[0], 1))
+
+        data_x = torch.from_numpy(data_x)
+        data_y = torch.from_numpy(data_y)
 
         return data_x, data_y
 
@@ -38,7 +42,6 @@ if __name__ == '__main__':
 
     print("Train", data_train[0].shape, data_train[1].shape)
     print("Val", data_val[0].shape, data_val[1].shape)
-    quit()
 
     with open(f'training_data.pickle', 'wb') as f:
         pickle.dump((data_train, data_val), f)
