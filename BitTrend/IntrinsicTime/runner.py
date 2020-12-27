@@ -22,6 +22,7 @@ class Runner:
         self.extreme_timestamp = order_book.timestamp
         self.delta_price = order_book.ask * (1 - self.delta_down)
         self.ie_price = order_book.ask * (1 + self.delta_up)
+        self.ie_price_previous = self.ie_price
         self.dc_times = []
         self.dc_prices = []
         self.os_times = []
@@ -37,17 +38,21 @@ class Runner:
                 #print(f'up IE {self.ie_price}')
                 self.ie_times.append(order_book.timestamp.timestamp())
                 self.ie_prices.append(self.ie_price)
+                self.ie_price_previous = self.ie_price
                 self.ie_price *= 1 + self.delta_up
 
             if order_book.bid > self.extreme_price:
                 self.extreme_price = order_book.bid
                 self.extreme_timestamp = order_book.timestamp
+                #self.delta_price = self.extreme_price * (2 - self.delta_down) - self.ie_price_previous
                 self.delta_price = order_book.bid * (1 - self.delta_down)
 
             if order_book.ask < self.delta_price:
                 #print(f'up->down DC {order_book.ask}')
+                self.delta_price = self.extreme_price * (2 - self.delta_down) - self.ie_price_previous
                 self._append(order_book.timestamp)
                 self.direction = Direction.down
+                self.ie_price_previous = self.ie_price
                 self.ie_price = self.delta_price * (1 - self.delta_down)
                 self.extreme_timestamp = order_book.timestamp
                 self.extreme_price = order_book.ask
@@ -58,6 +63,7 @@ class Runner:
                     # print(f'down IE {self.ie_price}')
                     self.ie_times.append(order_book.timestamp.timestamp())
                     self.ie_prices.append(self.ie_price)
+                    self.ie_price_previous = self.ie_price
                     self.ie_price *= 1 - self.delta_down
 
         else:
@@ -65,17 +71,21 @@ class Runner:
                 #print(f'down IE {self.ie_price}')
                 self.ie_times.append(order_book.timestamp.timestamp())
                 self.ie_prices.append(self.ie_price)
+                self.ie_price_previous = self.ie_price
                 self.ie_price *= 1 - self.delta_down
 
             if order_book.ask < self.extreme_price:
                 self.extreme_price = order_book.ask
                 self.extreme_timestamp = order_book.timestamp
+                #self.delta_price = self.extreme_price * (2 + self.delta_down) - self.ie_price_previous
                 self.delta_price = order_book.ask * (1 + self.delta_up)
 
             if order_book.bid > self.delta_price:
                 #print(f'down->up DC {order_book.ask}')
+                self.delta_price = self.extreme_price * (2 + self.delta_down) - self.ie_price_previous
                 self._append(order_book.timestamp)
                 self.direction = Direction.up
+                self.ie_price_previous = self.ie_price
                 self.ie_price = self.delta_price * (1 + self.delta_up)
                 self.extreme_timestamp = order_book.timestamp
                 self.extreme_price = order_book.bid
@@ -86,6 +96,7 @@ class Runner:
                     #print(f'up IE {self.ie_price}')
                     self.ie_times.append(order_book.timestamp.timestamp())
                     self.ie_prices.append(self.ie_price)
+                    self.ie_price_previous = self.ie_price
                     self.ie_price *= 1 + self.delta_up
 
         return event

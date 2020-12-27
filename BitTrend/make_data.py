@@ -14,8 +14,8 @@ if __name__ == "__main__":
 
     ignore_date_ranges = []
     # [(string_to_datetime("2020-03-13 03:00:00.0"), string_to_datetime("2020-03-13 04:00:00.0"))]
-    start_timestamp = string_to_datetime("2020-05-08 00:00:00.0")
-    end_timestamp = string_to_datetime("2020-05-30 00:00:00.0")
+    start_timestamp = string_to_datetime("2020-05-15 00:00:00.0")
+    end_timestamp = string_to_datetime("2020-05-18 00:00:00.0")
 
     order_books = make_order_books(None, None)
     if order_books is None:
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     print(f'Order books ({len(order_books)}) {order_books[0].timestamp} - {order_books[-1].timestamp}')
 
-    delta = 0.002
+    delta = 0.0015
     runner = Runner(delta=delta, order_book=order_books[0])
     for order_book in order_books:
         runner.step(order_book)
@@ -48,9 +48,9 @@ if __name__ == "__main__":
 
     ax1 = plt.subplot(1, 1, 1)
     ax1.grid(True)
-    #plt.plot(times, prices, label=f'price')
-    #plt.plot(times, asks, label=f'ask')
-    #plt.plot(times, bids, label=f'bid')
+    plt.plot(times, prices, label=f'price')
+    plt.plot(times, asks, label=f'ask')
+    plt.plot(times, bids, label=f'bid')
     plt.plot(runner.os_times, runner.os_prices, label=f'OS')
     plt.scatter(runner.os_times, runner.os_prices, label=f'OS', s=5**2)
     plt.scatter(runner.dc_times, runner.dc_prices, label=f'DC', s=7**2)
