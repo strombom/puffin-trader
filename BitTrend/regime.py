@@ -59,7 +59,7 @@ for idx_ie, timestamp in enumerate(runner.ie_times):
     scatters[scatter_idx]['x'].append(idx_ie)
     scatters[scatter_idx]['y'].append(runner.ie_prices[idx_ie])
 
-smooth_periods = [100, 500]
+smooth_periods = [600, 900]
 smooths = {}
 for smooth_period in smooth_periods:
     smooth = []
@@ -70,18 +70,18 @@ for smooth_period in smooth_periods:
 
 values = []
 leverages = []
-sim = BitmexSimulator(max_leverage=2.0, mark_price=runner.ie_prices[0])
+sim = BitmexSimulator(max_leverage=10.0, mark_price=runner.ie_prices[0])
 direction = Direction.up
 for idx in range(len(runner.ie_times) - 1):
     mark_price = runner.ie_prices[idx]
 
     order_size = 0.0
 
-    if direction == Direction.down and smooths[100][idx] > smooths[500][idx]:
+    if direction == Direction.down and smooths[smooth_periods[0]][idx] > smooths[smooth_periods[1]][idx]:
         direction = Direction.up
         order_size = sim.calculate_order_size(leverage=4.0, mark_price=mark_price)
 
-    elif direction == Direction.up and smooths[100][idx] < smooths[500][idx]:
+    elif direction == Direction.up and smooths[smooth_periods[0]][idx] < smooths[smooth_periods[1]][idx]:
         direction = Direction.down
         order_size = sim.calculate_order_size(leverage=-5.0, mark_price=mark_price)
 
