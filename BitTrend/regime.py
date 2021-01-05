@@ -2,63 +2,72 @@ import math
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
+from scipy import stats
 from matplotlib import markers
+from multiprocessing.connection import Client
 
 from BitmexSim.bitmex_simulator import BitmexSimulator
 from Common.Misc import timestamp_to_string
 from Indicators.supersmoother import SuperSmoother
-from IntrinsicTime.runner import Direction
-
+from ie_scatter import make_ie_scatters
 
 with open(f"cache/intrinsic_time_data.pickle", 'rb') as f:
     delta, order_books, runner = pickle.load(f)
 
-#ie_prices = np.array(runner.ie_prices)
-#ie_prices = np.log(ie_prices)
+p = np.array(runner.ie_prices)
+runner.ie_prices = p + 0
 
-x = np.arange(0, len(runner.ie_times))
-ie_directions = np.empty(len(runner.ie_times))
 
-scatters = []
-colors = ['xkcd:green', 'xkcd:light red', 'xkcd:lime', 'xkcd:baby pink']
-for i in range(4):
-    marker = '+'  # '^' if i % 2 == 0 else 'v'
-    size = 40
-    color = colors[i]
-    scatters.append({'marker': marker, 'size': size, 'color': color, 'x': [], 'y': []})
+ie_scatters, ie_overshoots = make_ie_scatters(runner)
 
-overshoots = {'x': [], 'y': []}
-idx_dc, idx_os = 0, 0
-direction = Direction.down
-for idx_ie, timestamp in enumerate(runner.ie_times):
-    turn = False
-    while idx_os + 1 < len(runner.os_times) and timestamp > runner.os_times[idx_os + 1]:
-        idx_os += 1
-        overshoots['x'].append(idx_ie - 1)
-        overshoots['y'].append(runner.os_prices[idx_os])
-        turn = True
-        if runner.ie_prices[idx_ie] > runner.os_prices[idx_os]:
-            direction = Direction.up
-        else:
-            direction = Direction.down
+pos_x = 20
+start_x = 0
 
-    while idx_dc + 1 < len(runner.dc_times) and timestamp >= runner.dc_times[idx_dc + 1]:
-        idx_dc += 1
-    if idx_dc >= len(runner.dc_times):
-        break
+c_x = np.arange(0, pos_x - start_x)
+prices = runner.ie_prices[start_x:pos_x]
+r = stats.linregress(c_x, prices)
+c_y = c_x * r.slope + r.intercept
 
-    if direction == Direction.up:
-        scatter_idx = 0
-    else:
-        scatter_idx = 1
+address = ('localhost', 27567)
+conn = Client(address, authkey=b'secret password')
+conn.send((ie_scatters, ie_overshoots, None))
+conn.close()
+quit()
 
-    if idx_ie + 1 < len(runner.ie_times):
-        if runner.ie_times[idx_ie + 1] == runner.ie_times[idx_ie]:
-            scatter_idx += 2  # Free fall
+print(c_x)
+print(prices)
+print(r)
+print(c_y)
+#quit()
 
-    scatters[scatter_idx]['x'].append(idx_ie)
-    scatters[scatter_idx]['y'].append(runner.ie_prices[idx_ie])
+ax1 = plt.subplot(1, 1, 1)
+for scatter_idx in range(len(ie_scatters)):
+    ie_scatter = ie_scatters[scatter_idx]
+    ax1.scatter(ie_scatter['x'], ie_scatter['y'], marker=ie_scatter['marker'], color=ie_scatter['color'], s=ie_scatter['size'])
 
+ax1.scatter(ie_overshoots['x'], ie_overshoots['y'], marker='_', color='xkcd:grey', s=40)
+
+ax1.plot(c_x, c_y, label='C')
+
+#for smooth in smooths:
+#    ax1.plot(smooths[smooth])
+
+#ax2 = plt.subplot(3, 1, 2, sharex=ax1)
+#ax2.plot(values)
+
+#ax3 = plt.subplot(3, 1, 3, sharex=ax1)
+#ax3.plot(leverages)
+
+#plt.plot(runner.os_times, runner.os_prices, label=f'OS')
+plt.show()
+
+
+
+
+
+
+"""
 smooth_periods = [600, 900]
 smooths = {}
 for smooth_period in smooth_periods:
@@ -90,30 +99,7 @@ for idx in range(len(runner.ie_times) - 1):
 
     values.append(sim.get_value(mark_price=mark_price))
     leverages.append(sim.get_leverage(mark_price=mark_price))
-
-
-ax1 = plt.subplot(3, 1, 1)
-for scatter_idx in range(len(scatters)):
-    scatter = scatters[scatter_idx]
-    ax1.scatter(scatter['x'], scatter['y'], marker=scatter['marker'], color=scatter['color'], s=scatter['size'])
-
-ax1.scatter(overshoots['x'], overshoots['y'], marker='_', color='xkcd:grey', s=40)
-for smooth in smooths:
-    ax1.plot(smooths[smooth])
-
-ax2 = plt.subplot(3, 1, 2, sharex=ax1)
-ax2.plot(values)
-
-ax3 = plt.subplot(3, 1, 3, sharex=ax1)
-ax3.plot(leverages)
-
-#plt.plot(runner.os_times, runner.os_prices, label=f'OS')
-plt.show()
-
-
-
-
-
+"""
 
 
 quit()
