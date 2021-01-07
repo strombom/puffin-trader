@@ -1,15 +1,10 @@
-import math
+
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
 from scipy import stats
-from matplotlib import markers
 from multiprocessing.connection import Client
 
-from BitmexSim.bitmex_simulator import BitmexSimulator
-from Common.Misc import timestamp_to_string
-from Indicators.supersmoother import SuperSmoother
 from ie_scatter import make_ie_scatters
 
 with open(f"cache/intrinsic_time_data.pickle", 'rb') as f:
@@ -29,17 +24,29 @@ prices = runner.ie_prices[start_x:pos_x]
 r = stats.linregress(c_x, prices)
 c_y = c_x * r.slope + r.intercept
 
-address = ('localhost', 27567)
-conn = Client(address, authkey=b'secret password')
-conn.send((ie_scatters, ie_overshoots, None))
-conn.close()
+
+def send(name, data):
+    address = ('localhost', 27567)
+    conn = Client(address, authkey=b'secret password')
+    conn.send({'name': name,
+               'data': data})
+    conn.close()
+
+
+send('ie_overshoots', ie_overshoots)
+send('ie_scatters', ie_scatters)
+
+send('botline1', {'x': [0, 50], 'y': [9000, 9050], 'color': 'xkcd:blue'})
+send('botline2', {'x': [0, 50], 'y': [9050, 9100], 'color': 'xkcd:red'})
+send('botline3', {'x': [0, 50], 'y': [9150, 9200], 'color': 'xkcd:green'})
+
 quit()
 
 print(c_x)
 print(prices)
 print(r)
 print(c_y)
-#quit()
+# quit()
 
 ax1 = plt.subplot(1, 1, 1)
 for scatter_idx in range(len(ie_scatters)):
@@ -50,22 +57,14 @@ ax1.scatter(ie_overshoots['x'], ie_overshoots['y'], marker='_', color='xkcd:grey
 
 ax1.plot(c_x, c_y, label='C')
 
-#for smooth in smooths:
+# for smooth in smooths:
 #    ax1.plot(smooths[smooth])
-
-#ax2 = plt.subplot(3, 1, 2, sharex=ax1)
-#ax2.plot(values)
-
-#ax3 = plt.subplot(3, 1, 3, sharex=ax1)
-#ax3.plot(leverages)
-
-#plt.plot(runner.os_times, runner.os_prices, label=f'OS')
+# ax2 = plt.subplot(3, 1, 2, sharex=ax1)
+# ax2.plot(values)
+# ax3 = plt.subplot(3, 1, 3, sharex=ax1)
+# ax3.plot(leverages)
+# plt.plot(runner.os_times, runner.os_prices, label=f'OS')
 plt.show()
-
-
-
-
-
 
 """
 smooth_periods = [600, 900]
@@ -101,11 +100,8 @@ for idx in range(len(runner.ie_times) - 1):
     leverages.append(sim.get_leverage(mark_price=mark_price))
 """
 
-
-quit()
-
-ax1 = plt.subplot(1, 1, 1)
-ax1.grid(True)
+# ax1 = plt.subplot(1, 1, 1)
+# ax1.grid(True)
 # plt.plot(times, prices, label=f'price')
 # plt.plot(times, asks, label=f'ask')
 # plt.plot(times, bids, label=f'bid')
@@ -114,11 +110,11 @@ ax1.grid(True)
 # plt.scatter(runner.dc_times, dc_prices, label=f'DC', s=7 ** 2)
 # plt.scatter(runner.ie_times, ie_prices, label=f'IE', s=5 ** 2)
 
-x = np.arange(0, len(ie_prices))
-
-plt.plot(x, ie_prices, label=f'IE')
-plt.scatter(x, ie_prices, label=f'IE')
-
-plt.legend()
-
-plt.show()
+# x = np.arange(0, len(ie_prices))
+#
+# plt.plot(x, ie_prices, label=f'IE')
+# plt.scatter(x, ie_prices, label=f'IE')
+#
+# plt.legend()
+#
+# plt.show()
