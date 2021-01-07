@@ -13,19 +13,10 @@ with open(f"cache/intrinsic_time_data.pickle", 'rb') as f:
 p = np.array(runner.ie_prices)
 runner.ie_prices = p + 0
 
-
 ie_scatters, ie_overshoots = make_ie_scatters(runner)
 
-pos_x = 20
-start_x = 0
 
-c_x = np.arange(0, pos_x - start_x)
-prices = runner.ie_prices[start_x:pos_x]
-r = stats.linregress(c_x, prices)
-c_y = c_x * r.slope + r.intercept
-
-
-def send(name, data):
+def live_plot(name, data):
     address = ('localhost', 27567)
     conn = Client(address, authkey=b'secret password')
     conn.send({'name': name,
@@ -33,38 +24,29 @@ def send(name, data):
     conn.close()
 
 
-send('ie_overshoots', ie_overshoots)
-send('ie_scatters', ie_scatters)
+live_plot('ie_overshoots', ie_overshoots)
+live_plot('ie_scatters', ie_scatters)
 
-send('botline1', {'x': [0, 50], 'y': [9000, 9050], 'color': 'xkcd:blue'})
-send('botline2', {'x': [0, 50], 'y': [9050, 9100], 'color': 'xkcd:red'})
-send('botline3', {'x': [0, 50], 'y': [9150, 9200], 'color': 'xkcd:green'})
 
-quit()
+def channel(start, stop, name):
+    start_x = start
+    pos_x = stop
 
-print(c_x)
-print(prices)
-print(r)
-print(c_y)
-# quit()
+    c_x = np.arange(start_x, pos_x)
+    prices = runner.ie_prices[start_x:pos_x]
+    r = stats.linregress(c_x, prices)
 
-ax1 = plt.subplot(1, 1, 1)
-for scatter_idx in range(len(ie_scatters)):
-    ie_scatter = ie_scatters[scatter_idx]
-    ax1.scatter(ie_scatter['x'], ie_scatter['y'], marker=ie_scatter['marker'], color=ie_scatter['color'], s=ie_scatter['size'])
+    c_x = np.array([start_x, pos_x - 1])
+    c_y = c_x * r.slope + r.intercept
 
-ax1.scatter(ie_overshoots['x'], ie_overshoots['y'], marker='_', color='xkcd:grey', s=40)
+    live_plot(f'channel_{name}_top', {'x': c_x, 'y': c_y, 'color': 'xkcd:blue'})
+    live_plot(f'channel_{name}_mid', {'x': c_x, 'y': c_y + 25, 'color': 'xkcd:green'})
+    live_plot(f'channel_{name}_bot', {'x': c_x, 'y': c_y - 25, 'color': 'xkcd:red'})
 
-ax1.plot(c_x, c_y, label='C')
 
-# for smooth in smooths:
-#    ax1.plot(smooths[smooth])
-# ax2 = plt.subplot(3, 1, 2, sharex=ax1)
-# ax2.plot(values)
-# ax3 = plt.subplot(3, 1, 3, sharex=ax1)
-# ax3.plot(leverages)
-# plt.plot(runner.os_times, runner.os_prices, label=f'OS')
-plt.show()
+channel(0, 25, 'a')
+channel(20, 52, 'b')
+
 
 """
 smooth_periods = [600, 900]
