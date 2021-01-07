@@ -15,20 +15,38 @@ runner.ie_prices = p + 0
 
 ie_scatters, ie_overshoots = make_ie_scatters(runner)
 
+data_buffer = []
 
-def live_plot(name, data):
+
+def send_data():
     address = ('localhost', 27567)
     conn = Client(address, authkey=b'secret password')
-    conn.send({'name': name,
-               'data': data})
+    conn.send(data_buffer)
     conn.close()
 
 
-live_plot('ie_overshoots', ie_overshoots)
+def append_data(name, data):
+    data_buffer.append({'name': name, 'data': data})
+
+
+def live_plot(name, data):
+    append_data(name, data)
+
+
+def clear_lines():
+    append_data('clear', None)
+
+
+def annotate(x, y, text):
+    append_data(f'annotate_{x}', {'x': x, 'y': y, 'text': text})
+
+
+clear_lines()
+# live_plot('ie_overshoots', ie_overshoots)
 live_plot('ie_scatters', ie_scatters)
 
 
-def channel(start, stop, name):
+def channel(start, stop, width, name):
     start_x = start
     pos_x = stop
 
@@ -40,13 +58,15 @@ def channel(start, stop, name):
     c_y = c_x * r.slope + r.intercept
 
     live_plot(f'channel_{name}_top', {'x': c_x, 'y': c_y, 'color': 'xkcd:blue'})
-    live_plot(f'channel_{name}_mid', {'x': c_x, 'y': c_y + 25, 'color': 'xkcd:green'})
-    live_plot(f'channel_{name}_bot', {'x': c_x, 'y': c_y - 25, 'color': 'xkcd:red'})
+    live_plot(f'channel_{name}_mid', {'x': c_x, 'y': c_y + width, 'color': 'xkcd:green'})
+    live_plot(f'channel_{name}_bot', {'x': c_x, 'y': c_y - width, 'color': 'xkcd:red'})
 
 
-channel(0, 25, 'a')
-channel(20, 52, 'b')
+channel(0, 25, 22, 'a')
+channel(20, 52, 18, 'b')
+annotate(55, 9154, 'breakout')
 
+send_data()
 
 """
 smooth_periods = [600, 900]
