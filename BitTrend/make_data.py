@@ -14,13 +14,13 @@ if __name__ == "__main__":
 
     ignore_date_ranges = []
     # [(string_to_datetime("2020-03-13 03:00:00.0"), string_to_datetime("2020-03-13 04:00:00.0"))]
-    start_timestamp = string_to_datetime("2020-06-12 00:00:00.0")
-    end_timestamp = string_to_datetime("2020-06-13 00:00:00.0")
+    start_timestamp = string_to_datetime("2020-07-01 00:00:00.0")
+    end_timestamp = string_to_datetime("2020-07-08 00:00:00.0")
 
     order_books = make_order_books(None, None)
     if order_books is None:
         agg_ticks = read_agg_ticks('C:/development/github/puffin-trader/tmp/',
-                                   ['agg_ticks_1.csv', 'agg_ticks_2.csv', 'agg_ticks_3.csv'],
+                                   ['binance_agg_ticks.csv'],
                                    start_timestamp=start_timestamp,
                                    end_timestamp=end_timestamp,
                                    ignore_date_ranges=ignore_date_ranges)
