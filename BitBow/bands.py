@@ -89,6 +89,29 @@ if __name__ == '__main__':
     rainbow_bottom_params = rainbow_regression(timestamps_bottom, prices_bottom)
     rainbow_bottom = rainbow_generate(timestamps, rainbow_bottom_params)
 
+    """
+    timestamps_next = [string_to_datetime("2011-06-07 00:00:00.0"),
+                       string_to_datetime("2013-12-04 00:00:00.0"),
+                       string_to_datetime("2017-12-17 00:00:00.0"),
+                       string_to_datetime("2021-12-17 00:00:00.0"),
+                       string_to_datetime("2025-12-17 00:00:00.0"),
+                       string_to_datetime("2029-12-17 00:00:00.0"),
+                       string_to_datetime("2034-12-17 00:00:00.0")]
+    rainbow_next = rainbow_generate(timestamps_next, rainbow_bottom_params)
+    for price in rainbow_next * np.array([48, 24, 12, 6, 3, 1.5, 0.75]): # * 8.2:
+        print(price)
+    quit()
+    """
+
+    """
+    timestamps = [string_to_datetime("2011-06-07 00:00:00.0"),
+                  string_to_datetime("2013-12-04 00:00:00.0"),
+                  string_to_datetime("2017-12-17 00:00:00.0")]
+    rainbow_bottom = rainbow_generate(timestamps, rainbow_bottom_params)
+    print(rainbow_bottom)
+    quit()
+    """
+
     timestamps_top = [string_to_datetime("2011-11-20 00:00:00.0"),
                       string_to_datetime("2013-11-30 00:00:00.0"),
                       string_to_datetime("2017-12-17 00:00:00.0")]
@@ -96,10 +119,11 @@ if __name__ == '__main__':
     rainbow_top_params = rainbow_regression(timestamps_top, prices_top)
     rainbow_top = rainbow_generate(timestamps, rainbow_top_params)
 
-    o_timestamps_top = [string_to_datetime("2012-11-21 00:00:00.0"),
-                      string_to_datetime("2016-07-10 00:00:00.0"),
-                      string_to_datetime("2020-05-09 00:00:00.0")]
-    o_prices_top = [36.0, 1830.0, 23350.0]
+    """
+    o_timestamps_top = [string_to_datetime("2012-11-14 00:00:00.0"),
+                      string_to_datetime("2016-07-11 00:00:00.0"),
+                      string_to_datetime("2020-05-11 00:00:00.0")]
+    o_prices_top = [138.0, 6400.0, 79500.0]
     o_rainbow_top_params = rainbow_regression(o_timestamps_top, o_prices_top)
     o_rainbow_top = rainbow_generate(timestamps, o_rainbow_top_params)
 
@@ -110,33 +134,36 @@ if __name__ == '__main__':
     o_rainbow_mid_params = rainbow_regression(o_timestamps_mid, o_prices_mid)
     o_rainbow_mid = rainbow_generate(timestamps, o_rainbow_mid_params)
 
-    o_timestamps_bot = [string_to_datetime("2012-11-21 00:00:00.0"),
-                      string_to_datetime("2016-07-10 00:00:00.0"),
-                      string_to_datetime("2020-05-09 00:00:00.0")]
-    o_prices_bot = [36.0, 1830.0, 23350.0]
+    o_timestamps_bot = [string_to_datetime("2012-11-22 00:00:00.0"),
+                      string_to_datetime("2016-07-08 00:00:00.0"),
+                      string_to_datetime("2020-05-02 00:00:00.0")]
+    o_prices_bot = [9.4, 520.0, 6700.0]
     o_rainbow_bot_params = rainbow_regression(o_timestamps_bot, o_prices_bot)
     o_rainbow_bot = rainbow_generate(timestamps, o_rainbow_bot_params)
+    """
 
+    """
     rainbow_params = rainbow_regression(timestamps[start_idx:end_idx], prices[start_idx:end_idx])
     timestamps_2021 = timestamps
     rainbow_2021 = rainbow_generate(timestamps_2021, rainbow_params)
 
     timestamps_short = timestamps[start_idx:end_idx]
     rainbow_short = rainbow_generate(timestamps_short, rainbow_params)
+    """
 
     ax1 = plt.subplot(1, 1, 1)
     ax1.grid(True)
     plt.yscale('log')
     plt.plot(timestamps, prices, label=f'Price')
     # plt.plot(timestamps_2014, rainbow_2014, label=f'Rainbow 2014')
-    plt.plot(timestamps_2021, rainbow_2021, label=f'Rainbow 2021')
-    plt.plot(timestamps_short, rainbow_short, label=f'Rainbow short')
+    # plt.plot(timestamps_2021, rainbow_2021, label=f'Rainbow 2021')
+    # plt.plot(timestamps_short, rainbow_short, label=f'Rainbow short')
     plt.plot(timestamps, rainbow_bottom, label=f'Rainbow bottom')
     plt.plot(timestamps, rainbow_top, label=f'Rainbow top')
     plt.plot(timestamps, np.exp((np.log(rainbow_bottom) + np.log(rainbow_top)) / 2), label=f'Rainbow mid')
-    plt.plot(timestamps, o_rainbow_top, label=f'Orig Rainbow top')
-    plt.plot(timestamps, o_rainbow_mid, label=f'Orig Rainbow mid')
-    plt.plot(timestamps, o_rainbow_bot, label=f'Orig Rainbow bot')
+    # plt.plot(timestamps, o_rainbow_top, label=f'Orig Rainbow top')
+    # plt.plot(timestamps, o_rainbow_mid, label=f'Orig Rainbow mid')
+    # plt.plot(timestamps, o_rainbow_bot, label=f'Orig Rainbow bot')
     plt.scatter(timestamps_bottom, prices_bottom, label=f'Rainbow bottom', c='red')
     plt.legend()
     plt.show()
