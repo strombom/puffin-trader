@@ -11,14 +11,6 @@ from make_data import get_data
 bitcoin_inception = string_to_datetime("2009-01-09 00:00:00.0")
 
 
-""""
-def rainbow_prices(timestamp):
-    days_since_inception = (timestamp - bitcoin_inception).days
-    rainbow = 10 ** (2.9065 * math.log(days_since_inception) - 19.493)
-    print(rainbow)
-"""
-
-
 def rainbow_regression_f(x, prices, timestamps):
     y = []
     for timestamp in timestamps:
@@ -41,15 +33,11 @@ def rainbow_generate(timestamps, params):
     prices = []
     for timestamp in timestamps:
         price = 10 ** (params[0] * math.log((timestamp - bitcoin_inception).days) + params[1])
-        prices.append((price))
-        # price = np.power(10, params[0] * np.log(np.arange(timestamps.shape[0]) / 24 + days_since_inception) + params[1])
+        prices.append(price)
     return np.array(prices)
 
 
 if __name__ == '__main__':
-    # print(rainbow_prices(string_to_datetime("2020-01-01 00:00:00.0")))
-    # quit()
-
     timestamps_bitstamp, prices = get_data()
     timestamps_bitstamp, prices = np.array(timestamps_bitstamp), np.array(prices)
     print(f'start {timestamps_bitstamp[0]} - end {timestamps_bitstamp[-1]}')
@@ -74,15 +62,6 @@ if __name__ == '__main__':
 
     print(f'start {timestamps_bitstamp[start_idx]} - end {timestamps_bitstamp[end_idx]}')
 
-    # timestamps_2021 = timestamps[start_idx:end_idx]
-    # rainbow_2021 = rainbow_generate(timestamps_2021, [2.9065, 19.493])
-
-    # rainbow_2014 = []
-    # for timestamp in timestamps_2014:
-    #     days_since_inception = (timestamp - bitcoin_inception).days
-    #     r = 10 ** (2.9065 * math.log(days_since_inception) - 19.493)
-    #     rainbow_2014.append(r)
-
     timestamps_top = [string_to_datetime("2011-06-08 00:00:00.0"),
                       string_to_datetime("2013-11-30 00:00:00.0"),
                       string_to_datetime("2017-12-17 00:00:00.0")]
@@ -90,112 +69,60 @@ if __name__ == '__main__':
     rainbow_top_params = rainbow_regression(timestamps_top, prices_top)
     rainbow_top = rainbow_generate(timestamps_extended, rainbow_top_params)
 
+    timestamps_bot = [string_to_datetime("2012-10-27 00:00:00.0"),
+                      string_to_datetime("2015-08-24 00:00:00.0"),
+                      string_to_datetime("2020-03-23 00:00:00.0")]
+    prices_bot = [9.5, 202.0, 5816.0]
+    regr_bot_params = rainbow_regression(timestamps_bot, prices_bot)
+    rainbow_bot = rainbow_generate(timestamps_extended, regr_bot_params)
+
+    print("Tops")
     for timestamp_find in timestamps_top:
         for timestamp, price in zip(timestamps_extended, rainbow_top):
             if timestamp > timestamp_find:
-                print(timestamp, price)
+                print(" ", timestamp, price)
                 break
 
-    timestamps_bottom = [string_to_datetime("2012-10-27 00:00:00.0"),
-                         string_to_datetime("2015-08-24 00:00:00.0"),
-                         string_to_datetime("2020-03-23 00:00:00.0")]
-    prices_bottom = [9.5, 202.0, 5816.0]
-    regr_bottom_params = rainbow_regression(timestamps_bottom, prices_bottom)
-    regr_bottom = rainbow_generate(timestamps_extended, regr_bottom_params)
+    print("Bots")
+    for timestamp_find in timestamps_bot:
+        for timestamp, price in zip(timestamps_extended, rainbow_bot):
+            if timestamp > timestamp_find:
+                print(" ", timestamp, price)
+                break
 
-    # rainbow_params = rainbow_regression(timestamps_bitstamp[start_idx:end_idx], prices[start_idx:end_idx])
-    # rainbow_2021 = rainbow_generate(timestamps_extended, rainbow_params)
-    #
-    # timestamps_short = timestamps_bitstamp[start_idx:end_idx]
-    # rainbow_short = rainbow_generate(timestamps_short, rainbow_params)
-    #
-    # factors = []
-    # for timestamp in timestamps_extended:
-    #     # price = 10 ** (params[0] * math.log((timestamp - bitcoin_inception).days) + params[1])
-    #     days = (timestamp - bitcoin_inception).days
-    #     factors.append(math.pow(0.5, (days - 850) / (4 * 365)) * 20)
-    # rainbow_top = rainbow_2021 * factors
-    #
-    # factors = []
-    # for timestamp in timestamps_extended:
-    #     # price = 10 ** (params[0] * math.log((timestamp - bitcoin_inception).days) + params[1])
-    #     days = (timestamp - bitcoin_inception).days
-    #     factors.append(38.1 * days ** -0.3727)
-    # rainbow_bot = rainbow_2021 / factors
-    # # print(np.array(factors))
+    rainbow_n = 7
+    log_top, log_bot = np.log(rainbow_top), np.log(rainbow_bot)
+    log_diff = (log_top - log_bot) / (rainbow_n - 2)
+    log_bot = log_bot - log_diff
+    log_diffs = np.arange(rainbow_n + 1)[..., np.newaxis] * log_diff
+    rainbows = np.exp(log_diffs + log_bot)
 
-    """
-    timestamps_next = [string_to_datetime("2011-06-07 00:00:00.0"),
-                       string_to_datetime("2013-12-04 00:00:00.0"),
-                       string_to_datetime("2017-12-17 00:00:00.0"),
-                       string_to_datetime("2021-12-17 00:00:00.0"),
-                       string_to_datetime("2025-12-17 00:00:00.0"),
-                       string_to_datetime("2029-12-17 00:00:00.0"),
-                       string_to_datetime("2034-12-17 00:00:00.0")]
-    rainbow_next = rainbow_generate(timestamps_next, rainbow_bottom_params)
-    for price in rainbow_next * np.array([48, 24, 12, 6, 3, 1.5, 0.75]): # * 8.2:
-        print(price)
-    quit()
-    """
+    cmap = plt.get_cmap('rainbow')
+    cmap.set_under('white')
 
-    """
-    timestamps = [string_to_datetime("2011-06-07 00:00:00.0"),
-                  string_to_datetime("2013-12-04 00:00:00.0"),
-                  string_to_datetime("2017-12-17 00:00:00.0")]
-    rainbow_bottom = rainbow_generate(timestamps, rainbow_bottom_params)
-    print(rainbow_bottom)
-    quit()
-    """
-
-    """
-    o_timestamps_top = [string_to_datetime("2012-11-14 00:00:00.0"),
-                      string_to_datetime("2016-07-11 00:00:00.0"),
-                      string_to_datetime("2020-05-11 00:00:00.0")]
-    o_prices_top = [138.0, 6400.0, 79500.0]
-    o_rainbow_top_params = rainbow_regression(o_timestamps_top, o_prices_top)
-    o_rainbow_top = rainbow_generate(timestamps, o_rainbow_top_params)
-
-    o_timestamps_mid = [string_to_datetime("2012-11-21 00:00:00.0"),
-                      string_to_datetime("2016-07-10 00:00:00.0"),
-                      string_to_datetime("2020-05-09 00:00:00.0")]
-    o_prices_mid = [36.0, 1830.0, 23350.0]
-    o_rainbow_mid_params = rainbow_regression(o_timestamps_mid, o_prices_mid)
-    o_rainbow_mid = rainbow_generate(timestamps, o_rainbow_mid_params)
-
-    o_timestamps_bot = [string_to_datetime("2012-11-22 00:00:00.0"),
-                      string_to_datetime("2016-07-08 00:00:00.0"),
-                      string_to_datetime("2020-05-02 00:00:00.0")]
-    o_prices_bot = [9.4, 520.0, 6700.0]
-    o_rainbow_bot_params = rainbow_regression(o_timestamps_bot, o_prices_bot)
-    o_rainbow_bot = rainbow_generate(timestamps, o_rainbow_bot_params)
-    """
-
-    # diff = np.log(prices) - np.log(rainbow_2021)
-    # print(diff)
-    # quit()
-
-    #bot2 = rainbow_2021 * 0.5
-
-    f, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-
-    # ax1 = plt.subplot(2, 1, 1)
+    f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', gridspec_kw={'height_ratios': [3, 1]})
     ax1.grid(True)
     ax1.set_yscale('log')
-    ax1.plot(timestamps_bitstamp, prices, label=f'Price')
+
+    for n in range(rainbow_n):
+        ax1.fill_between(timestamps_extended, rainbows[n], rainbows[n + 1],
+                         facecolor=cmap(n / rainbow_n),
+                         alpha=0.95)
+
+    ax1.plot(timestamps_bitstamp, prices, label=f'Price', c='white')
+    # ax1.plot(timestamps_extended, rainbow_bot, label=f'Rainbow bot')
+    # ax1.plot(timestamps_extended, rainbow_top, label=f'Rainbow top')
     # plt.plot(timestamps_2014, rainbow_2014, label=f'Rainbow 2014')
     # ax1.plot(timestamps_extended, rainbow_2021, label=f'Rainbow 2021')
     # ax1.plot(timestamps_short, rainbow_short, label=f'Rainbow short')
-    ax1.plot(timestamps_extended, regr_bottom, label=f'Regr bottom')
-    ax1.plot(timestamps_extended, rainbow_top, label=f'Rainbow top')
     # ax1.plot(timestamps_2021, rainbow_bot, label=f'Rainbow bot')
     # ax1.plot(timestamps, np.exp((np.log(rainbow_bottom) + np.log(rainbow_top)) / 2), label=f'Rainbow mid')
     # plt.plot(timestamps, o_rainbow_top, label=f'Orig Rainbow top')
     # plt.plot(timestamps, o_rainbow_mid, label=f'Orig Rainbow mid')
     # plt.plot(timestamps, o_rainbow_bot, label=f'Orig Rainbow bot')
-    ax1.scatter(timestamps_bottom, prices_bottom, label=f'Rainbow bottom', c='red')
+    # ax1.scatter(timestamps_bottom, prices_bottom, label=f'Rainbow bottom', c='red')
     ax1.legend()
 
-    # ax2 = plt.subplot(2, 1, 2)
     ax2.grid(True)
     # ax1.set_yscale('lin')
     # ax2.plot(timestamps, diff, label=f'Diff')
@@ -205,3 +132,79 @@ if __name__ == '__main__':
     plt.show()
 
 # 10^(2.9065  * ln((number of days since 2009 Jan 09)/days) - 19.493)
+
+# timestamps_2021 = timestamps[start_idx:end_idx]
+# rainbow_2021 = rainbow_generate(timestamps_2021, [2.9065, 19.493])
+
+# rainbow_2014 = []
+# for timestamp in timestamps_2014:
+#     days_since_inception = (timestamp - bitcoin_inception).days
+#     r = 10 ** (2.9065 * math.log(days_since_inception) - 19.493)
+#     rainbow_2014.append(r)
+
+# rainbow_params = rainbow_regression(timestamps_bitstamp[start_idx:end_idx], prices[start_idx:end_idx])
+# rainbow_2021 = rainbow_generate(timestamps_extended, rainbow_params)
+#
+# timestamps_short = timestamps_bitstamp[start_idx:end_idx]
+# rainbow_short = rainbow_generate(timestamps_short, rainbow_params)
+#
+# factors = []
+# for timestamp in timestamps_extended:
+#     # price = 10 ** (params[0] * math.log((timestamp - bitcoin_inception).days) + params[1])
+#     days = (timestamp - bitcoin_inception).days
+#     factors.append(math.pow(0.5, (days - 850) / (4 * 365)) * 20)
+# rainbow_top = rainbow_2021 * factors
+#
+# factors = []
+# for timestamp in timestamps_extended:
+#     # price = 10 ** (params[0] * math.log((timestamp - bitcoin_inception).days) + params[1])
+#     days = (timestamp - bitcoin_inception).days
+#     factors.append(38.1 * days ** -0.3727)
+# rainbow_bot = rainbow_2021 / factors
+# # print(np.array(factors))
+
+"""
+timestamps_next = [string_to_datetime("2011-06-07 00:00:00.0"),
+                   string_to_datetime("2013-12-04 00:00:00.0"),
+                   string_to_datetime("2017-12-17 00:00:00.0"),
+                   string_to_datetime("2021-12-17 00:00:00.0"),
+                   string_to_datetime("2025-12-17 00:00:00.0"),
+                   string_to_datetime("2029-12-17 00:00:00.0"),
+                   string_to_datetime("2034-12-17 00:00:00.0")]
+rainbow_next = rainbow_generate(timestamps_next, rainbow_bottom_params)
+for price in rainbow_next * np.array([48, 24, 12, 6, 3, 1.5, 0.75]): # * 8.2:
+    print(price)
+quit()
+"""
+
+"""
+timestamps = [string_to_datetime("2011-06-07 00:00:00.0"),
+              string_to_datetime("2013-12-04 00:00:00.0"),
+              string_to_datetime("2017-12-17 00:00:00.0")]
+rainbow_bottom = rainbow_generate(timestamps, rainbow_bottom_params)
+print(rainbow_bottom)
+quit()
+"""
+
+"""
+o_timestamps_top = [string_to_datetime("2012-11-14 00:00:00.0"),
+                  string_to_datetime("2016-07-11 00:00:00.0"),
+                  string_to_datetime("2020-05-11 00:00:00.0")]
+o_prices_top = [138.0, 6400.0, 79500.0]
+o_rainbow_top_params = rainbow_regression(o_timestamps_top, o_prices_top)
+o_rainbow_top = rainbow_generate(timestamps, o_rainbow_top_params)
+
+o_timestamps_mid = [string_to_datetime("2012-11-21 00:00:00.0"),
+                  string_to_datetime("2016-07-10 00:00:00.0"),
+                  string_to_datetime("2020-05-09 00:00:00.0")]
+o_prices_mid = [36.0, 1830.0, 23350.0]
+o_rainbow_mid_params = rainbow_regression(o_timestamps_mid, o_prices_mid)
+o_rainbow_mid = rainbow_generate(timestamps, o_rainbow_mid_params)
+
+o_timestamps_bot = [string_to_datetime("2012-11-22 00:00:00.0"),
+                  string_to_datetime("2016-07-08 00:00:00.0"),
+                  string_to_datetime("2020-05-02 00:00:00.0")]
+o_prices_bot = [9.4, 520.0, 6700.0]
+o_rainbow_bot_params = rainbow_regression(o_timestamps_bot, o_prices_bot)
+o_rainbow_bot = rainbow_generate(timestamps, o_rainbow_bot_params)
+"""
