@@ -1,7 +1,10 @@
 import math
+import pickle
+
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import timedelta
+from matplotlib.ticker import ScalarFormatter
 from scipy.optimize import leastsq
 
 from Common.Misc import string_to_datetime
@@ -97,37 +100,29 @@ if __name__ == '__main__':
     log_diffs = np.arange(rainbow_n + 1)[..., np.newaxis] * log_diff
     rainbows = np.exp(log_diffs + log_bot)
 
-    cmap = plt.get_cmap('rainbow')
-    cmap.set_under('white')
+    with open(f"cache/rainbow.pickle", 'wb') as f:
+        pickle.dump((timestamps_extended, rainbows, timestamps_bitstamp, prices), f, pickle.HIGHEST_PROTOCOL)
 
-    f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', gridspec_kw={'height_ratios': [3, 1]})
+    f, ax1 = plt.subplots(1, 1, sharex='all', gridspec_kw={'height_ratios': [1]})
     ax1.grid(True)
     ax1.set_yscale('log')
+    ax1.yaxis.set_major_formatter(ScalarFormatter())
+    ax1.ticklabel_format(axis='y', style='plain')
 
     for n in range(rainbow_n):
         ax1.fill_between(timestamps_extended, rainbows[n], rainbows[n + 1],
-                         facecolor=cmap(n / rainbow_n),
-                         alpha=0.95)
+                         facecolor=plt.get_cmap('gist_rainbow')((rainbow_n - 1 - n) / rainbow_n),
+                         alpha=0.55)
 
-    ax1.plot(timestamps_bitstamp, prices, label=f'Price', c='white')
-    # ax1.plot(timestamps_extended, rainbow_bot, label=f'Rainbow bot')
-    # ax1.plot(timestamps_extended, rainbow_top, label=f'Rainbow top')
-    # plt.plot(timestamps_2014, rainbow_2014, label=f'Rainbow 2014')
-    # ax1.plot(timestamps_extended, rainbow_2021, label=f'Rainbow 2021')
-    # ax1.plot(timestamps_short, rainbow_short, label=f'Rainbow short')
-    # ax1.plot(timestamps_2021, rainbow_bot, label=f'Rainbow bot')
-    # ax1.plot(timestamps, np.exp((np.log(rainbow_bottom) + np.log(rainbow_top)) / 2), label=f'Rainbow mid')
-    # plt.plot(timestamps, o_rainbow_top, label=f'Orig Rainbow top')
-    # plt.plot(timestamps, o_rainbow_mid, label=f'Orig Rainbow mid')
-    # plt.plot(timestamps, o_rainbow_bot, label=f'Orig Rainbow bot')
-    # ax1.scatter(timestamps_bottom, prices_bottom, label=f'Rainbow bottom', c='red')
+    ax1.plot(timestamps_bitstamp, prices, c='white', linewidth=1.0)
+    ax1.plot(timestamps_bitstamp, prices, c='black', linewidth=0.5, label=f'Price')
     ax1.legend()
 
-    ax2.grid(True)
+    # ax2.grid(True)
     # ax1.set_yscale('lin')
     # ax2.plot(timestamps, diff, label=f'Diff')
     # ax2.fill_between(timestamps, 0, diff)
-    ax2.legend()
+    # ax2.legend()
 
     plt.show()
 
