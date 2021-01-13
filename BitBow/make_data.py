@@ -7,7 +7,7 @@ from Common.Misc import string_to_datetime
 
 
 def make_data():
-    file_path = f"C:/Users/Johan/Downloads/bitstampUSD.csv/.bitstampUSD.csv"
+    file_path = f"C:/Users/jst/Downloads/bitstampUSD.csv/.bitstampUSD.csv"
     last_hour = string_to_datetime("2011-09-14 00:00:00.0")
 
     timestamps, prices = [], []
