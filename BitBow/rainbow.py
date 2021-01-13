@@ -40,6 +40,21 @@ def rainbow_generate(timestamps, params):
     return np.array(prices)
 
 
+def rainbow_indicator_load_params():
+    with open(f"cache/rainbow_params.pickle", 'rb') as f:
+        params = pickle.load(f)
+    return params
+
+
+def rainbow_indicator(params, timestamp, price, rainbow_n=7):
+    rainbow_top = 10 ** (params[0][0] * math.log((timestamp - bitcoin_inception).days) + params[0][1])
+    rainbow_bot = 10 ** (params[1][0] * math.log((timestamp - bitcoin_inception).days) + params[1][1])
+    log_top, log_bot = math.log(rainbow_top), math.log(rainbow_bot)
+    step_size = (log_top - log_bot) / (rainbow_n - 2)
+    log_top, log_bot = log_top + step_size, log_bot - step_size
+    return (math.log(price) - log_bot) / (log_top - log_bot)
+
+
 if __name__ == '__main__':
     timestamps_bitstamp, prices = get_data()
     timestamps_bitstamp, prices = np.array(timestamps_bitstamp), np.array(prices)
@@ -78,6 +93,9 @@ if __name__ == '__main__':
     prices_bot = [9.5, 202.0, 5816.0]
     regr_bot_params = rainbow_regression(timestamps_bot, prices_bot)
     rainbow_bot = rainbow_generate(timestamps_extended, regr_bot_params)
+
+    with open(f"cache/rainbow_params.pickle", 'wb') as f:
+        pickle.dump((rainbow_top_params, regr_bot_params), f, pickle.HIGHEST_PROTOCOL)
 
     print("Tops")
     for timestamp_find in timestamps_top:
