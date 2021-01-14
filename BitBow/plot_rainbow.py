@@ -12,13 +12,12 @@ if __name__ == '__main__':
 
     rainbow_params = rainbow_indicator_load_params()
 
-    #a = rainbow_indicator(rainbow_params, string_to_datetime("2021-01-13 00:00:00.0"), 35000.0)
+    # a = rainbow_indicator(rainbow_params, string_to_datetime("2021-01-13 00:00:00.0"), 35000.0)
     rainbow_indicators = []
     for timestamp, price in zip(timestamps_bitstamp, prices_bitstamp):
         rainbow_indicators.append(rainbow_indicator(rainbow_params, timestamp, price))
 
     # BitmexSimulator
-
 
     f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', gridspec_kw={'height_ratios': [3, 1]})
     ax1.grid(True)
@@ -32,8 +31,8 @@ if __name__ == '__main__':
                          alpha=0.55)
 
     ax1.plot(timestamps_bitstamp, prices_bitstamp, c='white', linewidth=1.0)
-    ax1.plot(timestamps_bitstamp, prices_bitstamp, c='black', linewidth=0.5, label=f'Price')
-    ax1.legend()
+    ax1.plot(timestamps_bitstamp, prices_bitstamp, c='black', linewidth=0.5, label=f'Bitcoin price')
+    ax1.legend(loc='upper left')
 
     ax2.grid(True)
     # ax2.set_yscale('lin')
@@ -41,6 +40,6 @@ if __name__ == '__main__':
     # ax2.plot(timestamps, diff, label=f'Diff')
     # ax2.fill_between(timestamps, 0, diff)
     ax2.set_ylim([0, 1])
-    ax2.legend()
+    ax2.legend(loc='upper left')
 
     plt.show()
