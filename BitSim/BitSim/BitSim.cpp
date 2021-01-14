@@ -39,37 +39,53 @@ int main()
         bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
     }
     else if (command == "find_direction_changes") {
-        /*
+        std::cout << "Find direction changes (" << DateTime::to_string_iso_8601(BitSim::timestamp_start) << " - " << DateTime::to_string_iso_8601(BitSim::timestamp_end) << ")" << std::endl;
+
         {
-            auto bitbase_client = BitBaseClient();
-            auto bitmex_ticks = bitbase_client.get_ticks("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end);
-            bitmex_ticks->save(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
+            constexpr auto date_step_size = date::months{ 3 };
+            auto timestamp_start = BitSim::timestamp_start;
+            auto timestamp_end = timestamp_start + date_step_size;
+
+            for (auto file_idx = 0; timestamp_start < BitSim::timestamp_end; file_idx++) {
+                std::cout << "Get ticks (" << DateTime::to_string_iso_8601(timestamp_start) << " - " << DateTime::to_string_iso_8601(timestamp_end) << std::endl;
+
+                auto bitbase_client = BitBaseClient();
+                auto bitmex_ticks = bitbase_client.get_ticks("BTCUSDT", "BINANCE", timestamp_start, timestamp_end);
+                bitmex_ticks->save(std::string{ BitSim::tmp_path } + "\\binance_ticks_" + std::to_string(file_idx)+ ".dat");
+
+                timestamp_start = timestamp_end;
+                if (timestamp_end + date_step_size > BitSim::timestamp_end) {
+                    timestamp_end = BitSim::timestamp_end;
+                } else {
+                    timestamp_end += date_step_size;
+                }
+            }
         }
 
-        auto bitmex_ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\bitmex_ticks.dat");
-        auto bitmex_agg_ticks = AggTicks{ bitmex_ticks };
-        bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
-
-        */
-        auto agg_ticks = std::make_shared<AggTicks>(std::string{ BitSim::tmp_path } + "\\bitmex_agg_ticks.dat");
-        for (auto delta : BitSim::PriceDirection::deltas) {
-            auto pd_events = PD_Events{ delta, agg_ticks };
-            pd_events.plot_events(agg_ticks, std::string{ "events_" } + std::to_string(delta));
+        auto bitmex_agg_ticks = AggTicks{};
+        for (auto file_idx = 0; ; file_idx++) {
+            auto bitmex_ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\binance_ticks_" + std::to_string(file_idx) + ".dat");
+            if (bitmex_ticks->rows.size()) {
+                bitmex_agg_ticks.insert(bitmex_ticks);
+            }
+            else {
+                break;
+            }
         }
-
-        /*
-        auto file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\events.csv" };
-        for (auto idx = 0; idx < pd_events.events.size(); idx++) {
-            const auto& event = pd_events.events[idx];
-            const auto& event_offset = pd_events.events_offset[idx];
-            file << event.timestamp.time_since_epoch().count() << ",";
-            file << event.price << ",";
-            file << event.price_min << ",";
-            file << event.price_max << ",";
-            file << event_offset.price << std::endl;
+        bitmex_agg_ticks.save(std::string{ BitSim::tmp_path } + "\\binance_agg_ticks.dat");
+        
+        auto file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\binance_agg_ticks.csv" };
+        for (auto& agg_tick : bitmex_agg_ticks.agg_ticks) {
+            file << agg_tick.timestamp.time_since_epoch().count() / 1000 << ",";
+            file << agg_tick.high << ",";
+            file << agg_tick.low << ",";
+            file << agg_tick.volume << std::endl;
         }
         file.close();
-        */
+
+        std::cout << "Saved binance_agg_ticks.csv" << std::endl;
+        std::cout << "start: " << DateTime::to_string_iso_8601(bitmex_agg_ticks.agg_ticks.front().timestamp) << std::endl;
+        std::cout << "end:   " << DateTime::to_string_iso_8601(bitmex_agg_ticks.agg_ticks.back().timestamp) << std::endl;
 
         //auto bitbase_client = BitBaseClient();
         //auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);

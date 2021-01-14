@@ -36,8 +36,13 @@ AggTicks::AggTicks(void) :
 
 }
 
-AggTicks::AggTicks(sptrTicks ticks) :
+AggTicks::AggTicks(const sptrTicks ticks) :
     pending_agg_tick_valid(false)
+{
+    insert(ticks);
+}
+
+void AggTicks::insert(const sptrTicks ticks)
 {
     for (auto&& tick : ticks->rows) {
         insert(tick);

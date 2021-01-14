@@ -46,7 +46,7 @@ class AggTicks
 {
 public:
     AggTicks(void);
-    AggTicks(sptrTicks ticks);
+    AggTicks(const sptrTicks ticks);
     AggTicks(const std::string filename_path);
 
     std::vector<AggTick> agg_ticks;
@@ -60,7 +60,8 @@ public:
     void save(const std::string& filename_path) const;
     void load(const std::string& filename_path);
 
-    void insert(const Tick &tick);
+    void insert(const Tick& tick);
+    void insert(const sptrTicks ticks);
 };
 
 using sptrAggTicks = std::shared_ptr<AggTicks>;
