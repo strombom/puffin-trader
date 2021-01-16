@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     print(f'Order books ({len(order_books)}) {order_books[0].timestamp} - {order_books[-1].timestamp}')
 
-    delta = 0.002
+    delta = 0.005
     runner = Runner(delta=delta, order_book=order_books[0])
     for order_book in order_books:
         runner.step(order_book)

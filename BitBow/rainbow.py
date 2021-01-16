@@ -3,7 +3,7 @@ import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import timedelta
+from datetime import datetime, timedelta
 from matplotlib.ticker import ScalarFormatter
 from scipy.optimize import leastsq
 
@@ -46,7 +46,7 @@ def rainbow_indicator_load_params():
     return params
 
 
-def rainbow_indicator(params, timestamp, price, rainbow_n=7):
+def rainbow_indicator(params, timestamp: datetime, price, rainbow_n=7):
     rainbow_top = 10 ** (params[0][0] * math.log((timestamp - bitcoin_inception).days) + params[0][1])
     rainbow_bot = 10 ** (params[1][0] * math.log((timestamp - bitcoin_inception).days) + params[1][1])
     log_top, log_bot = math.log(rainbow_top), math.log(rainbow_bot)
