@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     # runner.os_prices = np.array(runner.os_prices)
     # runner.dc_prices = np.array(runner.dc_prices)
-    runner.ie_prices = np.array(runner.ie_prices)
+    runner.ie_prices = np.array(runner.ie_prices)[0:2000]
     x = np.arange(runner.ie_prices.shape[0])
 
     rainbow_params = rainbow_indicator_load_params()
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         smooths[smooth_period] = smooth
 
     p = np.array(runner.ie_prices)
-    f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', gridspec_kw={'height_ratios': [3, 1]})
+    f, (ax1) = plt.subplots(1, 1, sharex='all', gridspec_kw={'height_ratios': [1]})
     # ax1 = plt.subplot(2, 1, 1)
     ax1.grid(True)
     ax1.set_yscale('log')
@@ -51,10 +51,8 @@ if __name__ == '__main__':
         ax1.plot(x, smooth, label=f'Smooth {smooth_period}')
 
     # ax2 = plt.subplot(2, 1, 2)
-    ax2.set_ylim((0, 1))
-    ax2.plot(x, rainbow, label=f'Rainbow')
-
-
+    # ax2.set_ylim((0, 1))
+    # ax2.plot(x, rainbow, label=f'Rainbow')
 
     # plt.scatter(runner.ie_times, runner.ie_min_asks, label=f'Min Asks', s=5 ** 2)
     # plt.scatter(runner.ie_times, runner.ie_max_bids, label=f'Max Bids', s=5 ** 2)
@@ -62,5 +60,3 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.show()
-
-

@@ -60,6 +60,6 @@ if __name__ == '__main__':
     """
 
     with open(f"cache/intrinsic_time_runner.pickle", 'wb') as f:
-        pickle.dump((delta, runner), f, pickle.HIGHEST_PROTOCOL)
+        pickle.dump((delta, runner), f)
 
     print(len(runner.ie_times))
