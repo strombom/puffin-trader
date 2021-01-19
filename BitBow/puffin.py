@@ -65,7 +65,6 @@ if __name__ == '__main__':
     def estimate_slope(start, stop):
         c_x = np.arange(start, stop)
         r = stats.linregress(c_x, runner.ie_prices[start:stop])
-        # print('slope', r.slope)
         return c_x, c_x * r.slope + r.intercept
 
 
@@ -75,7 +74,7 @@ if __name__ == '__main__':
         PositionDirection.short: {'x': [], 'y': []}
     }
 
-    first_idx = 100
+    first_idx = 96
     simulator = Simulator()
     direction = PositionDirection.short
     state = 'estimate_slope'
@@ -88,11 +87,28 @@ if __name__ == '__main__':
     values = []
 
 
-    def find_best_fit(idx: int):
-        pass
+    def find_best_fit(idx_start: int, idx_end: int):
+        xs, ys = [], []
+        for l in range(idx_end - idx_start, 10, -1):
+            slope_x, slope_y = estimate_slope(idx_end - l, idx_end)
+            max_d = 0
+            for x, y in zip(slope_x, slope_y):
+                d = abs(runner.ie_prices[x] - y)
+                max_d = max(max_d, d)
+            xs.append(slope_x[0])
+            ys.append(max_d / slope_y[0] * 100 - l / 75)
 
+        min_x_idx = ys.index(min(ys))
+        print(xs[min_x_idx])
+        slope = estimate_slope(xs[min_x_idx], idx_end)
+        mindicator = (xs, ys)
+        return mindicator, slope
 
-    find_best_fit(first_idx)
+    # find_best_fit(first_idx - 70, first_idx)
+    # find_best_fit(100, 150)
+
+    # for s in range(25, 500, 20):
+    #     find_best_fit(s, s + 70)
 
     for idx, ie_price in enumerate(runner.ie_prices[:first_idx]):
         values.append(simulator.get_value(ie_price))
@@ -133,14 +149,14 @@ if __name__ == '__main__':
                 # state = 'estimate_slope'
                 slope_start_x = idx
 
-    f, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1,
-                                      sharex='col',
-                                      gridspec_kw={'height_ratios': [4, 1, 1]},
-                                      figsize=(10, 9))
+    f, (ax1, ax2) = plt.subplots(nrows=2, ncols=1,
+                                 sharex='col',
+                                 gridspec_kw={'height_ratios': [4, 1]},
+                                 figsize=(10, 9))
     ax1.grid(which='minor', alpha=0.3)
     ax1.grid(which='major', alpha=0.3)
     ax1.set_yscale('log', base=10)
-    ax1.set_xlim([first_idx - 50, first_idx + 200])
+    ax1.set_xlim([first_idx - 100, first_idx + 100])
     fmt = FormatStrFormatter('%.0f')
     ax1.yaxis.set_major_formatter(fmt)
     ax1.yaxis.set_minor_formatter(fmt)
@@ -152,14 +168,29 @@ if __name__ == '__main__':
                                     (PositionDirection.short, 'xkcd:red', 'Short')):
         ax1.scatter(plot_events[direction]['x'], plot_events[direction]['y'], label=label, s=2 ** 2, c=color)
 
-    ax2.grid(True)
-    ax3.grid(True)
+    # for slope in slopes:
+    #     ax1.plot(slope['x'], slope['y'])
+    slope = ax1.plot([0], [runner.ie_prices[0]], c='xkcd:hot pink')[0]
 
     ax1.legend(loc='upper left')
 
-    ax3.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    ax2.grid(True)
+    ax2.set_ylim([0, 3])
+    mindicator = ax2.plot([1], [2], c='red')[0]
+
+
+    def on_mouse_move(event):
+        if event.xdata is None or event.xdata < 70:
+            return
+        x = int(event.xdata)
+        (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(x - 70, x)
+        mindicator.set_data(mind_x, mind_y)
+        slope.set_data(slope_x, slope_y)
+        plt.draw()
+
 
     plt.tight_layout()
+    plt.connect('motion_notify_event', on_mouse_move)
     plt.show()
     plt.get_current_fig_manager().toolbar.pan()
 
@@ -172,9 +203,4 @@ if __name__ == '__main__':
     # plt.scatter(runner.os_times, runner.os_prices, label=f'OS', s=5 ** 2)
     # plt.scatter(runner.dc_times, runner.dc_prices, label=f'DC', s=7 ** 2)
     # plt.scatter(runner.ie_times, runner.ie_prices, label=f'IE', s=5 ** 2)
-
-    for slope in slopes:
-        # print(slope['x'])
-        # print(slope['y'])
-        ax1.plot(slope['x'], slope['y'])
     """
