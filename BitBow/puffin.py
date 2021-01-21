@@ -1,3 +1,4 @@
+import math
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,9 +19,9 @@ class PositionDirection(IntEnum):
 
 
 class Simulator:
-    def __init__(self):
-        self.btc = 0.0
-        self.usd = 6976.0
+    def __init__(self, btc, usd):
+        self.btc = btc
+        self.usd = usd
         self.fee = 0.00075
 
     def buy(self, price):
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
         delta, runner = pickle.load(f)
 
-    runner.ie_prices = np.array(runner.ie_prices)[0:1000]
+    runner.ie_prices = np.array(runner.ie_prices)[0:500]
     x = np.arange(runner.ie_prices.shape[0])
 
     """
@@ -63,8 +64,8 @@ if __name__ == '__main__':
 
 
     def estimate_slope(start, stop):
-        c_x = np.arange(start, stop)
-        r = stats.linregress(c_x, runner.ie_prices[start:stop])
+        c_x = np.arange(start, stop + 1)
+        r = stats.linregress(c_x, runner.ie_prices[start:stop + 1])
         return c_x, c_x * r.slope + r.intercept
 
 
@@ -75,8 +76,8 @@ if __name__ == '__main__':
     }
 
     first_idx = 96
-    simulator = Simulator()
-    direction = PositionDirection.short
+    simulator = Simulator(btc=1, usd=0)
+    direction = PositionDirection.long
     state = 'estimate_slope'
     puffin_price = runner.ie_prices[0]
     slope = None
@@ -84,12 +85,14 @@ if __name__ == '__main__':
     threshold = puffin_price * (1 + 2 * delta)
     thresholds = {'x': [], 'y': []}
     slopes = []
-    values = []
+    values = {'x': [], 'y': []}
+    angles = {'x': [], 'y': []}
+    angle_threshold = 0.2
 
 
     def find_best_fit(idx_start: int, idx_end: int):
         xs, ys = [], []
-        for l in range(idx_end - idx_start, 10, -1):
+        for l in range(idx_end + 1 - idx_start, 10, -1):
             slope_x, slope_y = estimate_slope(idx_end - l, idx_end)
             max_d = 0
             for x, y in zip(slope_x, slope_y):
@@ -99,7 +102,7 @@ if __name__ == '__main__':
             ys.append(max_d / slope_y[0] * 100 - l / 75)
 
         min_x_idx = ys.index(min(ys))
-        print(xs[min_x_idx])
+        # print(xs[min_x_idx])
         slope = estimate_slope(xs[min_x_idx], idx_end)
         mindicator = (xs, ys)
         return mindicator, slope
@@ -111,48 +114,63 @@ if __name__ == '__main__':
     #     find_best_fit(s, s + 70)
 
     for idx, ie_price in enumerate(runner.ie_prices[:first_idx]):
-        values.append(simulator.get_value(ie_price))
         plot_events[PositionDirection.hedge]['x'].append(idx)
         plot_events[PositionDirection.hedge]['y'].append(ie_price)
 
+    prev_slope_angle = 0
+    slope_angle = 0
+
     for idx in range(first_idx, runner.ie_prices.shape[0]):
         ie_price = runner.ie_prices[idx]
-        values.append(simulator.get_value(ie_price))
+        values['x'].append(idx)
+        values['y'].append(simulator.get_value(ie_price))
         slope_start_x = max(slope_start_x, idx - 20)
 
         if idx - slope_start_x >= 10:
-            slope_x, slope_y = estimate_slope(slope_start_x, idx)
+            (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(idx - 70, idx)
+            slope_len = slope_x[-1] - slope_x[0]
+            # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
+            threshold_delta = 1.8 * delta
+
+            dx, dy = slope_x[-1] - slope_x[0], 1000 * (slope_y[-1] - slope_y[0]) / ie_price
+            # angle = math.atan(dy / dx)
+            prev_slope_angle = slope_angle
+            slope_angle = dy / dx
+            angles['x'].append(idx)
+            angles['y'].append(slope_angle)
+
+            # slope_x, slope_y = estimate_slope(slope_start_x, idx)
             # slopes.append({'x': slope_x, 'y': slope_y})
 
         plot_events[direction]['x'].append(idx)
         plot_events[direction]['y'].append(ie_price)
 
         if direction == PositionDirection.short:
-            threshold = slope_y[-1] * (1 + 2 * delta)
+            threshold = slope_y[-1] * (1 + threshold_delta)
             thresholds['x'].append(idx)
             thresholds['y'].append(threshold)
 
-            if ie_price > threshold:
+            if ie_price > threshold or (slope_y[-1] > ie_price and slope_angle > angle_threshold > prev_slope_angle):
                 simulator.buy(ie_price)
                 direction *= -1
                 # state = 'estimate_slope'
                 slope_start_x = idx
 
         elif direction == PositionDirection.long:
-            threshold = slope_y[-1] * (1 - 2 * delta)
+            threshold = slope_y[-1] * (1 - threshold_delta)
             thresholds['x'].append(idx)
             thresholds['y'].append(threshold)
 
-            if ie_price < threshold:
+            if ie_price < threshold or (slope_y[-1] < ie_price and prev_slope_angle < -angle_threshold < slope_angle):
                 simulator.sell(ie_price)
                 direction *= -1
                 # state = 'estimate_slope'
                 slope_start_x = idx
 
-    f, (ax1, ax2) = plt.subplots(nrows=2, ncols=1,
-                                 sharex='col',
-                                 gridspec_kw={'height_ratios': [4, 1]},
-                                 figsize=(10, 9))
+    f, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1,
+                                      sharex='col',
+                                      gridspec_kw={'height_ratios': [4, 1, 1]},
+                                      figsize=(10, 9))
     ax1.grid(which='minor', alpha=0.3)
     ax1.grid(which='major', alpha=0.3)
     ax1.set_yscale('log', base=10)
@@ -175,8 +193,13 @@ if __name__ == '__main__':
     ax1.legend(loc='upper left')
 
     ax2.grid(True)
-    ax2.set_ylim([0, 3])
-    mindicator = ax2.plot([1], [2], c='red')[0]
+    # ax2.set_ylim([0, 3])
+    # mindicator = ax2.plot([1], [2], c='red')[0]
+    ax2.plot(angles['x'], angles['y'], label=f'Angle')
+
+    ax3.grid(True)
+    ax3.plot(values['x'], values['y'], label=f'Value')
+    # ax3.set_ylim([0, 3])
 
 
     def on_mouse_move(event):
@@ -184,10 +207,9 @@ if __name__ == '__main__':
             return
         x = int(event.xdata)
         (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(x - 70, x)
-        mindicator.set_data(mind_x, mind_y)
+        # mindicator.set_data(mind_x, mind_y)
         slope.set_data(slope_x, slope_y)
         plt.draw()
-
 
     plt.tight_layout()
     plt.connect('motion_notify_event', on_mouse_move)
