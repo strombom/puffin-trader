@@ -87,7 +87,9 @@ if __name__ == '__main__':
     slopes = []
     values = {'x': [], 'y': []}
     angles = {'x': [], 'y': []}
+    anglediffs = {'x': [], 'y': []}
     angle_threshold = 0.2
+    annotations = []
 
 
     def find_best_fit(idx_start: int, idx_end: int):
@@ -119,6 +121,7 @@ if __name__ == '__main__':
 
     prev_slope_angle = 0
     slope_angle = 0
+    previous_trade_value = simulator.get_value(runner.ie_prices[first_idx])
 
     for idx in range(first_idx, runner.ie_prices.shape[0]):
         ie_price = runner.ie_prices[idx]
@@ -126,46 +129,73 @@ if __name__ == '__main__':
         values['y'].append(simulator.get_value(ie_price))
         slope_start_x = max(slope_start_x, idx - 20)
 
-        if idx - slope_start_x >= 10:
-            (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(idx - 70, idx)
-            slope_len = slope_x[-1] - slope_x[0]
-            # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
-            threshold_delta = 1.8 * delta
+        if idx == 242:
+            a = 1
 
-            dx, dy = slope_x[-1] - slope_x[0], 1000 * (slope_y[-1] - slope_y[0]) / ie_price
-            # angle = math.atan(dy / dx)
-            prev_slope_angle = slope_angle
-            slope_angle = dy / dx
-            angles['x'].append(idx)
-            angles['y'].append(slope_angle)
+        (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(idx - 70, idx)
+        slope_len = slope_x[-1] - slope_x[0]
+        # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
+        threshold_delta = 1.75 * delta
 
-            # slope_x, slope_y = estimate_slope(slope_start_x, idx)
-            # slopes.append({'x': slope_x, 'y': slope_y})
+        dx, dy = slope_x[-1] - slope_x[0], 1000 * (slope_y[-1] - slope_y[0]) / ie_price
+        # angle = math.atan(dy / dx)
+        prev_slope_angle = slope_angle
+        slope_angle = dy / dx
+        angles['x'].append(idx)
+        angles['y'].append(slope_angle)
+
+        anglediff = slope_angle - prev_slope_angle
+        anglediffs['x'].append(idx)
+        anglediffs['y'].append(anglediff)
+
+        # threshold_delta *= (1 - max(0.5, min(1, abs(anglediff))) / 2)
+
+        # slope_x, slope_y = estimate_slope(slope_start_x, idx)
+        # slopes.append({'x': slope_x, 'y': slope_y})
 
         plot_events[direction]['x'].append(idx)
         plot_events[direction]['y'].append(ie_price)
+
+        made_trade = False
 
         if direction == PositionDirection.short:
             threshold = slope_y[-1] * (1 + threshold_delta)
             thresholds['x'].append(idx)
             thresholds['y'].append(threshold)
 
-            if ie_price > threshold or (slope_y[-1] > ie_price and slope_angle > angle_threshold > prev_slope_angle):
+            if ie_price > threshold or \
+                    (ie_price > slope_y[-1] and slope_angle > angle_threshold and slope_angle > prev_slope_angle) or \
+                    (slope_len > 20 and slope_angle > 0 and ie_price > slope_y[-1]):
+
                 simulator.buy(ie_price)
                 direction *= -1
                 # state = 'estimate_slope'
                 slope_start_x = idx
+                made_trade = True
 
         elif direction == PositionDirection.long:
             threshold = slope_y[-1] * (1 - threshold_delta)
             thresholds['x'].append(idx)
             thresholds['y'].append(threshold)
 
-            if ie_price < threshold or (slope_y[-1] < ie_price and prev_slope_angle < -angle_threshold < slope_angle):
+            if ie_price < threshold or (ie_price < slope_y[-1] and slope_angle < -angle_threshold and slope_angle < prev_slope_angle):
                 simulator.sell(ie_price)
                 direction *= -1
                 # state = 'estimate_slope'
                 slope_start_x = idx
+                made_trade = True
+
+        if made_trade:
+            value_after = simulator.get_value(ie_price)
+            profit = (value_after - previous_trade_value) / previous_trade_value
+            previous_trade_value = value_after
+
+            annotations.append({
+                'x': idx,
+                'y': ie_price,
+                'direction': 'short',
+                'profit': profit
+            })
 
     f, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1,
                                       sharex='col',
@@ -190,12 +220,26 @@ if __name__ == '__main__':
     #     ax1.plot(slope['x'], slope['y'])
     slope = ax1.plot([0], [runner.ie_prices[0]], c='xkcd:hot pink')[0]
 
+    for annotation in annotations:
+        if annotation['profit'] > 0:
+            color = 'xkcd:green'
+        else:
+            color = 'xkcd:red'
+        ax1.annotate(f'{annotation["profit"] * 100:.2f}',
+                     xy=(annotation['x'], annotation['y'] * 1.001),
+                     xytext=(annotation['x'], annotation['y'] * 1.05),
+                     color='xkcd:black',
+                     bbox={'boxstyle': 'round', 'fc': color, 'alpha': 0.5},
+                     arrowprops={'arrowstyle': '->', 'color': 'cornflowerblue'},
+                     horizontalalignment='center')
+
     ax1.legend(loc='upper left')
 
     ax2.grid(True)
     # ax2.set_ylim([0, 3])
     # mindicator = ax2.plot([1], [2], c='red')[0]
-    ax2.plot(angles['x'], angles['y'], label=f'Angle')
+    # ax2.plot(angles['x'], angles['y'], label=f'Angle')
+    ax2.plot(anglediffs['x'], anglediffs['y'], label=f'Angle diff')
 
     ax3.grid(True)
     ax3.plot(values['x'], values['y'], label=f'Value')
