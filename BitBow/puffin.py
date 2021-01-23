@@ -122,6 +122,7 @@ if __name__ == '__main__':
     prev_slope_angle = 0
     slope_angle = 0
     previous_trade_value = simulator.get_value(runner.ie_prices[first_idx])
+    confirm_negative_slope = False
 
     for idx in range(first_idx, runner.ie_prices.shape[0]):
         ie_price = runner.ie_prices[idx]
@@ -135,7 +136,7 @@ if __name__ == '__main__':
         (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(idx - 70, idx)
         slope_len = slope_x[-1] - slope_x[0]
         # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
-        threshold_delta = 1.75 * delta
+        threshold_delta = 1.85 * delta
 
         dx, dy = slope_x[-1] - slope_x[0], 1000 * (slope_y[-1] - slope_y[0]) / ie_price
         # angle = math.atan(dy / dx)
@@ -143,6 +144,11 @@ if __name__ == '__main__':
         slope_angle = dy / dx
         angles['x'].append(idx)
         angles['y'].append(slope_angle)
+
+        if abs(slope_angle) > 2 and slope_len > 30:
+            threshold_delta *= 0.9
+        # elif abs(slope_angle) > 1:
+        #     threshold_delta *= 1.1
 
         anglediff = slope_angle - prev_slope_angle
         anglediffs['x'].append(idx)
@@ -156,7 +162,14 @@ if __name__ == '__main__':
         plot_events[direction]['x'].append(idx)
         plot_events[direction]['y'].append(ie_price)
 
-        made_trade = False
+        make_trade = False
+
+        if abs(anglediff) > 1.0:
+            threshold_delta *= 1 - 0.5
+        elif abs(anglediff) > 0.7:
+            threshold_delta *= 1 - 0.3
+        elif abs(anglediff) > 0.4:
+            threshold_delta *= 1 - 0.2
 
         if direction == PositionDirection.short:
             threshold = slope_y[-1] * (1 + threshold_delta)
@@ -166,26 +179,27 @@ if __name__ == '__main__':
             if ie_price > threshold or \
                     (ie_price > slope_y[-1] and slope_angle > angle_threshold and slope_angle > prev_slope_angle) or \
                     (slope_len > 20 and slope_angle > 0 and ie_price > slope_y[-1]):
-
-                simulator.buy(ie_price)
-                direction *= -1
-                # state = 'estimate_slope'
-                slope_start_x = idx
-                made_trade = True
+                make_trade = True
 
         elif direction == PositionDirection.long:
             threshold = slope_y[-1] * (1 - threshold_delta)
             thresholds['x'].append(idx)
             thresholds['y'].append(threshold)
 
-            if ie_price < threshold or (ie_price < slope_y[-1] and slope_angle < -angle_threshold and slope_angle < prev_slope_angle):
-                simulator.sell(ie_price)
-                direction *= -1
-                # state = 'estimate_slope'
-                slope_start_x = idx
-                made_trade = True
+            if ie_price < threshold or \
+                    (ie_price < slope_y[-1] and slope_angle < -angle_threshold and slope_angle < prev_slope_angle) or \
+                    (slope_len > 20 and slope_angle < 0 and ie_price < slope_y[-1]):
+                make_trade = True
 
-        if made_trade:
+        if make_trade:
+            if direction == PositionDirection.short:
+                simulator.buy(ie_price)
+            else:
+                simulator.sell(ie_price)
+            direction *= -1
+            slope_start_x = idx
+            made_trade = True
+
             value_after = simulator.get_value(ie_price)
             profit = (value_after - previous_trade_value) / previous_trade_value
             previous_trade_value = value_after
@@ -197,10 +211,12 @@ if __name__ == '__main__':
                 'profit': profit
             })
 
-    f, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1,
-                                      sharex='col',
-                                      gridspec_kw={'height_ratios': [4, 1, 1]},
-                                      figsize=(10, 9))
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1,
+                                        sharex='col',
+                                        gridspec_kw={'height_ratios': [4, 1, 1]},
+                                        figsize=(10, 10))
+    plt.tight_layout()
+    fig.subplots_adjust(hspace=0)
     ax1.grid(which='minor', alpha=0.3)
     ax1.grid(which='major', alpha=0.3)
     ax1.set_yscale('log', base=10)
@@ -238,27 +254,28 @@ if __name__ == '__main__':
     ax2.grid(True)
     # ax2.set_ylim([0, 3])
     # mindicator = ax2.plot([1], [2], c='red')[0]
-    # ax2.plot(angles['x'], angles['y'], label=f'Angle')
+    ax2.plot(angles['x'], angles['y'], label=f'Angle')
     ax2.plot(anglediffs['x'], anglediffs['y'], label=f'Angle diff')
+    ax2.legend(loc='upper left')
 
     ax3.grid(True)
     ax3.plot(values['x'], values['y'], label=f'Value')
+    ax3.legend(loc='upper left')
     # ax3.set_ylim([0, 3])
 
 
     def on_mouse_move(event):
         if event.xdata is None or event.xdata < 70:
             return
-        x = int(event.xdata)
+        x = int(event.xdata + 0.5)
         (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(x - 70, x)
         # mindicator.set_data(mind_x, mind_y)
         slope.set_data(slope_x, slope_y)
         plt.draw()
 
-    plt.tight_layout()
     plt.connect('motion_notify_event', on_mouse_move)
     plt.show()
-    plt.get_current_fig_manager().toolbar.pan()
+    # plt.get_current_fig_manager().toolbar.pan()
 
     """
     # formatter = ScalarFormatter()
