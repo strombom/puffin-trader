@@ -7,6 +7,7 @@ from enum import IntEnum
 from scipy import stats
 from datetime import datetime, timezone
 
+from BinanceSim.binance_simulator import BinanceSimulator
 from Indicators.supersmoother import SuperSmoother
 from IntrinsicTime.runner import Direction
 from rainbow import rainbow_indicator_load_params, rainbow_indicator
@@ -18,6 +19,7 @@ class PositionDirection(IntEnum):
     short = -1
 
 
+"""
 class Simulator:
     def __init__(self, btc, usd):
         self.btc = btc
@@ -34,6 +36,7 @@ class Simulator:
 
     def get_value(self, price):
         return self.usd + self.btc * price
+"""
 
 
 if __name__ == '__main__':
@@ -76,7 +79,7 @@ if __name__ == '__main__':
     }
 
     first_idx = 96
-    simulator = Simulator(btc=1, usd=0)
+    simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner.ie_prices[0], initial_leverage=0.0)
     direction = PositionDirection.long
     state = 'estimate_slope'
     puffin_price = runner.ie_prices[0]
@@ -121,13 +124,13 @@ if __name__ == '__main__':
 
     prev_slope_angle = 0
     slope_angle = 0
-    previous_trade_value = simulator.get_value(runner.ie_prices[first_idx])
+    previous_trade_value = simulator.get_value_usdt(mark_price=runner.ie_prices[first_idx])
     confirm_negative_slope = False
 
     for idx in range(first_idx, runner.ie_prices.shape[0]):
         ie_price = runner.ie_prices[idx]
         values['x'].append(idx)
-        values['y'].append(simulator.get_value(ie_price))
+        values['y'].append(simulator.get_value_usdt(mark_price=ie_price))
         slope_start_x = max(slope_start_x, idx - 20)
 
         if idx == 242:
@@ -164,12 +167,12 @@ if __name__ == '__main__':
 
         make_trade = False
 
-        if abs(anglediff) > 1.0:
-            threshold_delta *= 1 - 0.5
-        elif abs(anglediff) > 0.7:
-            threshold_delta *= 1 - 0.3
-        elif abs(anglediff) > 0.4:
-            threshold_delta *= 1 - 0.2
+        # if abs(anglediff) > 1.0:
+        #     threshold_delta *= 1 - 0.5
+        # elif abs(anglediff) > 0.7:
+        #     threshold_delta *= 1 - 0.3
+        # elif abs(anglediff) > 0.4:
+        #     threshold_delta *= 1 - 0.2
 
         if direction == PositionDirection.short:
             threshold = slope_y[-1] * (1 + threshold_delta)
@@ -193,14 +196,16 @@ if __name__ == '__main__':
 
         if make_trade:
             if direction == PositionDirection.short:
-                simulator.buy(ie_price)
+                order_size = simulator.calculate_order_size_btc(leverage=1.0, mark_price=ie_price)
+                simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
             else:
-                simulator.sell(ie_price)
+                order_size = simulator.calculate_order_size_btc(leverage=-1.0, mark_price=ie_price)
+                simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
             direction *= -1
             slope_start_x = idx
             made_trade = True
 
-            value_after = simulator.get_value(ie_price)
+            value_after = simulator.get_value_usdt(mark_price=ie_price)
             profit = (value_after - previous_trade_value) / previous_trade_value
             previous_trade_value = value_after
 
@@ -220,7 +225,7 @@ if __name__ == '__main__':
     ax1.grid(which='minor', alpha=0.3)
     ax1.grid(which='major', alpha=0.3)
     ax1.set_yscale('log', base=10)
-    ax1.set_xlim([first_idx - 100, first_idx + 100])
+    ax1.set_xlim([first_idx - 25, first_idx + 100])
     fmt = FormatStrFormatter('%.0f')
     ax1.yaxis.set_major_formatter(fmt)
     ax1.yaxis.set_minor_formatter(fmt)
