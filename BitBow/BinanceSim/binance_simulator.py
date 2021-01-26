@@ -17,7 +17,7 @@ class BinanceSimulator:
         else:
             return False
 
-    def get_leverage(self, mark_price):
+    def calculate_leverage(self, mark_price):
         if self.is_liquidated(mark_price=mark_price):
             return -1
 
@@ -104,35 +104,6 @@ class BinanceSimulator:
             self.debt_btc = -self.wallet_btc
             self.wallet_btc = 0
 
-        """
-        if order_size_btc > 0:
-            if self.debt_btc > 0:
-                # Repay debt
-                if order_size_btc > self.debt_btc:
-                    order_size_btc -= self.debt_btc
-                    self.debt_btc = 0
-                else:
-                    self.debt_btc -= order_size_btc
-                    order_size_btc = 0
-
-        elif order_size_btc < 0:
-            if self.debt_usdt > 0:
-                # Repay debt
-                if -order_size_btc * mark_price > self.debt_usdt:
-                    order_size_btc += self.debt_usdt / mark_price
-                    self.debt_usdt = 0
-                else:
-                    self.debt_usdt -= -order_size_btc * mark_price
-                    order_size_btc = 0
-
-        if self.wallet_usdt < 0:
-            self.debt_usdt = -self.wallet_usdt
-            self.wallet_usdt = 0
-        if self.wallet_btc < 0:
-            self.debt_btc = -self.wallet_btc
-            self.wallet_btc = 0
-        """
-
         if self.calculate_margin(mark_price=mark_price) < self.liquidation_level:
             self.wallet_usdt = 0.0
             self.wallet_btc = 0.0
@@ -147,83 +118,42 @@ class BinanceSimulator:
 
 
 if __name__ == '__main__':
-    sim = BinanceSimulator(initial_usdt=10000, initial_btc=0, max_leverage=2, mark_price=10000, initial_leverage=0.0)
-    value = sim.get_value_usdt(mark_price=10000)
-    leverage = sim.get_leverage(mark_price=10000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
 
-    print("----")
-    print(f'Buy 1 btc')
-    sim.market_order(order_size_btc=1.0, mark_price=10000)
-    value = sim.get_value_usdt(mark_price=10000)
-    leverage = sim.get_leverage(mark_price=10000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
+    def test_order(order_size_btc, mark_price):
+        print("----")
+        if order_size_btc > 0:
+            print(f'Buy {order_size_btc} btc @ {mark_price}')
+        else:
+            print(f'Sell {-order_size_btc} btc @ {mark_price}')
+        sim.market_order(order_size_btc=order_size_btc, mark_price=mark_price)
+        value = sim.get_value_usdt(mark_price=mark_price)
+        leverage = sim.calculate_leverage(mark_price=mark_price)
+        margin = sim.calculate_margin(mark_price=mark_price)
+        print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
+        print(f'value: {value}, leverage: {leverage}, margin: {margin}')
 
-    print("----")
-    print(f'Buy 2 btc')
-    sim.market_order(order_size_btc=2.0, mark_price=10000)
-    value = sim.get_value_usdt(mark_price=10000)
-    leverage = sim.get_leverage(mark_price=10000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
+    def test_mark_price(mark_price):
+        print("----")
+        print(f'Mark price {mark_price}')
+        value = sim.get_value_usdt(mark_price=mark_price)
+        leverage = sim.calculate_leverage(mark_price=mark_price)
+        margin = sim.calculate_margin(mark_price=mark_price)
+        print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
+        print(f'value: {value}, leverage: {leverage}, margin: {margin}')
 
-    print("----")
-    print(f'Mark price 12000')
-    value = sim.get_value_usdt(mark_price=12000)
-    leverage = sim.get_leverage(mark_price=12000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
 
-    print("----")
-    print(f'Mark price 15000')
-    value = sim.get_value_usdt(mark_price=15000)
-    leverage = sim.get_leverage(mark_price=15000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
+    mark_price = 10000
+    sim = BinanceSimulator(initial_usdt=10000, initial_btc=0, max_leverage=2, mark_price=mark_price, initial_leverage=0.0)
 
-    print("----")
-    print(f'Mark price 8000')
-    value = sim.get_value_usdt(mark_price=8000)
-    leverage = sim.get_leverage(mark_price=8000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
+    test_mark_price(mark_price=mark_price)
+    test_order(order_size_btc=1.0, mark_price=10000)
+    test_order(order_size_btc=2.0, mark_price=10000)
+    test_mark_price(mark_price=12000)
+    test_mark_price(mark_price=15000)
+    test_mark_price(mark_price=8000)
+    test_order(order_size_btc=-1.0, mark_price=8000)
+    test_order(order_size_btc=-2.0, mark_price=8000)
+    test_order(order_size_btc=-2.0, mark_price=10000)
+    test_mark_price(mark_price=8000)
+    test_mark_price(mark_price=11000)
 
-    print("----")
-    print(f'Sell 1 btc')
-    sim.market_order(order_size_btc=-1.0, mark_price=8000)
-    value = sim.get_value_usdt(mark_price=8000)
-    leverage = sim.get_leverage(mark_price=8000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
-
-    print("----")
-    print(f'Sell 2 btc')
-    sim.market_order(order_size_btc=-2.0, mark_price=10000)
-    value = sim.get_value_usdt(mark_price=10000)
-    leverage = sim.get_leverage(mark_price=10000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
-
-    print("----")
-    print(f'Sell 2 btc')
-    sim.market_order(order_size_btc=-2.0, mark_price=10000)
-    value = sim.get_value_usdt(mark_price=10000)
-    leverage = sim.get_leverage(mark_price=10000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
-
-    print("----")
-    print(f'Mark price 8000')
-    value = sim.get_value_usdt(mark_price=8000)
-    leverage = sim.get_leverage(mark_price=8000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
-
-    print("----")
-    print(f'Mark price 12000')
-    value = sim.get_value_usdt(mark_price=12000)
-    leverage = sim.get_leverage(mark_price=12000)
-    print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
-    print(f'value: {value}, leverage: {leverage}')
