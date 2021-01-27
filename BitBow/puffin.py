@@ -19,24 +19,36 @@ class PositionDirection(IntEnum):
     short = -1
 
 
-"""
-class Simulator:
-    def __init__(self, btc, usd):
-        self.btc = btc
-        self.usd = usd
-        self.fee = 0.00075
+class Slope:
+    max_slope_length = 70
 
-    def buy(self, price):
-        self.btc = self.usd / price * (1 - self.fee)
-        self.usd = 0
+    def __init__(self, ie_prices, end_idx):
+        self.ie_prices = ie_prices
+        slope_x, slope_y = self.find_best_fit(end_idx - self.max_slope_length, end_idx)
+        dx, dy = slope_x[-1] - slope_x[0], 1000 * (slope_y[-1] - slope_y[0]) / ie_price
+        self.angle = dy / dx
+        self.length = slope_x[-1] - slope_x[0]
+        self.x = slope_x
+        self.y = slope_y
 
-    def sell(self, price):
-        self.usd = self.btc * price * (1 - self.fee)
-        self.btc = 0
+    def estimate_slope(self, start, stop):
+        c_x = np.arange(start, stop + 1)
+        r = stats.linregress(c_x, self.ie_prices[start:stop + 1])
+        return c_x, c_x * r.slope + r.intercept
 
-    def get_value(self, price):
-        return self.usd + self.btc * price
-"""
+    def find_best_fit(self, idx_start: int, idx_end: int):
+        xs, ys = [], []
+        for l in range(idx_end + 1 - idx_start, 10, -1):
+            slope_x, slope_y = self.estimate_slope(idx_end - l, idx_end)
+            max_d = 0
+            for x, y in zip(slope_x, slope_y):
+                d = abs(self.ie_prices[x] - y)
+                max_d = max(max_d, d)
+            xs.append(slope_x[0])
+            ys.append(max_d / slope_y[0] * 100 - l / 75)
+
+        min_x_idx = ys.index(min(ys))
+        return self.estimate_slope(xs[min_x_idx], idx_end)
 
 
 if __name__ == '__main__':
@@ -54,8 +66,8 @@ if __name__ == '__main__':
         rainbow[idx] = rainbow_indicator(params=rainbow_params, timestamp=timestamp, price=price)
     """
 
-    smooths = {}
     """
+    smooths = {}
     smooth_periods = [8]
     for smooth_period in smooth_periods:
         smooth = []
@@ -64,13 +76,6 @@ if __name__ == '__main__':
             smooth.append(smoother.append(price))
         smooths[smooth_period] = smooth
     """
-
-
-    def estimate_slope(start, stop):
-        c_x = np.arange(start, stop + 1)
-        r = stats.linregress(c_x, runner.ie_prices[start:stop + 1])
-        return c_x, c_x * r.slope + r.intercept
-
 
     plot_events = {
         PositionDirection.long:  {'x': [], 'y': []},
@@ -81,10 +86,7 @@ if __name__ == '__main__':
     first_idx = 96
     simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner.ie_prices[0], initial_leverage=0.0)
     direction = PositionDirection.long
-    state = 'estimate_slope'
     puffin_price = runner.ie_prices[0]
-    slope = None
-    slope_start_x = first_idx - 20
     threshold = puffin_price * (1 + 2 * delta)
     thresholds = {'x': [], 'y': []}
     slopes = []
@@ -94,73 +96,41 @@ if __name__ == '__main__':
     angle_threshold = 0.2
     annotations = []
 
-
-    def find_best_fit(idx_start: int, idx_end: int):
-        xs, ys = [], []
-        for l in range(idx_end + 1 - idx_start, 10, -1):
-            slope_x, slope_y = estimate_slope(idx_end - l, idx_end)
-            max_d = 0
-            for x, y in zip(slope_x, slope_y):
-                d = abs(runner.ie_prices[x] - y)
-                max_d = max(max_d, d)
-            xs.append(slope_x[0])
-            ys.append(max_d / slope_y[0] * 100 - l / 75)
-
-        min_x_idx = ys.index(min(ys))
-        # print(xs[min_x_idx])
-        slope = estimate_slope(xs[min_x_idx], idx_end)
-        mindicator = (xs, ys)
-        return mindicator, slope
-
-    # find_best_fit(first_idx - 70, first_idx)
-    # find_best_fit(100, 150)
-
-    # for s in range(25, 500, 20):
-    #     find_best_fit(s, s + 70)
-
     for idx, ie_price in enumerate(runner.ie_prices[:first_idx]):
         plot_events[PositionDirection.hedge]['x'].append(idx)
         plot_events[PositionDirection.hedge]['y'].append(ie_price)
+        slopes.append(None)
 
-    prev_slope_angle = 0
-    slope_angle = 0
     previous_trade_value = simulator.get_value_usdt(mark_price=runner.ie_prices[first_idx])
-    confirm_negative_slope = False
 
     for idx in range(first_idx, runner.ie_prices.shape[0]):
         ie_price = runner.ie_prices[idx]
         values['x'].append(idx)
         values['y'].append(simulator.get_value_usdt(mark_price=ie_price))
-        slope_start_x = max(slope_start_x, idx - 20)
 
-        if idx == 242:
-            a = 1
+        slope = Slope(runner.ie_prices, idx)
+        slopes.append(slope)
 
-        (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(idx - 70, idx)
-        slope_len = slope_x[-1] - slope_x[0]
         # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
         threshold_delta = 1.85 * delta
 
-        dx, dy = slope_x[-1] - slope_x[0], 1000 * (slope_y[-1] - slope_y[0]) / ie_price
-        # angle = math.atan(dy / dx)
-        prev_slope_angle = slope_angle
-        slope_angle = dy / dx
-        angles['x'].append(idx)
-        angles['y'].append(slope_angle)
+        prev_slope_angle = 0
+        if slopes[-2] is not None:
+            prev_slope_angle = slopes[-2].angle
 
-        if abs(slope_angle) > 2 and slope_len > 30:
+        angles['x'].append(idx)
+        angles['y'].append(slope.angle)
+
+        if abs(slope.angle) > 2 and slope.length > 30:
             threshold_delta *= 0.9
         # elif abs(slope_angle) > 1:
         #     threshold_delta *= 1.1
 
-        anglediff = slope_angle - prev_slope_angle
+        anglediff = slope.angle - prev_slope_angle
         anglediffs['x'].append(idx)
         anglediffs['y'].append(anglediff)
 
         # threshold_delta *= (1 - max(0.5, min(1, abs(anglediff))) / 2)
-
-        # slope_x, slope_y = estimate_slope(slope_start_x, idx)
-        # slopes.append({'x': slope_x, 'y': slope_y})
 
         plot_events[direction]['x'].append(idx)
         plot_events[direction]['y'].append(ie_price)
@@ -175,23 +145,23 @@ if __name__ == '__main__':
         #     threshold_delta *= 1 - 0.2
 
         if direction == PositionDirection.short:
-            threshold = slope_y[-1] * (1 + threshold_delta)
+            threshold = slope.y[-1] * (1 + threshold_delta)
             thresholds['x'].append(idx)
             thresholds['y'].append(threshold)
 
             if ie_price > threshold or \
-                    (ie_price > slope_y[-1] and slope_angle > angle_threshold and slope_angle > prev_slope_angle) or \
-                    (slope_len > 20 and slope_angle > 0 and ie_price > slope_y[-1]):
+                    (ie_price > slope.y[-1] and slope.angle > angle_threshold and slope.angle > prev_slope_angle) or \
+                    (slope.length > 20 and slope.angle > 0 and ie_price > slope.y[-1]):
                 make_trade = True
 
         elif direction == PositionDirection.long:
-            threshold = slope_y[-1] * (1 - threshold_delta)
+            threshold = slope.y[-1] * (1 - threshold_delta)
             thresholds['x'].append(idx)
             thresholds['y'].append(threshold)
 
             if ie_price < threshold or \
-                    (ie_price < slope_y[-1] and slope_angle < -angle_threshold and slope_angle < prev_slope_angle) or \
-                    (slope_len > 20 and slope_angle < 0 and ie_price < slope_y[-1]):
+                    (ie_price < slope.y[-1] and slope.angle < -angle_threshold and slope.angle < prev_slope_angle) or \
+                    (slope.length > 20 and slope.angle < 0 and ie_price < slope.y[-1]):
                 make_trade = True
 
         if make_trade:
@@ -199,10 +169,11 @@ if __name__ == '__main__':
                 order_size = simulator.calculate_order_size_btc(leverage=1.0, mark_price=ie_price)
                 simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
             else:
+                if idx > 280:
+                    a = 1
                 order_size = simulator.calculate_order_size_btc(leverage=-1.0, mark_price=ie_price)
                 simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
             direction *= -1
-            slope_start_x = idx
             made_trade = True
 
             value_after = simulator.get_value_usdt(mark_price=ie_price)
@@ -239,7 +210,7 @@ if __name__ == '__main__':
 
     # for slope in slopes:
     #     ax1.plot(slope['x'], slope['y'])
-    slope = ax1.plot([0], [runner.ie_prices[0]], c='xkcd:hot pink')[0]
+    slope_plot = ax1.plot([0], [runner.ie_prices[0]], c='xkcd:hot pink')[0]
 
     for annotation in annotations:
         if annotation['profit'] > 0:
@@ -272,11 +243,12 @@ if __name__ == '__main__':
     def on_mouse_move(event):
         if event.xdata is None or event.xdata < 70:
             return
-        x = int(event.xdata + 0.5)
-        (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(x - 70, x)
+        slope_idx = int(event.xdata + 0.5)
+        # (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(x - 70, x)
         # mindicator.set_data(mind_x, mind_y)
-        slope.set_data(slope_x, slope_y)
-        plt.draw()
+        if 0 <= slope_idx < len(slopes) and slopes[slope_idx] is not None:
+            slope_plot.set_data(slopes[slope_idx].x, slopes[slope_idx].y)
+            plt.draw()
 
     plt.connect('motion_notify_event', on_mouse_move)
     plt.show()
