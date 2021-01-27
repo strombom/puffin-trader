@@ -62,7 +62,8 @@ class BinanceSimulator:
             if self.wallet_btc > 0:
                 order_size -= self.wallet_btc
 
-        order_size += leverage * self.wallet_usdt / mark_price
+        equity = self.wallet_usdt - self.debt_usdt + (self.wallet_btc - self.debt_btc) * mark_price
+        order_size += leverage * equity / mark_price
 
         return order_size
 
