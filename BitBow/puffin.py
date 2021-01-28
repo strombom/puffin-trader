@@ -51,91 +51,69 @@ class Slope:
         return self.estimate_slope(xs[min_x_idx], idx_end)
 
 
-if __name__ == '__main__':
-    with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
-        delta, runner = pickle.load(f)
+class Plotter:
+    def __init__(self):
+        self.events = {
+            PositionDirection.long:  {'x': [], 'y': []},
+            PositionDirection.hedge: {'x': [], 'y': []},
+            PositionDirection.short: {'x': [], 'y': []}
+        }
+        self.angles = {'x': [], 'y': []}
+        self.values = {'x': [], 'y': []}
+        self.thresholds = {'x': [], 'y': []}
 
-    runner.ie_prices = np.array(runner.ie_prices)[0:500]
-    x = np.arange(runner.ie_prices.shape[0])
+    def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float):
+        self.events[PositionDirection.hedge]['x'].append(event_idx)
+        self.events[PositionDirection.hedge]['y'].append(event_price)
 
-    """
-    rainbow_params = rainbow_indicator_load_params()
-    rainbow = np.empty(x.shape[0])
-    for idx, (timestamp, price) in enumerate(zip(runner.ie_times, runner.ie_prices)):
-        timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        rainbow[idx] = rainbow_indicator(params=rainbow_params, timestamp=timestamp, price=price)
-    """
+    def append_angle(self, angle_idx: int, angle: float):
+        self.angles['x'].append(angle_idx)
+        self.angles['y'].append(angle)
 
-    """
-    smooths = {}
-    smooth_periods = [8]
-    for smooth_period in smooth_periods:
-        smooth = []
-        smoother = SuperSmoother(period=smooth_period, initial_value=runner.ie_prices[0])
-        for price in runner.ie_prices:
-            smooth.append(smoother.append(price))
-        smooths[smooth_period] = smooth
-    """
+    def append_value(self, value_idx: int, value_price: float):
+        self.values['x'].append(value_idx)
+        self.values['y'].append(value_price)
 
-    plot_events = {
-        PositionDirection.long:  {'x': [], 'y': []},
-        PositionDirection.hedge: {'x': [], 'y': []},
-        PositionDirection.short: {'x': [], 'y': []}
-    }
+    def append_threshold(self, threshold_idx: int, threshold: float):
+        self.thresholds['x'].append(idx)
+        self.thresholds['y'].append(threshold)
 
-    first_idx = 96
-    simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner.ie_prices[0], initial_leverage=0.0)
-    direction = PositionDirection.long
-    puffin_price = runner.ie_prices[0]
-    threshold = puffin_price * (1 + 2 * delta)
-    thresholds = {'x': [], 'y': []}
-    slopes = []
-    values = {'x': [], 'y': []}
-    angles = {'x': [], 'y': []}
-    anglediffs = {'x': [], 'y': []}
-    angle_threshold = 0.2
-    annotations = []
 
-    for idx, ie_price in enumerate(runner.ie_prices[:first_idx]):
-        plot_events[PositionDirection.hedge]['x'].append(idx)
-        plot_events[PositionDirection.hedge]['y'].append(ie_price)
-        slopes.append(None)
+class Position:
+    def __init__(self, direction: PositionDirection, plotter: Plotter):
+        self.direction = direction
+        self.plotter = plotter
 
-    previous_trade_value = simulator.get_value_usdt(mark_price=runner.ie_prices[first_idx])
-
-    for idx in range(first_idx, runner.ie_prices.shape[0]):
-        ie_price = runner.ie_prices[idx]
-        values['x'].append(idx)
-        values['y'].append(simulator.get_value_usdt(mark_price=ie_price))
-
-        slope = Slope(runner.ie_prices, idx)
-        slopes.append(slope)
-
+    def step(self, mark_price: float) -> bool:
         # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
         threshold_delta = 1.85 * delta
-
-        prev_slope_angle = 0
-        if slopes[-2] is not None:
-            prev_slope_angle = slopes[-2].angle
-
-        angles['x'].append(idx)
-        angles['y'].append(slope.angle)
 
         if abs(slope.angle) > 2 and slope.length > 30:
             threshold_delta *= 0.9
         # elif abs(slope_angle) > 1:
         #     threshold_delta *= 1.1
 
-        anglediff = slope.angle - prev_slope_angle
-        anglediffs['x'].append(idx)
-        anglediffs['y'].append(anglediff)
-
         # threshold_delta *= (1 - max(0.5, min(1, abs(anglediff))) / 2)
 
-        plot_events[direction]['x'].append(idx)
-        plot_events[direction]['y'].append(ie_price)
-
         make_trade = False
+
+        if position.direction == PositionDirection.short:
+            threshold = slope.y[-1] * (1 + threshold_delta)
+            plotter.append_threshold(idx, threshold)
+
+            if ie_price > threshold or \
+                    (ie_price > slope.y[-1] and slope.angle > angle_threshold and slope.angle > prev_slope_angle) or \
+                    (ie_price > slope.y[-1] and slope.angle > 0 and slope.length > 20):
+                make_trade = True
+
+        elif position.direction == PositionDirection.long:
+            threshold = slope.y[-1] * (1 - threshold_delta)
+            plotter.append_threshold(idx, threshold)
+
+            if ie_price < threshold or \
+                    (ie_price < slope.y[-1] and slope.angle < -angle_threshold and slope.angle < prev_slope_angle) or \
+                    (ie_price < slope.y[-1] and slope.angle < 0 and slope.length > 20):
+                make_trade = True
 
         # if abs(anglediff) > 1.0:
         #     threshold_delta *= 1 - 0.5
@@ -144,36 +122,55 @@ if __name__ == '__main__':
         # elif abs(anglediff) > 0.4:
         #     threshold_delta *= 1 - 0.2
 
-        if direction == PositionDirection.short:
-            threshold = slope.y[-1] * (1 + threshold_delta)
-            thresholds['x'].append(idx)
-            thresholds['y'].append(threshold)
+        return make_trade
 
-            if ie_price > threshold or \
-                    (ie_price > slope.y[-1] and slope.angle > angle_threshold and slope.angle > prev_slope_angle) or \
-                    (slope.length > 20 and slope.angle > 0 and ie_price > slope.y[-1]):
-                make_trade = True
 
-        elif direction == PositionDirection.long:
-            threshold = slope.y[-1] * (1 - threshold_delta)
-            thresholds['x'].append(idx)
-            thresholds['y'].append(threshold)
+if __name__ == '__main__':
+    with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
+        delta, runner = pickle.load(f)
 
-            if ie_price < threshold or \
-                    (ie_price < slope.y[-1] and slope.angle < -angle_threshold and slope.angle < prev_slope_angle) or \
-                    (slope.length > 20 and slope.angle < 0 and ie_price < slope.y[-1]):
-                make_trade = True
+    runner.ie_prices = np.array(runner.ie_prices)[0:500]
+    x = np.arange(runner.ie_prices.shape[0])
+
+    first_idx = 96
+    simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner.ie_prices[0], initial_leverage=0.0)
+    plotter = Plotter()
+    position = Position(direction=PositionDirection.long, plotter=plotter)
+
+    slopes = []
+
+    angle_threshold = 0.2
+    annotations = []
+
+    for idx, ie_price in enumerate(runner.ie_prices[:first_idx]):
+        plotter.append_event(PositionDirection.hedge, idx, ie_price)
+        slopes.append(None)
+
+    previous_trade_value = simulator.get_value_usdt(mark_price=runner.ie_prices[first_idx])
+
+    for idx in range(first_idx, runner.ie_prices.shape[0]):
+        ie_price = runner.ie_prices[idx]
+        plotter.append_value(idx, simulator.get_value_usdt(mark_price=ie_price))
+
+        slope = Slope(runner.ie_prices, idx)
+        slopes.append(slope)
+
+        prev_slope_angle = 0
+        if slopes[-2] is not None:
+            prev_slope_angle = slopes[-2].angle
+
+        plotter.append_angle(idx, slope.angle)
+
+        make_trade = position.step(ie_price)
 
         if make_trade:
-            if direction == PositionDirection.short:
+            if position.direction == PositionDirection.short:
                 order_size = simulator.calculate_order_size_btc(leverage=1.0, mark_price=ie_price)
                 simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
             else:
-                if idx > 280:
-                    a = 1
                 order_size = simulator.calculate_order_size_btc(leverage=-1.0, mark_price=ie_price)
                 simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
-            direction *= -1
+            position.direction *= -1
             made_trade = True
 
             value_after = simulator.get_value_usdt(mark_price=ie_price)
@@ -186,6 +183,8 @@ if __name__ == '__main__':
                 'direction': 'short',
                 'profit': profit
             })
+
+        plotter.append_event(position.direction, idx, ie_price)
 
     fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1,
                                         sharex='col',
@@ -201,12 +200,12 @@ if __name__ == '__main__':
     ax1.yaxis.set_major_formatter(fmt)
     ax1.yaxis.set_minor_formatter(fmt)
 
-    ax1.scatter(thresholds['x'], thresholds['y'], marker='_', c='xkcd:gold', label=f'Threshold')
+    ax1.scatter(plotter.thresholds['x'], plotter.thresholds['y'], marker='_', c='xkcd:gold', label=f'Threshold')
 
     for direction, color, label in ((PositionDirection.long, 'xkcd:green', 'Long'),
                                     (PositionDirection.hedge, 'xkcd:light blue', 'Hedge'),
                                     (PositionDirection.short, 'xkcd:red', 'Short')):
-        ax1.scatter(plot_events[direction]['x'], plot_events[direction]['y'], label=label, s=2 ** 2, c=color)
+        ax1.scatter(plotter.events[direction]['x'], plotter.events[direction]['y'], label=label, s=2 ** 2, c=color)
 
     # for slope in slopes:
     #     ax1.plot(slope['x'], slope['y'])
@@ -230,12 +229,13 @@ if __name__ == '__main__':
     ax2.grid(True)
     # ax2.set_ylim([0, 3])
     # mindicator = ax2.plot([1], [2], c='red')[0]
-    ax2.plot(angles['x'], angles['y'], label=f'Angle')
-    ax2.plot(anglediffs['x'], anglediffs['y'], label=f'Angle diff')
+    ax2.plot(plotter.angles['x'], plotter.angles['y'], label=f'Angle')
+    angle_diffs = plotter.angles['y'][1:] - plotter.angles['y'][:-1]
+    ax2.plot(plotter.angles['x'][1:], angle_diffs, label=f'Angle diff')
     ax2.legend(loc='upper left')
 
     ax3.grid(True)
-    ax3.plot(values['x'], values['y'], label=f'Value')
+    ax3.plot(plotter.values['x'], plotter.values['y'], label=f'Value')
     ax3.legend(loc='upper left')
     # ax3.set_ylim([0, 3])
 
@@ -249,6 +249,7 @@ if __name__ == '__main__':
         if 0 <= slope_idx < len(slopes) and slopes[slope_idx] is not None:
             slope_plot.set_data(slopes[slope_idx].x, slopes[slope_idx].y)
             plt.draw()
+            # fig.canvas.blit(ax1.bbox)
 
     plt.connect('motion_notify_event', on_mouse_move)
     plt.show()
@@ -263,4 +264,15 @@ if __name__ == '__main__':
     # plt.scatter(runner.os_times, runner.os_prices, label=f'OS', s=5 ** 2)
     # plt.scatter(runner.dc_times, runner.dc_prices, label=f'DC', s=7 ** 2)
     # plt.scatter(runner.ie_times, runner.ie_prices, label=f'IE', s=5 ** 2)
+    """
+
+    """
+    smooths = {}
+    smooth_periods = [8]
+    for smooth_period in smooth_periods:
+        smooth = []
+        smoother = SuperSmoother(period=smooth_period, initial_value=runner.ie_prices[0])
+        for price in runner.ie_prices:
+            smooth.append(smoother.append(price))
+        smooths[smooth_period] = smooth
     """
