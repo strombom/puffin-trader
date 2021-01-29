@@ -6,41 +6,9 @@ from matplotlib.ticker import FormatStrFormatter
 from enum import IntEnum
 
 from BinanceSim.binance_simulator import BinanceSimulator
+from Common.Misc import PositionDirection
+from plotter import Plotter
 from slopes import Slopes
-
-
-class PositionDirection(IntEnum):
-    long = 1
-    hedge = 0
-    short = -1
-
-
-class Plotter:
-    def __init__(self):
-        self.events = {
-            PositionDirection.long:  {'x': [], 'y': []},
-            PositionDirection.hedge: {'x': [], 'y': []},
-            PositionDirection.short: {'x': [], 'y': []}
-        }
-        self.angles = {'x': [], 'y': []}
-        self.values = {'x': [], 'y': []}
-        self.thresholds = {'x': [], 'y': []}
-
-    def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float):
-        self.events[PositionDirection.hedge]['x'].append(event_idx)
-        self.events[PositionDirection.hedge]['y'].append(event_price)
-
-    def append_angle(self, angle_idx: int, angle: float):
-        self.angles['x'].append(angle_idx)
-        self.angles['y'].append(angle)
-
-    def append_value(self, value_idx: int, value_price: float):
-        self.values['x'].append(value_idx)
-        self.values['y'].append(value_price)
-
-    def append_threshold(self, threshold_idx: int, threshold: float):
-        self.thresholds['x'].append(idx)
-        self.thresholds['y'].append(threshold)
 
 
 class Position:
@@ -93,7 +61,7 @@ if __name__ == '__main__':
     with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
         delta, runner = pickle.load(f)
 
-    runner.ie_prices = np.array(runner.ie_prices)[0:500]
+    runner.ie_prices = np.array(runner.ie_prices)[0:5000]
     x = np.arange(runner.ie_prices.shape[0])
 
     first_idx = 96
@@ -147,6 +115,9 @@ if __name__ == '__main__':
 
         plotter.append_event(position.direction, idx, ie_price)
 
+    plotter.plot()
+
+    """
     fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1,
                                         sharex='col',
                                         gridspec_kw={'height_ratios': [4, 1, 1]},
@@ -212,6 +183,7 @@ if __name__ == '__main__':
     plt.connect('motion_notify_event', on_mouse_move)
     plt.show()
     # plt.get_current_fig_manager().toolbar.pan()
+    """
 
     """
     # formatter = ScalarFormatter()

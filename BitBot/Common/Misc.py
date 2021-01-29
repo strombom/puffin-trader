@@ -1,5 +1,12 @@
 
 from datetime import datetime, timezone
+from enum import IntEnum
+
+
+class PositionDirection(IntEnum):
+    long = 1
+    hedge = 0
+    short = -1
 
 
 def string_to_timestamp(date, fmt='%Y-%m-%d %H:%M:%S.%f'):
