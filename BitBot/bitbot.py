@@ -4,47 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from enum import IntEnum
-from scipy import stats
 
 from BinanceSim.binance_simulator import BinanceSimulator
+from slopes import Slopes
 
 
 class PositionDirection(IntEnum):
     long = 1
     hedge = 0
     short = -1
-
-
-class Slope:
-    max_slope_length = 70
-
-    def __init__(self, ie_prices, end_idx):
-        self.ie_prices = ie_prices
-        slope_x, slope_y = self.find_best_fit(end_idx - self.max_slope_length, end_idx)
-        dx, dy = slope_x[-1] - slope_x[0], 1000 * (slope_y[-1] - slope_y[0]) / ie_price
-        self.angle = dy / dx
-        self.length = slope_x[-1] - slope_x[0]
-        self.x = slope_x
-        self.y = slope_y
-
-    def estimate_slope(self, start, stop):
-        c_x = np.arange(start, stop + 1)
-        r = stats.linregress(c_x, self.ie_prices[start:stop + 1])
-        return c_x, c_x * r.slope + r.intercept
-
-    def find_best_fit(self, idx_start: int, idx_end: int):
-        xs, ys = [], []
-        for l in range(idx_end + 1 - idx_start, 10, -1):
-            slope_x, slope_y = self.estimate_slope(idx_end - l, idx_end)
-            max_d = 0
-            for x, y in zip(slope_x, slope_y):
-                d = abs(self.ie_prices[x] - y)
-                max_d = max(max_d, d)
-            xs.append(slope_x[0])
-            ys.append(max_d / slope_y[0] * 100 - l / 75)
-
-        min_x_idx = ys.index(min(ys))
-        return self.estimate_slope(xs[min_x_idx], idx_end)
 
 
 class Plotter:
@@ -133,7 +101,9 @@ if __name__ == '__main__':
     plotter = Plotter()
     position = Position(direction=PositionDirection.long, plotter=plotter)
 
-    slopes = []
+    slopes = Slopes(runner.ie_prices)
+    print("slopes", len(slopes.slopes))
+    quit()
 
     angle_threshold = 0.2
     annotations = []
