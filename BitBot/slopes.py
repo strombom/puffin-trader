@@ -7,7 +7,7 @@ from scipy import stats
 class Slopes:
     # The latest price is not included in the slope
     max_slope_length = 70
-    min_slope_length = 10
+    min_slope_length = 15
     x_range = np.arange(max_slope_length)
 
     def __init__(self, prices: np.ndarray):
@@ -29,6 +29,12 @@ class Slopes:
                     'slopes': self.slopes}
             pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
+    def __getitem__(self, item):
+        return self.slopes[item - self.max_slope_length]
+
+    def __len__(self):
+        return len(self.slopes) + self.max_slope_length
+
 
 class Slope:
     def __init__(self, prices: np.ndarray, offset: int):
@@ -42,7 +48,7 @@ class Slope:
     def find_best_fit(self):
         min_d = 1e9
         best_slope = None
-        for slope_length in range(Slopes.min_slope_length, Slopes.max_slope_length + 1):
+        for slope_length in range(Slopes.max_slope_length, Slopes.min_slope_length - 1, -1):
             y_start, y_end, max_d = self.estimate_slope(slope_length=slope_length)
             max_d = max_d / y_start * 100 - slope_length / 75
             if max_d < min_d:
@@ -57,5 +63,5 @@ class Slope:
         y_start, y_end = slope_y[0], slope_y[-1]
         s = self.prices.shape[0]
         p = self.prices[s - slope_length:]
-        max_d = np.argmax(np.abs(p - slope_y))
+        max_d = np.max(np.abs(p - slope_y))
         return y_start, y_end, max_d

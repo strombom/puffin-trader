@@ -102,28 +102,23 @@ if __name__ == '__main__':
     position = Position(direction=PositionDirection.long, plotter=plotter)
 
     slopes = Slopes(runner.ie_prices)
-    print("slopes", len(slopes.slopes))
-    quit()
 
     angle_threshold = 0.2
     annotations = []
 
     for idx, ie_price in enumerate(runner.ie_prices[:first_idx]):
         plotter.append_event(PositionDirection.hedge, idx, ie_price)
-        slopes.append(None)
 
     previous_trade_value = simulator.get_value_usdt(mark_price=runner.ie_prices[first_idx])
 
     for idx in range(first_idx, runner.ie_prices.shape[0]):
+        slope = slopes[idx]
         ie_price = runner.ie_prices[idx]
         plotter.append_value(idx, simulator.get_value_usdt(mark_price=ie_price))
 
-        slope = Slope(runner.ie_prices, idx)
-        slopes.append(slope)
-
         prev_slope_angle = 0
         if slopes[-2] is not None:
-            prev_slope_angle = slopes[-2].angle
+            prev_slope_angle = slopes[idx - 1].angle
 
         plotter.append_angle(idx, slope.angle)
 
@@ -210,12 +205,9 @@ if __name__ == '__main__':
         if event.xdata is None or event.xdata < 70:
             return
         slope_idx = int(event.xdata + 0.5)
-        # (mind_x, mind_y), (slope_x, slope_y) = find_best_fit(x - 70, x)
-        # mindicator.set_data(mind_x, mind_y)
-        if 0 <= slope_idx < len(slopes) and slopes[slope_idx] is not None:
+        if Slopes.max_slope_length <= slope_idx < len(slopes) and slopes[slope_idx] is not None:
             slope_plot.set_data(slopes[slope_idx].x, slopes[slope_idx].y)
             plt.draw()
-            # fig.canvas.blit(ax1.bbox)
 
     plt.connect('motion_notify_event', on_mouse_move)
     plt.show()
