@@ -27,21 +27,24 @@ class Plotter:
 
         # Add plots
         self.plt = self.win.addPlot(row=0, col=0)
+        self.plt.showGrid(x=True, y=True, alpha=0.3)
         ax0 = self.plt.getAxis('bottom')
         ax0.setStyle(showValues=False)
         self.plt_value = self.win.addPlot(row=1, col=0)
+        self.plt_value.showGrid(x=True, y=True, alpha=0.3)
         self.plt_value.setXLink(self.plt)
         self.win.ci.layout.setRowStretchFactor(0, 2)
         self.win.ci.layout.setSpacing(0)
         self.win.ci.layout.setContentsMargins(0, 0, 0, 0)
 
-        crosshair_pen = pg.mkPen({'color': (0xff, 0xff, 0xff, 25), 'width': 2})
-        self.v_top_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
-        self.v_bot_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
-        self.h_line = pg.InfiniteLine(angle=0,  movable=False, pen=crosshair_pen)
-        self.plt.addItem(self.v_top_line, ignoreBounds=True)
-        self.plt_value.addItem(self.v_bot_line, ignoreBounds=True)
-        self.plt.addItem(self.h_line, ignoreBounds=True)
+        # Crosshair
+        # crosshair_pen = pg.mkPen({'color': (0xff, 0xff, 0xff, 25), 'width': 2})
+        # self.v_top_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        # self.v_bot_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        # self.h_line = pg.InfiniteLine(angle=0,  movable=False, pen=crosshair_pen)
+        # self.plt.addItem(self.v_top_line, ignoreBounds=True)
+        # self.plt_value.addItem(self.v_bot_line, ignoreBounds=True)
+        # self.plt.addItem(self.h_line, ignoreBounds=True)
 
         self.slope_lines = []
         for idx in range(40):
@@ -72,9 +75,9 @@ class Plotter:
         mouse_point = self.plt.vb.mapSceneToView(pos)
         if self.plt.sceneBoundingRect().contains(pos):
             x, y = mouse_point.x(), mouse_point.y()
-            self.v_top_line.setPos(x)
-            self.v_bot_line.setPos(x)
-            self.h_line.setPos(y)
+            # self.v_top_line.setPos(x)
+            # self.v_bot_line.setPos(x)
+            # self.h_line.setPos(y)
 
             slope_idx = int(x + 0.5)
             if self.slopes.max_slope_length + len(self.slope_lines) <= slope_idx < len(self.slopes):
