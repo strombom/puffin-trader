@@ -54,23 +54,38 @@ class Plotter:
 
         self.mouse_move_signal = pg.SignalProxy(self.plt.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_move)
 
-    def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float):
+        self.annotation_fill = {'positive': pg.mkBrush(color=(0x15, 0xb0, 0xa1, 80)),
+                                'negative': pg.mkBrush(color=(0xe5, 0x00, 0x00, 80))}
+
+    def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float) -> None:
         self.events[event_direction]['x'].append(event_idx)
         self.events[event_direction]['y'].append(event_price)
 
-    def append_angle(self, angle_idx: int, angle: float):
+    def append_angle(self, angle_idx: int, angle: float) -> None:
         self.angles['x'].append(angle_idx)
         self.angles['y'].append(angle)
 
-    def append_value(self, value_idx: int, value_price: float):
+    def append_value(self, value_idx: int, value_price: float) -> None:
         self.values['x'].append(value_idx)
         self.values['y'].append(value_price)
 
-    def append_threshold(self, threshold_idx: int, threshold: float):
+    def append_threshold(self, threshold_idx: int, threshold: float) -> None:
         self.thresholds['x'].append(threshold_idx)
         self.thresholds['y'].append(threshold)
 
-    def mouse_move(self, event):
+    def append_annotation(self, x: int, y: float, direction: PositionDirection, profit: float) -> None:
+        if profit >= 0:
+            fill = self.annotation_fill['positive']
+        else:
+            fill = self.annotation_fill['negative']
+        annotation = pg.TextItem(f'{profit * 100:.2f}', anchor=(0.5, 1), fill=fill)
+        annotation.setPos(x, y + 80)
+        self.plt.addItem(annotation)
+        arrow = pg.ArrowItem(angle=270)
+        arrow.setPos(x, y + 30)
+        self.plt.addItem(arrow)
+
+    def mouse_move(self, event) -> None:
         pos = event[0]
         mouse_point = self.plt.vb.mapSceneToView(pos)
         if self.plt.sceneBoundingRect().contains(pos):
@@ -97,6 +112,9 @@ class Plotter:
             self.plt.addItem(scatter)
             y_min = min(y_min, min(events['y']))
             y_max = max(y_max, max(events['y']))
+
+        # for annotation in self.annotations:
+        #     annotation.setParentItem()
 
         self.plt_value.plot(self.values['x'], self.values['y'])
 

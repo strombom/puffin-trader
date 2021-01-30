@@ -106,12 +106,13 @@ if __name__ == '__main__':
             profit = (value_after - previous_trade_value) / previous_trade_value
             previous_trade_value = value_after
 
-            annotations.append({
-                'x': idx,
-                'y': ie_price,
-                'direction': 'short',
-                'profit': profit
-            })
+            plotter.append_annotation(x=idx, y=ie_price, direction=PositionDirection.short, profit=profit)
+            # annotations.append({
+            #     'x': idx,
+            #     'y': ie_price,
+            #     'direction': 'short',
+            #     'profit': profit
+            # })
 
         plotter.append_event(position.direction, idx, ie_price)
 
