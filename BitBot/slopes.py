@@ -38,30 +38,29 @@ class Slopes:
 
 class Slope:
     def __init__(self, prices: np.ndarray, offset: int):
-        self.prices = prices
-        y_start, y_end, slope_length = self.find_best_fit()
+        y_start, y_end, slope_length = self.find_best_fit(prices)
         self.length = slope_length
         self.angle = 1000 * (y_end - y_start) / prices[-1] / slope_length
         self.x = np.array((offset - slope_length, offset - 1))
         self.y = np.array((y_start, y_end))
 
-    def find_best_fit(self):
+    def find_best_fit(self, prices: np.ndarray):
         min_d = 1e9
         best_slope = None
         for slope_length in range(Slopes.max_slope_length, Slopes.min_slope_length - 1, -1):
-            y_start, y_end, max_d = self.estimate_slope(slope_length=slope_length)
+            y_start, y_end, max_d = self.estimate_slope(slope_length=slope_length, prices=prices)
             max_d = max_d / y_start * 100 - slope_length / 75
             if max_d < min_d:
                 min_d = max_d
                 best_slope = (y_start, y_end, slope_length)
         return best_slope
 
-    def estimate_slope(self, slope_length):
+    def estimate_slope(self, slope_length: int, prices: np.ndarray):
         x_range = Slopes.x_range[:slope_length]
-        r = stats.linregress(x_range, self.prices[self.prices.shape[0] - slope_length:])
+        r = stats.linregress(x_range, prices[prices.shape[0] - slope_length:])
         slope_y = x_range * r.slope + r.intercept
         y_start, y_end = slope_y[0], slope_y[-1]
-        s = self.prices.shape[0]
-        p = self.prices[s - slope_length:]
+        s = prices.shape[0]
+        p = prices[s - slope_length:]
         max_d = np.max(np.abs(p - slope_y))
         return y_start, y_end, max_d

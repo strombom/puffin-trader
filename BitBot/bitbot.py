@@ -64,12 +64,12 @@ if __name__ == '__main__':
     runner.ie_prices = np.array(runner.ie_prices)[0:5000]
     x = np.arange(runner.ie_prices.shape[0])
 
+    slopes = Slopes(runner.ie_prices)
+
     first_idx = 96
     simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner.ie_prices[0], initial_leverage=0.0)
-    plotter = Plotter()
+    plotter = Plotter(slopes)
     position = Position(direction=PositionDirection.long, plotter=plotter)
-
-    slopes = Slopes(runner.ie_prices)
 
     angle_threshold = 0.2
     annotations = []

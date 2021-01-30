@@ -8,7 +8,8 @@ colors = ['r', 'g', 'y', 'b', ]
 
 
 class Plotter:
-    def __init__(self):
+    def __init__(self, slopes):
+        self.slopes = slopes
         self.events = {
             PositionDirection.long:  {'x': [], 'y': []},
             PositionDirection.hedge: {'x': [], 'y': []},
@@ -24,10 +25,18 @@ class Plotter:
         self.win.resize(1200, 1000)
         self.win.setBackground((0x34, 0x38, 0x37))
         self.plt = self.win.addPlot()
-        self.v_line = pg.InfiniteLine(angle=90, movable=False)
-        self.h_line = pg.InfiniteLine(angle=0, movable=False)
+        crosshair_pen = pg.mkPen({'color': (0xff, 0xff, 0xff, 25), 'width': 2})
+        self.v_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        self.h_line = pg.InfiniteLine(angle=0,  movable=False, pen=crosshair_pen)
         self.plt.addItem(self.v_line, ignoreBounds=True)
         self.plt.addItem(self.h_line, ignoreBounds=True)
+
+        self.slope_lines = []
+        for idx in range(40):
+            slope_pen = pg.mkPen({'color': (0x02, 0xbf, 0xfe, 50 + idx * 1), 'width': 2})
+            slope_line = self.plt.plot([0, 1], [0, 1], pen=slope_pen)  # pg.ScatterPlotItem(size=4, brush=event_colors[direction])
+            self.slope_lines.append(slope_line)
+
         self.mouse_move_signal = pg.SignalProxy(self.plt.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_move)
 
     def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float):
@@ -54,6 +63,12 @@ class Plotter:
             self.v_line.setPos(x)
             self.h_line.setPos(y)
 
+            slope_idx = int(x + 0.5)
+            if self.slopes.max_slope_length + len(self.slope_lines) <= slope_idx < len(self.slopes):
+                for idx in range(len(self.slope_lines)):
+                    slope = self.slopes[slope_idx - len(self.slope_lines) + idx]
+                    self.slope_lines[idx].setData(slope.x, slope.y)
+
     def plot(self) -> None:
         y_min, y_max = 1e9, 0
         event_colors = {PositionDirection.long:  pg.mkBrush(0x15, 0xb0, 0x1a, 220),
@@ -67,7 +82,7 @@ class Plotter:
             y_min = min(y_min, min(events['y']))
             y_max = max(y_max, max(events['y']))
 
-        self.plt.setLimits(yMin=y_min * 0.95, yMax=y_max * 1.05)
+        self.plt.setLimits(yMin=y_min * 0.9, yMax=y_max * 1.1)
         # self.plt.enableAutoRange()
 
         self.win.show()
