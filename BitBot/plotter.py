@@ -24,16 +24,28 @@ class Plotter:
         self.win.setWindowTitle('Puffin')
         self.win.resize(1200, 1000)
         self.win.setBackground((0x34, 0x38, 0x37))
-        self.plt = self.win.addPlot()
+
+        # Add plots
+        self.plt = self.win.addPlot(row=0, col=0)
+        ax0 = self.plt.getAxis('bottom')
+        ax0.setStyle(showValues=False)
+        self.plt_value = self.win.addPlot(row=1, col=0)
+        self.plt_value.setXLink(self.plt)
+        self.win.ci.layout.setRowStretchFactor(0, 2)
+        self.win.ci.layout.setSpacing(0)
+        self.win.ci.layout.setContentsMargins(0, 0, 0, 0)
+
         crosshair_pen = pg.mkPen({'color': (0xff, 0xff, 0xff, 25), 'width': 2})
-        self.v_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        self.v_top_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        self.v_bot_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
         self.h_line = pg.InfiniteLine(angle=0,  movable=False, pen=crosshair_pen)
-        self.plt.addItem(self.v_line, ignoreBounds=True)
+        self.plt.addItem(self.v_top_line, ignoreBounds=True)
+        self.plt_value.addItem(self.v_bot_line, ignoreBounds=True)
         self.plt.addItem(self.h_line, ignoreBounds=True)
 
         self.slope_lines = []
         for idx in range(40):
-            slope_pen = pg.mkPen({'color': (0x02, 0xbf, 0xfe, 50 + idx * 1), 'width': 2})
+            slope_pen = pg.mkPen({'color': (0x02, 0xbf, 0xfe, 25 + idx * 1), 'width': 2})
             slope_line = self.plt.plot([0, 1], [0, 1], pen=slope_pen)  # pg.ScatterPlotItem(size=4, brush=event_colors[direction])
             self.slope_lines.append(slope_line)
 
@@ -60,7 +72,8 @@ class Plotter:
         mouse_point = self.plt.vb.mapSceneToView(pos)
         if self.plt.sceneBoundingRect().contains(pos):
             x, y = mouse_point.x(), mouse_point.y()
-            self.v_line.setPos(x)
+            self.v_top_line.setPos(x)
+            self.v_bot_line.setPos(x)
             self.h_line.setPos(y)
 
             slope_idx = int(x + 0.5)
@@ -81,6 +94,8 @@ class Plotter:
             self.plt.addItem(scatter)
             y_min = min(y_min, min(events['y']))
             y_max = max(y_max, max(events['y']))
+
+        self.plt_value.plot(self.values['x'], self.values['y'])
 
         self.plt.setLimits(yMin=y_min * 0.9, yMax=y_max * 1.1)
         # self.plt.enableAutoRange()

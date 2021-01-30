@@ -61,7 +61,7 @@ if __name__ == '__main__':
     with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
         delta, runner = pickle.load(f)
 
-    runner.ie_prices = np.array(runner.ie_prices)[0:5000]
+    runner.ie_prices = np.array(runner.ie_prices)[0:2500]
     x = np.arange(runner.ie_prices.shape[0])
 
     slopes = Slopes(runner.ie_prices)
