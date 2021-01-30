@@ -18,6 +18,18 @@ class Plotter:
         self.values = {'x': [], 'y': []}
         self.thresholds = {'x': [], 'y': []}
 
+        self.app = QtGui.QApplication([])
+        self.win = pg.GraphicsLayoutWidget()
+        self.win.setWindowTitle('Puffin')
+        self.win.resize(1200, 1000)
+        self.win.setBackground((0x34, 0x38, 0x37))
+        self.plt = self.win.addPlot()
+        self.v_line = pg.InfiniteLine(angle=90, movable=False)
+        self.h_line = pg.InfiniteLine(angle=0, movable=False)
+        self.plt.addItem(self.v_line, ignoreBounds=True)
+        self.plt.addItem(self.h_line, ignoreBounds=True)
+        self.mouse_move_signal = pg.SignalProxy(self.plt.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_move)
+
     def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float):
         self.events[event_direction]['x'].append(event_idx)
         self.events[event_direction]['y'].append(event_price)
@@ -34,18 +46,16 @@ class Plotter:
         self.thresholds['x'].append(threshold_idx)
         self.thresholds['y'].append(threshold)
 
-    def plot(self):
-        app = QtGui.QApplication([])
-        win = pg.GraphicsLayoutWidget()
-        win.setWindowTitle('Puffin')
-        win.resize(1200, 1000)
-        win.setBackground((0x34, 0x38, 0x37))
-        img = pg.ImageItem()
-        plot = win.addPlot()
-        plot.addItem(img)
+    def mouse_move(self, event):
+        pos = event[0]
+        mouse_point = self.plt.vb.mapSceneToView(pos)
+        if self.plt.sceneBoundingRect().contains(pos):
+            x, y = mouse_point.x(), mouse_point.y()
+            self.v_line.setPos(x)
+            self.h_line.setPos(y)
 
+    def plot(self) -> None:
         y_min, y_max = 1e9, 0
-
         event_colors = {PositionDirection.long:  pg.mkBrush(0x15, 0xb0, 0x1a, 220),
                         PositionDirection.hedge: pg.mkBrush(0x95, 0xd0, 0xfc, 220),
                         PositionDirection.short: pg.mkBrush(0xe5, 0x00, 0x00, 220)}
@@ -53,12 +63,12 @@ class Plotter:
             events = self.events[direction]
             scatter = pg.ScatterPlotItem(size=4, brush=event_colors[direction])
             scatter.addPoints(events['x'], events['y'])
-            plot.addItem(scatter)
+            self.plt.addItem(scatter)
             y_min = min(y_min, min(events['y']))
             y_max = max(y_max, max(events['y']))
 
-        plot.setLimits(yMin=y_min * 0.95, yMax=y_max * 1.05)
-        # plot.enableAutoRange()
-        win.show()
+        self.plt.setLimits(yMin=y_min * 0.95, yMax=y_max * 1.05)
+        # self.plt.enableAutoRange()
 
-        app.exec_()
+        self.win.show()
+        self.app.exec_()
