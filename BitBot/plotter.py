@@ -110,6 +110,19 @@ class Plotter:
             y_min = min(y_min, min(events['y']))
             y_max = max(y_max, max(events['y']))
 
+        scatter_symbol = QtGui.QPainterPath()
+        scatter_symbol.addText(0, 0, QtGui.QFont("San Serif", 10), '-')
+        scatter_br = scatter_symbol.boundingRect()
+        scale = min(1. / scatter_br.width(), 1. / scatter_br.height())
+        scatter_tr = QtGui.QTransform()
+        scatter_tr.scale(scale, scale)
+        scatter_tr.translate(-scatter_br.x() - scatter_br.width() / 2., -scatter_br.y() - scatter_br.height() / 2.)
+        scatter_symbol = scatter_tr.map(scatter_symbol)
+
+        scatter = pg.ScatterPlotItem(size=5, brush=pg.mkBrush(0xe5, 0xd0, 0x00, 220), symbol=scatter_symbol)
+        scatter.addPoints(self.thresholds['x'], self.thresholds['y'])
+        self.plt.addItem(scatter)
+
         # for annotation in self.annotations:
         #     annotation.setParentItem()
 

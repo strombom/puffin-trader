@@ -85,8 +85,6 @@ if __name__ == '__main__':
         slope = slopes[idx - Slopes.max_slope_length]
         ie_price = runner.ie_prices[idx]
 
-        # sh = slopes[idx-slopes_history_count:idx]
-
         make_trade = position.step(ie_price)  # , slopes[idx-slopes_history_count:idx])
 
         if make_trade:
