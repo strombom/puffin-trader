@@ -90,14 +90,11 @@ class Plotter:
         mouse_point = self.plt.vb.mapSceneToView(pos)
         if self.plt.sceneBoundingRect().contains(pos):
             x, y = mouse_point.x(), mouse_point.y()
-            # self.v_top_line.setPos(x)
-            # self.v_bot_line.setPos(x)
-            # self.h_line.setPos(y)
 
-            slope_idx = int(x + 0.5)
-            if self.slopes.max_slope_length + len(self.slope_lines) <= slope_idx < len(self.slopes):
+            x = int(x + 0.5)
+            if self.slopes.max_slope_length + len(self.slope_lines) <= x < self.slopes.max_slope_length + len(self.slopes):
                 for idx in range(len(self.slope_lines)):
-                    slope = self.slopes[slope_idx - len(self.slope_lines) + idx]
+                    slope = self.slopes[x - self.slopes.max_slope_length - len(self.slope_lines) + 1 + idx]
                     self.slope_lines[idx].setData(slope.x, slope.y)
 
     def plot(self) -> None:

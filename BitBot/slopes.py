@@ -30,10 +30,10 @@ class Slopes:
             pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
     def __getitem__(self, item):
-        return self.slopes[item - self.max_slope_length]
+        return self.slopes[item]
 
     def __len__(self):
-        return len(self.slopes) + self.max_slope_length
+        return len(self.slopes)
 
 
 class Slope:
