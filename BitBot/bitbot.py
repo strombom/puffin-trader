@@ -8,7 +8,7 @@ from enum import IntEnum
 from BinanceSim.binance_simulator import BinanceSimulator
 from Common.Misc import PositionDirection
 from plotter import Plotter
-from slopes import Slopes
+from slopes import Slopes, Slope
 
 
 class Position:
@@ -16,7 +16,7 @@ class Position:
         self.direction = direction
         self.plotter = plotter
 
-    def step(self, mark_price: float) -> bool:
+    def step(self, mark_price: float, slope: Slope) -> bool:
         # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
         threshold_delta = 1.85 * delta
 
@@ -36,7 +36,7 @@ class Position:
 
         if position.direction == PositionDirection.short:
             threshold = slope.y[-1] * (1 + threshold_delta)
-            plotter.append_threshold(idx, threshold)
+            self.plotter.append_threshold(idx, threshold)
 
             if mark_price > threshold or \
                     (mark_price > slope.y[-1] and slope.angle > angle_threshold and slope.angle > prev_slope_angle) or \
@@ -45,7 +45,7 @@ class Position:
 
         elif position.direction == PositionDirection.long:
             threshold = slope.y[-1] * (1 - threshold_delta)
-            plotter.append_threshold(idx, threshold)
+            self.plotter.append_threshold(idx, threshold)
 
             if mark_price < threshold or \
                     (mark_price < slope.y[-1] and slope.angle < -angle_threshold and slope.angle < prev_slope_angle) or \
@@ -85,7 +85,10 @@ if __name__ == '__main__':
         slope = slopes[idx - Slopes.max_slope_length]
         ie_price = runner.ie_prices[idx]
 
-        make_trade = position.step(ie_price)  # , slopes[idx-slopes_history_count:idx])
+        plotter.append_slope_length(idx, slope.length)
+        plotter.append_volatility(idx, slope.volatility)
+
+        make_trade = position.step(ie_price, slope)  # , slopes[idx-slopes_history_count:idx])
 
         if make_trade:
             if position.direction == PositionDirection.short:

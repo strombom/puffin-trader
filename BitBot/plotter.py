@@ -18,6 +18,8 @@ class Plotter:
         self.angles = {'x': [], 'y': []}
         self.values = {'x': [], 'y': []}
         self.thresholds = {'x': [], 'y': []}
+        self.volatilities = {'x': [], 'y': []}
+        self.slope_lengths = {'x': [], 'y': []}
 
         self.app = QtGui.QApplication([])
         self.win = pg.GraphicsLayoutWidget()
@@ -72,6 +74,14 @@ class Plotter:
     def append_threshold(self, threshold_idx: int, threshold: float) -> None:
         self.thresholds['x'].append(threshold_idx)
         self.thresholds['y'].append(threshold)
+
+    def append_volatility(self, volatility_idx: int, volatility: float) -> None:
+        self.volatilities['x'].append(volatility_idx)
+        self.volatilities['y'].append(volatility)
+
+    def append_slope_length(self, slope_length_idx: int, slope_length: float) -> None:
+        self.slope_lengths['x'].append(slope_length_idx)
+        self.slope_lengths['y'].append(slope_length)
 
     def append_annotation(self, x: int, y: float, direction: PositionDirection, profit: float) -> None:
         if profit >= 0:

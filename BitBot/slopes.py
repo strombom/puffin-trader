@@ -38,21 +38,22 @@ class Slopes:
 
 class Slope:
     def __init__(self, prices: np.ndarray, offset: int):
-        y_start, y_end, slope_length = self.find_best_fit(prices)
+        y_start, y_end, slope_length, volatility = self.find_best_fit(prices)
         self.length = slope_length
         self.angle = 1000 * (y_end - y_start) / prices[-1] / slope_length
         self.x = np.array((offset - slope_length, offset - 1))
         self.y = np.array((y_start, y_end))
+        self.volatility = volatility
 
     def find_best_fit(self, prices: np.ndarray):
-        min_d = 1e9
+        min_volatility = 1e9
         best_slope = None
         for slope_length in range(Slopes.max_slope_length, Slopes.min_slope_length - 1, -1):
-            y_start, y_end, max_d = self.estimate_slope(slope_length=slope_length, prices=prices)
-            max_d = max_d / y_start * 100 - slope_length / 75
-            if max_d < min_d:
-                min_d = max_d
-                best_slope = (y_start, y_end, slope_length)
+            y_start, y_end, max_volatility = self.estimate_slope(slope_length=slope_length, prices=prices)
+            max_volatility = max_volatility / y_start * 100 - slope_length / 75
+            if max_volatility < min_volatility:
+                min_volatility = max_volatility
+                best_slope = (y_start, y_end, slope_length, max_volatility)
         return best_slope
 
     def estimate_slope(self, slope_length: int, prices: np.ndarray):
