@@ -3,6 +3,7 @@ import pyqtgraph as pg
 from PyQt5 import QtGui
 
 from Common.Misc import PositionDirection
+from slopes import Slopes
 
 colors = ['r', 'g', 'y', 'b', ]
 
@@ -30,20 +31,27 @@ class Plotter:
         # Price plot
         self.plt_price = self.win.addPlot(row=0, col=0)
         self.plt_price.showGrid(x=True, y=True, alpha=0.3)
-        ax_price = self.plt_price.getAxis('bottom')
-        ax_price.setStyle(showValues=False)
+        ax_x_price = self.plt_price.getAxis('bottom')
+        ax_x_price.setStyle(showValues=False)
+        ax_y_price = self.plt_price.getAxis('left')
+        ax_y_price.setWidth(50)
 
         # Indicator plot
         self.plt_indicators = self.win.addPlot(row=1, col=0)
         self.plt_indicators.showGrid(x=True, y=True, alpha=0.3)
         self.plt_indicators.setXLink(self.plt_price)
-        ax0_indicators = self.plt_indicators.getAxis('bottom')
-        ax0_indicators.setStyle(showValues=False)
+        ax0_x_indicators = self.plt_indicators.getAxis('bottom')
+        ax0_x_indicators.setStyle(showValues=False)
+        ax0_y_indicators = self.plt_indicators.getAxis('left')
+        ax0_y_indicators.setWidth(50)
 
         # Value plot
         self.plt_value = self.win.addPlot(row=2, col=0)
         self.plt_value.showGrid(x=True, y=True, alpha=0.3)
         self.plt_value.setXLink(self.plt_price)
+        ax_y_value = self.plt_value.getAxis('left')
+        ax_y_value.setWidth(50)
+
         self.win.ci.layout.setRowStretchFactor(0, 2)
         self.win.ci.layout.setSpacing(0)
         self.win.ci.layout.setContentsMargins(0, 0, 0, 0)
@@ -81,7 +89,7 @@ class Plotter:
 
     def append_slope_length(self, slope_length_idx: int, slope_length: float) -> None:
         self.slope_lengths['x'].append(slope_length_idx)
-        self.slope_lengths['y'].append(slope_length)
+        self.slope_lengths['y'].append(slope_length / Slopes.max_slope_length)
 
     def append_annotation(self, x: int, y: float, direction: PositionDirection, profit: float) -> None:
         if profit >= 0:
@@ -133,13 +141,14 @@ class Plotter:
         scatter.addPoints(self.thresholds['x'], self.thresholds['y'])
         self.plt_price.addItem(scatter)
 
-        # for annotation in self.annotations:
-        #     annotation.setParentItem()
+        self.plt_price.setLimits(yMin=y_min * 0.9, yMax=y_max * 1.1)
+        # self.plt.enableAutoRange()
 
         self.plt_value.plot(self.values['x'], self.values['y'])
 
-        self.plt_price.setLimits(yMin=y_min * 0.9, yMax=y_max * 1.1)
-        # self.plt.enableAutoRange()
+        self.plt_indicators.plot(self.volatilities['x'], self.volatilities['y'], name=f'Volatility')
+        self.plt_indicators.plot(self.slope_lengths['x'], self.slope_lengths['y'], name=f'Length')
+
 
         self.win.show()
         self.app.exec_()
