@@ -27,34 +27,34 @@ class Plotter:
         self.win.resize(1200, 1000)
         self.win.setBackground((0x34, 0x38, 0x37))
 
-        # Add plots
-        self.plt = self.win.addPlot(row=0, col=0)
-        self.plt.showGrid(x=True, y=True, alpha=0.3)
-        ax0 = self.plt.getAxis('bottom')
-        ax0.setStyle(showValues=False)
-        self.plt_value = self.win.addPlot(row=1, col=0)
+        # Price plot
+        self.plt_price = self.win.addPlot(row=0, col=0)
+        self.plt_price.showGrid(x=True, y=True, alpha=0.3)
+        ax_price = self.plt_price.getAxis('bottom')
+        ax_price.setStyle(showValues=False)
+
+        # Indicator plot
+        self.plt_indicators = self.win.addPlot(row=1, col=0)
+        self.plt_indicators.showGrid(x=True, y=True, alpha=0.3)
+        self.plt_indicators.setXLink(self.plt_price)
+        ax0_indicators = self.plt_indicators.getAxis('bottom')
+        ax0_indicators.setStyle(showValues=False)
+
+        # Value plot
+        self.plt_value = self.win.addPlot(row=2, col=0)
         self.plt_value.showGrid(x=True, y=True, alpha=0.3)
-        self.plt_value.setXLink(self.plt)
+        self.plt_value.setXLink(self.plt_price)
         self.win.ci.layout.setRowStretchFactor(0, 2)
         self.win.ci.layout.setSpacing(0)
         self.win.ci.layout.setContentsMargins(0, 0, 0, 0)
 
-        # Crosshair
-        # crosshair_pen = pg.mkPen({'color': (0xff, 0xff, 0xff, 25), 'width': 2})
-        # self.v_top_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
-        # self.v_bot_line = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
-        # self.h_line = pg.InfiniteLine(angle=0,  movable=False, pen=crosshair_pen)
-        # self.plt.addItem(self.v_top_line, ignoreBounds=True)
-        # self.plt_value.addItem(self.v_bot_line, ignoreBounds=True)
-        # self.plt.addItem(self.h_line, ignoreBounds=True)
-
         self.slope_lines = []
         for idx in range(40):
             slope_pen = pg.mkPen({'color': (0x02, 0xbf, 0xfe, 25 + idx * 1), 'width': 2})
-            slope_line = self.plt.plot([0, 1], [0, 1], pen=slope_pen)  # pg.ScatterPlotItem(size=4, brush=event_colors[direction])
+            slope_line = self.plt_price.plot([0, 1], [0, 1], pen=slope_pen)  # pg.ScatterPlotItem(size=4, brush=event_colors[direction])
             self.slope_lines.append(slope_line)
 
-        self.mouse_move_signal = pg.SignalProxy(self.plt.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_move)
+        self.mouse_move_signal = pg.SignalProxy(self.plt_price.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_move)
 
         self.annotation_fill = {'positive': pg.mkBrush(color=(0x15, 0xb0, 0xa1, 80)),
                                 'negative': pg.mkBrush(color=(0xe5, 0x00, 0x00, 80))}
@@ -90,15 +90,15 @@ class Plotter:
             fill = self.annotation_fill['negative']
         annotation = pg.TextItem(f'{profit * 100:.2f}', anchor=(0.5, 1), fill=fill)
         annotation.setPos(x, y + 80)
-        self.plt.addItem(annotation)
+        self.plt_price.addItem(annotation)
         arrow = pg.ArrowItem(angle=270)
         arrow.setPos(x, y + 30)
-        self.plt.addItem(arrow)
+        self.plt_price.addItem(arrow)
 
     def mouse_move(self, event) -> None:
         pos = event[0]
-        mouse_point = self.plt.vb.mapSceneToView(pos)
-        if self.plt.sceneBoundingRect().contains(pos):
+        mouse_point = self.plt_price.vb.mapSceneToView(pos)
+        if self.plt_price.sceneBoundingRect().contains(pos):
             x, y = mouse_point.x(), mouse_point.y()
 
             x = int(x + 0.5)
@@ -116,7 +116,7 @@ class Plotter:
             events = self.events[direction]
             scatter = pg.ScatterPlotItem(size=4, brush=event_colors[direction])
             scatter.addPoints(events['x'], events['y'])
-            self.plt.addItem(scatter)
+            self.plt_price.addItem(scatter)
             y_min = min(y_min, min(events['y']))
             y_max = max(y_max, max(events['y']))
 
@@ -131,14 +131,14 @@ class Plotter:
 
         scatter = pg.ScatterPlotItem(size=5, brush=pg.mkBrush(0xe5, 0xd0, 0x00, 220), symbol=scatter_symbol)
         scatter.addPoints(self.thresholds['x'], self.thresholds['y'])
-        self.plt.addItem(scatter)
+        self.plt_price.addItem(scatter)
 
         # for annotation in self.annotations:
         #     annotation.setParentItem()
 
         self.plt_value.plot(self.values['x'], self.values['y'])
 
-        self.plt.setLimits(yMin=y_min * 0.9, yMax=y_max * 1.1)
+        self.plt_price.setLimits(yMin=y_min * 0.9, yMax=y_max * 1.1)
         # self.plt.enableAutoRange()
 
         self.win.show()
