@@ -67,6 +67,14 @@ class Plotter:
         self.annotation_fill = {'positive': pg.mkBrush(color=(0x15, 0xb0, 0xa1, 80)),
                                 'negative': pg.mkBrush(color=(0xe5, 0x00, 0x00, 80))}
 
+        crosshair_pen = pg.mkPen({'color': (0xff, 0xff, 0xff, 25), 'width': 2})
+        self.v_line_price = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        self.v_line_indicators = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        self.v_line_value = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
+        self.plt_price.addItem(self.v_line_price, ignoreBounds=True)
+        self.plt_indicators.addItem(self.v_line_indicators, ignoreBounds=True)
+        self.plt_value.addItem(self.v_line_value, ignoreBounds=True)
+
     def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float) -> None:
         self.events[event_direction]['x'].append(event_idx)
         self.events[event_direction]['y'].append(event_price)
@@ -106,14 +114,18 @@ class Plotter:
     def mouse_move(self, event) -> None:
         pos = event[0]
         mouse_point = self.plt_price.vb.mapSceneToView(pos)
-        if self.plt_price.sceneBoundingRect().contains(pos):
-            x, y = mouse_point.x(), mouse_point.y()
+        # if self.plt_price.sceneBoundingRect().contains(pos):
+        x, y = mouse_point.x(), mouse_point.y()
+        x = int(x + 0.5)
 
-            x = int(x + 0.5)
-            if self.slopes.max_slope_length + len(self.slope_lines) <= x < self.slopes.max_slope_length + len(self.slopes):
-                for idx in range(len(self.slope_lines)):
-                    slope = self.slopes[x - self.slopes.max_slope_length - len(self.slope_lines) + 1 + idx]
-                    self.slope_lines[idx].setData(slope.x, slope.y)
+        self.v_line_price.setPos(x)
+        self.v_line_indicators.setPos(x)
+        self.v_line_value.setPos(x)
+
+        if self.slopes.max_slope_length + len(self.slope_lines) <= x < self.slopes.max_slope_length + len(self.slopes):
+            for idx in range(len(self.slope_lines)):
+                slope = self.slopes[x - self.slopes.max_slope_length - len(self.slope_lines) + 1 + idx]
+                self.slope_lines[idx].setData(slope.x, slope.y)
 
     def plot(self) -> None:
         y_min, y_max = 1e9, 0
@@ -146,9 +158,10 @@ class Plotter:
 
         self.plt_value.plot(self.values['x'], self.values['y'])
 
-        self.plt_indicators.plot(self.volatilities['x'], self.volatilities['y'], name=f'Volatility')
-        self.plt_indicators.plot(self.slope_lengths['x'], self.slope_lengths['y'], name=f'Length')
-
+        self.plt_indicators.addLegend()
+        self.plt_indicators.setLabel('left', 'Abc')
+        self.plt_indicators.plot(self.volatilities['x'], self.volatilities['y'], pen='y', name=f'Volatility')
+        self.plt_indicators.plot(self.slope_lengths['x'], self.slope_lengths['y'], pen='r', name=f'Length')
 
         self.win.show()
         self.app.exec_()
