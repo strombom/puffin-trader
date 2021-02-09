@@ -9,6 +9,11 @@ class PositionDirection(IntEnum):
     short = -1
 
 
+class Regime(IntEnum):
+    chop = 0
+    trend = 1
+
+
 def string_to_timestamp(date, fmt='%Y-%m-%d %H:%M:%S.%f'):
     return datetime.timestamp(datetime.strptime(date, fmt))
 

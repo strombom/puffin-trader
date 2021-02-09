@@ -6,7 +6,7 @@ from matplotlib.ticker import FormatStrFormatter
 from enum import IntEnum
 
 from BinanceSim.binance_simulator import BinanceSimulator
-from Common.Misc import PositionDirection
+from Common.Misc import PositionDirection, Regime
 from plotter import Plotter
 from slopes import Slopes, Slope
 
@@ -15,12 +15,21 @@ class Position:
     def __init__(self, direction: PositionDirection, plotter: Plotter):
         self.direction = direction
         self.plotter = plotter
+        self.regime = Regime.chop
 
-    def step(self, mark_price: float, slope: Slope) -> bool:
+    def step(self, ie_idx: int, mark_price: float, mark_price_prev: float, slope: Slope) -> bool:
+        # regime
+        if self.regime == Regime.chop:
+            if (slope.angle > 0.25 and mark_price > mark_price_prev) or \
+                    (slope.angle < -0.25 and mark_price < mark_price_prev):
+                if slope.length > 0.20 and slope.volatility > 0.3 - 0.2 * slope.length:
+                    self.regime = Regime.trend
+                    self.plotter.regime_change(x=ie_idx, mark_price=mark_price, regime=self.regime)
+
         # threshold_delta = (1.6 + 0.8 * (slope_len - 10) / 70) * delta
         threshold_delta = 1.85 * delta
 
-        if abs(slope.angle) > 2 and slope.length > 30:
+        if abs(slope.angle) > 2 and slope.length > 0.4:
             threshold_delta *= 0.9
         # elif abs(slope_angle) > 1:
         #     threshold_delta *= 1.1
@@ -29,27 +38,27 @@ class Position:
 
         make_trade = False
 
-        angle_threshold = 0.2
+        angle_threshold = 0.2 / 5
         prev_slope_angle = 0
         if slopes[-2] is not None:
-            prev_slope_angle = slopes[idx - Slopes.max_slope_length - 1].angle
+            prev_slope_angle = slopes[ie_idx - Slopes.max_slope_length - 1].angle
 
         if position.direction == PositionDirection.short:
             threshold = slope.y[-1] * (1 + threshold_delta)
-            self.plotter.append_threshold(idx, threshold)
+            self.plotter.append_threshold(ie_idx, threshold)
 
             if mark_price > threshold or \
-                    (mark_price > slope.y[-1] and slope.angle > angle_threshold and slope.angle > prev_slope_angle) or \
-                    (mark_price > slope.y[-1] and slope.angle > 0 and slope.length > 20):
+                    (mark_price > slope.y[-1] and slope.angle > angle_threshold and slope.angle > prev_slope_angle and mark_price > mark_price_prev) or \
+                    (mark_price > slope.y[-1] and slope.angle > 0 and slope.length > 0.3 and mark_price > mark_price_prev):
                 make_trade = True
 
         elif position.direction == PositionDirection.long:
             threshold = slope.y[-1] * (1 - threshold_delta)
-            self.plotter.append_threshold(idx, threshold)
+            self.plotter.append_threshold(ie_idx, threshold)
 
             if mark_price < threshold or \
-                    (mark_price < slope.y[-1] and slope.angle < -angle_threshold and slope.angle < prev_slope_angle) or \
-                    (mark_price < slope.y[-1] and slope.angle < 0 and slope.length > 20):
+                    (mark_price < slope.y[-1] and slope.angle < -angle_threshold and slope.angle < prev_slope_angle and mark_price < mark_price_prev) or \
+                    (mark_price < slope.y[-1] and slope.angle < 0 and slope.length > 0.3 and mark_price < mark_price_prev):
                 make_trade = True
 
         # if abs(anglediff) > 1.0:
@@ -58,6 +67,10 @@ class Position:
         #     threshold_delta *= 1 - 0.3
         # elif abs(anglediff) > 0.4:
         #     threshold_delta *= 1 - 0.2
+
+        if make_trade and self.regime == Regime.trend:
+            self.regime = Regime.chop
+            self.plotter.regime_change(x=ie_idx, mark_price=mark_price, regime=self.regime)
 
         return make_trade
 
@@ -70,7 +83,7 @@ if __name__ == '__main__':
     x = np.arange(runner.ie_prices.shape[0])
     slopes = Slopes(runner.ie_prices)
 
-    slopes_history_count = 10
+    slopes_history_count = 0
     first_idx = Slopes.max_slope_length + slopes_history_count
     simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner.ie_prices[0], initial_leverage=0.0)
     plotter = Plotter(slopes)
@@ -88,7 +101,7 @@ if __name__ == '__main__':
         plotter.append_slope_length(idx, slope.length)
         plotter.append_volatility(idx, slope.volatility)
 
-        make_trade = position.step(ie_price, slope)  # , slopes[idx-slopes_history_count:idx])
+        make_trade = position.step(idx, ie_price, runner.ie_prices[idx - 1], slope)  # , slopes[idx-slopes_history_count:idx])
 
         if make_trade:
             if position.direction == PositionDirection.short:

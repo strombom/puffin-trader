@@ -1,8 +1,9 @@
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui
+from pyqtgraph import mkPen
 
-from Common.Misc import PositionDirection
+from Common.Misc import PositionDirection, Regime
 from slopes import Slopes
 
 colors = ['r', 'g', 'y', 'b', ]
@@ -52,9 +53,11 @@ class Plotter:
         ax_y_value = self.plt_value.getAxis('left')
         ax_y_value.setWidth(50)
 
-        self.win.ci.layout.setRowStretchFactor(0, 2)
         self.win.ci.layout.setSpacing(0)
         self.win.ci.layout.setContentsMargins(0, 0, 0, 0)
+        self.win.ci.layout.setRowStretchFactor(0, 3)
+        self.win.ci.layout.setRowStretchFactor(1, 3)
+        self.win.ci.layout.setRowStretchFactor(2, 1)
 
         self.slope_lines = []
         for idx in range(40):
@@ -74,6 +77,12 @@ class Plotter:
         self.plt_price.addItem(self.v_line_price, ignoreBounds=True)
         self.plt_indicators.addItem(self.v_line_indicators, ignoreBounds=True)
         self.plt_value.addItem(self.v_line_value, ignoreBounds=True)
+
+        self.plt_indicator_annotations = {'volatility': pg.TextItem(f'V', anchor=(0.5, 0), fill=(0x00, 0x35, 0x5b)),
+                                          'length': pg.TextItem(f'L', anchor=(0.5, 0), fill=(0x02, 0xab, 0x2e)),
+                                          'angle': pg.TextItem(f'A', anchor=(0.5, 0), fill=(0x84, 0x00, 0x00))}
+        for name, annotation in self.plt_indicator_annotations.items():
+            self.plt_indicators.addItem(annotation)
 
     def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float) -> None:
         self.events[event_direction]['x'].append(event_idx)
@@ -97,7 +106,7 @@ class Plotter:
 
     def append_slope_length(self, slope_length_idx: int, slope_length: float) -> None:
         self.slope_lengths['x'].append(slope_length_idx)
-        self.slope_lengths['y'].append(slope_length / Slopes.max_slope_length)
+        self.slope_lengths['y'].append(slope_length)
 
     def append_annotation(self, x: int, y: float, direction: PositionDirection, profit: float) -> None:
         if profit >= 0:
@@ -109,6 +118,21 @@ class Plotter:
         self.plt_price.addItem(annotation)
         arrow = pg.ArrowItem(angle=270)
         arrow.setPos(x, y + 30)
+        self.plt_price.addItem(arrow)
+
+    def regime_change(self, x: int, mark_price: float, regime: Regime):
+        if regime == Regime.trend:
+            text = 'Trend'
+            brush = pg.mkBrush(color=(0xc7, 0xfb, 0xb5, 80))
+        else:
+            text = 'Chop'
+            brush = pg.mkBrush(color=(0xff, 0xb0, 0x7c, 80))
+
+        annotation = pg.TextItem(f'{text}', anchor=(0.5, 0), fill=brush)
+        annotation.setPos(x, mark_price - 80)
+        self.plt_price.addItem(annotation)
+        arrow = pg.ArrowItem(angle=90)
+        arrow.setPos(x, mark_price - 30)
         self.plt_price.addItem(arrow)
 
     def mouse_move(self, event) -> None:
@@ -126,6 +150,15 @@ class Plotter:
             for idx in range(len(self.slope_lines)):
                 slope = self.slopes[x - self.slopes.max_slope_length - len(self.slope_lines) + 1 + idx]
                 self.slope_lines[idx].setData(slope.x, slope.y)
+
+        for idx, (name, annotation) in enumerate(self.plt_indicator_annotations.items()):
+            annotation.setPos(x + (idx - 1) * 7, -0.7)
+
+        idx = x - Slopes.max_slope_length
+        if 0 <= idx < len(self.volatilities['y']):
+            self.plt_indicator_annotations['volatility'].setText(text=f"{self.volatilities['y'][idx]:.2f}")
+            self.plt_indicator_annotations['length'].setText(text=f"{self.slope_lengths['y'][idx]:.2f}")
+            self.plt_indicator_annotations['angle'].setText(text=f"{self.angles['y'][idx]:.2f}")
 
     def plot(self) -> None:
         y_min, y_max = 1e9, 0
@@ -160,8 +193,9 @@ class Plotter:
 
         self.plt_indicators.addLegend()
         self.plt_indicators.setLabel('left', 'Abc')
-        self.plt_indicators.plot(self.volatilities['x'], self.volatilities['y'], pen='y', name=f'Volatility')
-        self.plt_indicators.plot(self.slope_lengths['x'], self.slope_lengths['y'], pen='r', name=f'Length')
+        self.plt_indicators.plot(self.volatilities['x'], self.volatilities['y'], pen='b', name=f'Volatility')
+        self.plt_indicators.plot(self.slope_lengths['x'], self.slope_lengths['y'], pen='g', name=f'Length')
+        self.plt_indicators.plot(self.angles['x'], self.angles['y'], pen='r', name=f'Angle')
 
         self.win.show()
         self.app.exec_()

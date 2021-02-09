@@ -7,7 +7,7 @@ from scipy import stats
 class Slopes:
     # The latest price is not included in the slope
     max_slope_length = 70
-    min_slope_length = 15
+    min_slope_length = 12
     x_range = np.arange(max_slope_length)
 
     def __init__(self, prices: np.ndarray):
@@ -39,8 +39,8 @@ class Slopes:
 class Slope:
     def __init__(self, prices: np.ndarray, offset: int):
         y_start, y_end, slope_length, volatility = self.find_best_fit(prices)
-        self.length = slope_length
-        self.angle = 1000 * (y_end - y_start) / prices[-1] / slope_length
+        self.length = slope_length / Slopes.max_slope_length
+        self.angle = 200 * (y_end - y_start) / prices[-1] / slope_length
         self.x = np.array((offset - slope_length, offset - 1))
         self.y = np.array((y_start, y_end))
         self.volatility = volatility
@@ -50,7 +50,7 @@ class Slope:
         best_slope = None
         for slope_length in range(Slopes.max_slope_length, Slopes.min_slope_length - 1, -1):
             y_start, y_end, max_volatility = self.estimate_slope(slope_length=slope_length, prices=prices)
-            max_volatility = max_volatility / y_start * 100 - slope_length / 75
+            max_volatility = max_volatility / y_start * 60  # - slope_length / 75
             if max_volatility < min_volatility:
                 min_volatility = max_volatility
                 best_slope = (y_start, y_end, slope_length, max_volatility)
