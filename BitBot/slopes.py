@@ -12,7 +12,7 @@ class Slopes:
 
     def __init__(self, prices: np.ndarray):
         try:
-            with open(f"cache/slopes.pickle", 'rb') as f:
+            with open(f"cache/slopes2.pickle", 'rb') as f:
                 data = pickle.load(f)
                 if data['slope_count'] == prices.shape[0] - self.max_slope_length:
                     self.slopes = data['slopes']
@@ -45,18 +45,18 @@ class Slope:
         self.y = np.array((y_start, y_end))
         self.volatility = volatility
 
-    def find_best_fit(self, prices: np.ndarray):
+    def find_best_fit(self, prices: np.ndarray) -> tuple:
         min_volatility = 1e9
         best_slope = None
         for slope_length in range(Slopes.max_slope_length, Slopes.min_slope_length - 1, -1):
-            y_start, y_end, max_volatility = self.estimate_slope(slope_length=slope_length, prices=prices)
-            max_volatility = max_volatility / y_start * 60  # - slope_length / 75
+            y_start, y_end, volatility = self.estimate_slope(slope_length=slope_length, prices=prices)
+            max_volatility = volatility / y_start * 100 - slope_length / 75
             if max_volatility < min_volatility:
                 min_volatility = max_volatility
                 best_slope = (y_start, y_end, slope_length, max_volatility)
         return best_slope
 
-    def estimate_slope(self, slope_length: int, prices: np.ndarray):
+    def estimate_slope(self, slope_length: int, prices: np.ndarray) -> tuple:
         x_range = Slopes.x_range[:slope_length]
         r = stats.linregress(x_range, prices[prices.shape[0] - slope_length:])
         slope_y = x_range * r.slope + r.intercept
