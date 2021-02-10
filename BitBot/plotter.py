@@ -55,8 +55,8 @@ class Plotter:
 
         self.win.ci.layout.setSpacing(0)
         self.win.ci.layout.setContentsMargins(0, 0, 0, 0)
-        self.win.ci.layout.setRowStretchFactor(0, 3)
-        self.win.ci.layout.setRowStretchFactor(1, 3)
+        self.win.ci.layout.setRowStretchFactor(0, 6)
+        self.win.ci.layout.setRowStretchFactor(1, 5)
         self.win.ci.layout.setRowStretchFactor(2, 1)
 
         self.slope_lines = []
@@ -162,19 +162,19 @@ class Plotter:
 
     def plot(self) -> None:
         y_min, y_max = 1e9, 0
-        event_colors = {PositionDirection.long:  pg.mkBrush(0x15, 0xb0, 0x1a, 220),
-                        PositionDirection.hedge: pg.mkBrush(0x95, 0xd0, 0xfc, 220),
-                        PositionDirection.short: pg.mkBrush(0xe5, 0x00, 0x00, 220)}
+        event_colors = {PositionDirection.long:  pg.mkBrush(0x15, 0xb0, 0x1a, 250),
+                        PositionDirection.hedge: pg.mkBrush(0x95, 0xd0, 0xfc, 250),
+                        PositionDirection.short: pg.mkBrush(0xe5, 0x00, 0x00, 250)}
         for direction in [PositionDirection.long, PositionDirection.hedge, PositionDirection.short]:
             events = self.events[direction]
-            scatter = pg.ScatterPlotItem(size=4, brush=event_colors[direction])
+            scatter = pg.ScatterPlotItem(size=5, brush=event_colors[direction])
             scatter.addPoints(events['x'], events['y'])
             self.plt_price.addItem(scatter)
             y_min = min(y_min, min(events['y']))
             y_max = max(y_max, max(events['y']))
 
         scatter_symbol = QtGui.QPainterPath()
-        scatter_symbol.addText(0, 0, QtGui.QFont("San Serif", 10), '-')
+        scatter_symbol.addText(0, 0, QtGui.QFont("San Serif", 8), '-')
         scatter_br = scatter_symbol.boundingRect()
         scale = min(1. / scatter_br.width(), 1. / scatter_br.height())
         scatter_tr = QtGui.QTransform()
@@ -182,7 +182,7 @@ class Plotter:
         scatter_tr.translate(-scatter_br.x() - scatter_br.width() / 2., -scatter_br.y() - scatter_br.height() / 2.)
         scatter_symbol = scatter_tr.map(scatter_symbol)
 
-        scatter = pg.ScatterPlotItem(size=5, brush=pg.mkBrush(0xe5, 0xd0, 0x00, 220), symbol=scatter_symbol)
+        scatter = pg.ScatterPlotItem(size=3, brush=pg.mkBrush(0xe5, 0xd0, 0x00, 10), symbol=scatter_symbol)
         scatter.addPoints(self.thresholds['x'], self.thresholds['y'])
         self.plt_price.addItem(scatter)
 
