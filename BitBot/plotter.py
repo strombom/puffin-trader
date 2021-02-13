@@ -67,8 +67,8 @@ class Plotter:
 
         self.mouse_move_signal = pg.SignalProxy(self.plt_price.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_move)
 
-        self.annotation_fill = {'positive': pg.mkBrush(color=(0x15, 0xb0, 0xa1, 80)),
-                                'negative': pg.mkBrush(color=(0xe5, 0x00, 0x00, 80))}
+        self.annotation_fill = {'positive': pg.mkBrush(color=(0x15, 0xb0, 0xa1, 40)),
+                                'negative': pg.mkBrush(color=(0xe5, 0x00, 0x00, 40))}
 
         crosshair_pen = pg.mkPen({'color': (0xff, 0xff, 0xff, 25), 'width': 2})
         self.v_line_price = pg.InfiniteLine(angle=90, movable=False, pen=crosshair_pen)
@@ -114,7 +114,7 @@ class Plotter:
         else:
             fill = self.annotation_fill['negative']
         annotation = pg.TextItem(f'{profit * 100:.2f}', anchor=(0.5, 1), fill=fill)
-        annotation.setPos(x, y + 80)
+        annotation.setPos(x, y + 100)
         self.plt_price.addItem(annotation)
         arrow = pg.ArrowItem(angle=270)
         arrow.setPos(x, y + 30)
@@ -123,13 +123,13 @@ class Plotter:
     def regime_change(self, x: int, mark_price: float, regime: Regime):
         if regime == Regime.trend:
             text = 'Trend'
-            brush = pg.mkBrush(color=(0xc7, 0xfb, 0xb5, 80))
+            brush = pg.mkBrush(color=(0xc7, 0xfb, 0xb5, 30))
         else:
             text = 'Chop'
-            brush = pg.mkBrush(color=(0xff, 0xb0, 0x7c, 80))
+            brush = pg.mkBrush(color=(0xff, 0xb0, 0x7c, 30))
 
         annotation = pg.TextItem(f'{text}', anchor=(0.5, 0), fill=brush)
-        annotation.setPos(x, mark_price - 80)
+        annotation.setPos(x, mark_price - 100)
         self.plt_price.addItem(annotation)
         arrow = pg.ArrowItem(angle=90)
         arrow.setPos(x, mark_price - 30)
