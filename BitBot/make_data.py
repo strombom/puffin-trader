@@ -11,8 +11,8 @@ from IntrinsicTime.runner import Runner
 if __name__ == '__main__':
     ignore_date_ranges = []
     # [(string_to_datetime("2020-03-13 03:00:00.0"), string_to_datetime("2020-03-13 04:00:00.0"))]
-    start_timestamp = string_to_datetime("2020-01-01 00:00:00.0")
-    end_timestamp = string_to_datetime("2021-07-08 00:00:00.0")
+    start_timestamp = string_to_datetime("2021-01-01 00:00:00.0")
+    end_timestamp = string_to_datetime("2021-02-01 00:00:00.0")
 
     order_books = make_order_books(None, None)
     if order_books is None:
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     print(f'Order books ({len(order_books)}) {order_books[0].timestamp} - {order_books[-1].timestamp}')
 
-    delta = 0.005
+    delta = 0.001
     runner = Runner(delta=delta, order_book=order_books[0])
     for order_book in order_books:
         runner.step(order_book)
@@ -43,21 +43,20 @@ if __name__ == '__main__':
         bids[idx] = order_book.bid
         times[idx] = datetime.timestamp(order_book.timestamp)
 
-    """
+    import matplotlib.pyplot as plt
     ax1 = plt.subplot(1, 1, 1)
     ax1.grid(True)
-    plt.plot(times, prices, label=f'price')
-    plt.plot(times, asks, label=f'ask')
-    plt.plot(times, bids, label=f'bid')
-    plt.plot(runner.os_times, runner.os_prices, label=f'OS')
-    plt.scatter(runner.os_times, runner.os_prices, label=f'OS', s=5**2)
-    plt.scatter(runner.dc_times, runner.dc_prices, label=f'DC', s=7**2)
-    plt.scatter(runner.ie_times, runner.ie_prices, label=f'IE', s=5**2)
-    plt.scatter(runner.ie_times, runner.ie_min_asks, label=f'Min Asks', s=5**2)
-    plt.scatter(runner.ie_times, runner.ie_max_bids, label=f'Max Bids', s=5**2)
+    # plt.plot(times, prices, color='', label=f'price')
+    plt.plot(times, asks, color='xkcd:beige', label=f'ask')
+    plt.plot(times, bids, color='xkcd:beige', label=f'bid')
+    plt.plot(runner.os_times, runner.os_prices, color='xkcd:red', label=f'OS')
+    plt.scatter(runner.os_times, runner.os_prices, color='xkcd:red', label=f'OS', s=7**2)
+    # plt.scatter(runner.dc_times, runner.dc_prices, color='xkcd:dark red', label=f'DC', s=9**2)
+    plt.scatter(runner.ie_times, runner.ie_prices, color='xkcd:teal', label=f'IE', s=7**2)
+    # plt.scatter(runner.ie_times, runner.ie_min_asks, label=f'Min Asks', s=5**2)
+    # plt.scatter(runner.ie_times, runner.ie_max_bids, label=f'Max Bids', s=5**2)
     plt.legend()
     plt.show()
-    """
 
     with open(f"cache/intrinsic_time_runner.pickle", 'wb') as f:
         pickle.dump((delta, runner), f)
