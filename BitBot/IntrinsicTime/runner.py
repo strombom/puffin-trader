@@ -45,11 +45,6 @@ class Runner:
                 self.extreme_timestamp = order_book.timestamp
                 self.extreme_price = order_book.ask
 
-                while order_book.ask < self.expected_ie_price:
-                    self.ie_times.append(order_book.timestamp.timestamp())
-                    self.ie_prices.append(self.expected_ie_price)
-                    self.expected_ie_price *= 1 - self.delta
-
         else:
             while order_book.ask < self.expected_ie_price:
                 self.ie_times.append(order_book.timestamp.timestamp())
@@ -69,11 +64,6 @@ class Runner:
                 self.expected_ie_price = expected_dc_price * (1 + self.delta)
                 self.extreme_timestamp = order_book.timestamp
                 self.extreme_price = order_book.bid
-
-                while order_book.bid > self.expected_ie_price:
-                    self.ie_times.append(order_book.timestamp.timestamp())
-                    self.ie_prices.append(self.expected_ie_price)
-                    self.expected_ie_price *= 1 + self.delta
 
     def _append(self, dc_timestamp, delta_price):
         self.ie_times.append(dc_timestamp.timestamp())
