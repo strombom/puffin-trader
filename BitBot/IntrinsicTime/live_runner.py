@@ -12,7 +12,7 @@ class RunnerEvent(IntEnum):
     change_down = -1
 
 
-class Runner:
+class LiveRunner:
     def __init__(self, delta, initial_price):
         self.delta = delta
         self.direction = Direction.up
