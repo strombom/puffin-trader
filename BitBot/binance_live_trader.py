@@ -51,16 +51,21 @@ def live_data(data_pipe: Pipe):
 
 
 def trader(data_pipe: Pipe):
-    @ratelimit.limits(calls=1, period=0.5)
+    @ratelimit.limits(calls=1, period=1)
     def print_it(msg):
         print("-> " + msg)
 
+    ask, bid = 0.0, 0.0
     while True:
         if data_pipe.poll(0.5):
-            # print(data_pipe.recv())
             timestamp, price, buy = data_pipe.recv()
+            if buy:
+                ask = price
+            else:
+                bid = price
+
             try:
-                print_it(f"trader has msg {timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')} {price} {buy}")
+                print_it(f"trader has msg {timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')} {ask:.1f} <-> {bid:.1f} {buy}")
             except ratelimit.exception.RateLimitException:
                 pass
 
