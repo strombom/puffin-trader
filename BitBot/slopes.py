@@ -39,7 +39,7 @@ class Slopes:
 
 
 class Slope:
-    def __init__(self, prices: np.ndarray, offset: int):
+    def __init__(self, prices: np.ndarray, offset: int = 0):
         (y_start, y_end, slope_length, volatility), volatilities = self.find_best_fit(prices)
         self.length = slope_length / Slopes.max_slope_length
         self.angle = 200 * (y_end - y_start) / prices[-1] / slope_length
