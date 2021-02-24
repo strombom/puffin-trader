@@ -10,6 +10,7 @@ from collections import deque
 from multiprocessing import Pipe
 from datetime import datetime, timedelta
 
+from binance_account import BinanceAccount
 from slopes import Slopes, Slope
 from position_live import PositionLive
 from Common.Misc import PositionDirection
@@ -68,6 +69,11 @@ class LivePlotter:
 
 
 def trader(data_pipe: Pipe):
+    binance_account = BinanceAccount()
+    from time import sleep
+    while True:
+        sleep(1)
+
     initial_price = 40000.0
     runner = LiveRunner(delta=0.001, initial_price=initial_price)
 
@@ -100,11 +106,12 @@ def trader(data_pipe: Pipe):
                         if make_trade:
                             if position.direction == PositionDirection.long:
                                 position.direction = PositionDirection.short
+                                binance_account.order(-1)
                             else:
                                 position.direction = PositionDirection.long
+                                binance_account.order(1)
 
                         print(timestamp, ie_prices[len(ie_prices) - 1], slope.length, slope.angle, position.direction)
-
 
             try:
                 print_it(f"trader has msg {timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')} {ask:.1f} <-> {bid:.1f} {buy}")
