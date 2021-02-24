@@ -5,8 +5,15 @@ import signal
 import msgpack
 import threading
 import ratelimit
-from datetime import datetime, timedelta
+import numpy as np
+from collections import deque
 from multiprocessing import Pipe
+from datetime import datetime, timedelta
+
+from slopes import Slopes, Slope
+from position_live import PositionLive
+from Common.Misc import PositionDirection
+from IntrinsicTime.live_runner import LiveRunner
 
 
 def live_data(data_pipe: Pipe):
@@ -38,7 +45,6 @@ def live_data(data_pipe: Pipe):
 
         return last_timestamp
 
-
     timestamp_start = datetime.utcnow() - timedelta(minutes=2)
     while True:
         if data_pipe.poll(0.5):
@@ -50,12 +56,30 @@ def live_data(data_pipe: Pipe):
         # print("t new", timestamp_start)
 
 
+class LivePlotter:
+    def __init__(self):
+        pass
+
+    def append_threshold(self, ie_idx, threshold):
+        pass
+
+    def regime_change(self, x, mark_price, regime):
+        pass
+
+
 def trader(data_pipe: Pipe):
+    initial_price = 40000.0
+    runner = LiveRunner(delta=0.001, initial_price=initial_price)
+
     @ratelimit.limits(calls=1, period=1)
     def print_it(msg):
-        print("-> " + msg)
+        # print("-> " + msg)
+        pass
 
-    ask, bid = 0.0, 0.0
+    position = PositionLive(delta=0.001, initial_price=initial_price, direction=PositionDirection.long)
+    ie_prices = deque(maxlen=Slopes.max_slope_length + 10)
+    ask, bid = initial_price, initial_price
+
     while True:
         if data_pipe.poll(0.5):
             timestamp, price, buy = data_pipe.recv()
@@ -63,6 +87,18 @@ def trader(data_pipe: Pipe):
                 ask = price
             else:
                 bid = price
+
+            make_trade = None
+            new_ie_prices = runner.step(ask=ask, bid=bid)
+            if len(new_ie_prices) > 0:
+                for ie_price in new_ie_prices:
+                    ie_prices.append(ie_price)
+                    slope_prices = np.array(ie_prices)[-Slopes.max_slope_length - 1:-1]
+                    if slope_prices.shape[0] == Slopes.max_slope_length:
+                        print("sps", slope_prices.shape)
+                        slope = Slope(prices=slope_prices)
+                        make_trade = position.step(mark_price=ie_price, slope=slope)
+                        print(timestamp, ie_prices[len(ie_prices) - 1], slope.length, slope.angle, make_trade)
 
             try:
                 print_it(f"trader has msg {timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')} {ask:.1f} <-> {bid:.1f} {buy}")
