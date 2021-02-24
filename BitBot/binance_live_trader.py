@@ -95,10 +95,16 @@ def trader(data_pipe: Pipe):
                     ie_prices.append(ie_price)
                     slope_prices = np.array(ie_prices)[-Slopes.max_slope_length - 1:-1]
                     if slope_prices.shape[0] == Slopes.max_slope_length:
-                        print("sps", slope_prices.shape)
                         slope = Slope(prices=slope_prices)
                         make_trade = position.step(mark_price=ie_price, slope=slope)
-                        print(timestamp, ie_prices[len(ie_prices) - 1], slope.length, slope.angle, make_trade)
+                        if make_trade:
+                            if position.direction == PositionDirection.long:
+                                position.direction = PositionDirection.short
+                            else:
+                                position.direction = PositionDirection.long
+
+                        print(timestamp, ie_prices[len(ie_prices) - 1], slope.length, slope.angle, position.direction)
+
 
             try:
                 print_it(f"trader has msg {timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')} {ask:.1f} <-> {bid:.1f} {buy}")
