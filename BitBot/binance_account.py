@@ -1,4 +1,5 @@
 import json
+import math
 import binance.enums
 from binance.client import Client
 from binance.websockets import BinanceSocketManager
@@ -15,6 +16,11 @@ class BinanceAccount:
             api_secret = account_info['api_secret']
 
         self.client = Client(api_key, api_secret)
+
+        # exchange_info = self.client.get_exchange_info()
+        # for symbol in exchange_info['symbols']:
+        #     if symbol['symbol'] == 'BTCUSDT':
+        #         print("Exchange info", symbol)
 
         def process_margin_message(data):
             print("margin", data)
@@ -53,6 +59,8 @@ class BinanceAccount:
         # margin_usdt {'assetName': 'USDT', 'assetFullName': 'Tether', 'isBorrowable': True, 'isMortgageable': True, 'userMinBorrow': '0', 'userMinRepay': '0'}
 
         self.update_account_status()
+
+        return
 
         self.order(2.0)
         self.order(1.5)
@@ -98,6 +106,9 @@ class BinanceAccount:
         print(f"Account USDT wallet={self.assets['USDT']['wallet']}, debt={self.assets['USDT']['debt']}")
 
     def order(self, leverage):
+        borrow_extra = 1.01
+        min_order_size_usdt = 10
+
         if leverage == 0:
             return
 
@@ -119,7 +130,6 @@ class BinanceAccount:
         print(f"Order size BTC: leverage({leverage}) target_btc({target_btc}) order_size_btc({order_size_btc})")
 
         # Borrow
-        borrow_extra = 1.01
         if leverage > 0:
             borrow_usdt = borrow_extra * order_size_btc * mark_price - self.assets['USDT']['wallet']
             if borrow_usdt > 0:
@@ -131,51 +141,46 @@ class BinanceAccount:
             borrow_btc = borrow_extra * -order_size_btc - self.assets['BTC']['wallet']
             if borrow_btc > 0:
                 print(f"Borrow BTC ({borrow_btc})")
-                quit()
                 transaction = self.client.create_margin_loan(asset='BTC', amount=str(borrow_btc))
                 print("Borrow BTC result", transaction)
 
         # Trade BTC<->USDT
-        if leverage > 0:
+        if leverage > 0 and order_size_btc * mark_price > min_order_size_usdt:
+            min_lot_size = 0.000001
+            order_size_btc = math.floor(order_size_btc / min_lot_size) * min_lot_size
             order = self.client.create_margin_order(
                 symbol='BTCUSDT',
                 side=binance.enums.SIDE_BUY,
                 type=binance.enums.ORDER_TYPE_MARKET,
-                timeInForce=binance.enums.TIME_IN_FORCE_GTC,
-                quantity=order_size_btc,
+                quantity=str(order_size_btc),
+                newOrderRespType=binance.enums.ORDER_RESP_TYPE_RESULT)
+            print(f"Order BTC ({order_size_btc})")
+            print("Order BTC result", order)
+
+        elif leverage < 0 and -order_size_btc * mark_price > min_order_size_usdt:
+            min_lot_size = 0.000001
+            order_size_btc = math.floor(order_size_btc / min_lot_size) * min_lot_size
+            order = self.client.create_margin_order(
+                symbol='BTCUSDT',
+                side=binance.enums.SIDE_SELL,
+                type=binance.enums.ORDER_TYPE_MARKET,
+                quantity=str(-order_size_btc),
                 newOrderRespType=binance.enums.ORDER_RESP_TYPE_RESULT)
             print(f"Order BTC ({order_size_btc})")
             print("Order BTC result", order)
 
         # Repay debt
-        if leverage > 0 and self.assets['BTC']['debt'] > 0:
-            if self.assets['BTC']['debt'] * mark_price > self.assets['USDT']['wallet']:
-                print("Trying to repay BTC debt, not enough USDT funds!!!")
-                return
-            self.client.repay_margin_loan(asset='BTC', amount=str(self.assets['BTC']['debt']))
+        self.update_account_status()
+        if self.assets['BTC']['wallet'] > 0 and self.assets['BTC']['debt'] > 0:
+            repay_btc = min(self.assets['BTC']['wallet'], self.assets['BTC']['debt'])
+            details = self.client.repay_margin_loan(asset='BTC', amount=str(repay_btc))
+            print(f"Repay BTC ({repay_btc})")
+            print("Repay BTC result", details)
 
-        elif leverage < 0 and self.assets['USDT']['debt'] > 0:
-            if self.assets['USDT']['debt'] > self.assets['BTC']['wallet'] * mark_price:
-                print("Trying to repay USDT debt, not enough BTC funds!!!")
-                return
-            self.client.repay_margin_loan(asset='USDT', amount=str(self.assets['USDT']['debt']))
+        if self.assets['USDT']['wallet'] > 0 and self.assets['USDT']['debt'] > 0:
+            repay_usdt = min(self.assets['USDT']['wallet'], self.assets['USDT']['debt'])
+            details = self.client.repay_margin_loan(asset='USDT', amount=str(repay_usdt))
+            print(f"Repay USDT ({repay_usdt})")
+            print("Repay USDT result", details)
 
-        """
-        target_btc_wallet = 0
-        target_btc_debt = 0
-        target_usdt_wallet = 0
-        target_usdt_debt = 0
-
-        if target_btc > 0:
-            target_btc_wallet = target_btc
-            if equity >= target_btc * mark_price:
-                target_usdt_debt = 0
-            else:
-                target_usdt_debt = target_btc * mark_price - equity
-        else:
-            target_btc_debt = 0
-            target_usdt_wallet = 0
-        """
-
-        return
 
