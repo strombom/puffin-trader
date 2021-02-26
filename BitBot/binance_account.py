@@ -124,7 +124,7 @@ class BinanceAccount:
         else:
             mark_price = self.mark_price_bid
 
-        self.update_account_status()
+        # self.update_account_status()
 
         equity = self.assets['USDT']['wallet'] - self.assets['USDT']['debt']
         equity += (self.assets['BTC']['wallet'] - self.assets['BTC']['debt']) * mark_price
@@ -135,21 +135,6 @@ class BinanceAccount:
 
         print(f"Order size BTC: leverage({leverage}) target_btc({target_btc}) order_size_btc({order_size_btc})")
 
-        # Borrow
-        if leverage > 0:
-            borrow_usdt = borrow_extra * order_size_btc * mark_price - self.assets['USDT']['wallet']
-            if borrow_usdt > 0:
-                print(f"Borrow USDT ({borrow_usdt})")
-                transaction = self.client.create_margin_loan(asset='USDT', amount=str(borrow_usdt))
-                print("Borrow USDT transaction", transaction)
-
-        else:
-            borrow_btc = borrow_extra * -order_size_btc - self.assets['BTC']['wallet']
-            if borrow_btc > 0:
-                print(f"Borrow BTC ({borrow_btc})")
-                transaction = self.client.create_margin_loan(asset='BTC', amount=str(borrow_btc))
-                print("Borrow BTC result", transaction)
-
         # Trade BTC<->USDT
         if leverage > 0 and order_size_btc * mark_price > min_order_size_usdt:
             min_lot_size = 0.000001
@@ -159,7 +144,8 @@ class BinanceAccount:
                 side=binance.enums.SIDE_BUY,
                 type=binance.enums.ORDER_TYPE_MARKET,
                 quantity=str(order_size_btc),
-                newOrderRespType=binance.enums.ORDER_RESP_TYPE_RESULT)
+                newOrderRespType=binance.enums.ORDER_RESP_TYPE_RESULT,
+                sideEffectType='MARGIN_BUY')
             print(f"Order BTC ({order_size_btc})")
             print("Order BTC result", order)
 
@@ -171,7 +157,8 @@ class BinanceAccount:
                 side=binance.enums.SIDE_SELL,
                 type=binance.enums.ORDER_TYPE_MARKET,
                 quantity=str(-order_size_btc),
-                newOrderRespType=binance.enums.ORDER_RESP_TYPE_RESULT)
+                newOrderRespType=binance.enums.ORDER_RESP_TYPE_RESULT,
+                sideEffectType='MARGIN_BUY')
             print(f"Order BTC ({order_size_btc})")
             print("Order BTC result", order)
 
@@ -199,3 +186,6 @@ class BinanceAccount:
                 break
             except binance.exceptions.BinanceAPIException:
                 traceback.print_exc()
+
+        sleep(0.3)
+        self.update_account_status()
