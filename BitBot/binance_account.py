@@ -1,7 +1,10 @@
 import json
 import math
+import traceback
+from time import sleep
+
 import binance.enums
-from binance.client import Client
+import binance.exceptions
 from binance.websockets import BinanceSocketManager
 
 class BinanceAccount:
@@ -9,13 +12,8 @@ class BinanceAccount:
     mark_price_ask = 0
     mark_price_bid = 0
 
-    def __init__(self):
-        with open('binance_account.json') as f:
-            account_info = json.load(f)
-            api_key = account_info['api_key']
-            api_secret = account_info['api_secret']
-
-        self.client = Client(api_key, api_secret)
+    def __init__(self, binance_client):
+        self.client = binance_client
 
         # exchange_info = self.client.get_exchange_info()
         # for symbol in exchange_info['symbols']:
@@ -105,6 +103,14 @@ class BinanceAccount:
         print(f"Account BTC wallet={self.assets['BTC']['wallet']}, debt={self.assets['BTC']['debt']}")
         print(f"Account USDT wallet={self.assets['USDT']['wallet']}, debt={self.assets['USDT']['debt']}")
 
+    def calculate_leverage(self):
+        self.update_account_status()
+        mark_price = (self.mark_price_ask + self.mark_price_bid) / 2
+        usdt = self.assets['USDT']['wallet'] - self.assets['USDT']['debt']
+        btc = (self.assets['BTC']['wallet'] - self.assets['BTC']['debt']) * mark_price
+        leverage = btc / (usdt + btc)
+        return leverage
+
     def order(self, leverage):
         borrow_extra = 1.01
         min_order_size_usdt = 10
@@ -170,17 +176,26 @@ class BinanceAccount:
             print("Order BTC result", order)
 
         # Repay debt
-        self.update_account_status()
-        if self.assets['BTC']['wallet'] > 0 and self.assets['BTC']['debt'] > 0:
-            repay_btc = min(self.assets['BTC']['wallet'], self.assets['BTC']['debt'])
-            details = self.client.repay_margin_loan(asset='BTC', amount=str(repay_btc))
-            print(f"Repay BTC ({repay_btc})")
-            print("Repay BTC result", details)
+        for retry in range(3):
+            self.update_account_status()
+            try:
+                if self.assets['BTC']['wallet'] > 0 and self.assets['BTC']['debt'] > 0:
+                    repay_btc = min(self.assets['BTC']['wallet'], self.assets['BTC']['debt'])
+                    details = self.client.repay_margin_loan(asset='BTC', amount=str(repay_btc))
+                    print(f"Repay BTC ({repay_btc})")
+                    print("Repay BTC result", details)
+                break
+            except binance.exceptions.BinanceAPIException:
+                traceback.print_exc()
 
-        if self.assets['USDT']['wallet'] > 0 and self.assets['USDT']['debt'] > 0:
-            repay_usdt = min(self.assets['USDT']['wallet'], self.assets['USDT']['debt'])
-            details = self.client.repay_margin_loan(asset='USDT', amount=str(repay_usdt))
-            print(f"Repay USDT ({repay_usdt})")
-            print("Repay USDT result", details)
-
-
+        for retry in range(3):
+            self.update_account_status()
+            try:
+                if self.assets['USDT']['wallet'] > 0 and self.assets['USDT']['debt'] > 0:
+                    repay_usdt = min(self.assets['USDT']['wallet'], self.assets['USDT']['debt'])
+                    details = self.client.repay_margin_loan(asset='USDT', amount=str(repay_usdt))
+                    print(f"Repay USDT ({repay_usdt})")
+                    print("Repay USDT result", details)
+                break
+            except binance.exceptions.BinanceAPIException:
+                traceback.print_exc()
