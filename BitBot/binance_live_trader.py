@@ -20,7 +20,7 @@ def get_historic_data(runner, ie_prices):
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://192.168.1.90:31003")
 
-    timestamp_start = datetime.utcnow() - timedelta(minutes=60)
+    timestamp_start = datetime.utcnow() - timedelta(minutes=180)
     while datetime.utcnow() - timestamp_start > timedelta(seconds=2):
         command = {'command': 'get_ticks',
                    'symbol': 'BTCUSDT',
@@ -50,7 +50,6 @@ def get_historic_data(runner, ie_prices):
                 ask = bid
             if bid == 0:
                 bid = ask
-            runner.step(ask=ask, bid=bid)
             new_ie_prices = runner.step(ask=ask, bid=bid)
             if len(new_ie_prices) > 0:
                 for ie_price in new_ie_prices:
@@ -81,7 +80,11 @@ def trader():
     runner = LiveRunner(delta=delta, initial_price=initial_price)
 
     binance_account = BinanceAccount(binance_client)
-    position = PositionLive(delta=delta, initial_price=initial_price, direction=PositionDirection.long)
+    if binance_account.calculate_leverage() > 0:
+        direction = PositionDirection.long
+    else:
+        direction = PositionDirection.short
+    position = PositionLive(delta=delta, initial_price=initial_price, direction=direction)
     ie_prices = deque(maxlen=Slopes.max_slope_length + 10)
     get_historic_data(runner, ie_prices)
 
