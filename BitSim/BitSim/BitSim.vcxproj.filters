@@ -61,6 +61,12 @@
     <Filter Include="Header Files\ExchangeSimulator">
       <UniqueIdentifier>{a180a3d8-e32f-4824-8b32-5a87d1876a5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\IntrinsicEvents">
+      <UniqueIdentifier>{60622e31-9fc6-4afe-988b-527dc48ea63d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IntrinsicEvents">
+      <UniqueIdentifier>{eaef944e-f96d-4419-bc7f-ba22f5094d5c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitSim.cpp">
@@ -167,6 +173,12 @@
     </ClCompile>
     <ClCompile Include="ES_Bitmex.cpp">
       <Filter>Source Files\ExchangeSimulator</Filter>
+    </ClCompile>
+    <ClCompile Include="IE_Runner.cpp">
+      <Filter>Source Files\IntrinsicEvents</Filter>
+    </ClCompile>
+    <ClCompile Include="IE_Events.cpp">
+      <Filter>Source Files\IntrinsicEvents</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -277,6 +289,12 @@
     </ClInclude>
     <ClInclude Include="ES_Bitmex.h">
       <Filter>Header Files\ExchangeSimulator</Filter>
+    </ClInclude>
+    <ClInclude Include="IE_Runner.h">
+      <Filter>Header Files\IntrinsicEvents</Filter>
+    </ClInclude>
+    <ClInclude Include="IE_Events.h">
+      <Filter>Header Files\IntrinsicEvents</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

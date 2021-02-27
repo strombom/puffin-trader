@@ -10,9 +10,10 @@
 #include "RL_Trader.h"
 #include "PD_Events.h"
 #include "PD_Simulator.h"
+#include "IE_Runner.h"
 #include "LiveData.h"
 #include "BitLib/BitBotConstants.h"
-#include "BitLib\BitBaseClient.h"
+#include "BitLib/BitBaseClient.h"
 #include "BitLib/DateTime.h"
 #include "BitLib/Logger.h"
 #include "BitLib/Utils.h"
@@ -41,6 +42,7 @@ int main()
     else if (command == "find_direction_changes") {
         std::cout << "Find direction changes (" << DateTime::to_string_iso_8601(BitSim::timestamp_start) << " - " << DateTime::to_string_iso_8601(BitSim::timestamp_end) << ")" << std::endl;
 
+        /*
         {
             constexpr auto date_step_size = date::months{ 3 };
             auto timestamp_start = BitSim::timestamp_start;
@@ -61,7 +63,20 @@ int main()
                 }
             }
         }
+        */
 
+        auto binance_ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\binance_ticks_4.dat");
+        std::cout << "a" << binance_ticks->rows.size() << std::endl;
+        
+        const auto delta = 0.0015;
+        auto ie_runner = IE_Runner(delta, binance_ticks->rows[0].price, binance_ticks->rows[0].timestamp);
+        for (const auto &tick : binance_ticks->rows) {
+            ie_runner.step(tick);
+
+        }
+
+
+        /*
         auto bitmex_agg_ticks = AggTicks{};
         for (auto file_idx = 0; ; file_idx++) {
             auto bitmex_ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\binance_ticks_" + std::to_string(file_idx) + ".dat");
@@ -86,6 +101,7 @@ int main()
         std::cout << "Saved binance_agg_ticks.csv" << std::endl;
         std::cout << "start: " << DateTime::to_string_iso_8601(bitmex_agg_ticks.agg_ticks.front().timestamp) << std::endl;
         std::cout << "end:   " << DateTime::to_string_iso_8601(bitmex_agg_ticks.agg_ticks.back().timestamp) << std::endl;
+        */
 
         //auto bitbase_client = BitBaseClient();
         //auto bitmex_intervals = bitbase_client.get_intervals("XBTUSD", "BITMEX", BitSim::timestamp_start, BitSim::timestamp_end, BitSim::interval);
