@@ -8,6 +8,7 @@ IE_Runner::IE_Runner(double delta_, float initial_price, time_point_ms initial_t
     current_ask = initial_price;
     current_bid = initial_price;
     previous_price = initial_price;
+    ie_start_price = initial_price;
     ie_max_price = initial_price;
     ie_min_price = initial_price;
     ie_delta_travel = 0;
@@ -40,23 +41,36 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
     }
     else if (ie_delta_travel + delta_travel >= delta) {
         // One intrinsic event
+        const auto direction = signbit(current_price - previous_price) ? -1.0f : 1.0f;
         const auto delta_travel_remaining = delta - ie_delta_travel;
         const auto delta_travel_extra = delta_travel - delta_travel_remaining;
-        const auto delta_price = current_price * (1.0f + delta_travel_remaining);
-
+        const auto delta_price = current_price * (1.0f + direction * delta_travel_remaining);
+        const auto ie_delta = (delta_price - ie_start_price) / delta_price;
         const auto ie_duration = tick.timestamp - ie_timestamp;
-        const auto ie_spread = ie_max_price - ie_min_price;
+        const auto ie_spread = (ie_max_price - ie_min_price) / tick.price;
 
         ie_volume += delta_travel_remaining / delta_travel * tick.volume;
 
-        events->append(ie_duration, ie_volume, ie_spread, ie_trade_count);
+        if (false) {
+            std::cout << "timestamp(" << DateTime::to_string_iso_8601(tick.timestamp) << ")";
+            std::cout << " price(" << tick.price << ")";
+            std::cout << " delta(" << ie_delta * 100000 << ")";
+            std::cout << " time(" << ie_duration.count() << ")";
+            std::cout << " vol(" << ie_volume << ")";
+            std::cout << " spread(" << ie_spread << ")";
+            std::cout << " trade count(" << ie_trade_count << ")";
+            std::cout << std::endl;
+        }
+        events->append(tick.timestamp, tick.price, ie_delta, ie_duration, ie_volume, ie_spread, ie_trade_count);
         
+        // Next intrinsic event
         ie_delta_travel = delta_travel - delta_travel_remaining;
         ie_volume = delta_travel_extra / delta_travel * tick.volume;
         ie_timestamp = tick.timestamp;
         ie_trade_count = 0;
-
-        std::cout << "a " << 1 << std::endl;
+        ie_start_price = tick.price;
+        ie_max_price = tick.price;
+        ie_min_price = tick.price;
     }
     else {
         // Multiple intrinsic events

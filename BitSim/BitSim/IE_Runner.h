@@ -16,6 +16,7 @@ private:
     float delta;
     float previous_price;
     time_point_ms ie_timestamp;
+    float ie_start_price;
     float ie_volume;
     float ie_max_price;
     float ie_min_price;
