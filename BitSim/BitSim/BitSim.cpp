@@ -89,8 +89,13 @@ int main()
             
             auto out_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\binance_precision_runner.csv" };
             for (const auto& event : ie_events->events) {
+                if (event.timestamp > date::sys_days(date::year { 2021 } / 2 / 23) + 1h + 0min + 0s) {
+                    break;
+                }
                 out_file << event.timestamp.time_since_epoch().count() / 1000 << ",";
                 out_file << event.price << ",";
+                out_file << event.price_max << ",";
+                out_file << event.price_min << ",";
                 out_file << event.delta << ",";
                 out_file << event.delta_top << ",";
                 out_file << event.delta_bot << ",";
@@ -99,7 +104,6 @@ int main()
                 out_file << event.trade_count << std::endl;
             }
             out_file.close();
-            
         }
 
         /*
