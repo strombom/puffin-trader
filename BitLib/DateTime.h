@@ -1,8 +1,8 @@
 #pragma once
 #include "pch.h"
 
-#include "date/date.h"
 
+using namespace std::chrono_literals;
 
 using time_point_ms = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 

@@ -14,14 +14,19 @@ public:
 
 private:
     float delta;
-    float previous_price;
+    //float previous_price;
     time_point_ms ie_timestamp;
     float ie_start_price;
     float ie_volume;
     float ie_max_price;
     float ie_min_price;
-    float ie_delta_travel;
     int ie_trade_count;
-    float current_ask;
-    float current_bid;
+
+    float ie_delta_top;
+    float ie_delta_bot;
+
+    //float ie_delta_travel;
+    //float current_ask;
+    //float current_bid;
+    float current_price;
 };

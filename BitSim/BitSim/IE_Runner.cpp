@@ -1,20 +1,30 @@
 #include "pch.h"
+
+#include "BitLib/DateTime.h"
 #include "IE_Runner.h"
 
 
 IE_Runner::IE_Runner(double delta_, float initial_price, time_point_ms initial_timestamp)
 {
     delta = (float) delta_;
-    current_ask = initial_price;
-    current_bid = initial_price;
-    previous_price = initial_price;
+    //current_ask = initial_price;
+    //current_bid = initial_price;
+    current_price = initial_price;
+    //previous_price = initial_price;
     ie_start_price = initial_price;
     ie_max_price = initial_price;
     ie_min_price = initial_price;
-    ie_delta_travel = 0;
     ie_volume = 0;
     ie_timestamp = initial_timestamp;
     ie_trade_count = 0;
+
+    ie_delta_top = 0;
+    ie_delta_bot = 0;
+    //ie_delta_travel = 0;
+}
+
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
 }
 
 void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
@@ -22,16 +32,121 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
     ie_trade_count += 1;
 
     if (tick.buy) {
-        current_ask = tick.price;
+        current_price = std::min(current_price, tick.price);
     }
     else {
-        current_bid = tick.price;
+        current_price = std::max(current_price, tick.price);
     }
 
-    ie_max_price = std::max(ie_max_price, tick.price);
-    ie_min_price = std::min(ie_min_price, tick.price);
+    if (current_price > ie_max_price) {
+        ie_max_price = current_price;
+        ie_delta_top = (ie_max_price - ie_start_price) / ie_start_price;
+    }
+    else if (current_price < ie_min_price) {
+        ie_min_price = current_price;
+        ie_delta_bot = (ie_start_price - ie_min_price) / ie_start_price;
+    }
 
-    const auto current_price = std::max(std::min(previous_price, current_ask), current_bid);
+    auto delta_down = (ie_max_price - current_price) / ie_max_price; // Delta from top
+    auto delta_up = (current_price - ie_min_price) / ie_min_price;   // Delta from bottom
+
+    const auto delta_dir = sgn((ie_delta_top + delta_down) - (ie_delta_bot + delta_up));
+    // delta_dir:  1 -> down from max-price
+    //            -1 -> up from min-price
+
+    if (std::max(ie_delta_top + delta_down, ie_delta_bot + delta_up) >= delta) {
+        auto ie_duration = tick.timestamp - ie_timestamp;
+        auto ie_price = float{};
+        auto remaining_delta = float{};
+
+        if (delta_dir == 1) {
+            remaining_delta = ie_delta_top + delta_down;
+            ie_price = ie_max_price * (1.0f - (delta - ie_delta_top));
+        }
+        else {
+            remaining_delta = ie_delta_bot + delta_up;
+            ie_price = ie_min_price * (1.0f + (delta - ie_delta_bot));
+        }
+        auto ie_delta = (ie_start_price - ie_price) / ie_start_price;
+
+        while (remaining_delta >= 2 * delta) {
+            events->append(tick.timestamp, ie_price, ie_delta, ie_delta_top, ie_delta_bot, ie_duration, ie_volume, ie_trade_count);
+
+            ie_start_price = ie_price;
+            ie_volume = 0;
+            ie_trade_count = 0;
+            ie_max_price = ie_price;
+            ie_min_price = ie_price;
+            ie_delta_top = 0;
+            ie_delta_bot = delta;
+            ie_price = ie_price * (1.0f - delta_dir * delta);
+            ie_delta = (ie_start_price - ie_price) / ie_start_price;
+            ie_duration = 0ms;
+
+            remaining_delta -= delta;
+        }
+
+        ie_volume += tick.volume;
+        events->append(tick.timestamp, ie_price, ie_delta, ie_delta_top, ie_delta_bot, ie_duration, ie_volume, ie_trade_count);
+
+        ie_timestamp = tick.timestamp;
+        ie_start_price = ie_price;
+        ie_volume = 0;
+        ie_trade_count = 0;
+        ie_max_price = ie_price;
+        ie_min_price = ie_price;
+        ie_delta_top = 0;
+        ie_delta_bot = 0;
+    }
+    else {
+        ie_volume += tick.volume;
+    }
+
+    /*
+    else if (ie_delta_bot + delta_up >= delta) {
+        auto remaining_delta = ie_delta_bot + delta_up;
+        auto ie_price = ie_min_price * (1.0f + std::min(remaining_delta, delta_up));
+        auto ie_duration = tick.timestamp - ie_timestamp;
+
+        while (remaining_delta >= 2 * delta) {
+            auto ie_delta = (ie_start_price - ie_price) / ie_start_price;
+            events->append(tick.timestamp, ie_price, ie_delta, ie_delta_top, ie_delta_bot, ie_duration, ie_volume, ie_trade_count);
+
+            ie_timestamp = tick.timestamp;
+            ie_start_price = ie_price;
+            ie_volume = 0;
+            ie_trade_count = 0;
+            ie_max_price = ie_price;
+            ie_min_price = ie_price;
+            ie_delta_top = delta;
+            ie_delta_bot = 0;
+            ie_price = ie_price * (1.0f + delta);
+
+            ie_duration = 0ms;
+
+            remaining_delta -= delta;
+        }
+
+        ie_volume += tick.volume;
+
+        auto ie_delta = (ie_start_price - ie_price) / ie_start_price;
+        events->append(tick.timestamp, ie_price, ie_delta, ie_delta_top, ie_delta_bot, ie_duration, ie_volume, ie_trade_count);
+
+        ie_timestamp = tick.timestamp;
+        ie_start_price = ie_price;
+        ie_volume = 0;
+        ie_trade_count = 0;
+        ie_max_price = ie_price;
+        ie_min_price = ie_price;
+        ie_delta_top = 0;
+        ie_delta_bot = 0;
+    }
+    */
+
+    return;
+
+
+    /*
     auto delta_travel = std::abs(current_price - previous_price) / previous_price;
 
     if (ie_delta_travel + delta_travel < delta) {
@@ -78,6 +193,7 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
 
         std::cout << "b " << 2 << std::endl;
     }
+    
 
     //while (dc_delta_travel >= delta) {
     //    delta_travel = 
@@ -86,4 +202,5 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
     //}
 
     previous_price = current_price;
+    */
 }

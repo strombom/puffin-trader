@@ -67,8 +67,8 @@ int main()
 
         if (false) {
             constexpr auto date_step_size = date::months{ 3 };
-            auto timestamp_start = date::sys_days(date::year{ 2021 } / 2 / 25) + 0h + 0min + 0s;
-            auto timestamp_end = date::sys_days(date::year{ 2021 } / 2 / 25) + 3h + 0min + 0s;
+            auto timestamp_start = date::sys_days(date::year{ 2021 } / 2 / 23) + 0h + 0min + 0s;
+            auto timestamp_end = date::sys_days(date::year{ 2021 } / 2 / 25) + 0h + 0min + 0s;
 
             std::cout << "Get ticks (" << DateTime::to_string_iso_8601(timestamp_start) << " - " << DateTime::to_string_iso_8601(timestamp_end) << std::endl;
 
@@ -80,24 +80,26 @@ int main()
 
         if (true) {
             auto binance_ticks = std::make_shared<Ticks>(std::string{ BitSim::tmp_path } + "\\binance_ticks_test.dat");
-            const auto delta = 0.01;
+            const auto delta = 0.002;
             auto ie_runner = IE_Runner(delta, binance_ticks->rows[0].price, binance_ticks->rows[0].timestamp);
             auto ie_events = std::make_shared<IE_Events>();
             for (const auto& tick : binance_ticks->rows) {
                 ie_runner.step(ie_events, tick);                
             }
-
+            
             auto out_file = std::ofstream{ std::string{ BitSim::tmp_path } + "\\binance_precision_runner.csv" };
             for (const auto& event : ie_events->events) {
                 out_file << event.timestamp.time_since_epoch().count() / 1000 << ",";
                 out_file << event.price << ",";
                 out_file << event.delta << ",";
+                out_file << event.delta_top << ",";
+                out_file << event.delta_bot << ",";
                 out_file << event.duration.count() << ",";
                 out_file << event.volume << ",";
-                out_file << event.spread << ",";
                 out_file << event.trade_count << std::endl;
             }
             out_file.close();
+            
         }
 
         /*
