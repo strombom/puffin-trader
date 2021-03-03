@@ -35,7 +35,7 @@ std::tuple<double, double, double> ES_Bitmex::calculate_position_leverage(double
     auto position_leverage = 0.0;
     auto upnl = 0.0;
 
-    if (pos_contracts != 0.0) {
+    if (pos_contracts != 0.0 && pos_price != 0 && mark_price != 0) {
         const auto sign = pos_contracts / abs(pos_contracts);
         const auto entry_value = std::abs(pos_contracts / pos_price);
         const auto mark_value = std::abs(pos_contracts / mark_price);
@@ -99,7 +99,7 @@ void ES_Bitmex::market_order(double order_contracts, double mark_price)
 double ES_Bitmex::get_account_value(double mark_price) const
 {
     auto position_pnl = 0.0;
-    if (pos_contracts != 0) {
+    if (pos_contracts != 0 && pos_price != 0 && mark_price != 0) {
         position_pnl = pos_contracts * (1 / pos_price - 1 / mark_price);
     }
     return (wallet + position_pnl) * mark_price / start_value;
