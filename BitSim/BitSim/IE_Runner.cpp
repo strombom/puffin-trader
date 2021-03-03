@@ -11,28 +11,32 @@ IE_Runner::IE_Runner(double delta_, float initial_price, time_point_ms initial_t
     ie_start_price = initial_price;
     ie_max_price = initial_price;
     ie_min_price = initial_price;
-    ie_volume = 0;
     ie_timestamp = initial_timestamp;
+    ie_volume = 0;
     ie_trade_count = 0;
     ie_delta_top = 0;
     ie_delta_bot = 0;
 }
 
-template <typename T> int sgn(T val) {
-    return (T(0) < val) - (val < T(0));
-}
-
 void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
 {
-    auto static price_change_accum_volume = 0.0f;
-    price_change_accum_volume += tick.volume;
+    auto const static price_change_volume_threshold = 10.0f;
 
-    if (price_change_accum_volume > 1.0f) {
-        price_change_accum_volume = 0.0f;
-        if (tick.buy) {
+    auto static buy_accum_volume = 0.0f;
+    if (tick.buy) {
+        buy_accum_volume += tick.volume;
+        if (buy_accum_volume > price_change_volume_threshold) {
+            buy_accum_volume = 0.0f;
             current_price = std::min(current_price, tick.price);
         }
-        else {
+    }
+
+    auto static sell_accum_volume = 0.0f;    
+    if (!tick.buy)
+    {
+        sell_accum_volume += tick.volume;
+        if (sell_accum_volume > price_change_volume_threshold) {
+            sell_accum_volume = 0.0f;
             current_price = std::max(current_price, tick.price);
         }
     }
