@@ -7,20 +7,15 @@
 IE_Runner::IE_Runner(double delta_, float initial_price, time_point_ms initial_timestamp)
 {
     delta = (float) delta_;
-    //current_ask = initial_price;
-    //current_bid = initial_price;
     current_price = initial_price;
-    //previous_price = initial_price;
     ie_start_price = initial_price;
     ie_max_price = initial_price;
     ie_min_price = initial_price;
     ie_volume = 0;
     ie_timestamp = initial_timestamp;
     ie_trade_count = 0;
-
     ie_delta_top = 0;
     ie_delta_bot = 0;
-    //ie_delta_travel = 0;
 }
 
 template <typename T> int sgn(T val) {
@@ -29,15 +24,21 @@ template <typename T> int sgn(T val) {
 
 void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
 {
-    if (tick.buy) {
-        current_price = std::min(current_price, tick.price);
-    }
-    else {
-        current_price = std::max(current_price, tick.price);
+    auto static price_change_accum_volume = 0.0f;
+    price_change_accum_volume += tick.volume;
+
+    if (price_change_accum_volume > 1.0f) {
+        price_change_accum_volume = 0.0f;
+        if (tick.buy) {
+            current_price = std::min(current_price, tick.price);
+        }
+        else {
+            current_price = std::max(current_price, tick.price);
+        }
     }
 
     auto delta_dir = float{};
-    static auto previous_price = current_price;
+    auto static previous_price = current_price;
     if (current_price > previous_price) {
         delta_dir = 1.0f;
     }
