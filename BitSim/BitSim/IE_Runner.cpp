@@ -78,9 +78,13 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
             auto a = 1;
         }
         while (remaining_delta >= 2 * delta) {
-            if (ie_delta > delta || ie_delta_top > delta || ie_delta_bot > delta) {
-                auto a = 1;
+            if (delta_dir == 1) {
+                ie_max_price = std::min(ie_max_price, ie_price);
             }
+            else {
+                ie_min_price = std::max(ie_min_price, ie_price);
+            }
+
             events->append(tick.timestamp, ie_price, ie_max_price, ie_min_price, ie_delta, std::min(ie_delta_top, delta), std::min(ie_delta_bot, delta), ie_duration, ie_volume, ie_trade_count);
 
             const auto next_price = ie_price * (1.0f + delta_dir * delta);
