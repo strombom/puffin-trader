@@ -1,6 +1,7 @@
 
 import pickle
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from enum import IntEnum
@@ -13,32 +14,36 @@ from slopes import Slopes
 
 
 if __name__ == '__main__':
-    with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
-        delta, runner = pickle.load(f)
+    # with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
+    #     delta, runner = pickle.load(f)
 
-    runner.ie_prices = np.array(runner.ie_prices)[0:10000]
-    x = np.arange(runner.ie_prices.shape[0])
-    slopes = Slopes(runner.ie_prices, use_cache=True)
+    delta = 0.0025
+    runner_data = pd.read_csv('../tmp/binance_runner.csv')
+    runner_prices = runner_data['price'].to_numpy()
+
+    x = np.arange(runner_data.shape[0])
+    slopes = Slopes(runner_prices, use_cache=True)
 
     slopes_history_count = 0
     first_idx = Slopes.max_slope_length + slopes_history_count
-    simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner.ie_prices[0], initial_leverage=0.0)
+    simulator = BinanceSimulator(initial_usdt=0.0, initial_btc=1.0, max_leverage=2, mark_price=runner_prices[0], initial_leverage=0.0)
     plotter = Plotter(slopes=slopes)
     position = Position(delta=delta, direction=PositionDirection.long, plotter=plotter)
 
-    for idx, ie_price in enumerate(runner.ie_prices[:first_idx]):
+    for idx, ie_price in enumerate(runner_prices[:first_idx]):
         plotter.append_event(PositionDirection.hedge, idx, ie_price)
+        plotter.append_timestamp(idx, runner_data.iloc[idx]['timestamp'])
 
-    previous_trade_value = simulator.get_value_usdt(mark_price=runner.ie_prices[first_idx])
+    previous_trade_value = simulator.get_value_usdt(mark_price=runner_prices[first_idx])
 
-    for idx in range(first_idx, runner.ie_prices.shape[0]):
-        slope = slopes[idx - Slopes.max_slope_length]
-        ie_price = runner.ie_prices[idx]
+    for idx in range(first_idx, runner_prices.shape[0]):
+        slope = slopes.slopes.iloc[idx - Slopes.max_slope_length]
+        ie_price = runner_prices[idx]
 
-        plotter.append_slope_length(idx, slope.length)
-        plotter.append_volatility(idx, slope.volatility)
+        plotter.append_slope_length(idx, slope['length'])
+        plotter.append_volatility(idx, slope['volatility'])
 
-        make_trade = position.step(idx, ie_price, runner.ie_prices[idx - 1], slope)  # , slopes[idx-slopes_history_count:idx])
+        make_trade = position.step(idx, ie_price, runner_prices[idx - 1], slope)  # , slopes[idx-slopes_history_count:idx])
 
         if make_trade:
             if position.direction == PositionDirection.short:
@@ -59,5 +64,6 @@ if __name__ == '__main__':
         plotter.append_value(idx, simulator.get_value_usdt(mark_price=ie_price))
         plotter.append_angle(idx, slope.angle)
         plotter.append_event(position.direction, idx, ie_price)
+        plotter.append_timestamp(idx, runner_data.iloc[idx]['timestamp'])
 
     plotter.plot()

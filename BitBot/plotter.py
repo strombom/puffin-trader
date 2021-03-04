@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui
@@ -17,6 +19,7 @@ class Plotter:
             PositionDirection.hedge: {'x': [], 'y': []},
             PositionDirection.short: {'x': [], 'y': []}
         }
+        self.timestamps = {'x': [], 'y': []}
         self.angles = {'x': [], 'y': []}
         self.values = {'x': [], 'y': []}
         self.thresholds = {'x': [], 'y': []}
@@ -78,6 +81,9 @@ class Plotter:
         self.plt_indicators.addItem(self.v_line_indicators, ignoreBounds=True)
         self.plt_value.addItem(self.v_line_value, ignoreBounds=True)
 
+        self.datetime_marker = pg.TextItem(f'DT', anchor=(0.5, 1), fill=(0x81, 0x81, 0x81))
+        self.plt_price.addItem(self.datetime_marker)
+
         self.plt_indicator_annotations = {'volatility': pg.TextItem(f'V', anchor=(0.5, 0), fill=(0x00, 0x35, 0x5b)),
                                           'length': pg.TextItem(f'L', anchor=(0.5, 0), fill=(0x02, 0xab, 0x2e)),
                                           'angle': pg.TextItem(f'A', anchor=(0.5, 0), fill=(0x84, 0x00, 0x00))}
@@ -87,6 +93,10 @@ class Plotter:
     def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float) -> None:
         self.events[event_direction]['x'].append(event_idx)
         self.events[event_direction]['y'].append(event_price)
+
+    def append_timestamp(self, event_idx: int,  timestamp: str) -> None:
+        self.timestamps['x'].append(event_idx)
+        self.timestamps['y'].append(timestamp)
 
     def append_angle(self, angle_idx: int, angle: float) -> None:
         self.angles['x'].append(angle_idx)
@@ -146,10 +156,18 @@ class Plotter:
         self.v_line_indicators.setPos(x)
         self.v_line_value.setPos(x)
 
+        if 0 <= x < len(self.timestamps['x']):
+            timestamp = self.timestamps['y'][x] / 1000
+            print(timestamp)
+            timestamp = datetime.fromtimestamp(timestamp)
+            self.datetime_marker.setPos(x, self.plt_price.getAxis('left').range[0] + 200)
+            self.datetime_marker.setText(text=timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+
         if self.slopes.max_slope_length + len(self.slope_lines) <= x < self.slopes.max_slope_length + len(self.slopes):
             for idx in range(len(self.slope_lines)):
-                slope = self.slopes[x - self.slopes.max_slope_length - len(self.slope_lines) + 1 + idx]
-                self.slope_lines[idx].setData(slope.x, slope.y)
+                s_idx = x - self.slopes.max_slope_length - len(self.slope_lines) + 1 + idx
+                slope = self.slopes.slopes.iloc[s_idx]
+                self.slope_lines[idx].setData([slope['x0'], slope['x1']], [slope['y0'], slope['y1']])
 
         for idx, (name, annotation) in enumerate(self.plt_indicator_annotations.items()):
             annotation.setPos(x + (idx - 1) * 7, -0.7)
