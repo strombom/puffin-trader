@@ -54,7 +54,7 @@ class LiveRunner:
         delta_down = (self.ie_max_price - self.current_price) / self.ie_max_price  # Delta from top
         delta_up = (self.current_price - self.ie_min_price) / self.ie_min_price    # Delta from bot
 
-        if self.ie_delta_top + delta_down >= self.delta or self.ie_delta_bot + delta_up >= delta:
+        if self.ie_delta_top + delta_down >= self.delta or self.ie_delta_bot + delta_up >= self.delta:
             ie_duration = timestamp - self.ie_timestamp
 
             if delta_dir == 1:
