@@ -105,11 +105,9 @@ def trader():
 
         new_ie_prices = runner.step(timestamp=timestamp, price=price, volume=volume, buy=buy)
         for ie_price, ie_duration in new_ie_prices:
-            ie_prices.append(ie_price)
-            print(ie_prices)
-            print(np.array(ie_prices))
-            slope_prices = np.array(ie_prices)[-Slopes.max_slope_length - 1:-1]
-            print(slope_prices)
+            ie_prices.append((ie_price, ie_duration))
+            slope_prices = np.array([ie_price[0] for ie_price in ie_prices])
+            slope_prices = slope_prices[-Slopes.max_slope_length - 1:-1]
             if slope_prices.shape[0] != Slopes.max_slope_length:
                 continue
 
@@ -118,14 +116,15 @@ def trader():
             if make_trade:
                 if position.direction == PositionDirection.long:
                     position.direction = PositionDirection.short
-                    logging.warning("Order -1.5!")
-                    # binance_account.order(-1.5)
+                    logging.info("Order -1.5")
+                    binance_account.order(-1.5)
                 else:
                     position.direction = PositionDirection.long
-                    logging.warning("Order 2.5!")
-                    # binance_account.order(2.5)
+                    logging.info("Order 2.5")
+                    binance_account.order(2.5)
 
-            print(datetime.utcnow(), ie_prices[len(ie_prices) - 1], slope['length'], slope['angle'], position.direction)
+            price = ie_prices[len(ie_prices) - 1]
+            logging.info(f"New event ({price}), slope({slope['length']}, {slope['angle']}), {position.direction}")
 
     logging.info("Start Binance BTCUSDT ticker stream")
     trade_socket_manager = BinanceSocketManager(binance_client)

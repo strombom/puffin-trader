@@ -19,9 +19,6 @@ class PositionLive:
             self.mark_price_prev = mark_price
             self.initialised = True
 
-        print("duration", duration)
-        quit()
-
         if duration == 0 or self.duration_prev == 0:
             self.duration_prev = duration
             return False
