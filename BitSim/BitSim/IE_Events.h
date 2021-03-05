@@ -7,7 +7,7 @@
 class IE_Event
 {
 public:
-    IE_Event(time_point_ms timestamp, float price, float price_max, float price_min, float delta, float delta_top, float delta_bot, std::chrono::milliseconds duration, float volume, int trade_count);
+    IE_Event(time_point_ms timestamp, float price, float price_max, float price_min, float price_buy, float price_sell, float delta, float delta_top, float delta_bot, std::chrono::milliseconds duration, float volume, int trade_count);
 
     time_point_ms timestamp;
     float price;
@@ -20,6 +20,9 @@ public:
     std::chrono::milliseconds duration;
     float volume;
     int trade_count;
+
+    float price_buy;
+    float price_sell;
 };
 
 using sptrIE_Event = std::shared_ptr<IE_Event>;
@@ -28,7 +31,7 @@ using sptrIE_Event = std::shared_ptr<IE_Event>;
 class IE_Events
 {
 public:
-    void append(time_point_ms timestamp, float price, float price_max, float price_min, float delta, float delta_top, float delta_bot, std::chrono::milliseconds duration, float volume, int trade_count);
+    void append(time_point_ms timestamp, float price, float price_max, float price_min, float price_buy, float price_sell, float delta, float delta_top, float delta_bot, std::chrono::milliseconds duration, float volume, int trade_count);
 
     std::vector<IE_Event> events;
 };

@@ -18,26 +18,28 @@ IE_Runner::IE_Runner(double delta_, float initial_price, time_point_ms initial_t
     ie_delta_bot = 0;
 }
 
-void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
+void IE_Runner::step(sptrIE_Events& events, const sptrTicks& ticks, int tick_idx)
 {
     auto const static price_change_volume_threshold = 10.0f;
 
+    const auto tick = &ticks->rows[tick_idx];
+
     auto static buy_accum_volume = 0.0f;
-    if (tick.buy) {
-        buy_accum_volume += tick.volume;
+    if (tick->buy) {
+        buy_accum_volume += tick->volume;
         if (buy_accum_volume > price_change_volume_threshold) {
             buy_accum_volume = 0.0f;
-            current_price = std::min(current_price, tick.price);
+            current_price = std::min(current_price, tick->price);
         }
     }
 
     auto static sell_accum_volume = 0.0f;    
-    if (!tick.buy)
+    if (!tick->buy)
     {
-        sell_accum_volume += tick.volume;
+        sell_accum_volume += tick->volume;
         if (sell_accum_volume > price_change_volume_threshold) {
             sell_accum_volume = 0.0f;
-            current_price = std::max(current_price, tick.price);
+            current_price = std::max(current_price, tick->price);
         }
     }
 
@@ -66,7 +68,7 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
     ie_trade_count += 1;
 
     if (ie_delta_top + delta_down >= delta || ie_delta_bot + delta_up >= delta) {
-        auto ie_duration = tick.timestamp - ie_timestamp;
+        auto ie_duration = tick->timestamp - ie_timestamp;
         auto ie_price = float{};
         auto remaining_delta = float{};
 
@@ -90,7 +92,7 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
                 ie_min_price = std::max(ie_min_price, ie_price);
             }
 
-            events->append(tick.timestamp, ie_price, ie_max_price, ie_min_price, ie_delta, std::min(ie_delta_top, delta), std::min(ie_delta_bot, delta), ie_duration, ie_volume, ie_trade_count);
+            events->append(tick->timestamp, ie_price, ie_max_price, ie_min_price, 0.0f, 0.0f, ie_delta, std::min(ie_delta_top, delta), std::min(ie_delta_bot, delta), ie_duration, ie_volume, ie_trade_count);
 
             const auto next_price = ie_price * (1.0f + delta_dir * delta);
             ie_start_price = ie_price;
@@ -114,10 +116,10 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
             remaining_delta -= delta;
         }
 
-        ie_volume += tick.volume;
-        events->append(tick.timestamp, ie_price, ie_max_price, ie_min_price, ie_delta, ie_delta_top, ie_delta_bot, ie_duration, ie_volume, ie_trade_count);
+        ie_volume += tick->volume;
+        events->append(tick->timestamp, ie_price, ie_max_price, ie_min_price, 0.0f, 0.0f, ie_delta, ie_delta_top, ie_delta_bot, ie_duration, ie_volume, ie_trade_count);
 
-        ie_timestamp = tick.timestamp;
+        ie_timestamp = tick->timestamp;
         ie_start_price = ie_price;
         ie_volume = 0;
         ie_trade_count = 0;
@@ -127,6 +129,21 @@ void IE_Runner::step(sptrIE_Events& events, const Tick& tick)
         ie_delta_bot = 0;
     }
     else {
-        ie_volume += tick.volume;
+        ie_volume += tick->volume;
+    }
+}
+
+void IE_Runner::run(sptrIE_Events& events, const sptrTicks& ticks, time_point_ms timestamp_start, time_point_ms timestamp_end)
+{
+    for (auto idx = 0; idx < ticks->rows.size(); idx++) {
+    //for (const auto& tick : ticks->rows) {
+        const auto tick = &ticks->rows[idx];
+        if (tick->timestamp < timestamp_start) {
+            continue;
+        }
+        if (tick->timestamp > timestamp_end) {
+            break;
+        }
+        step(events, ticks, idx);
     }
 }
