@@ -6,15 +6,23 @@ from Common.Misc import PositionDirection, Regime
 
 
 class PositionLive:
-    def __init__(self, delta: float, initial_price: float, direction: PositionDirection):
+    def __init__(self, delta: float, direction: PositionDirection):
         self.delta = delta
         self.direction = direction
         self.regime = Regime.chop
-        self.mark_price_prev = initial_price
+        self.mark_price_prev = 0
         self.prev_slope_angle = 0
         self.duration_prev = 0
+        self.initialised = False
 
     def step(self, mark_price: float, duration: int, slope: pd.DataFrame) -> bool:
+        if not self.initialised:
+            self.mark_price_prev = mark_price
+            self.initialised = True
+
+        print("duration", duration)
+        quit()
+
         if duration == 0 or self.duration_prev == 0:
             self.duration_prev = duration
             return False

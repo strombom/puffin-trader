@@ -1,27 +1,36 @@
 
 import logging
+from datetime import datetime, timedelta
 
 
 class LiveRunner:
     price_change_volume_threshold = 10.0
 
-    def __init__(self, delta, initial_price):
+    def __init__(self, delta, initial_timestamp):
         self.delta = delta
-        self.current_price = initial_price
-        self.previous_price = initial_price
-        self.ie_timestamp = 0
-        self.ie_volume = 0
-        self.ie_start_price = initial_price
-        self.ie_max_price = initial_price
-        self.ie_min_price = initial_price
+        self.ie_timestamp = initial_timestamp
+        self.buy_accum_volume = 0
+        self.sell_accum_volume = 0
+        self.current_price = 0
+        self.previous_price = 0
+        self.ie_start_price = 0
+        self.ie_max_price = 0
+        self.ie_min_price = 0
         self.ie_delta_top = 0
         self.ie_delta_bot = 0
         self.ie_trade_count = 0
+        self.ie_volume = 0
+        self.initialised = False
 
-        self.buy_accum_volume = 0
-        self.sell_accum_volume = 0
+    def step(self, timestamp: datetime, price: float, volume: float, buy: bool):
+        if not self.initialised:
+            self.current_price = price
+            self.previous_price = price
+            self.ie_start_price = price
+            self.ie_max_price = price
+            self.ie_min_price = price
+            self.initialised = True
 
-    def step(self, timestamp: int, price: float, volume: float, buy: bool):
         events = []
 
         if buy:
@@ -44,7 +53,6 @@ class LiveRunner:
         if self.current_price > self.ie_max_price:
             self.ie_max_price = self.current_price
             self.ie_delta_top = (self.ie_max_price - self.ie_start_price) / self.ie_start_price
-
         elif self.current_price < self.ie_min_price:
             self.ie_min_price = self.current_price
             self.ie_delta_bot = (self.ie_start_price - self.ie_min_price) / self.ie_start_price
@@ -62,7 +70,7 @@ class LiveRunner:
                 ie_price = self.ie_min_price * (1.0 + (self.delta - self.ie_delta_bot))
             else:
                 remaining_delta = self.ie_delta_top + delta_down
-                ie_price = self.ie_max_price * (1.0 + (self.delta - self.ie_delta_top))
+                ie_price = self.ie_max_price * (1.0 - (self.delta - self.ie_delta_top))
 
             # ie_delta = (self.ie_start_price - ie_price) / self.ie_start_price
 
@@ -88,6 +96,8 @@ class LiveRunner:
                 self.ie_delta_bot = (self.ie_start_price - self.ie_min_price) / self.ie_start_price
                 # ie_delta = (self.ie_start_price - next_price) / self.ie_start_price
                 ie_price = next_price
+                ie_duration = timedelta(seconds=0)
+                remaining_delta -= self.delta
 
             self.ie_volume += volume
             events.append((ie_price, ie_duration))
@@ -103,6 +113,8 @@ class LiveRunner:
 
         else:
             self.ie_volume += volume
+
+        return events
 
         """
         ie_prices = []

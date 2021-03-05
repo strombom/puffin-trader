@@ -12,24 +12,25 @@ from datetime import datetime, timedelta
 
 from binance.websockets import BinanceSocketManager
 from binance_account import BinanceAccount
-from slopes import Slopes
+from slopes import Slopes, make_slope
 from position_live import PositionLive
 from Common.Misc import PositionDirection
 from IntrinsicTime.live_runner import LiveRunner
 
 
-def get_historic_data(runner, ie_prices):
+def get_historic_data(runner: LiveRunner, ie_prices: deque, initial_timestamp: datetime):
     logging.info("Connect to Binance delta server")
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://192.168.1.90:31003")
 
-    timestamp_start = datetime.utcnow() - timedelta(minutes=180)
-    while datetime.utcnow() - timestamp_start > timedelta(seconds=2):
+    count = 0
+    timestamp_request = initial_timestamp
+    while datetime.utcnow() - timestamp_request > timedelta(seconds=2):
         command = {'command': 'get_ticks',
                    'symbol': 'BTCUSDT',
                    'max_rows': 1000,
-                   'timestamp_start': timestamp_start.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'}
+                   'timestamp_start': timestamp_request.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'}
         command = json.dumps(command).encode()
         socket.send(command)
         message = msgpack.unpackb(socket.recv())
@@ -43,11 +44,15 @@ def get_historic_data(runner, ie_prices):
             buy = not row[3]
             # print(timestamp, price, buy)
             historic_data.append((timestamp, price, volume, buy))
-            timestamp_start = timestamp + timedelta(milliseconds=1)
+            timestamp_request = timestamp + timedelta(milliseconds=1)
 
         for timestamp, price, volume, buy in historic_data:
             new_ie_prices = runner.step(timestamp=timestamp, price=price, volume=volume, buy=buy)
+            count += len(new_ie_prices)
             ie_prices.extend(new_ie_prices)
+            if len(new_ie_prices) > 0:
+                print(count)
+    quit()
 
 
 class LivePlotter:
@@ -71,9 +76,9 @@ def trader():
     binance_client = Client(api_key, api_secret)
 
     logging.info("Start live runner")
-    delta = 0.0015
-    initial_price = 40000.0
-    runner = LiveRunner(delta=delta, initial_price=initial_price)
+    delta = 0.0025
+    initial_timestamp = datetime.utcnow() - timedelta(hours=2)
+    runner = LiveRunner(delta=delta, initial_timestamp=initial_timestamp)
 
     logging.info("Start Binance account")
     binance_account = BinanceAccount(binance_client)
@@ -81,11 +86,11 @@ def trader():
         direction = PositionDirection.long
     else:
         direction = PositionDirection.short
-    position = PositionLive(delta=delta, initial_price=initial_price, direction=direction)
+    position = PositionLive(delta=delta, direction=direction)
     ie_prices = deque(maxlen=Slopes.max_slope_length + 10)
 
     logging.info("Get historic data")
-    get_historic_data(runner, ie_prices)
+    get_historic_data(runner=runner, ie_prices=ie_prices, initial_timestamp=initial_timestamp)
 
     def process_ticker_message(data):
         # {'e': 'trade', 'E': 1614958138067, 's': 'BTCUSDT', 't': 686038737, 'p': '48253.49000000', 'q': '0.00270700', 'b': 5108573132, 'a': 5108573234, 'T': 1614958138066, 'm': True, 'M': True}
@@ -95,7 +100,7 @@ def trader():
         volume = data['q']
         buy = not data['m']
         # trade_id = data['t']
-        # print(f'sym({symbol}) ts({timestamp}) p({price}) v({volume}) buy({buy}) tid({trade_id})')
+        print(f'sym({symbol}) ts({timestamp}) p({price}) v({volume}) buy({buy}) tid({trade_id})')
 
         if symbol != 'BTCUSDT':
             return
@@ -107,7 +112,7 @@ def trader():
             if slope_prices.shape[0] != Slopes.max_slope_length:
                 continue
 
-            slope = Slope(prices=slope_prices)
+            slope = make_slope(slope_prices, Slopes.min_slope_length, Slopes.max_slope_length)
             make_trade = position.step(mark_price=ie_price, duration=ie_duration, slope=slope)
             if make_trade:
                 if position.direction == PositionDirection.long:
@@ -123,12 +128,6 @@ def trader():
     trade_socket_manager = BinanceSocketManager(binance_client)
     trade_socket_manager.start_trade_socket('BTCUSDT', process_ticker_message)
     trade_socket_manager.start()
-
-    # margin_socket_manager = BinanceSocketManager(binance_client)
-    # margin_socket_manager.start_depth_socket('BTCUSDT', process_depth_message,
-    #                                          depth=BinanceSocketManager.WEBSOCKET_DEPTH_5)
-    # margin_socket_manager.start()
-
 
     while True:
         sleep(1)

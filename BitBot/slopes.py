@@ -28,7 +28,7 @@ def estimate_slope(slope_length: int, prices: np.ndarray, x_range: np.ndarray) -
 
 
 #@numba.jit()
-def find_best_fit(prices: np.ndarray, min_slope_length: int, max_slope_length: int, offset: int = 0) -> dict:
+def make_slope(prices: np.ndarray, min_slope_length: int, max_slope_length: int, offset: int = 0) -> dict:
     volatilities = []
     slopes = []
     mean_price = np.mean(prices)
@@ -75,7 +75,7 @@ class Slopes:
 
         slopes = []
         for slope_idx in range(self.max_slope_length, prices.shape[0]):
-            slope = find_best_fit(prices[slope_idx - self.max_slope_length:slope_idx], self.min_slope_length, self.max_slope_length, slope_idx)
+            slope = make_slope(prices[slope_idx - self.max_slope_length:slope_idx], self.min_slope_length, self.max_slope_length, slope_idx)
             slope['idx'] = slope_idx
             slopes.append(slope)
         self.slopes = pd.DataFrame(slopes)
