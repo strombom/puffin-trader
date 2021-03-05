@@ -123,8 +123,9 @@ def trader():
                     logging.info("Order 2.5")
                     binance_account.order(2.5)
 
-            price = ie_prices[len(ie_prices) - 1]
-            logging.info(f"New event ({price}), slope({slope['length']}, {slope['angle']}), {position.direction}")
+            price = ie_prices[len(ie_prices) - 1][0]
+            duration = ie_prices[len(ie_prices) - 1][1].total_seconds()
+            logging.info(f"New event ({price}) dur({duration:.1f}s) slope_len({slope['length']}) slope_ang({slope['angle']}), dir({position.direction})")
 
     logging.info("Start Binance BTCUSDT ticker stream")
     trade_socket_manager = BinanceSocketManager(binance_client)
