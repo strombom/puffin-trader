@@ -53,7 +53,8 @@ def make_slope(prices: np.ndarray, min_slope_length: int, max_slope_length: int,
             'x1': offset - 1,
             'y0': y_start,
             'y1': y_end,
-            'volatility': volatility}
+            'volatility': volatility,
+            'idx': offset}
 
 
 class Slopes:
@@ -76,7 +77,6 @@ class Slopes:
         slopes = []
         for slope_idx in range(self.max_slope_length, prices.shape[0]):
             slope = make_slope(prices[slope_idx - self.max_slope_length:slope_idx], self.min_slope_length, self.max_slope_length, slope_idx)
-            slope['idx'] = slope_idx
             slopes.append(slope)
         self.slopes = pd.DataFrame(slopes)
 

@@ -24,7 +24,6 @@ def get_historic_data(runner: LiveRunner, ie_prices: deque, initial_timestamp: d
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://192.168.1.90:31003")
 
-    count = 0
     timestamp_request = initial_timestamp
     while datetime.utcnow() - timestamp_request > timedelta(seconds=2):
         command = {'command': 'get_ticks',
@@ -48,11 +47,7 @@ def get_historic_data(runner: LiveRunner, ie_prices: deque, initial_timestamp: d
 
         for timestamp, price, volume, buy in historic_data:
             new_ie_prices = runner.step(timestamp=timestamp, price=price, volume=volume, buy=buy)
-            count += len(new_ie_prices)
             ie_prices.extend(new_ie_prices)
-            if len(new_ie_prices) > 0:
-                print(count)
-    quit()
 
 
 class LivePlotter:
@@ -77,7 +72,7 @@ def trader():
 
     logging.info("Start live runner")
     delta = 0.0025
-    initial_timestamp = datetime.utcnow() - timedelta(hours=2)
+    initial_timestamp = datetime.utcnow() - timedelta(hours=3)
     runner = LiveRunner(delta=delta, initial_timestamp=initial_timestamp)
 
     logging.info("Start Binance account")
@@ -91,16 +86,19 @@ def trader():
 
     logging.info("Get historic data")
     get_historic_data(runner=runner, ie_prices=ie_prices, initial_timestamp=initial_timestamp)
+    if len(ie_prices) < ie_prices.maxlen:
+        logging.error(f"Tick history not filled {len(ie_prices)}/{ie_prices.maxlen}")
+        quit()
 
     def process_ticker_message(data):
         # {'e': 'trade', 'E': 1614958138067, 's': 'BTCUSDT', 't': 686038737, 'p': '48253.49000000', 'q': '0.00270700', 'b': 5108573132, 'a': 5108573234, 'T': 1614958138066, 'm': True, 'M': True}
         symbol = data['s']
-        timestamp = data['E']
-        price = data['p']
-        volume = data['q']
+        timestamp = datetime.utcfromtimestamp(data['E'] / 1000)
+        price = float(data['p'])
+        volume = float(data['q'])
         buy = not data['m']
         # trade_id = data['t']
-        print(f'sym({symbol}) ts({timestamp}) p({price}) v({volume}) buy({buy}) tid({trade_id})')
+        # print(f'sym({symbol}) ts({timestamp}) p({price}) v({volume}) buy({buy})')
 
         if symbol != 'BTCUSDT':
             return
@@ -108,7 +106,10 @@ def trader():
         new_ie_prices = runner.step(timestamp=timestamp, price=price, volume=volume, buy=buy)
         for ie_price, ie_duration in new_ie_prices:
             ie_prices.append(ie_price)
+            print(ie_prices)
+            print(np.array(ie_prices))
             slope_prices = np.array(ie_prices)[-Slopes.max_slope_length - 1:-1]
+            print(slope_prices)
             if slope_prices.shape[0] != Slopes.max_slope_length:
                 continue
 
@@ -117,12 +118,14 @@ def trader():
             if make_trade:
                 if position.direction == PositionDirection.long:
                     position.direction = PositionDirection.short
-                    binance_account.order(-1.5)
+                    logging.warning("Order -1.5!")
+                    # binance_account.order(-1.5)
                 else:
                     position.direction = PositionDirection.long
-                    binance_account.order(2.5)
+                    logging.warning("Order 2.5!")
+                    # binance_account.order(2.5)
 
-            print(datetime.utcnow(), ie_prices[len(ie_prices) - 1], slope.length, slope.angle, position.direction)
+            print(datetime.utcnow(), ie_prices[len(ie_prices) - 1], slope['length'], slope['angle'], position.direction)
 
     logging.info("Start Binance BTCUSDT ticker stream")
     trade_socket_manager = BinanceSocketManager(binance_client)
