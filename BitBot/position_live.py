@@ -56,7 +56,7 @@ class PositionLive:
                 make_trade = True
 
         elif self.direction == PositionDirection.long:
-            threshold = slope.y[-1] * (1 - threshold_delta)
+            threshold = slope['y1'] * (1 - threshold_delta)
             # self.plotter.append_threshold(ie_idx, threshold)
 
             if mark_price < threshold or \
