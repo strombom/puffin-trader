@@ -13,7 +13,10 @@ class Position:
         self.regime = Regime.chop
         self.prev_slope_angle = 0
 
-    def step(self, ie_idx: int, mark_price: float, mark_price_prev: float, slope: pd.DataFrame) -> bool:
+    def step(self, ie_idx: int, mark_price: float, mark_price_prev: float, duration: int, duration_prev: int, slope: pd.DataFrame) -> bool:
+        if duration == 0 or duration_prev == 0:
+            return False
+
         # regime
         if self.regime == Regime.chop:
             if (slope['angle'] > 0.25 and mark_price > mark_price_prev) or \

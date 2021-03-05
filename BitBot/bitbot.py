@@ -20,6 +20,7 @@ if __name__ == '__main__':
     delta = 0.0025
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
     runner_prices = runner_data['price'].to_numpy()
+    runner_durations = runner_data['duration'].to_numpy()
 
     x = np.arange(runner_data.shape[0])
     slopes = Slopes(runner_prices, use_cache=True)
@@ -43,7 +44,10 @@ if __name__ == '__main__':
         plotter.append_slope_length(idx, slope['length'])
         plotter.append_volatility(idx, slope['volatility'])
 
-        make_trade = position.step(idx, ie_price, runner_prices[idx - 1], slope)  # , slopes[idx-slopes_history_count:idx])
+        previous_duration = runner_durations[idx - 1]
+        duration = runner_durations[idx]
+
+        make_trade = position.step(idx, ie_price, runner_prices[idx - 1], duration, previous_duration, slope)
 
         if make_trade:
             if position.direction == PositionDirection.short:

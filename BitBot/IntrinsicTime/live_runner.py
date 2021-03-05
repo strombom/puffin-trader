@@ -1,25 +1,81 @@
-from enum import IntEnum
 
-
-class Direction(IntEnum):
-    up = 1
-    down = -1
-
-
-class RunnerEvent(IntEnum):
-    change_up = 1
-    nothing = 0
-    change_down = -1
+import logging
 
 
 class LiveRunner:
+    price_change_volume_threshold = 10.0
+
     def __init__(self, delta, initial_price):
         self.delta = delta
-        self.direction = Direction.up
-        self.extreme_price = initial_price
-        self.expected_ie_price = initial_price * (1 + self.delta)
+        self.current_price = initial_price
+        self.previous_price = initial_price
+        self.ie_timestamp = 0
+        self.ie_volume = 0
+        self.ie_start_price = initial_price
+        self.ie_max_price = initial_price
+        self.ie_min_price = initial_price
+        self.ie_delta_top = 0
+        self.ie_delta_bot = 0
+        self.ie_trade_count = 0
 
-    def step(self, ask, bid):
+        self.buy_accum_volume = 0
+        self.sell_accum_volume = 0
+
+    def step(self, timestamp: int, price: float, volume: float, buy: bool):
+        events = []
+
+        if buy:
+            self.buy_accum_volume += volume
+            if self.buy_accum_volume > self.price_change_volume_threshold:
+                self.buy_accum_volume = 0
+                self.current_price = min(self.current_price, price)
+        else:
+            self.sell_accum_volume += volume
+            if self.sell_accum_volume > self.price_change_volume_threshold:
+                self.sell_accum_volume = 0
+                self.current_price = max(self.current_price, price)
+
+        if self.current_price > self.previous_price:
+            delta_dir = 1
+        else:
+            delta_dir = -1
+        self.previous_price = self.current_price
+
+        if self.current_price > self.ie_max_price:
+            self.ie_max_price = self.current_price
+            self.ie_delta_top = (self.ie_max_price - self.ie_start_price) / self.ie_start_price
+
+        elif self.current_price < self.ie_min_price:
+            self.ie_min_price = self.current_price
+            self.ie_delta_bot = (self.ie_start_price - self.ie_min_price) / self.ie_start_price
+
+        self.ie_trade_count += 1
+
+        delta_down = (self.ie_max_price - self.current_price) / self.ie_max_price  # Delta from top
+        delta_up = (self.current_price - self.ie_min_price) / self.ie_min_price    # Delta from bot
+
+        if self.ie_delta_top + delta_down >= self.delta or self.ie_delta_bot + delta_up >= delta:
+            ie_duration = timestamp - self.ie_timestamp
+
+            if delta_dir == 1:
+                remaining_delta = self.ie_delta_bot + delta_up
+                ie_price = self.ie_min_price * (1.0 + (self.delta - self.ie_delta_bot))
+            else:
+                remaining_delta = self.ie_delta_top + delta_down
+                ie_price = self.ie_max_price * (1.0 + (self.delta - self.ie_delta_top))
+
+            ie_delta = (self.ie_start_price - ie_price) / self.ie_start_price
+
+            while remaining_delta >= 2 * self.delta:
+                if delta_dir == 1:
+                    self.ie_max_price = min(self.ie_max_price, ie_price)
+                else:
+                    self.ie_min_price = max(self.ie_min_price, ie_price)
+
+                #events.append()
+                break
+
+        quit()
         ie_prices = []
 
         if self.direction == Direction.up:

@@ -46,28 +46,45 @@ class RunnerPlotter:
         self.plt_price.addItem(self.v_line_price, ignoreBounds=True)
         self.plt_indicators.addItem(self.v_line_indicators, ignoreBounds=True)
 
-        tick_pen = pg.mkPen({'color': (0x02, 0xbf, 0xfe, 50), 'width': 2})
-        tick_x, tick_y = tick_data[['timestamp']].to_numpy().squeeze(), tick_data[['price']].to_numpy().squeeze()
-        tick_line = self.plt_price.plot(tick_x, tick_y, pen=tick_pen)
+        # tick_pen = pg.mkPen({'color': (0x02, 0xbf, 0xfe, 50), 'width': 2})
+        # tick_x, tick_y = tick_data[['timestamp']].to_numpy().squeeze(), tick_data[['price']].to_numpy().squeeze()
+        # tick_line = self.plt_price.plot(tick_x, tick_y, pen=tick_pen)
 
         runner_timestamp = runner_data[['timestamp']].to_numpy().squeeze()
         runner_price = runner_data[['price']].to_numpy().squeeze()
         runner_price_max = runner_data[['price_max']].to_numpy().squeeze()
         runner_price_min = runner_data[['price_min']].to_numpy().squeeze()
+        runner_x = np.arange(runner_timestamp.shape[0])
 
         scatter = pg.ScatterPlotItem(size=8, brush=pg.mkBrush(0xe5, 0xd0, 0x00, 100))
-        scatter.addPoints(runner_timestamp, runner_price)
+        scatter.addPoints(runner_x, runner_price)
         self.plt_price.addItem(scatter)
 
+        runner_price_pen = pg.mkPen(size=2, brush=pg.mkBrush(0xe5, 0xd0, 0x00, 100))
+        runner_price_line = self.plt_price.plot(runner_x, runner_price, pen=runner_price_pen)
+
+        price_max_x = np.arange(runner_timestamp.shape[0]).repeat(2, axis=0)[1:-1]
+        runner_price_max2 = runner_price_max.repeat(2, axis=0)[2:]
+        runner_price_max_pen = pg.mkPen({'color': (0x96, 0xf9, 0x7b, 40), 'width': 2})
+        runner_price_max_line = self.plt_price.plot(price_max_x, runner_price_max2, pen=runner_price_max_pen)
+
+        price_min_x = np.arange(runner_timestamp.shape[0]).repeat(2, axis=0)[1:-1]
+        runner_price_min2 = runner_price_min.repeat(2, axis=0)[2:]
+        runner_price_min_pen = pg.mkPen({'color': (0xe5, 0x00, 0x00, 40), 'width': 2})
+        runner_price_min_line = self.plt_price.plot(price_min_x, runner_price_min2, pen=runner_price_min_pen)
+
+        """
         price_max_lines = []
         price_min_lines = []
         line_max_pen = pg.mkPen({'color': (0x96, 0xf9, 0x7b, 100), 'width': 2})
         line_min_pen = pg.mkPen({'color': (0xe5, 0x00, 0x00, 100), 'width': 2})
         for idx in range(1, runner_timestamp.shape[0]):
-            price_max_lines.append(self.plt_price.plot(runner_timestamp[idx-1:idx+1], [runner_price_max[idx], runner_price_max[idx]], pen=line_max_pen))
-            price_max_lines.append(self.plt_price.plot([runner_timestamp[idx], runner_timestamp[idx]], [runner_price_max[idx], runner_price[idx]], pen=line_max_pen))
-            price_min_lines.append(self.plt_price.plot(runner_timestamp[idx-1:idx+1], [runner_price_min[idx], runner_price_min[idx]], pen=line_min_pen))
-            price_min_lines.append(self.plt_price.plot([runner_timestamp[idx], runner_timestamp[idx]], [runner_price_min[idx], runner_price[idx]], pen=line_min_pen))
+            pass
+            # price_max_lines.append(self.plt_price.plot(runner_timestamp[idx-1:idx+1], [runner_price_max[idx], runner_price_max[idx]], pen=line_max_pen))
+            price_max_lines.append(self.plt_price.plot([idx, idx], [runner_price_max[idx], runner_price[idx]], pen=line_max_pen))
+            #price_min_lines.append(self.plt_price.plot(runner_timestamp[idx-1:idx+1], [runner_price_min[idx], runner_price_min[idx]], pen=line_min_pen))
+            price_min_lines.append(self.plt_price.plot([idx, idx], [runner_price_min[idx], runner_price[idx]], pen=line_min_pen))
+        """
 
         """
         self.slope_lines = []
@@ -119,5 +136,6 @@ class RunnerPlotter:
 if __name__ == '__main__':
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
     tick_data = pd.read_csv('../tmp/binance_runner_ticks.csv')
+    # tick_data = None
     plotter = RunnerPlotter(runner_data=runner_data, tick_data=tick_data)
     plotter.plot()

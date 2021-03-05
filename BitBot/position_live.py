@@ -1,5 +1,6 @@
 
-from slopes import Slope, Slopes
+import pandas as pd
+from slopes import Slopes
 from plotter import Plotter
 from Common.Misc import PositionDirection, Regime
 
@@ -11,8 +12,14 @@ class PositionLive:
         self.regime = Regime.chop
         self.mark_price_prev = initial_price
         self.prev_slope_angle = 0
+        self.duration_prev = 0
 
-    def step(self, mark_price: float, slope: Slope) -> bool:
+    def step(self, mark_price: float, duration: int, slope: pd.DataFrame) -> bool:
+        if duration == 0 or self.duration_prev == 0:
+            self.duration_prev = duration
+            return False
+        self.duration_prev = duration
+
         # regime
         if self.regime == Regime.chop:
             if (slope.angle > 0.25 and mark_price > self.mark_price_prev) or \

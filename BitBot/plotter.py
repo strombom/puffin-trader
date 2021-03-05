@@ -158,7 +158,6 @@ class Plotter:
 
         if 0 <= x < len(self.timestamps['x']):
             timestamp = self.timestamps['y'][x] / 1000
-            print(timestamp)
             timestamp = datetime.fromtimestamp(timestamp)
             self.datetime_marker.setPos(x, self.plt_price.getAxis('left').range[0] + 200)
             self.datetime_marker.setText(text=timestamp.strftime("%Y-%m-%d %H:%M:%S"))

@@ -6,10 +6,28 @@ class Direction(IntEnum):
     down = -1
 
 
-class RunnerEvent(IntEnum):
-    change_up = 1
-    nothing = 0
-    change_down = -1
+class Runner:
+    def __init__(self, delta, initial_price, initial_timestamp):
+        self.delta = delta
+        self.current_price = initial_price
+        self.ie_start_price = initial_price
+        self.ie_max_price = initial_price
+        self.ie_min_price = initial_price
+        self.ie_timestamp = initial_timestamp
+        self.ie_volume = 0
+        self.ie_trade_count = 0
+        self.ie_delta_top = 0
+        self.ie_delta_bot = 0
+
+        self.ie_times = []
+        self.ie_prices = []
+
+    def step(self, timestamp, ask, bid):
+
+
+
+
+
 
 
 class Runner:
@@ -24,46 +42,46 @@ class Runner:
         self.ie_times = []
         self.ie_prices = []
 
-    def step(self, order_book):
+    def step(self, timestamp, ask, bid):
         if self.direction == Direction.up:
-            while order_book.bid > self.expected_ie_price:
-                self.ie_times.append(order_book.timestamp.timestamp())
+            while bid > self.expected_ie_price:
+                self.ie_times.append(timestamp.timestamp())
                 self.ie_prices.append(self.expected_ie_price)
                 self.expected_ie_price *= 1 + self.delta
 
-            if order_book.bid > self.extreme_price:
+            if bid > self.extreme_price:
                 self.extreme_price = order_book.bid
-                self.extreme_timestamp = order_book.timestamp
+                self.extreme_timestamp = timestamp
 
             delta_dc = (self.expected_ie_price - self.extreme_price) / self.extreme_price
             expected_dc_price = self.extreme_price * (1 - delta_dc)
 
-            if order_book.ask < expected_dc_price:
-                self._append(order_book.timestamp, expected_dc_price)
+            if ask < expected_dc_price:
+                self._append(timestamp, expected_dc_price)
                 self.direction = Direction.down
                 self.expected_ie_price = expected_dc_price * (1 - self.delta)
-                self.extreme_timestamp = order_book.timestamp
-                self.extreme_price = order_book.ask
+                self.extreme_timestamp = timestamp
+                self.extreme_price = ask
 
         else:
-            while order_book.ask < self.expected_ie_price:
-                self.ie_times.append(order_book.timestamp.timestamp())
+            while ask < self.expected_ie_price:
+                self.ie_times.append(timestamp.timestamp())
                 self.ie_prices.append(self.expected_ie_price)
                 self.expected_ie_price *= 1 - self.delta
 
-            if order_book.ask < self.extreme_price:
-                self.extreme_price = order_book.ask
-                self.extreme_timestamp = order_book.timestamp
+            if ask < self.extreme_price:
+                self.extreme_price = ask
+                self.extreme_timestamp = timestamp
 
             delta_dc = (self.extreme_price - self.expected_ie_price) / self.extreme_price
             expected_dc_price = self.extreme_price * (1 + delta_dc)
 
-            if order_book.bid > expected_dc_price:
-                self._append(order_book.timestamp, expected_dc_price)
+            if bid > expected_dc_price:
+                self._append(timestamp, expected_dc_price)
                 self.direction = Direction.up
                 self.expected_ie_price = expected_dc_price * (1 + self.delta)
-                self.extreme_timestamp = order_book.timestamp
-                self.extreme_price = order_book.bid
+                self.extreme_timestamp = timestamp
+                self.extreme_price = bid
 
     def _append(self, dc_timestamp, delta_price):
         self.ie_times.append(dc_timestamp.timestamp())
