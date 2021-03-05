@@ -47,7 +47,7 @@ class PositionLive:
         angle_threshold = 0.2 / 5
 
         if self.direction == PositionDirection.short:
-            threshold = slope.y[-1] * (1 + threshold_delta)
+            threshold = slope['y1'] * (1 + threshold_delta)
             # self.plotter.append_threshold(ie_idx, threshold)
 
             if mark_price > threshold or \
