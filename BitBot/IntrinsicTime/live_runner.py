@@ -64,7 +64,7 @@ class LiveRunner:
                 remaining_delta = self.ie_delta_top + delta_down
                 ie_price = self.ie_max_price * (1.0 + (self.delta - self.ie_delta_top))
 
-            ie_delta = (self.ie_start_price - ie_price) / self.ie_start_price
+            # ie_delta = (self.ie_start_price - ie_price) / self.ie_start_price
 
             while remaining_delta >= 2 * self.delta:
                 if delta_dir == 1:
@@ -72,10 +72,39 @@ class LiveRunner:
                 else:
                     self.ie_min_price = max(self.ie_min_price, ie_price)
 
-                #events.append()
-                break
+                events.append((ie_price, ie_duration))
 
-        quit()
+                next_price = ie_price * (1.0 + delta_dir * self.delta)
+                self.ie_start_price = ie_price
+                self.ie_volume = 0
+                self.ie_trade_count = 0
+                if delta_dir == 1:
+                    self.ie_max_price = next_price
+                    self.ie_min_price = ie_price
+                else:
+                    self.ie_max_price = ie_price
+                    self.ie_min_price = next_price
+                self.ie_delta_top = (self.ie_max_price - self.ie_start_price) / self.ie_start_price
+                self.ie_delta_bot = (self.ie_start_price - self.ie_min_price) / self.ie_start_price
+                # ie_delta = (self.ie_start_price - next_price) / self.ie_start_price
+                ie_price = next_price
+
+            self.ie_volume += volume
+            events.append((ie_price, ie_duration))
+
+            self.ie_timestamp = timestamp
+            self.ie_start_price = ie_price
+            self.ie_volume = 0
+            self.ie_trade_count = 0
+            self.ie_max_price = ie_price
+            self.ie_min_price = ie_price
+            self.ie_delta_top = 0
+            self.ie_delta_bot = 0
+
+        else:
+            self.ie_volume += volume
+
+        """
         ie_prices = []
 
         if self.direction == Direction.up:
@@ -113,3 +142,4 @@ class LiveRunner:
                 self.extreme_price = bid
 
         return ie_prices
+        """

@@ -100,8 +100,6 @@ def trader():
         if symbol != 'BTCUSDT':
             return
 
-        # Todo, ie_prices should be a deque with max length
-
         new_ie_prices = runner.step(timestamp=timestamp, price=price, volume=volume, buy=buy)
         for ie_price, ie_duration in new_ie_prices:
             ie_prices.append(ie_price)
