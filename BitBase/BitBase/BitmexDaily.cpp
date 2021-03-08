@@ -65,6 +65,13 @@ void BitmexDaily::download_done_callback(sptr_download_data_t payload)
 
     auto decompressed = std::stringstream{};
     boost::iostreams::copy(out, decompressed);
+
+    if (decompressed.eof()) {
+        logger.error("BitmexDaily::download_done_callback empty!");
+        shutdown();
+        return;
+    }
+
     auto tick_data = parse_raw(decompressed);
 
     if (!tick_data) {

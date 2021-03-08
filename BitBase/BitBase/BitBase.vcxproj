@@ -103,7 +103,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_TURN_OFF_PLATFORM_STRING;BOOST_UUID_FORCE_AUTO_LINK;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_TURN_OFF_PLATFORM_STRING;BOOST_UUID_FORCE_AUTO_LINK;NOMINMAX;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -149,7 +149,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_TURN_OFF_PLATFORM_STRING;BOOST_UUID_FORCE_AUTO_LINK;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_TURN_OFF_PLATFORM_STRING;BOOST_UUID_FORCE_AUTO_LINK;NOMINMAX;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>

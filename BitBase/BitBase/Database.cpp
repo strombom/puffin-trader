@@ -165,23 +165,45 @@ void Database::extend_tick_data(const std::string& exchange, const std::string& 
 {
     auto slock = std::scoped_lock{ file_mutex };
 
-    auto last_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
-    std::filesystem::create_directories(root_path + "/tick/" + exchange);
-    auto file = std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app | std::ofstream::binary };
+    auto prev_timestamp = get_attribute(exchange, symbol, "tick_data_last_timestamp", first_timestamp);
+    auto day = 0;
+    auto month = 0;
+    auto year = 0;
+
+    auto file = std::ofstream{}; // std::ofstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ofstream::app | std::ofstream::binary };
+    const auto base_path = std::string{ root_path + "/tick/" + exchange + "/" + symbol  + "/"};
 
     auto in_range = false;
     for (auto&& row : ticks->rows) {
-        if (!in_range && (row.timestamp > last_timestamp)) {
+        if (!in_range && (row.timestamp > prev_timestamp)) {
             in_range = true;
         }
-        if (in_range) {
-            file << row;
-            last_timestamp = row.timestamp;
+
+        if (!in_range) {
+            continue;
         }
+
+        auto tt = std::chrono::system_clock::to_time_t(row.timestamp);
+        auto utc_tm = std::gmtime(&tt);
+
+        if (utc_tm->tm_mday != day || utc_tm->tm_mon != month || utc_tm->tm_year != year) {
+            day = utc_tm->tm_mday;
+            month = utc_tm->tm_mon;
+            year = utc_tm->tm_year;
+
+            auto file_path = std::array<char, 15>{};
+            std::sprintf(file_path.data(), "%04d-%02d-%02d.dat", 1900 + year, 1 + month, day);
+
+            std::filesystem::create_directories(base_path);
+            file = std::ofstream{ base_path + file_path.data(), std::ofstream::app | std::ofstream::binary };
+        }
+
+        file << row;
+        prev_timestamp = row.timestamp;
     }
 
     file.close();
-    set_attribute(exchange, symbol, "tick_data_last_timestamp", last_timestamp);
+    set_attribute(exchange, symbol, "tick_data_last_timestamp", prev_timestamp);
 }
 
 void Database::extend_interval_data(const std::string& exchange, const std::string& symbol, const std::chrono::milliseconds interval, const Intervals& intervals_data, const time_point_ms& next_timestamp, long long next_tick_idx)
@@ -204,6 +226,8 @@ void Database::extend_interval_data(const std::string& exchange, const std::stri
 
 std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end, const std::chrono::milliseconds interval)
 {
+    auto slock = std::scoped_lock{ file_mutex };
+
     const auto interval_name = std::to_string(interval.count());
     const auto interval_offset = (timestamp_start - BitBase::Bitmex::first_timestamp) / interval;
 
@@ -224,18 +248,48 @@ std::unique_ptr<Intervals> Database::get_intervals(const std::string& exchange, 
 
 std::unique_ptr<Ticks> Database::get_ticks(const std::string& exchange, const std::string& symbol, const time_point_ms& timestamp_start, const time_point_ms& timestamp_end)
 {
-    const auto tick_offset = timestamp_start - BitBase::Bitmex::first_timestamp;
+    auto slock = std::scoped_lock{ file_mutex };
 
-    auto file = std::ifstream{ root_path + "/tick/" + exchange + "/" + symbol + ".dat", std::ifstream::binary };
+    const auto base_path = std::string{ root_path + "/tick/" + exchange + "/" + symbol + "/" };
+    auto next_file_timestamp = date::floor<date::days>(timestamp_start);
+    auto file = std::ifstream{};
+    auto day = 0;
+    auto month = 0;
+    auto year = 0;
 
     auto ticks = std::make_unique<Ticks>();
+
     auto tick = Tick{};
-    while (file >> tick) {
-        if (tick.timestamp >= timestamp_end) {
-            break;
+    auto file_initialised = false;
+    while (true) {
+        while (file_initialised) {
+            if (file >> tick) {
+                if (tick.timestamp >= timestamp_end) {
+                    break;
+                }
+                if (tick.timestamp >= timestamp_start) {
+                    ticks->rows.push_back(tick);
+                }
+            }
+            else {
+                file_initialised = false;
+            }
         }
-        if (tick.timestamp >= timestamp_start) {
-            ticks->rows.push_back(tick);
+
+        if (!file_initialised) {
+            if (next_file_timestamp >= timestamp_end) {
+                break;
+            }
+
+            auto tt = std::chrono::system_clock::to_time_t(next_file_timestamp);
+            auto utc_tm = std::gmtime(&tt);
+
+            auto file_path = std::array<char, 15>{};
+            std::sprintf(file_path.data(), "%04d-%02d-%02d.dat", 1900 + utc_tm->tm_year, 1 + utc_tm->tm_mon, utc_tm->tm_mday);
+            file = std::ifstream{ base_path + file_path.data(), std::ifstream::binary };
+
+            next_file_timestamp += date::days{ 1 };
+            file_initialised = true;
         }
     }
 

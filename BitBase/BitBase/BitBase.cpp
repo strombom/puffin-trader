@@ -70,7 +70,7 @@ int main()
     auto database = Database::create(BitBase::Database::root_path);
     auto bitmex = Bitmex{ database, download_manager };
     auto binance = Binance{ database };
-    auto coinbase_pro = CoinbasePro{ database };
+    //auto coinbase_pro = CoinbasePro{ database };
     auto server = Server{ database };
 
     auto keyboard_input = std::async(get_keyboard_input);
@@ -90,6 +90,6 @@ int main()
 
     bitmex.shutdown();
     binance.shutdown();
-    coinbase_pro.shutdown();
+    //coinbase_pro.shutdown();
     download_manager->shutdown();
 }

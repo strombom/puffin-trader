@@ -13,6 +13,7 @@
 #include <iostream>
 
 
+
 BinanceTick::BinanceTick(sptrDatabase database, tick_data_updated_callback_t tick_data_updated_callback) :
     database(database), tick_data_updated_callback(tick_data_updated_callback),
     state(BinanceTickState::idle), tick_data_thread_running(true)
@@ -101,6 +102,8 @@ void BinanceTick::tick_data_worker(void)
                     database->set_attribute(BitBase::Binance::exchange_name, symbol, "tick_data_last_id", new_last_trade_id);
                     insert_symbol_name(symbol);
                 }
+
+                std::this_thread::sleep_for(BitBase::Binance::Tick::rate_limit);
             }
         }
 
