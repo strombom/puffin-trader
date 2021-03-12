@@ -37,6 +37,9 @@ if __name__ == '__main__':
 
     spectrum = np.zeros((len(lengths), 2, runner_prices.shape[0]))
 
+    print(spectrum.shape)
+    #quit()
+
     for length_idx, length in enumerate(lengths):
         vols = []
         for idx in range(lengths[-1], runner_prices.shape[0]):
@@ -58,17 +61,18 @@ if __name__ == '__main__':
     volatility = volatility_factor * spectrum[:, 0, lengths[-1]:]
     angle = angle_factor * spectrum[:, 1, lengths[-1]:]
 
-    print(volatility.shape)
+    angle_amplitude = np.max(np.abs(angle))
+    angle = (angle_amplitude + angle) / (2 * angle_amplitude)
 
-    x = np.arange(volatility.shape[1])
+    x = np.arange(lengths[-1], lengths[-1] + volatility.shape[1])
     y = np.arange(volatility.shape[0])
 
-    fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
-    cmap = plt.get_cmap('Greens')
-    axs[0].pcolormesh(x, y, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=cmap)
-    axs[0].set_title("volatility")
-    axs[1].pcolormesh(x, y, angle, vmin=np.min(angle), vmax=np.max(angle), shading='auto', cmap=cmap)
-    axs[1].set_title("angle")
+    fig, axs = plt.subplots(3, 1, sharex=True)
+    axs[0].plot(runner_prices)
+    axs[1].pcolormesh(x, y, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Greens'))
+    axs[1].set_title("volatility")
+    axs[2].pcolormesh(x, y, angle, vmin=np.min(angle), vmax=np.max(angle), shading='auto', cmap=plt.get_cmap('RdYlGn'))
+    axs[2].set_title("angle")
 
 
     plt.show()
