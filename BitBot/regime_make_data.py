@@ -13,7 +13,7 @@ from BinanceSim.binance_simulator import BinanceSimulator
 from Common.Misc import PositionDirection
 from Indicators.supersmoother import super_smoother
 from position import Position
-from market_state_plotter import Plotter
+from regime_plotter import Plotter
 
 
 def make_spectrum(lengths, prices, poly_order, volatilities, directions):
