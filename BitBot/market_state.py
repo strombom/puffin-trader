@@ -16,18 +16,28 @@ from position import Position
 from market_state_plotter import Plotter
 
 
-if __name__ == '__main__':
-    # with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
-    #     delta, runner = pickle.load(f)
+def make_spectrum(lengths, prices, poly_order, volatilities, directions):
+    for length_idx, length in enumerate(lengths):
+        vols = []
+        for idx in range(lengths[-1], prices.shape[0]):
+            start, end = idx - length, idx
+            xp = np.arange(start, end)
+            yp = np.poly1d(np.polyfit(xp, prices[start:end], poly_order))
 
+            curve = yp(xp)
+            volatility = np.max(np.abs(curve / prices[start:end] - 1.0))
+            direction = curve[-1] / curve[-2] - 1.0
+            volatilities[length_idx, idx] = volatility
+            directions[length_idx, idx] = direction
+
+
+if __name__ == '__main__':
     delta = 0.004
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
 
-    runner_prices = runner_data['price'].to_numpy()
+    runner_prices = runner_data['price'].to_numpy()[:250]
 
     np.set_printoptions(precision=4)
-
-    # plt.plot(runner_prices)
 
     lengths = np.array((5, 7, 9, 11, 13, 15, 19, 23, 27, 33, 39, 47, 57, 69, 83))
     lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
@@ -35,46 +45,48 @@ if __name__ == '__main__':
                         131, 151, 161, 181, 201))
     lengths = np.arange(3, 200, 2)
 
-    spectrum = np.zeros((len(lengths), 2, runner_prices.shape[0]))
+    spectrum = np.zeros((len(lengths), 6, runner_prices.shape[0]))
 
-    print(spectrum.shape)
-    #quit()
+    for i in range(3):
+        make_spectrum(lengths=lengths,
+                      prices=runner_prices,
+                      poly_order=i + 1,
+                      volatilities=spectrum[:, i * 2 + 0, :],
+                      directions=spectrum[:, i * 2 + 1, :])
 
-    for length_idx, length in enumerate(lengths):
-        vols = []
-        for idx in range(lengths[-1], runner_prices.shape[0]):
-            start, end = idx - length, idx
-            xp = np.arange(start, end)
-            yp = np.poly1d(np.polyfit(xp, runner_prices[start:end], 2))
+    volatility_factor = (1 / np.power(lengths * 0.0000126, 0.636))[:, None] * 0.3
+    direction_factor = pow(lengths * 9.11848707e+02, 5.67883215e-01)[:, None] * 0.3
 
-            curve = yp(xp)
-            volatility = np.max(np.abs(curve / runner_prices[start:end] - 1.0))
-            angle = curve[-1] / curve[-2] - 1.0
-            spectrum[length_idx, 0, idx] = volatility
-            spectrum[length_idx, 1, idx] = angle
+    for i in range(3):
+        spectrum[:, i * 2 + 0, lengths[-1]:] *= volatility_factor
+        spectrum[:, i * 2 + 1, lengths[-1]:] *= direction_factor
 
-    fig, axs = plt.subplots(2, 1)
+    out_data = {}
+    for i in range(3):
+        for length_idx, length in enumerate(lengths):
+            out_data[f'vol_{i * 2 + 0}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, :]
+            out_data[f'dir_{i * 2 + 1}_{length_idx}'] = spectrum[length_idx, i * 2 + 1, :]
 
-    volatility_factor = (1 / np.power(lengths * 0.0000126, 0.636))[:, None]
-    angle_factor = pow(lengths * 9.11848707e+02, 5.67883215e-01)[:, None]
+    a = pd.DataFrame(data=out_data)
+    a.to_csv('../tmp/market_states.csv')
 
-    volatility = volatility_factor * spectrum[:, 0, lengths[-1]:]
-    angle = angle_factor * spectrum[:, 1, lengths[-1]:]
-
-    angle_amplitude = np.max(np.abs(angle))
-    angle = (angle_amplitude + angle) / (2 * angle_amplitude)
-
-    x = np.arange(lengths[-1], lengths[-1] + volatility.shape[1])
-    y = np.arange(volatility.shape[0])
-
-    fig, axs = plt.subplots(3, 1, sharex=True)
+    x = np.arange(lengths[-1], lengths[-1] + runner_prices.shape[0] - lengths[-1])
+    fig, axs = plt.subplots(7, 1, sharex=True, gridspec_kw={'wspace': 0, 'hspace': 0})
     axs[0].plot(runner_prices)
-    axs[1].pcolormesh(x, y, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Greens'))
-    axs[1].set_title("volatility")
-    axs[2].pcolormesh(x, y, angle, vmin=np.min(angle), vmax=np.max(angle), shading='auto', cmap=plt.get_cmap('RdYlGn'))
-    axs[2].set_title("angle")
 
+    for i in range(3):
+        volatility = spectrum[:, i * 2 + 0, lengths[-1]:]
+        axs[i * 2 + 1].pcolormesh(x, lengths, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Blues'))
+        #axs[1].set_title("Volatility")
 
+        direction = spectrum[:, i * 2 + 1, lengths[-1]:]
+        direction_amplitude = np.max(np.abs(direction))
+        direction = (direction_amplitude + direction) / (2 * direction_amplitude)
+
+        axs[i * 2 + 2].pcolormesh(x, lengths, direction, vmin=np.min(direction), vmax=np.max(direction), shading='auto', cmap=plt.get_cmap('RdYlGn'))
+        #axs[2].set_title("Direction")
+
+    plt.tight_layout()
     plt.show()
     quit()
 
