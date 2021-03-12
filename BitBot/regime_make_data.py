@@ -33,21 +33,26 @@ def make_spectrum(lengths, prices, poly_order, volatilities, directions):
 
 if __name__ == '__main__':
     delta = 0.004
+    n_degree = 4
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
 
-    runner_prices = runner_data['price'].to_numpy()[:250]
+    runner_prices = runner_data['price'].to_numpy()[:1000]
 
     np.set_printoptions(precision=4)
 
-    lengths = np.array((5, 7, 9, 11, 13, 15, 19, 23, 27, 33, 39, 47, 57, 69, 83))
+    lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
+                        39, 43, 47, 51, 57, 63, 69, 75, 83, 91, 100))
     lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
                         39, 43, 47, 51, 57, 63, 69, 75, 83, 91, 100, 111, 121,
                         131, 151, 161, 181, 201))
-    lengths = np.arange(3, 200, 2)
+    lengths = np.arange(3, 100, 2)
 
-    spectrum = np.zeros((len(lengths), 6, runner_prices.shape[0]))
+    lengths_df = pd.DataFrame(data={'length': lengths})
+    lengths_df.to_csv('../tmp/market_states_lengths.csv')
 
-    for i in range(3):
+    spectrum = np.zeros((len(lengths), n_degree * 2, runner_prices.shape[0]))
+
+    for i in range(n_degree):
         make_spectrum(lengths=lengths,
                       prices=runner_prices,
                       poly_order=i + 1,
@@ -57,32 +62,31 @@ if __name__ == '__main__':
     volatility_factor = (1 / np.power(lengths * 0.0000126, 0.636))[:, None] * 0.3
     direction_factor = pow(lengths * 9.11848707e+02, 5.67883215e-01)[:, None] * 0.3
 
-    for i in range(3):
+    for i in range(n_degree):
         spectrum[:, i * 2 + 0, lengths[-1]:] *= volatility_factor
         spectrum[:, i * 2 + 1, lengths[-1]:] *= direction_factor
 
-    out_data = {}
-    for i in range(3):
+    out_data = {'price': runner_prices[lengths[-1]:]}
+    for i in range(n_degree):
         for length_idx, length in enumerate(lengths):
-            out_data[f'vol_{i * 2 + 0}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, :]
-            out_data[f'dir_{i * 2 + 1}_{length_idx}'] = spectrum[length_idx, i * 2 + 1, :]
+            out_data[f'vol_{i * 2 + 0}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, lengths[-1]:]
+            out_data[f'dir_{i * 2 + 1}_{length_idx}'] = spectrum[length_idx, i * 2 + 1, lengths[-1]:]
 
-    a = pd.DataFrame(data=out_data)
-    a.to_csv('../tmp/market_states.csv')
+    spectrum_df = pd.DataFrame(data=out_data)
+    spectrum_df.to_csv('../tmp/market_states.csv')
 
-    x = np.arange(lengths[-1], lengths[-1] + runner_prices.shape[0] - lengths[-1])
-    fig, axs = plt.subplots(7, 1, sharex=True, gridspec_kw={'wspace': 0, 'hspace': 0})
-    axs[0].plot(runner_prices)
+    fig, axs = plt.subplots(1 + n_degree * 2, 1, sharex=True, gridspec_kw={'wspace': 0, 'hspace': 0})
+    axs[0].plot(runner_prices[lengths[-1]:])
 
-    for i in range(3):
-        volatility = spectrum[:, i * 2 + 0, lengths[-1]:]
+    x = np.arange(runner_prices.shape[0] - lengths[-1])
+    for i in range(n_degree):
+        volatility = 1 - spectrum[:, i * 2 + 0, lengths[-1]:]
         axs[i * 2 + 1].pcolormesh(x, lengths, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Blues'))
         #axs[1].set_title("Volatility")
 
         direction = spectrum[:, i * 2 + 1, lengths[-1]:]
         direction_amplitude = np.max(np.abs(direction))
         direction = (direction_amplitude + direction) / (2 * direction_amplitude)
-
         axs[i * 2 + 2].pcolormesh(x, lengths, direction, vmin=np.min(direction), vmax=np.max(direction), shading='auto', cmap=plt.get_cmap('RdYlGn'))
         #axs[2].set_title("Direction")
 
