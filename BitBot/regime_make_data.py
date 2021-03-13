@@ -37,6 +37,8 @@ if __name__ == '__main__':
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
 
     runner_prices = runner_data['price'].to_numpy()[:1000]
+    runner_volumes = runner_data['volume'].to_numpy()[:1000]
+    runner_durations = runner_data['duration'].to_numpy()[:1000]
 
     np.set_printoptions(precision=4)
 
@@ -66,7 +68,9 @@ if __name__ == '__main__':
         spectrum[:, i * 2 + 0, lengths[-1]:] *= volatility_factor
         spectrum[:, i * 2 + 1, lengths[-1]:] *= direction_factor
 
-    out_data = {'price': runner_prices[lengths[-1]:]}
+    out_data = {'price': runner_prices[lengths[-1]:],
+                'volume': runner_volumes[lengths[-1]:],
+                'duration': runner_durations[lengths[-1]:]}
     for i in range(n_degree):
         for length_idx, length in enumerate(lengths):
             out_data[f'vol_{i * 2 + 0}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, lengths[-1]:]
