@@ -32,26 +32,27 @@ def make_spectrum(lengths, prices, poly_order, volatilities, directions):
 
 
 if __name__ == '__main__':
-    delta = 0.004
+    delta = 0.008
     n_degree = 5
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
 
-    runner_prices = runner_data['price'].to_numpy()[:1000]
-    runner_deltas = runner_data['delta'].to_numpy()[:1000]
-    runner_volumes = runner_data['volume'].to_numpy()[:1000]
-    runner_durations = runner_data['duration'].to_numpy()[:1000]
+    n_samples = 19416
+    runner_prices = runner_data['price'].to_numpy()[:n_samples]
+    runner_deltas = runner_data['delta'].to_numpy()[:n_samples]
+    runner_volumes = runner_data['volume'].to_numpy()[:n_samples]
+    runner_durations = runner_data['duration'].to_numpy()[:n_samples]
 
     np.set_printoptions(precision=4)
 
-    lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
-                        39, 43, 47, 51, 57, 63, 69, 75, 83, 91, 100))
-    lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
-                        39, 43, 47, 51, 57, 63, 69, 75, 83, 91, 100, 111, 121,
-                        131, 151, 161, 181, 201))
-    lengths = np.arange(3, 100, 2)
+    #lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
+    #                    39, 43, 47, 51, 57, 63, 69, 75, 83, 91, 100))
+    #lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
+    #                    39, 43, 47, 51, 57, 63, 69, 75, 83, 91, 100, 111, 121,
+    #                    131, 151, 161, 181, 201))
+    lengths = np.arange(7, 60, 2)
 
     lengths_df = pd.DataFrame(data={'length': lengths})
-    lengths_df.to_csv('../tmp/market_states_lengths.csv')
+    lengths_df.to_csv('../tmp/regime_data_lengths.csv')
 
     spectrum = np.zeros((len(lengths), n_degree * 2, runner_prices.shape[0]))
 
@@ -80,7 +81,7 @@ if __name__ == '__main__':
             out_data[f'dir_{i * 2 + 1}_{length_idx}'] = spectrum[length_idx, i * 2 + 1, lengths[-1]:]
 
     spectrum_df = pd.DataFrame(data=out_data)
-    spectrum_df.to_csv('../tmp/market_states.csv')
+    spectrum_df.to_csv('../tmp/regime_data.csv')
 
     fig, axs = plt.subplots(1 + n_degree * 2, 1, sharex=True, gridspec_kw={'wspace': 0, 'hspace': 0})
     axs[0].plot(runner_prices[lengths[-1]:])
