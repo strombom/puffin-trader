@@ -77,8 +77,8 @@ if __name__ == '__main__':
 
     for i in range(n_degree):
         for length_idx, length in enumerate(lengths):
-            out_data[f'vol_{i * 2 + 0}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, lengths[-1]:]
-            out_data[f'dir_{i * 2 + 1}_{length_idx}'] = spectrum[length_idx, i * 2 + 1, lengths[-1]:]
+            out_data[f'vol_{i}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, lengths[-1]:]
+            out_data[f'dir_{i}_{length_idx}'] = spectrum[length_idx, i * 2 + 1, lengths[-1]:]
 
     spectrum_df = pd.DataFrame(data=out_data)
     spectrum_df.to_csv('../tmp/regime_data.csv')
