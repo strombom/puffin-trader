@@ -54,21 +54,23 @@ class Plotter:
                 return img
 
             spectrum_size = (n_samples, n_channels)
-            prediction_size = (prediction_len, n_channels)
+            target_size = (prediction_len, n_channels)
+            target_size = (10 + prediction_len, n_channels)
+            prediction_size = (10 + prediction_len, n_channels)
             spectrum = {}
 
             row = idx * 2 + 2
             spectrum['volatility'] = {
                 'spectrum': add_spectrum_image(row=row, col=0, size=spectrum_size, set_x_link=True),
-                'target': add_spectrum_image(row=row, col=1, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1),
-                'prediction': add_spectrum_image(row=row, col=2, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1)
+                'target': add_spectrum_image(row=row, col=1, size=target_size, set_x_link=False, width=self.win.width() * 0.125),
+                'prediction': add_spectrum_image(row=row, col=2, size=prediction_size, set_x_link=False, width=self.win.width() * 0.125)
             }
 
             row = idx * 2 + 3
             spectrum['direction'] = {
                 'spectrum': add_spectrum_image(row=row, col=0, size=spectrum_size, set_x_link=True),
-                'target': add_spectrum_image(row=row, col=1, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1),
-                'prediction': add_spectrum_image(row=row, col=2, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1)
+                'target': add_spectrum_image(row=row, col=1, size=target_size, set_x_link=False, width=self.win.width() * 0.125),
+                'prediction': add_spectrum_image(row=row, col=2, size=prediction_size, set_x_link=False, width=self.win.width() * 0.125)
             }
 
             self.spectrums.append(spectrum)

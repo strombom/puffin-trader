@@ -11,6 +11,10 @@ if __name__ == '__main__':
     lengths = pd.read_csv('../tmp/regime_data_lengths.csv')
     regime_data = pd.read_csv('../tmp/regime_data.csv')
 
+    regime_data['duration'] /= 100000000
+    regime_data['volume'] /= 2000
+    regime_data['delta'] /= 0.008
+
     prediction_len = 40
     n_degrees = (regime_data.shape[1] - 5) // (2 * lengths.shape[0])
     n_samples = regime_data.shape[0]
@@ -27,7 +31,7 @@ if __name__ == '__main__':
     def prediction_callback(sample_idx):
         n_timesteps = 10
         if n_timesteps < sample_idx < n_samples - prediction_len:
-            start, end = sample_idx, sample_idx + prediction_len
+            start, end = sample_idx - n_timesteps, sample_idx + prediction_len
             for degree in range(n_degrees):
                 img = spectrum_data[start:end, degree, :, 0] * 100
                 plotter.spectrums[degree]['volatility']['target'].setImage(img, levels=(0, 255))
@@ -42,7 +46,7 @@ if __name__ == '__main__':
                 # print(prediction.shape)
                 # print(predictions[:, n_timesteps + prediction_idx].shape)
                 predictions[:, n_timesteps + prediction_idx] = prediction
-            predictions = predictions[:, n_timesteps:].transpose()
+            predictions = predictions[:, :].transpose()
 
             for degree in range(n_degrees):
                 ch_idx = 3 + degree * n_channels * 2
