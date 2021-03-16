@@ -12,7 +12,7 @@ colors = ['r', 'g', 'y', 'b', ]
 
 
 class Plotter:
-    def __init__(self, n_spectrums):
+    def __init__(self, n_spectrums, n_samples, n_channels, prediction_len):
         self.prices = {'x': [], 'y': []}
         self.spectrums = []
 
@@ -30,56 +30,43 @@ class Plotter:
         ax_x_price.setStyle(showValues=False)
         ax_y_price = self.plt_price.getAxis('left')
         ax_y_price.setWidth(50)
+        self.plt_price_plot = self.plt_price.plot([0, 1], [0, 1], pen='r', name=f'Price')
 
         # Spectrums
         for idx in range(n_spectrums):
-            def addSpectrum(row, col, set_x_link=False):
-                array = np.empty((200, 30))
+            def add_spectrum_image(row, col, size, set_x_link=False, width=None):
+                array = np.zeros(size)
                 img = pg.ImageItem(array)
-                plot = self.win.addPlot(row=idx * 2 + 2, col=0)
+                plot = self.win.addPlot(row=row, col=col)
                 if set_x_link:
                     plot.setXLink(self.plt_price)
                 plot.showGrid(x=False, y=False, alpha=0.3)
                 plot.addItem(img)
                 plot.hideAxis('bottom')
                 plot.hideAxis('left')
+                if width:
+                    plot.setFixedWidth(width)
                 return array
 
-            self.spectrums.append(addSpectrum(row=idx * 2 + 2, col=0))
+            spectrum_size = (n_samples, n_channels)
+            prediction_size = (prediction_len, n_channels)
+            spectrum = {}
 
-            img_vol = pg.ImageItem(np.empty((200, 30)))
-            plot_vol = self.win.addPlot(row=idx * 2 + 2, col=0)
-            plot_vol.setXLink(self.plt_price)
-            plot_vol.showGrid(x=False, y=False, alpha=0.3)
-            plot_vol.addItem(img_vol)
-            plot_vol.hideAxis('bottom')
-            plot_vol.hideAxis('left')
+            row = idx * 2 + 2
+            spectrum['volatility'] = {
+                'spectrum': add_spectrum_image(row=row, col=0, size=spectrum_size, set_x_link=True),
+                'prediction': add_spectrum_image(row=row, col=1, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1),
+                'target': add_spectrum_image(row=row, col=2, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1)
+            }
 
-            img_vol_live = pg.ImageItem(np.empty((20, 30)))
-            plot_vol_live = self.win.addPlot(row=idx * 2 + 2, col=1)
-            plot_vol_live.showGrid(x=False, y=False, alpha=0.3)
-            plot_vol_live.addItem(img_vol_live)
-            plot_vol_live.hideAxis('bottom')
-            plot_vol_live.hideAxis('left')
-            plot_vol_live.setFixedWidth(self.win.width() * 0.2)
+            row = idx * 2 + 3
+            spectrum['direction'] = {
+                'spectrum': add_spectrum_image(row=row, col=0, size=spectrum_size, set_x_link=True),
+                'prediction': add_spectrum_image(row=row, col=1, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1),
+                'target': add_spectrum_image(row=row, col=2, size=prediction_size, set_x_link=False, width=self.win.width() * 0.1)
+            }
 
-            img_dir = pg.ImageItem(np.empty((200, 30)))
-            plot_dir = self.win.addPlot(row=idx * 2 + 3, col=0)
-            plot_dir.setXLink(self.plt_price)
-            plot_dir.showGrid(x=False, y=False, alpha=0.3)
-            plot_dir.addItem(img_dir)
-            plot_dir.hideAxis('bottom')
-            plot_dir.hideAxis('left')
-
-            img_dir_live = pg.ImageItem(np.empty((20, 30)))
-            plot_dir_live = self.win.addPlot(row=idx * 2 + 3, col=1)
-            plot_dir_live.showGrid(x=False, y=False, alpha=0.3)
-            plot_dir_live.addItem(img_dir_live)
-            plot_dir_live.hideAxis('bottom')
-            plot_dir_live.hideAxis('left')
-            plot_dir_live.setFixedWidth(self.win.width() * 0.2)
-
-            self.spectrums.append((img_vol, img_dir))
+            self.spectrums.append(spectrum)
 
         # Indicator plot
         """
@@ -129,7 +116,11 @@ class Plotter:
         #    self.plt_indicators.addItem(annotation)
         """
 
-    """
+    def plot_prices(self, prices):
+        self.plt_price_plot.setData(prices)
+
+
+    """   
     def append_event(self, event_direction: PositionDirection, event_idx: int, event_price: float) -> None:
         self.events[event_direction]['x'].append(event_idx)
         self.events[event_direction]['y'].append(event_price)
