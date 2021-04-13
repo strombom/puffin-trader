@@ -7,7 +7,7 @@ from pandas import DataFrame
 
 
 top_symbols = [
-    'ETH', 'BNB', 'XRP', 'ADA', 'DOT',
+    'BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'DOT',
     'LTC', 'XLM', 'BCH', 'THETA', 'FIL',
     'TRX', 'DOGE', 'VET', 'SOL', 'EOS',
     'XMR', 'LUNA', 'IOTA', 'XTZ', 'ATOM',
@@ -60,6 +60,22 @@ class BinanceAccount:
         return pairs
 
 
+def download_klines(pair):
+    klines = []
+    for kline in binance_client.get_historical_klines_generator(pair, Client.KLINE_INTERVAL_1MINUTE, "2021-01-01 UTC"):
+        klines.append({
+            'timestamp': kline[0],
+            'close': kline[4],
+            'high': kline[2],
+            'low': kline[3],
+            'volume': kline[5]
+        })
+    klines = DataFrame(klines)
+    file_path = f"cache/tickers/{pair}.csv"
+    klines.to_csv(file_path)
+    print(f"Saved {file_path}")
+
+
 if __name__ == '__main__':
     with open('binance_account.json') as f:
         account_info = json.load(f)
@@ -70,4 +86,5 @@ if __name__ == '__main__':
     binance_account = BinanceAccount(client=binance_client)
     tickers = binance_account.get_tickers()
 
-    print(tickers)
+    for ticker_idx, ticker in tickers.iterrows():
+        download_klines(pair=ticker['pair'])
