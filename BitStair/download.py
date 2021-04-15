@@ -7,27 +7,13 @@ from pandas import DataFrame
 
 
 top_symbols = [
-    'BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'DOT',
-    'LTC', 'XLM', 'BCH', 'THETA', 'FIL',
-    'TRX', 'DOGE', 'VET', 'SOL', 'EOS',
-    'XMR', 'LUNA', 'IOTA', 'XTZ', 'ATOM',
-    'NEO', 'AVAX', 'ALGO', 'EGLD', 'XEM',
-    'KSM', 'DASH', 'HBAR', 'ZEC', 'DCR',
-    'STX', 'NEAR', 'ETC', 'ZIL', 'BTG',
-    'TFUEL', 'WAVES', 'ICX', 'RVN', 'ONT',
-    'QTUM', 'ONE', 'HNT', 'SC', 'DGB',
-    'FTM', 'IOST', 'CELO', 'ZEN', 'LSK',
-    'NANO', 'CKB', 'XVG', 'NKN', 'BCD',
-    'ARDR', 'IOTX', 'STEEM', 'KMD', 'WAN',
-    'STRAX', 'SRM', 'BTS', 'ARK', 'IRIS',
-    'ROSE', 'SYS', 'SCRT', 'HIVE', 'TOMO',
-    'BTM', 'ELA', 'AION', 'CTC', 'CCXX',
-    'DFI', 'XWC', 'XDC', 'BCHA', 'ETN',
-    'AKT', 'HTR', 'ARRR', 'CRU', 'MARO',
-    'EDG', 'COTI', 'HNC', 'RDD', 'META',
-    'LTO', 'VRA', 'BCN', 'MWC', 'PHA',
-    'REV', 'KDA', 'NRG', 'APL', 'MONA',
-    'PAC', 'TT', 'NYE', 'FIRO', 'SAPP'
+    'BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'DOT', 'LTC', 'XLM', 'BCH', 'THETA', 'FIL', 'TRX', 'DOGE', 'VET', 'SOL', 'EOS',
+    'XMR', 'LUNA', 'IOTA', 'XTZ', 'ATOM', 'NEO', 'AVAX', 'ALGO', 'EGLD', 'XEM', 'KSM', 'DASH', 'HBAR', 'ZEC', 'DCR',
+    'STX', 'NEAR', 'ETC', 'ZIL', 'BTG', 'TFUEL', 'WAVES', 'ICX', 'RVN', 'ONT', 'QTUM', 'ONE', 'HNT', 'SC', 'DGB',
+    'FTM', 'IOST', 'CELO', 'ZEN', 'LSK', 'NANO', 'CKB', 'XVG', 'NKN', 'BCD', 'ARDR', 'IOTX', 'STEEM', 'KMD', 'WAN',
+    'STRAX', 'SRM', 'BTS', 'ARK', 'IRIS', 'ROSE', 'SYS', 'SCRT', 'HIVE', 'TOMO', 'BTM', 'ELA', 'AION', 'CTC', 'CCXX',
+    'DFI', 'XWC', 'XDC', 'BCHA', 'ETN', 'AKT', 'HTR', 'ARRR', 'CRU', 'MARO', 'EDG', 'COTI', 'HNC', 'RDD', 'META',
+    'LTO', 'VRA', 'BCN', 'MWC', 'PHA', 'REV', 'KDA', 'NRG', 'APL', 'MONA', 'PAC', 'TT', 'NYE', 'FIRO', 'SAPP'
 ]
 
 
@@ -88,3 +74,4 @@ if __name__ == '__main__':
 
     for ticker_idx, ticker in tickers.iterrows():
         download_klines(pair=ticker['pair'])
+
