@@ -39,9 +39,11 @@ def make_spectrum(lengths, prices, poly_order, directions):
 
 
 if __name__ == '__main__':
+    plot = False
+
     # start_date = datetime.strptime('2021-01-01 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
-    start_date = datetime.strptime('2021-04-12 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
-    end_date = datetime.strptime('2021-04-17 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
+    start_date = datetime.strptime('2021-04-18 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
+    end_date = datetime.strptime('2021-04-19 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
     delta = 0.005
 
     direction_degree = 3
@@ -63,12 +65,21 @@ if __name__ == '__main__':
 
     indicators = None
 
+    if plot:
+        fig, axs = plt.subplots(1 + count, 1, sharex='all', gridspec_kw={'wspace': 0, 'hspace': 0})
+    #
+
     for pair_idx, pair in enumerate(pairs):
         data = pd.read_csv(f"cache/tickers/{pair}.csv")
         pair_start_date = datetime.utcfromtimestamp(data.iloc[0]['timestamp'] / 1000)
         pair_end_date = datetime.utcfromtimestamp(data.iloc[data.shape[0] - 1]['timestamp'] / 1000)
         if pair_start_date != start_date or pair_end_date < end_date:
             continue
+
+        prices = data['close'].to_numpy()
+        prices /= prices.max()
+        if plot:
+            axs[0].plot(prices, label=f"{pair}")
 
         if indicators is None:
             n_pairs = len(pairs)
@@ -111,29 +122,24 @@ if __name__ == '__main__':
 
             indicators[pair_idx, :, kline_idx] = directions[:, runner_idx]
 
+        x = np.arange(indicators.shape[2])
+        # volatility = 1 - spectrum[:, i * 2 + 0, lengths[-1]:]
+        # axs[0 * 2 + 1].pcolormesh(x, lengths, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Blues'))
+        # axs[1].set_title("Volatility")
+
+        if plot:
+            for length_idx in range(lengths.shape[0]):
+                direction = indicators[pair_idx, :, :]
+                direction_amplitude = 0.02
+                # direction = (direction_amplitude + direction) / (2 * direction_amplitude)
+                axs[1 + pair_idx].pcolormesh(
+                    x, lengths, direction,
+                    vmin=-direction_amplitude, vmax=direction_amplitude,
+                    shading='auto', cmap=plt.get_cmap('RdYlGn')
+                )
+
+
         """
-        fig, axs = plt.subplots(1 + 1, 1, sharex='all', gridspec_kw={'wspace': 0, 'hspace': 0})
-        axs[0].plot(runner_prices[lengths[-1]:], label=f"{pair}")
-
-        x = np.arange(runner_prices.shape[0] - lengths[-1])
-        direction = directions[:, lengths[-1]:]
-
-        # x = np.arange(runner_prices.shape[0])
-        # direction = directions[:, :]
-
-        direction_amplitude = np.max(np.abs(direction))
-        direction = (direction_amplitude + direction) / (2 * direction_amplitude)
-        axs[1].pcolormesh(x, lengths, direction,
-                          vmin=np.min(direction), vmax=np.max(direction),
-                          shading='auto', cmap=plt.get_cmap('RdYlGn'))
-        axs[1].set_yscale('log')
-
-        mouse_lines = MouseLines(fig=fig, axs=axs, min=min(runner_prices), max=max(runner_prices))
-
-        plt.tight_layout()
-        plt.legend()
-        plt.show()
-        quit()
         quit()
         """
 
@@ -146,6 +152,35 @@ if __name__ == '__main__':
         print(pair)
         quit()
         """
+
+    if plot:
+        axs[0].legend()
+        plt.tight_layout()
+        plt.show()
+    
+    quit()
+
+    """
+    x = np.arange(runner_prices.shape[0] - lengths[-1])
+    direction = directions[:, lengths[-1]:]
+
+    # x = np.arange(runner_prices.shape[0])
+    # direction = directions[:, :]
+
+    direction_amplitude = np.max(np.abs(direction))
+    direction = (direction_amplitude + direction) / (2 * direction_amplitude)
+    axs[1].pcolormesh(x, lengths, direction,
+                      vmin=np.min(direction), vmax=np.max(direction),
+                      shading='auto', cmap=plt.get_cmap('RdYlGn'))
+    axs[1].set_yscale('log')
+
+    mouse_lines = MouseLines(fig=fig, axs=axs, min=min(runner_prices), max=max(runner_prices))
+
+    plt.tight_layout()
+    plt.legend()
+    plt.show()
+    quit()
+    """
 
     print("a")
 
