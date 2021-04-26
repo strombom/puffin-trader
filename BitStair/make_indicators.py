@@ -67,7 +67,6 @@ if __name__ == '__main__':
 
     if plot:
         fig, axs = plt.subplots(1 + count, 1, sharex='all', gridspec_kw={'wspace': 0, 'hspace': 0})
-    #
 
     for pair_idx, pair in enumerate(pairs):
         data = pd.read_csv(f"cache/tickers/{pair}.csv")
@@ -97,10 +96,6 @@ if __name__ == '__main__':
                 runner_prices.append(ie_event)
         runner_prices = np.array(runner_prices)
 
-        # runner_prices = runner_prices / max(runner_prices)
-        # plt.plot(timestamps, ie_events, label=f"{pair}")
-        # print(pair, datetime.fromtimestamp(timestamps[200] / 1000).strftime('%Y-%m-%d %H:%M:%S'), runner_prices[200])
-
         directions = np.zeros((len(lengths), runner_prices.shape[0]))
 
         make_spectrum(lengths=lengths,
@@ -114,19 +109,11 @@ if __name__ == '__main__':
         runner_idx = 0
         for kline_idx, row in data.iterrows():
             kline_timestamp = row['timestamp']
-
             while runner_idx < runner_prices.shape[0] - 1 and runner_timestamps[runner_idx + 1] <= kline_timestamp:
                 runner_idx += 1
-
-            # print(f"kline {kline_timestamp} runner {runner_timestamps[runner_idx]}")
-
             indicators[pair_idx, :, kline_idx] = directions[:, runner_idx]
 
         x = np.arange(indicators.shape[2])
-        # volatility = 1 - spectrum[:, i * 2 + 0, lengths[-1]:]
-        # axs[0 * 2 + 1].pcolormesh(x, lengths, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Blues'))
-        # axs[1].set_title("Volatility")
-
         if plot:
             for length_idx in range(lengths.shape[0]):
                 direction = indicators[pair_idx, :, :]
@@ -138,52 +125,8 @@ if __name__ == '__main__':
                     shading='auto', cmap=plt.get_cmap('RdYlGn')
                 )
 
-
-        """
-        quit()
-        """
-
-        """
-        break
-        print(ie_events)
-        print(timestamps)
-        print(len(ie_events))
-        print(data.shape)
-        print(pair)
-        quit()
-        """
-
     if plot:
         axs[0].legend()
         plt.tight_layout()
         plt.show()
-    
-    quit()
 
-    """
-    x = np.arange(runner_prices.shape[0] - lengths[-1])
-    direction = directions[:, lengths[-1]:]
-
-    # x = np.arange(runner_prices.shape[0])
-    # direction = directions[:, :]
-
-    direction_amplitude = np.max(np.abs(direction))
-    direction = (direction_amplitude + direction) / (2 * direction_amplitude)
-    axs[1].pcolormesh(x, lengths, direction,
-                      vmin=np.min(direction), vmax=np.max(direction),
-                      shading='auto', cmap=plt.get_cmap('RdYlGn'))
-    axs[1].set_yscale('log')
-
-    mouse_lines = MouseLines(fig=fig, axs=axs, min=min(runner_prices), max=max(runner_prices))
-
-    plt.tight_layout()
-    plt.legend()
-    plt.show()
-    quit()
-    """
-
-    print("a")
-
-    # quit()
-    # plt.legend()
-    # plt.show()
