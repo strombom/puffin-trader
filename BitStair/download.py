@@ -1,3 +1,4 @@
+import glob
 import os
 import json
 
@@ -48,7 +49,7 @@ class BinanceAccount:
 
 def download_klines(pair):
     klines = []
-    for kline in binance_client.get_historical_klines_generator(pair, Client.KLINE_INTERVAL_1MINUTE, "2021-01-01 UTC"):
+    for kline in binance_client.get_historical_klines_generator(pair, Client.KLINE_INTERVAL_1MINUTE, "2021-04-18 UTC"):
         klines.append({
             'timestamp': kline[0],
             'close': kline[4],
@@ -60,6 +61,28 @@ def download_klines(pair):
     file_path = f"cache/tickers/{pair}.csv"
     klines.to_csv(file_path)
     print(f"Saved {file_path}")
+
+
+def crop_tickers():
+    # Make sure all tickers have exactly the same length
+
+    pairs = []
+    for file_path in glob.glob("cache/tickers/*.csv"):
+        pair = os.path.basename(file_path).replace('.csv', '')
+        pairs.append(pair)
+
+    min_length = None
+    for pair in pairs:
+        data = pd.read_csv(f"cache/tickers/{pair}.csv")
+
+        if min_length is None:
+            min_length = data.shape[0]
+        min_length = min(min_length, data.shape[0])
+
+    for pair in pairs:
+        data = pd.read_csv(f"cache/tickers/{pair}.csv")
+        data = data.iloc[0:min_length, :]
+        data.to_csv(f"cache/tickers/{pair}.csv")
 
 
 if __name__ == '__main__':
@@ -75,3 +98,4 @@ if __name__ == '__main__':
     for ticker_idx, ticker in tickers.iterrows():
         download_klines(pair=ticker['pair'])
 
+    crop_tickers()

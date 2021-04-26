@@ -1,5 +1,7 @@
 import os
 import glob
+import pickle
+
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -68,6 +70,8 @@ if __name__ == '__main__':
     if plot:
         fig, axs = plt.subplots(1 + count, 1, sharex='all', gridspec_kw={'wspace': 0, 'hspace': 0})
 
+    prices = []
+
     for pair_idx, pair in enumerate(pairs):
         data = pd.read_csv(f"cache/tickers/{pair}.csv")
         pair_start_date = datetime.utcfromtimestamp(data.iloc[0]['timestamp'] / 1000)
@@ -75,10 +79,11 @@ if __name__ == '__main__':
         if pair_start_date != start_date or pair_end_date < end_date:
             continue
 
-        prices = data['close'].to_numpy()
-        prices /= prices.max()
+        pair_prices = data['close'].to_numpy()
+        prices.append(np.expand_dims(np.copy(pair_prices), axis=0))
         if plot:
-            axs[0].plot(prices, label=f"{pair}")
+            pair_prices /= pair_prices.max()
+            axs[0].plot(pair_prices, label=f"{pair}")
 
         if indicators is None:
             n_pairs = len(pairs)
@@ -130,3 +135,12 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.show()
 
+    prices = np.concatenate(prices, axis=0)
+
+    with open(f"cache/indicators.pickle", 'wb') as f:
+        pickle.dump({
+            'pairs': pairs,
+            'prices': prices,
+            'lengths': lengths,
+            'indicators': indicators
+        }, f)
