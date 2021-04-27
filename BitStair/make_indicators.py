@@ -60,7 +60,7 @@ if __name__ == '__main__':
         pair = os.path.basename(file_path).replace('.csv', '')
         pairs.append(pair)
         count += 1
-        if count == 2:
+        if count == 10:
             break
 
     import matplotlib.pyplot as plt
