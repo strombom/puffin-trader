@@ -73,9 +73,9 @@ class BinanceSimulator:
                 order_size -= self.wallet[pair]
 
         equity = 0.0
-        for pair in self.wallet:
-            equity += (self.wallet[pair] - self.debt[pair]) * self.mark_price[pair]
-        order_size += leverage * equity / mark_price
+        for wallet_pair in self.wallet:
+            equity += (self.wallet[wallet_pair] - self.debt[wallet_pair]) * self.mark_price[wallet_pair]
+        order_size += leverage * equity / self.mark_price[pair]
 
         return order_size
 
@@ -115,15 +115,22 @@ class BinanceSimulator:
             self.wallet[pair] = 0
 
         if self.calculate_margin() < self.liquidation_level:
-            for pair in self.wallet:
-                self.wallet[pair] = 0.0
-                self.debt[pair] = 0.0
+            for wallet_pair in self.wallet:
+                self.wallet[wallet_pair] = 0.0
+                self.debt[wallet_pair] = 0.0
 
     def limit_order(self, order_size, pair):
         self.order(order_size, pair, 0.00075)
 
     def market_order(self, order_size, pair):
         self.order(order_size, pair, 0.00075)
+
+    def sell_pair(self, pair):
+        if self.wallet[pair] > 0:
+            self.market_order(-self.wallet[pair], pair)
+
+        elif self.debt[pair] > 0:
+            self.market_order(self.debt[pair], pair)
 
 
 if __name__ == '__main__':
