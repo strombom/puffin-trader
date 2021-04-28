@@ -9,17 +9,27 @@ from binance.websockets import BinanceSocketManager
 
 
 class BinanceAccount:
-    assets = {}
-    mark_prices = {}
-    kline_threads = {}
 
-    def __init__(self, binance_client, symbols):
+    def __init__(self, binance_client, top_symbols):
         self.client = binance_client
+        self.assets = {}
+        self.mark_prices = {}
+        self.kline_threads = {}
 
-        # exchange_info = self.client.get_exchange_info()
-        # for symbol in exchange_info['symbols']:
-        #     if symbol['symbol'] == 'BTCUSDT':
-        #         print("Exchange info", symbol)
+        all_symbols = {}
+        exchange_info = self.client.get_exchange_info()
+        for symbol in exchange_info['symbols']:
+            if symbol['baseAsset'] not in all_symbols:
+                all_symbols[symbol['baseAsset']] = []
+            all_symbols[symbol['baseAsset']].append(symbol['symbol'])
+
+        trade_symbols = []
+        for top_symbol in top_symbols:
+            if top_symbol in all_symbols:
+                for symbol in all_symbols[top_symbol]:
+                    if 'USDT' in symbol:
+                        trade_symbols.append(top_symbol)
+                        break
 
         def process_margin_message(data):
             print("margin", data)
@@ -28,23 +38,25 @@ class BinanceAccount:
         self.margin_socket_manager.start_margin_socket(process_margin_message)
         self.margin_socket_manager.start()
 
-        def process_trade_message(data, pair):
-            if data['e'] == 'trade' and data['s'] == pair:
-                price = float(data['p'])
-                if data['m']:
-                    self.mark_price_bid = price
-                else:
-                    self.mark_price_ask = price
+        def process_trade_message(data):
+            if data['e'] == 'kline':
+                self.mark_prices[data['s']] = float(data['k']['c'])
 
-        for symbol in symbols:
+        for symbol in trade_symbols:
             trade_socket_manager = BinanceSocketManager(self.client)
             trade_socket_manager.start_kline_socket(symbol=symbol + "USDT", callback=process_trade_message, interval='1m')
             trade_socket_manager.start()
             self.kline_threads[symbol] = trade_socket_manager
 
         from time import sleep
-        while self.mark_price_ask == 0 or self.mark_price_bid == 0:
-            sleep(1)
+        has_all_symbols = False
+        while not has_all_symbols:
+            has_all_symbols = True
+            for symbol in trade_symbols:
+                if symbol + "USDT" not in self.mark_prices:
+                    has_all_symbols = False
+                    sleep(0.2)
+                    break
 
         # transaction = self.client.create_margin_loan(asset='BTC', amount='0.00001')
         # print(f'transaction {transaction}')
