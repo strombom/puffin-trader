@@ -19,14 +19,44 @@ simulator = BinanceSimulator(initial_usdt=1000, pairs=data['pairs'])
 previous_pair_idx = 0
 max_pairs = []
 values = []
+portfolio = []
+portfolio_size = 5
+
 for idx in range(data['prices'].shape[1]):
+    for pair_idx, pair in enumerate(data['pairs']):
+        simulator.set_mark_price(pair=pair, mark_price=data['prices'][pair_idx][idx])
+
+    pair_values = []
     max_pair_idx, max_pair_val = 0, -1.0
     for pair_idx, pair in enumerate(data['pairs']):
         val = np.amax(data['indicators'][pair_idx, :, idx])
+        pair_values.append((pair_idx, val))
         if val > max_pair_val:
             max_pair_val = val
             max_pair_idx = pair_idx
+    pair_values.sort(key=lambda x: x[1])
+    top_pairs = [x[0] for x in pair_values[:portfolio_size]]
+
+    if idx == 80000:
+        print(idx)
+
+    for pair_idx in portfolio.copy():
+        if pair_idx not in top_pairs:
+            simulator.sell_pair(pair=data['pairs'][pair_idx])
+            portfolio.remove(pair_idx)
+
+    for pair_idx in top_pairs:
+        if pair_idx not in portfolio:
+            total_value = simulator.get_value_usdt()
+            order_size = total_value / (portfolio_size * data['prices'][pair_idx][idx])
+            simulator.market_order(order_size=order_size, pair=data['pairs'][pair_idx])
+            portfolio.append(pair_idx)
+
+    if len(portfolio) != portfolio_size:
+        print(len(portfolio))
+
     # print(f'max_pair_idx: {max_pair_idx}, max_pair_val: {max_pair_val}')
+    """
     max_pairs.append(max_pair_val)
     if max_pair_idx != previous_pair_idx:
         for pair_idx, pair in enumerate(data['pairs']):
@@ -37,6 +67,7 @@ for idx in range(data['prices'].shape[1]):
         simulator.market_order(order_size=order_size, pair=data['pairs'][max_pair_idx])
 
         previous_pair_idx = max_pair_idx
+    """
 
     values.append(simulator.get_value_usdt())
 
@@ -53,7 +84,7 @@ for idx in range(data['prices'].shape[0]):
 axs[2].plot(values, label="Value UDST")
 
 # axs[0].legend()
-axs[1].legend()
+# axs[1].legend()
 axs[2].legend()
 plt.tight_layout()
 plt.show()

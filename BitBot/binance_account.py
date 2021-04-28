@@ -7,6 +7,7 @@ import binance.enums
 import binance.exceptions
 from binance.websockets import BinanceSocketManager
 
+
 class BinanceAccount:
     assets = {}
     mark_price_ask = 0
