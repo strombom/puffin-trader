@@ -1,8 +1,7 @@
 
 
 class BinanceSimulator:
-    def __init__(self, initial_usdt, pairs, max_leverage):
-        self.max_leverage = max_leverage
+    def __init__(self, initial_usdt, pairs):
         self.liquidation_level = 1.1
         self.pairs = pairs
         self.wallet = {'usdt': initial_usdt}
@@ -24,8 +23,7 @@ class BinanceSimulator:
         if self.is_liquidated():
             return -1
 
-        total_asset_value = self.wallet_usdt
-        total_debt = self.debt_usdt
+        total_asset_value, total_debt = 0.0, 0.0
         for pair in self.wallet:
             total_asset_value += self.wallet[pair] * self.mark_price[pair]
             total_debt += self.debt[pair] * self.mark_price[pair]
@@ -43,8 +41,8 @@ class BinanceSimulator:
         self.mark_price[pair] = mark_price
 
     def get_value_usdt(self):
-        value = self.wallet_usdt - self.debt_usdt
-        for pair in self.pairs:
+        value = 0.0
+        for pair in self.wallet:
             value += (self.wallet[pair] - self.debt[pair]) * self.mark_price[pair]
         return value
 
@@ -74,60 +72,58 @@ class BinanceSimulator:
             if self.wallet[pair] > 0:
                 order_size -= self.wallet[pair]
 
-        equity = self.wallet_usdt - self.debt_usdt + (self.wallet_btc - self.debt_btc) * mark_price
+        equity = 0.0
+        for pair in self.wallet:
+            equity += (self.wallet[pair] - self.debt[pair]) * self.mark_price[pair]
         order_size += leverage * equity / mark_price
 
         return order_size
 
-    def order(self, order_size_btc, mark_price, fee):
+    def order(self, order_size, pair, fee):
         # print('market_order', wallet, pos_price, pos_contracts, order_contracts, mark_price)
-        if self.is_liquidated(mark_price=mark_price):
+        if self.is_liquidated():
             return 0
 
-        fee_usdt = order_size_btc * mark_price * fee
-
-        self.wallet_btc += order_size_btc
-        self.wallet_usdt -= order_size_btc * mark_price
-        self.wallet_usdt -= fee_usdt
+        self.wallet[pair] += order_size
+        self.wallet['usdt'] -= order_size * self.mark_price[pair] * (1 + fee)
 
         # Repay debt
-        if order_size_btc > 0:
-            if self.debt_btc > 0:
-                if self.wallet_btc > self.debt_btc:
-                    self.wallet_btc -= self.debt_btc
-                    self.debt_btc = 0
+        if order_size > 0:
+            if self.debt[pair] > 0:
+                if self.wallet[pair] > self.debt[pair]:
+                    self.wallet[pair] -= self.debt[pair]
+                    self.debt[pair] = 0
                 else:
-                    self.debt_btc -= self.wallet_btc
-                    self.wallet_btc = 0
+                    self.debt[pair] -= self.wallet[pair]
+                    self.wallet[pair] = 0
 
-        elif order_size_btc < 0:
-            if self.debt_usdt > 0:
-                if self.wallet_usdt > self.debt_usdt:
-                    self.wallet_usdt -= self.debt_usdt
-                    self.debt_usdt = 0
+        elif order_size < 0:
+            if self.debt['usdt'] > 0:
+                if self.wallet['usdt'] > self.debt['usdt']:
+                    self.wallet['usdt'] -= self.debt['usdt']
+                    self.debt['usdt'] = 0
                 else:
-                    self.debt_usdt -= self.wallet_usdt
-                    self.wallet_usdt = 0
+                    self.debt['usdt'] -= self.wallet['usdt']
+                    self.wallet['usdt'] = 0
 
         # Borrow
-        if self.wallet_usdt < 0:
-            self.debt_usdt = -self.wallet_usdt
-            self.wallet_usdt = 0
-        if self.wallet_btc < 0:
-            self.debt_btc = -self.wallet_btc
-            self.wallet_btc = 0
+        if self.wallet['usdt'] < 0:
+            self.debt['usdt'] = -self.wallet['usdt']
+            self.wallet['usdt'] = 0
+        if self.wallet[pair] < 0:
+            self.debt[pair] = -self.wallet[pair]
+            self.wallet[pair] = 0
 
-        if self.calculate_margin(mark_price=mark_price) < self.liquidation_level:
-            self.wallet_usdt = 0.0
-            self.wallet_btc = 0.0
-            self.debt_usdt = 0.0
-            self.debt_btc = 0.0
+        if self.calculate_margin() < self.liquidation_level:
+            for pair in self.wallet:
+                self.wallet[pair] = 0.0
+                self.debt[pair] = 0.0
 
-    def limit_order(self, order_size_btc, mark_price):
-        self.order(order_size_btc, mark_price, 0.00075)
+    def limit_order(self, order_size, pair):
+        self.order(order_size, pair, 0.00075)
 
-    def market_order(self, order_size_btc, mark_price):
-        self.order(order_size_btc, mark_price, 0.00075)
+    def market_order(self, order_size, pair):
+        self.order(order_size, pair, 0.00075)
 
 
 if __name__ == '__main__':
@@ -154,9 +150,8 @@ if __name__ == '__main__':
         print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
         print(f'value: {value}, leverage: {leverage}, margin: {margin}')
 
-
     mark_price = 10000
-    sim = BinanceSimulator(initial_usdt=10000, initial_btc=0, max_leverage=2, mark_price=mark_price, initial_leverage=0.0)
+    sim = BinanceSimulator(initial_usdt=10000, initial_btc=0, mark_price=mark_price, initial_leverage=0.0)
 
     test_mark_price(mark_price=mark_price)
     test_order(order_size_btc=1.0, mark_price=10000)
