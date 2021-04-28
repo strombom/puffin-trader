@@ -6,7 +6,7 @@ class BinanceSimulator:
         self.pairs = pairs
         self.wallet = {'usdt': initial_usdt}
         self.debt = {'usdt': 0.0}
-        self.mark_price = {}
+        self.mark_price = {'usdt': 1.0}
         for pair in self.pairs:
             self.wallet[pair] = 0.0
             self.debt[pair] = 0.0
@@ -128,40 +128,40 @@ class BinanceSimulator:
 
 if __name__ == '__main__':
 
-    def test_order(order_size_btc, mark_price):
+    def atest_order(pair, order_size, mark_price):
         print("----")
-        if order_size_btc > 0:
-            print(f'Buy {order_size_btc} btc @ {mark_price}')
+        if order_size > 0:
+            print(f'Buy {order_size} {pair} @ {mark_price}')
         else:
-            print(f'Sell {-order_size_btc} btc @ {mark_price}')
-        sim.market_order(order_size_btc=order_size_btc, mark_price=mark_price)
-        value = sim.get_value_usdt(mark_price=mark_price)
-        leverage = sim.calculate_leverage(mark_price=mark_price)
-        margin = sim.calculate_margin(mark_price=mark_price)
-        print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
+            print(f'Sell {-order_size} {pair} @ {mark_price}')
+        sim.set_mark_price(pair=pair, mark_price=mark_price)
+        sim.market_order(order_size=order_size, pair=pair)
+        value = sim.get_value_usdt()
+        leverage = sim.calculate_leverage()
+        margin = sim.calculate_margin()
+        print(f'w_usdt: {sim.wallet["usdt"]}, w_{pair}: {sim.wallet[pair]}, d_usdt: {sim.debt["usdt"]}, d_{pair}: {sim.debt[pair]}')
         print(f'value: {value}, leverage: {leverage}, margin: {margin}')
 
-    def test_mark_price(mark_price):
+    def atest_mark_price(pair, mark_price):
         print("----")
         print(f'Mark price {mark_price}')
-        value = sim.get_value_usdt(mark_price=mark_price)
-        leverage = sim.calculate_leverage(mark_price=mark_price)
-        margin = sim.calculate_margin(mark_price=mark_price)
-        print(f'w_usdt: {sim.wallet_usdt}, w_btc: {sim.wallet_btc}, d_usdt: {sim.debt_usdt}, d_btc: {sim.debt_btc}')
+        sim.set_mark_price(pair=pair, mark_price=mark_price)
+        value = sim.get_value_usdt()
+        leverage = sim.calculate_leverage()
+        margin = sim.calculate_margin()
+        print(f'w_usdt: {sim.wallet["usdt"]}, w_{pair}: {sim.wallet[pair]}, d_usdt: {sim.debt["usdt"]}, d_{pair}: {sim.debt[pair]}')
         print(f'value: {value}, leverage: {leverage}, margin: {margin}')
 
-    mark_price = 10000
-    sim = BinanceSimulator(initial_usdt=10000, initial_btc=0, mark_price=mark_price, initial_leverage=0.0)
+    sim = BinanceSimulator(initial_usdt=10000, pairs=['btcusdt', 'ethusdt'])
 
-    test_mark_price(mark_price=mark_price)
-    test_order(order_size_btc=1.0, mark_price=10000)
-    test_order(order_size_btc=2.0, mark_price=10000)
-    test_mark_price(mark_price=12000)
-    test_mark_price(mark_price=15000)
-    test_mark_price(mark_price=8000)
-    test_order(order_size_btc=-1.0, mark_price=8000)
-    test_order(order_size_btc=-2.0, mark_price=8000)
-    test_order(order_size_btc=-2.0, mark_price=10000)
-    test_mark_price(mark_price=8000)
-    test_mark_price(mark_price=11000)
-
+    atest_mark_price(pair='btcusdt', mark_price=10000)
+    atest_order(pair='btcusdt', order_size=1.0, mark_price=10000)
+    atest_order(pair='btcusdt', order_size=2.0, mark_price=10000)
+    atest_mark_price(pair='btcusdt', mark_price=12000)
+    atest_mark_price(pair='btcusdt', mark_price=15000)
+    atest_mark_price(pair='btcusdt', mark_price=8000)
+    atest_order(pair='btcusdt', order_size=-1.0, mark_price=8000)
+    atest_order(pair='btcusdt', order_size=-2.0, mark_price=8000)
+    atest_order(pair='btcusdt', order_size=-2.0, mark_price=10000)
+    atest_mark_price(pair='btcusdt', mark_price=8000)
+    atest_mark_price(pair='btcusdt', mark_price=11000)
