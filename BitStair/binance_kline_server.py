@@ -1,5 +1,6 @@
-import json
 
+import json
+from time import sleep
 from binance.client import Client
 
 from binance_account import BinanceAccount
@@ -18,6 +19,7 @@ top_symbols = [
 'DCR', 'KSM', 'WAN', 'STX', 
 """
 
+
 if __name__ == "__main__":
     with open('binance_account.json') as f:
         account_info = json.load(f)
@@ -26,3 +28,7 @@ if __name__ == "__main__":
 
     binance_client = Client(api_key, api_secret)
     binance_account = BinanceAccount(binance_client=binance_client, top_symbols=top_symbols)
+
+    while True:
+        print(binance_account.mark_prices)
+        sleep(2)
