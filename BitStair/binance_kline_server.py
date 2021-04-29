@@ -4,7 +4,7 @@ import zmq
 import json
 import threading
 from time import sleep
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import deque
 from binance.client import Client
 
@@ -47,12 +47,15 @@ def server():
     history_lock = threading.Lock()
 
     def history_thread():
+        next_timestamp = datetime.now()
         while True:
+            next_timestamp += timedelta(minutes=60)
             with history_lock:
                 nonlocal history_counter
                 history_counter = history_counter + 1
-                history.append(binance_account.mark_prices)
-            sleep(5)
+                history.append(binance_account.mark_prices.copy())
+            while next_timestamp > datetime.now():
+                sleep(1.0)
 
     x = threading.Thread(target=history_thread)
     x.start()
