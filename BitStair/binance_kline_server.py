@@ -1,4 +1,4 @@
-
+import zmq
 import json
 from time import sleep
 from binance.client import Client
@@ -29,6 +29,11 @@ if __name__ == "__main__":
     binance_client = Client(api_key, api_secret)
     binance_account = BinanceAccount(binance_client=binance_client, top_symbols=top_symbols)
 
+    context = zmq.Context()
+    socket = context.socket(zmq.REP)
+    socket.bind("tcp://*:31007")
+
     while True:
-        print(binance_account.mark_prices)
-        sleep(2)
+        message = socket.recv_pyobj()
+        print("Received request: %s" % message)
+        socket.send_pyobj(binance_account.mark_prices)
