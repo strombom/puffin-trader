@@ -1,6 +1,11 @@
+import itertools
+
 import zmq
 import json
+import threading
 from time import sleep
+from datetime import datetime
+from collections import deque
 from binance.client import Client
 
 from binance_account import BinanceAccount
@@ -19,8 +24,11 @@ top_symbols = [
 'DCR', 'KSM', 'WAN', 'STX', 
 """
 
+top_symbols = [
+    'BTC', 'ETH', 'BNB'
+]
 
-if __name__ == "__main__":
+def server():
     with open('binance_account.json') as f:
         account_info = json.load(f)
         api_key = account_info['api_key']
@@ -33,7 +41,44 @@ if __name__ == "__main__":
     socket = context.socket(zmq.REP)
     socket.bind("tcp://*:31007")
 
+    history = deque(maxlen=24 * 60)
+    history_counter = 0
+
+    history_lock = threading.Lock()
+
+    def history_thread():
+        while True:
+            with history_lock:
+                nonlocal history_counter
+                history_counter = history_counter + 1
+                history.append(binance_account.mark_prices)
+            sleep(5)
+
+    x = threading.Thread(target=history_thread)
+    x.start()
+
     while True:
-        message = socket.recv_pyobj()
-        print("Received request: %s" % message)
-        socket.send_pyobj(binance_account.mark_prices)
+        command, payload = socket.recv_pyobj()
+        send_data = None
+
+        with history_lock:
+            if command == 'get_all':
+                send_data = {
+                    'last_idx': history_counter,
+                    'mark_prices': history
+                }
+
+            elif command == 'get_since':
+                last_idx = payload
+                history_idx = len(history) - 1 - (history_counter - last_idx)
+                history_idx = max(0, history_idx)
+                send_data = {
+                    'last_idx': history_counter,
+                    'mark_prices': list(itertools.islice(history, history_idx, len(history)))
+                }
+
+        socket.send_pyobj(send_data)
+
+
+if __name__ == "__main__":
+    server()
