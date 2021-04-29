@@ -1,4 +1,5 @@
 import json
+import threading
 import time
 import logging
 from collections import deque
@@ -6,14 +7,46 @@ from collections import deque
 import zmq
 from binance.client import Client
 
+from IntrinsicTime.runner import Runner
 
-def get_historic_data(config: dict, runners: dict, ie_prices: dict, last_idx: int):
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.connect(config['binance_kline_server_address'])
-    socket.send_pyobj(("get_since", -30))
-    message = socket.recv_pyobj()
-    print(message['last_idx'], len(message['mark_prices']))
+
+class Runners:
+    def __init__(self, config: dict):
+        self.config = config
+        self._data = {}
+        self._runners = {}
+        self.running = True
+        self._updater_thread = threading.Thread(target=self._updater)
+        self._updater_thread.start()
+        self._updater_thread.join()
+
+    def _updater(self):
+        next_idx = 0
+        while self.running:
+            context = zmq.Context()
+            socket = context.socket(zmq.REQ)
+            socket.connect(self.config['binance_kline_server_address'])
+            socket.send_pyobj(("get_since", next_idx))
+            message = socket.recv_pyobj()
+            next_idx = message['last_idx'] + 1
+
+            for prices in message['mark_prices']:
+                for pair in prices:
+                    if pair not in self._data:
+                        self._runners[pair] = Runner(delta=self.config['delta'])
+                        self._data[pair] = deque(maxlen=self.config['lengths'][-1])
+                    ie_prices = self._runners[pair].step(high=prices[pair], low=prices[pair])
+                    for ie_price in ie_prices:
+                        print(f"Append ({pair}): {ie_price}")
+                        self._data[pair].append(ie_price)
+
+            # print(message['last_idx'], len(message['mark_prices']), len(self._data['ONEUSDT']))
+
+            for pair in self._data:
+                print(f"{len(self._data[pair])} ", end='')
+            print()
+
+            time.sleep(1.0)
 
 
 def trader():
@@ -25,10 +58,8 @@ def trader():
     with open('config.json') as f:
         config = json.load(f)
 
-    runners, ie_prices = {}, {}
-    last_idx = 0
+    runners = Runners(config)
 
-    get_historic_data(config=config, runners=runners, ie_prices=ie_prices, last_idx=last_idx)
     lengths = config['lengths']
     print(lengths)
     quit()
