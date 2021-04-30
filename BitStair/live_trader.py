@@ -1,6 +1,9 @@
+from copy import copy
+
 import zmq
 import json
 import time
+import queue
 import logging
 import threading
 import numpy as np
@@ -15,11 +18,20 @@ class Indicators:
         self._config = config
         self._data = {}
         self._directions = {}
+        self._indicator_queue = queue.Queue()
         self._runners = {}
         self._running = True
         self._updater_thread = threading.Thread(target=self._updater)
         self._updater_thread.start()
-        self._updater_thread.join()
+
+    def get_queue(self):
+        return self._indicator_queue
+
+    def _calculate_indicators(self):
+        directions = dict(sorted(self._directions.items(), key=lambda item: item[1]))
+        directions = {key: val for key, val in directions.items() if val != -1.0}
+        top_five = list(directions.keys())[:5]
+        self._indicator_queue.put(top_five)
 
     def _calculate_directions(self):
         for pair in self._data:
@@ -35,6 +47,8 @@ class Indicators:
                 curve = yp(xp)
                 direction = curve[-1] / curve[-2] - 1.0
                 self._directions[pair] = max(self._directions[pair], direction)
+
+        self._calculate_indicators()
 
     def _updater(self):
         next_idx = 0
@@ -55,18 +69,11 @@ class Indicators:
                         self._data[pair] = deque(maxlen=self._config['lengths'][-1])
                     ie_prices = self._runners[pair].step(high=prices[pair], low=prices[pair])
                     for ie_price in ie_prices:
-                        # print(f"Append ({pair}): {ie_price}")
                         self._data[pair].append(ie_price)
                         updated = True
 
-            # print(message['last_idx'], len(message['mark_prices']), len(self._data['ONEUSDT']))
-
             if updated:
                 self._calculate_directions()
-
-            # for pair in self._data:
-            #     print(f"{pair}: {len(self._data[pair])}, ", end='')
-            # print()
 
             time.sleep(1.0)
 
@@ -81,6 +88,11 @@ def trader():
         config = json.load(f)
 
     indicators = Indicators(config)
+    indicator_queue = indicators.get_queue()
+
+    while True:
+        top_five = indicator_queue.get()
+        print("Got", top_five)
 
     lengths = config['lengths']
     print(lengths)
