@@ -10,14 +10,19 @@ from binance.websockets import BinanceSocketManager
 
 class BinanceAccount:
     def __init__(self, binance_client, trade_pairs):
-        self.assets = {}
+        self._balances = {}
         self._mark_prices = {}
         self._client = binance_client
+        self._total_equity = 0.0
+
+        tickers = self._client.get_all_tickers()
+        for ticker in tickers:
+            if ticker['symbol'] in trade_pairs:
+                self._mark_prices[ticker['symbol']] = float(ticker['price'])
 
         def process_kline_message(data):
             if data['e'] == 'kline':
                 self._mark_prices[data['s']] = float(data['k']['c'])
-                print(f"Update price {data['s']}: {data['k']['c']}")
 
         self._kline_threads = {}
         for trade_pair in trade_pairs:
@@ -26,46 +31,26 @@ class BinanceAccount:
             kline_socket_manager.start()
             self._kline_threads[trade_pair] = kline_socket_manager
 
-        """
-        def process_trade_message(data):
-            # Symbol data['s'] == 'BTCUSDT'
-            if data['e'] == 'trade':
-                symbol = data['s']
-                price = float(data['p'])
-                if data['m']:
-                    self.mark_prices[symbol] = price
-
-        self.trade_socket_managers = []
-        for trade_symbol in trade_symbols:
-            trade_socket_manager = BinanceSocketManager(self._client)
-            trade_socket_manager.start_trade_socket(trade_symbol, process_trade_message)
-            trade_socket_manager.start()
-            self.trade_socket_managers.append(trade_socket_manager)
-        """
-
-        from datetime import datetime
-        print(f"{datetime.now()} Check mark prices")
-
-        prices_up_to_date = False
-        while not prices_up_to_date:
-            prices_up_to_date = True
-            for trade_pair in self._mark_prices:
-                if self._mark_prices[trade_pair] == 0:
-                    prices_up_to_date = False
-                    break
-
-        print(f"{datetime.now()} Check mark prices OK")
-
         self.update_account_status()
+        sleep(1000)
 
     def update_account_status(self):
-        account_info = self._client.get_margin_account()
-        for asset in account_info['userAssets']:
-            name = asset['asset']
-            self.assets[name] = {'wallet': float(asset['free']),
-                                 'debt': float(asset['borrowed'])}
-        print(f"Account BTC wallet={self.assets['BTC']['wallet']}, debt={self.assets['BTC']['debt']}")
-        print(f"Account USDT wallet={self.assets['USDT']['wallet']}, debt={self.assets['USDT']['debt']}")
+        account_info = self._client.get_account()
+        total_equity = 0.0
+        for asset in account_info['balances']:
+            if asset['asset'] == 'USDT':
+                total_equity += float(asset['free'])
+            else:
+                name = asset['asset'] + 'USDT'
+                if name in self._mark_prices:
+                    self._balances[name] = float(asset['free'])
+                    total_equity += self._balances[name] * self._mark_prices[name]
+        self._total_equity = total_equity
+        print(f"Account balance: ", end='')
+        for name in self._balances:
+            if self._balances[name] > 0:
+                print(f"{name}: {self._balances[name]}  ", end='')
+        print(f"Account equity: {self._total_equity} USDT")
 
     def calculate_leverage(self):
         self.update_account_status()
