@@ -72,6 +72,12 @@ class BinanceAccount:
     def get_total_equity_usdt(self):
         return 300.0
 
+    def get_mark_price(self, trade_pair):
+        return self._mark_prices[trade_pair]
+
+    def market_buy(self, trade_pair, volume):
+        print(f"Buy {volume} {trade_pair}")
+
     def market_sell(self, trade_pair, volume):
         order = self._client.order_market_sell(
             symbol=trade_pair,

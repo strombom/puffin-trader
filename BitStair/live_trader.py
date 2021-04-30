@@ -119,15 +119,10 @@ def trader():
             portfolio = binance_account.get_portfolio()
             if top_pair not in portfolio:
                 total_equity = binance_account.get_total_equity_usdt()
-                order_size = total_equity / (config['portfolio_size'] * data['prices'][pair_idx][idx])
-                simulator.market_order(order_size=order_size, pair=data['pairs'][pair_idx])
-                portfolio.append(pair_idx)
-
-        print("Got", top_five)
-
-    lengths = config['lengths']
-    print(lengths)
-    quit()
+                mark_price = binance_account.get_mark_price(top_pair)
+                volume = total_equity / (config['portfolio_size'] * mark_price)
+                volume = volume * 0.95
+                binance_account.market_buy(trade_pair=top_pair, volume=volume)
 
 
 if __name__ == '__main__':
