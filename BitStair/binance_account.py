@@ -1,6 +1,7 @@
 import json
 import math
 import traceback
+import decimal
 from time import sleep
 
 import binance.enums
@@ -14,14 +15,17 @@ class BinanceAccount:
         self._balance_usdt = 0.0
         self._mark_prices = {}
         self._tick_sizes = {}
+        self._min_lot_sizes = {}
         self._client = binance_client
         self._total_equity = 0.0
 
         info = self._client.get_exchange_info()
         for symbol in info['symbols']:
             for symbol_filter in symbol['filters']:
-                if symbol_filter['filterType'] == "PRICE_FILTER":
-                    self._tick_sizes[symbol['symbol']] = int(math.log10(float(symbol_filter['tickSize'])))
+                if symbol_filter['filterType'] == "LOT_SIZE":
+                    # TODO: Potential bug if tick size doesn't end in 1
+                    self._tick_sizes[symbol['symbol']] = int(math.log10(float(symbol_filter['stepSize'])))
+                    self._min_lot_sizes[symbol['symbol']] = float(symbol_filter['minQty'])
                     break
 
         tickers = self._client.get_all_tickers()
@@ -43,6 +47,7 @@ class BinanceAccount:
         self._update_account_status()
 
     def get_portfolio(self):
+        self._update_account_status()
         portfolio = set()
         for trade_pair in self._balances:
             if self._balances[trade_pair] > 0:
@@ -57,7 +62,11 @@ class BinanceAccount:
             else:
                 trade_pair = symbol['asset'] + 'USDT'
                 if trade_pair in self._mark_prices:
-                    self._balances[trade_pair] = float(symbol['free'])
+                    balance = float(symbol['free'])
+                    if balance < self._min_lot_sizes[trade_pair]:
+                        balance = 0.0
+                    self._balances[trade_pair] = balance
+
         self._total_equity = self.get_total_equity_usdt()
         print(f"Account balance: ", end='')
         for trade_pair in self._balances:
@@ -78,7 +87,10 @@ class BinanceAccount:
         return self._mark_prices[trade_pair]
 
     def market_buy(self, trade_pair, volume):
-        quantity = round(volume, -self._tick_sizes[trade_pair])
+        factor = 10 ** -self._tick_sizes[trade_pair]
+        quantity = math.floor(volume * factor) / factor
+        if quantity == 0:
+            return
         order = self._client.order_market_buy(
             symbol=trade_pair,
             quantity=quantity
@@ -89,7 +101,10 @@ class BinanceAccount:
             print(f"Market buy {quantity} {trade_pair} OK")
 
     def market_sell(self, trade_pair, volume):
-        quantity = round(volume, -self._tick_sizes[trade_pair])
+        factor = 10 ** -self._tick_sizes[trade_pair]
+        quantity = math.floor(volume * factor) / factor
+        if quantity == 0:
+            return
         order = self._client.order_market_sell(
             symbol=trade_pair,
             quantity=quantity

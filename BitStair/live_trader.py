@@ -107,22 +107,27 @@ def trader():
 
     while True:
         top_pairs = indicator_queue.get()
+        print(f"Top pairs {top_pairs}")
 
         portfolio = binance_account.get_portfolio()
+        print(f"Portfolio {portfolio}")
         for portfolio_pair in portfolio.copy():
             if portfolio_pair not in top_pairs:
                 balance = binance_account.get_balance(portfolio_pair)
+                print(f"Sell {balance} {portfolio_pair}")
                 binance_account.market_sell(trade_pair=portfolio_pair, volume=balance)
                 portfolio.remove(portfolio_pair)
 
+        portfolio = binance_account.get_portfolio()
         for top_pair in top_pairs:
-            portfolio = binance_account.get_portfolio()
             if top_pair not in portfolio:
                 total_equity = binance_account.get_total_equity_usdt()
                 mark_price = binance_account.get_mark_price(top_pair)
                 volume = total_equity / (config['portfolio_size'] * mark_price)
                 volume = volume * 0.95
+                print(f"Buy {volume} {top_pair}")
                 binance_account.market_buy(trade_pair=top_pair, volume=volume)
+                portfolio = binance_account.get_portfolio()
 
 
 if __name__ == '__main__':
