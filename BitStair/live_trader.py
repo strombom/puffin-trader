@@ -36,8 +36,8 @@ class Indicators:
         #     print(pair)
         directions = dict(sorted(self._directions.items(), key=lambda item: item[1]))
         directions = {key: val for key, val in directions.items() if val != -1.0}
-        top_five = list(directions.keys())[:5]
-        self._indicator_queue.put(top_five)
+        top_pairs = set(list(directions.keys())[:self._config['portfolio_size']])
+        self._indicator_queue.put(top_pairs)
 
     def _calculate_directions(self):
         for pair in self._data:
@@ -106,9 +106,22 @@ def trader():
     #     print(asset, binance_account.assets[asset])
 
     while True:
-        top_five = indicator_queue.get()
+        top_pairs = indicator_queue.get()
 
-        # portfolio
+        portfolio = binance_account.get_portfolio()
+        for portfolio_pair in portfolio.copy():
+            if portfolio_pair not in top_pairs:
+                balance = binance_account.get_balance(portfolio_pair)
+                binance_account.market_sell(trade_pair=portfolio_pair, volume=balance)
+                portfolio.remove(portfolio_pair)
+
+        for top_pair in top_pairs:
+            portfolio = binance_account.get_portfolio()
+            if top_pair not in portfolio:
+                total_equity = binance_account.get_total_equity_usdt()
+                order_size = total_equity / (config['portfolio_size'] * data['prices'][pair_idx][idx])
+                simulator.market_order(order_size=order_size, pair=data['pairs'][pair_idx])
+                portfolio.append(pair_idx)
 
         print("Got", top_five)
 

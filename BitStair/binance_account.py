@@ -31,34 +31,56 @@ class BinanceAccount:
             kline_socket_manager.start()
             self._kline_threads[trade_pair] = kline_socket_manager
 
-        self.update_account_status()
-        sleep(1000)
+        self._update_account_status()
 
-    def update_account_status(self):
+    def get_portfolio(self):
+        portfolio = set()
+        for trade_pair in self._balances:
+            if self._balances[trade_pair] > 0:
+                portfolio.add(trade_pair)
+        return portfolio
+
+    def _update_account_status(self):
         account_info = self._client.get_account()
         total_equity = 0.0
-        for asset in account_info['balances']:
-            if asset['asset'] == 'USDT':
-                total_equity += float(asset['free'])
+        for symbol in account_info['balances']:
+            if symbol['asset'] == 'USDT':
+                total_equity += float(symbol['free'])
             else:
-                name = asset['asset'] + 'USDT'
-                if name in self._mark_prices:
-                    self._balances[name] = float(asset['free'])
-                    total_equity += self._balances[name] * self._mark_prices[name]
+                trade_pair = symbol['asset'] + 'USDT'
+                if trade_pair in self._mark_prices:
+                    self._balances[trade_pair] = float(symbol['free'])
+                    total_equity += self._balances[trade_pair] * self._mark_prices[trade_pair]
         self._total_equity = total_equity
         print(f"Account balance: ", end='')
-        for name in self._balances:
-            if self._balances[name] > 0:
-                print(f"{name}: {self._balances[name]}  ", end='')
+        for trade_pair in self._balances:
+            if self._balances[trade_pair] > 0:
+                print(f"{trade_pair}: {self._balances[trade_pair]}  ", end='')
         print(f"Account equity: {self._total_equity} USDT")
 
     def calculate_leverage(self):
-        self.update_account_status()
+        self._update_account_status()
         mark_price = (self.mark_price_ask + self.mark_price_bid) / 2
         usdt = self.assets['USDT']['wallet'] - self.assets['USDT']['debt']
         btc = (self.assets['BTC']['wallet'] - self.assets['BTC']['debt']) * mark_price
         leverage = btc / (usdt + btc)
         return leverage
+
+    def get_balance(self, trade_pair):
+        return self._balances[trade_pair]
+
+    def get_total_equity_usdt(self):
+        return 300.0
+
+    def market_sell(self, trade_pair, volume):
+        order = self._client.order_market_sell(
+            symbol=trade_pair,
+            quantity=volume
+        )
+        if order['status'] != 'FILLED':
+            print(f"Market sell  {volume} {trade_pair} FAILED! {order}")
+        else:
+            print(f"Market sold {volume} {trade_pair} OK")
 
     def order(self, leverage):
         borrow_extra = 1.01

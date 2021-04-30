@@ -3,5 +3,6 @@
   "binance_kline_server_address": "tcp://192.168.1.90:31007",
   "lengths": [5, 6, 7, 8, 9, 10, 12, 15, 18, 22, 27, 33, 39, 47, 56, 68, 82],
   "delta": 0.005,
-  "poly_order": 3
+  "poly_order": 3,
+  "portfolio_size": 5
 }
