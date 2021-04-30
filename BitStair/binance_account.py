@@ -13,8 +13,16 @@ class BinanceAccount:
         self._balances = {}
         self._balance_usdt = 0.0
         self._mark_prices = {}
+        self._tick_sizes = {}
         self._client = binance_client
         self._total_equity = 0.0
+
+        info = self._client.get_exchange_info()
+        for symbol in info['symbols']:
+            for symbol_filter in symbol['filters']:
+                if symbol_filter['filterType'] == "PRICE_FILTER":
+                    self._tick_sizes[symbol['symbol']] = int(math.log10(float(symbol_filter['tickSize'])))
+                    break
 
         tickers = self._client.get_all_tickers()
         for ticker in tickers:
@@ -70,14 +78,23 @@ class BinanceAccount:
         return self._mark_prices[trade_pair]
 
     def market_buy(self, trade_pair, volume):
-        print(f"Buy {volume} {trade_pair}")
-
-    def market_sell(self, trade_pair, volume):
-        order = self._client.order_market_sell(
+        quantity = round(volume, -self._tick_sizes[trade_pair])
+        order = self._client.order_market_buy(
             symbol=trade_pair,
-            quantity=volume
+            quantity=quantity
         )
         if order['status'] != 'FILLED':
-            print(f"Market sell  {volume} {trade_pair} FAILED! {order}")
+            print(f"Market buy  {quantity} {trade_pair} FAILED! {order}")
         else:
-            print(f"Market sold {volume} {trade_pair} OK")
+            print(f"Market buy {quantity} {trade_pair} OK")
+
+    def market_sell(self, trade_pair, volume):
+        quantity = round(volume, -self._tick_sizes[trade_pair])
+        order = self._client.order_market_sell(
+            symbol=trade_pair,
+            quantity=quantity
+        )
+        if order['status'] != 'FILLED':
+            print(f"Market sell  {quantity} {trade_pair} FAILED! {order}")
+        else:
+            print(f"Market sell {quantity} {trade_pair} OK")
