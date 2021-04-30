@@ -123,8 +123,9 @@ def trader():
             if top_pair not in portfolio:
                 total_equity = binance_account.get_total_equity_usdt()
                 mark_price = binance_account.get_mark_price(top_pair)
+                max_volume = binance_account.get_balance_usdt() / mark_price
                 volume = total_equity / (config['portfolio_size'] * mark_price)
-                volume = volume * 0.95
+                volume = min(volume, max_volume) * 0.95
                 print(f"Buy {volume} {top_pair}")
                 binance_account.market_buy(trade_pair=top_pair, volume=volume)
                 portfolio = binance_account.get_portfolio()

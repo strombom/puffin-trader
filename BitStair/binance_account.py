@@ -77,6 +77,9 @@ class BinanceAccount:
     def get_balance(self, trade_pair):
         return self._balances[trade_pair]
 
+    def get_balance_usdt(self):
+        return self._balance_usdt
+
     def get_total_equity_usdt(self):
         total_equity = self._balance_usdt
         for trade_pair in self._balances:
