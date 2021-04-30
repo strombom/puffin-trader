@@ -1,4 +1,5 @@
 from copy import copy
+from datetime import datetime
 
 import zmq
 import json
@@ -107,6 +108,7 @@ def trader():
 
     while True:
         top_pairs = indicator_queue.get()
+        print(f"Indicator update: {datetime.now()}")
         print(f"Top pairs {top_pairs}")
 
         portfolio = binance_account.get_portfolio()
