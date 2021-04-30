@@ -33,13 +33,13 @@ class BinanceKlineAccount:
                         trade_symbols.append(top_symbol)
                         break
 
-        def process_trade_message(data):
+        def process_kline_message(data):
             if data['e'] == 'kline':
                 self.mark_prices[data['s']] = float(data['k']['c'])
 
         for symbol in trade_symbols:
             kline_socket_manager = BinanceSocketManager(self._client)
-            kline_socket_manager.start_kline_socket(symbol=symbol + "USDT", callback=process_trade_message, interval='1m')
+            kline_socket_manager.start_kline_socket(symbol=symbol + "USDT", callback=process_kline_message, interval='1m')
             kline_socket_manager.start()
             self._kline_threads[symbol] = kline_socket_manager
 
