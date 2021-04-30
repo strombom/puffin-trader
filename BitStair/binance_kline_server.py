@@ -38,10 +38,10 @@ class BinanceKlineAccount:
                 self.mark_prices[data['s']] = float(data['k']['c'])
 
         for symbol in trade_symbols:
-            trade_socket_manager = BinanceSocketManager(self._client)
-            trade_socket_manager.start_kline_socket(symbol=symbol + "USDT", callback=process_trade_message, interval='1m')
-            trade_socket_manager.start()
-            self._kline_threads[symbol] = trade_socket_manager
+            kline_socket_manager = BinanceSocketManager(self._client)
+            kline_socket_manager.start_kline_socket(symbol=symbol + "USDT", callback=process_trade_message, interval='1m')
+            kline_socket_manager.start()
+            self._kline_threads[symbol] = kline_socket_manager
 
         from time import sleep
         has_all_symbols = False
