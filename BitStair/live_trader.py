@@ -11,6 +11,7 @@ from collections import deque
 from binance.client import Client
 
 from IntrinsicTime.runner import Runner
+from binance_account import BinanceAccount
 
 
 class Indicators:
@@ -24,10 +25,15 @@ class Indicators:
         self._updater_thread = threading.Thread(target=self._updater)
         self._updater_thread.start()
 
+    def get_pairs(self):
+        return list(self._directions.keys())
+
     def get_queue(self):
         return self._indicator_queue
 
     def _calculate_indicators(self):
+        # for pair in self._directions:
+        #     print(pair)
         directions = dict(sorted(self._directions.items(), key=lambda item: item[1]))
         directions = {key: val for key, val in directions.items() if val != -1.0}
         top_five = list(directions.keys())[:5]
@@ -90,16 +96,26 @@ def trader():
     indicators = Indicators(config)
     indicator_queue = indicators.get_queue()
 
+    time.sleep(1)
+
+    logging.info("Start Binance client")
+    binance_client = Client(api_key, api_secret)
+    binance_account = BinanceAccount(binance_client, trade_pairs=indicators.get_pairs())
+
+    # for asset in binance_account.assets:
+    #     print(asset, binance_account.assets[asset])
+
     while True:
         top_five = indicator_queue.get()
+
+        # portfolio
+
         print("Got", top_five)
 
     lengths = config['lengths']
     print(lengths)
     quit()
 
-    logging.info("Start Binance client")
-    binance_client = Client(api_key, api_secret)
 
 
 if __name__ == '__main__':
