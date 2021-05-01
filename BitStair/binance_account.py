@@ -6,17 +6,20 @@ from time import sleep
 
 import binance.enums
 import binance.exceptions
+from binance.client import Client
 from binance.websockets import BinanceSocketManager
 
 
 class BinanceAccount:
-    def __init__(self, binance_client, trade_pairs):
+    def __init__(self, api_key, api_secret, trade_pairs):
+        self._api_key = api_key
+        self._api_secret = api_secret
         self._balances = {}
         self._balance_usdt = 0.0
         self._mark_prices = {}
         self._tick_sizes = {}
         self._min_lot_sizes = {}
-        self._client = binance_client
+        self._client = Client(self._api_key, self._api_secret)
         self._total_equity = 0.0
 
         info = self._client.get_exchange_info()
@@ -28,23 +31,25 @@ class BinanceAccount:
                     self._min_lot_sizes[symbol['symbol']] = float(symbol_filter['minQty'])
                     break
 
+        print("trade_pairs", trade_pairs)
+
         tickers = self._client.get_all_tickers()
         for ticker in tickers:
             if ticker['symbol'] in trade_pairs:
                 self._mark_prices[ticker['symbol']] = float(ticker['price'])
 
-        def process_kline_message(data):
-            if data['e'] == 'kline':
-                self._mark_prices[data['s']] = float(data['k']['c'])
-
         self._kline_threads = {}
         for trade_pair in trade_pairs:
             kline_socket_manager = BinanceSocketManager(self._client)
-            kline_socket_manager.start_kline_socket(symbol=trade_pair, callback=process_kline_message, interval='1m')
+            kline_socket_manager.start_kline_socket(symbol=trade_pair, callback=self._process_kline_message, interval='1m')
             kline_socket_manager.start()
             self._kline_threads[trade_pair] = kline_socket_manager
 
         self._update_account_status()
+
+    def _process_kline_message(self, data):
+        if data['e'] == 'kline':
+            self._mark_prices[data['s']] = float(data['k']['c'])
 
     def get_portfolio(self):
         self._update_account_status()

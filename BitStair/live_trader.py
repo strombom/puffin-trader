@@ -9,7 +9,6 @@ import logging
 import threading
 import numpy as np
 from collections import deque
-from binance.client import Client
 
 from IntrinsicTime.runner import Runner
 from binance_account import BinanceAccount
@@ -25,6 +24,7 @@ class Indicators:
         self._running = True
         self._updater_thread = threading.Thread(target=self._updater)
         self._updater_thread.start()
+        self._initialized = False
 
     def get_pairs(self):
         return list(self._directions.keys())
@@ -32,10 +32,13 @@ class Indicators:
     def get_queue(self):
         return self._indicator_queue
 
+    def is_initialized(self):
+        return self._initialized
+
     def _calculate_indicators(self):
         # for pair in self._directions:
         #     print(pair)
-        directions = dict(sorted(self._directions.items(), key=lambda item: item[1]))
+        directions = dict(sorted(self._directions.items(), reverse=False, key=lambda item: item[1]))
         directions = {key: val for key, val in directions.items() if val != -1.0}
         top_pairs = set(list(directions.keys())[:self._config['portfolio_size']])
         self._indicator_queue.put(top_pairs)
@@ -81,6 +84,7 @@ class Indicators:
 
             if updated:
                 self._calculate_directions()
+                self._initialized = True
 
             time.sleep(1.0)
 
@@ -95,17 +99,13 @@ def trader():
         config = json.load(f)
 
     indicators = Indicators(config)
-    indicator_queue = indicators.get_queue()
-
-    time.sleep(1)
+    while not indicators.is_initialized():
+        time.sleep(0.5)
 
     logging.info("Start Binance client")
-    binance_client = Client(api_key, api_secret)
-    binance_account = BinanceAccount(binance_client, trade_pairs=indicators.get_pairs())
+    binance_account = BinanceAccount(api_key, api_secret, trade_pairs=indicators.get_pairs())
 
-    # for asset in binance_account.assets:
-    #     print(asset, binance_account.assets[asset])
-
+    indicator_queue = indicators.get_queue()
     while True:
         top_pairs = indicator_queue.get()
         print(f"Indicator update: {datetime.now()}")
@@ -139,4 +139,10 @@ if __name__ == '__main__':
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
     logging.Formatter.converter = time.gmtime
-    trader()
+
+    while True:
+        try:
+            trader()
+        except ConnectionError as e:
+            print("Error!", e)
+            time.sleep(10)
