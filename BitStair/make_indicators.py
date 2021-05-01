@@ -44,9 +44,11 @@ if __name__ == '__main__':
     plot = False
 
     # start_date = datetime.strptime('2021-01-01 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
-    start_date = datetime.strptime('2021-04-18 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
-    end_date = datetime.strptime('2021-04-19 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
-    delta = 0.005
+    start_date = datetime.strptime('2021-03-01 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
+    end_date = datetime.strptime('2021-04-28 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')
+
+    with open('cache/optim_deltas.pickle', 'rb') as f:
+        optim_deltas = pickle.load(f)
 
     direction_degree = 3
     # lengths = np.arange(5, 50, 2)
@@ -60,8 +62,8 @@ if __name__ == '__main__':
         pair = os.path.basename(file_path).replace('.csv', '')
         pairs.append(pair)
         count += 1
-        if count == 10:
-            break
+        # if count == 30:
+        #     break
 
     import matplotlib.pyplot as plt
 
@@ -92,7 +94,7 @@ if __name__ == '__main__':
             indicators = np.empty((n_pairs, n_lengths, n_timesteps))
 
         dirs = []
-        runner = Runner(delta=delta)
+        runner = Runner(delta=optim_deltas[pair])
 
         runner_timestamps, runner_prices = [], []
         for idx, row in data.iterrows():
@@ -108,8 +110,7 @@ if __name__ == '__main__':
                       poly_order=direction_degree,
                       directions=directions)
 
-        print(f"indicators.shape {indicators.shape}")
-        print(f"directions.shape {directions.shape}")
+        print(f"{pair} indicators {indicators.shape} directions {directions.shape}")
 
         runner_idx = 0
         for kline_idx, row in data.iterrows():
