@@ -85,7 +85,8 @@ class BinanceSimulator:
             return 0
 
         self.wallet[pair] += order_size
-        self.wallet['usdt'] -= order_size * self.mark_price[pair] * (1 + fee)
+        self.wallet['usdt'] -= order_size * self.mark_price[pair]
+        self.wallet['usdt'] -= abs(order_size) * self.mark_price[pair] * fee
 
         # Repay debt
         if order_size > 0:
