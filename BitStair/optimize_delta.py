@@ -18,7 +18,9 @@ if __name__ == '__main__':
         pair = os.path.basename(file_path).replace('.csv', '')
         pairs.append(pair)
 
-    deltas = np.arange(start=0.005, stop=0.025, step=0.003)
+    pd.DataFrame(np.array(pairs)).to_csv(path_or_buf='cache/pairs.csv')
+
+    deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
     steps = np.zeros((len(pairs), deltas.shape[0]))
 
     for pair_idx, pair in enumerate(pairs):
