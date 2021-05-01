@@ -72,7 +72,7 @@ class BinanceSimulator:
         if self.is_liquidated(mark_price=mark_price):
             return 0
 
-        fee_usdt = order_size_btc * mark_price * fee
+        fee_usdt = abs(order_size_btc) * mark_price * fee
 
         self.wallet_btc += order_size_btc
         self.wallet_usdt -= order_size_btc * mark_price
