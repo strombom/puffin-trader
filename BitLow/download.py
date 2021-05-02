@@ -40,7 +40,7 @@ def main():
     with open('binance_account.json') as f:
         account_info = json.load(f)
 
-    start_time = "2021-01-01 UTC"
+    start_time = "2020-01-01 UTC"
 
     client = Client(
         api_key=account_info['api_key'],
