@@ -9,7 +9,7 @@ from binance.client import Client
 def download_klines(client: Client, symbol: str, start_time: str):
     file_path = f"cache/klines/{symbol}.csv"
     print(f"Downloading {file_path}")
-    
+
     if os.path.exists(file_path):
         return
 
