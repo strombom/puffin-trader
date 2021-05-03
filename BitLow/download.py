@@ -23,11 +23,11 @@ def download_klines(client: Client, symbol: str, start_time: str):
     for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE, start_time):
         klines.append({
             'open_time': kline[0],
-            'open': kline[1],
-            'high': kline[2],
-            'low': kline[3],
-            'close': kline[4],
-            'volume': kline[5],
+            'open': float(kline[1]),
+            'high': float(kline[2]),
+            'low': float(kline[3]),
+            'close': float(kline[4]),
+            'volume': float(kline[5]),
             'close_time': kline[6],
             'number_of_trades': kline[8]
         })
