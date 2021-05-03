@@ -7,7 +7,7 @@ from binance.client import Client
 
 
 def download_klines(client: Client, symbol: str, start_time: str):
-    file_path = f"cache/klines/{symbol}.csv"
+    file_path = f"cache/klines/{symbol}.hdf"
     print(f"Downloading {file_path}")
 
     if os.path.exists(file_path):
@@ -38,7 +38,13 @@ def download_klines(client: Client, symbol: str, start_time: str):
             pass
 
     klines = pd.DataFrame(klines)
-    klines.to_csv(file_path)
+    klines.to_hdf(
+        path_or_buf=file_path,
+        key=symbol,
+        mode='w',
+        complevel=9,
+        complib='blosc'
+    )
 
 
 def main():
