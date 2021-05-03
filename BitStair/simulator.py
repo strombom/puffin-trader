@@ -20,7 +20,7 @@ previous_pair_idx = 0
 max_pairs = []
 values = []
 portfolio = []
-portfolio_size = 5
+portfolio_size = 1
 
 for idx in range(data['prices'].shape[1]):
     for pair_idx, pair in enumerate(data['pairs']):
@@ -29,16 +29,20 @@ for idx in range(data['prices'].shape[1]):
     pair_values = []
     max_pair_idx, max_pair_val = 0, -1.0
     for pair_idx, pair in enumerate(data['pairs']):
-        val = np.amax(data['indicators'][pair_idx, :, idx])
+        # val = np.amax(data['indicators'][pair_idx, :, idx])
+        # val = data['indicators'][pair_idx, 16, idx]
+        val = np.amax(data['indicators'][pair_idx, 3:6, idx])
         pair_values.append((pair_idx, val))
         if val > max_pair_val:
             max_pair_val = val
             max_pair_idx = pair_idx
-    pair_values.sort(key=lambda x: x[1])
+    pair_values.sort(key=lambda x: x[1], reverse=False)
     top_pairs = [x[0] for x in pair_values[:portfolio_size]]
 
     if idx == 80000:
         print(idx)
+
+    updated = False
 
     for pair_idx in portfolio.copy():
         if pair_idx not in top_pairs:
@@ -47,10 +51,23 @@ for idx in range(data['prices'].shape[1]):
 
     for pair_idx in top_pairs:
         if pair_idx not in portfolio:
-            total_value = simulator.get_value_usdt()
-            order_size = total_value / (portfolio_size * data['prices'][pair_idx][idx])
+            total_equity = simulator.get_value_usdt()
+            volume = total_equity / (portfolio_size * data['prices'][pair_idx][idx])
+            max_volume = simulator.wallet['usdt'] / data['prices'][pair_idx][idx]
+            order_size = min(volume, max_volume) * 0.90
+
+            # total_value = simulator.get_value_usdt()
+            # order_size = total_value / (portfolio_size * data['prices'][pair_idx][idx])
             simulator.market_order(order_size=order_size, pair=data['pairs'][pair_idx])
             portfolio.append(pair_idx)
+            updated = True
+
+    if updated:
+        m = idx % 60
+        h = (idx % (60 * 24)) // 60
+        d = idx // (60 * 24)
+
+        print(idx, d, h, m, portfolio)
 
     if len(portfolio) != portfolio_size:
         print(len(portfolio))
