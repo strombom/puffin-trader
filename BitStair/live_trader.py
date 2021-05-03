@@ -1,6 +1,7 @@
-from copy import copy
+import pickle
 from datetime import datetime
 
+import binance.exceptions
 import zmq
 import json
 import time
@@ -16,6 +17,9 @@ from binance_account import BinanceAccount
 
 class Indicators:
     def __init__(self, config: dict):
+        with open('cache/optim_deltas.pickle', 'rb') as f:
+            self._optim_deltas = pickle.load(f)
+
         self._config = config
         self._data = {}
         self._directions = {}
@@ -74,8 +78,10 @@ class Indicators:
             updated = False
             for prices in message['mark_prices']:
                 for pair in prices:
+                    if pair not in self._optim_deltas:
+                        continue
                     if pair not in self._data:
-                        self._runners[pair] = Runner(delta=self._config['delta'])
+                        self._runners[pair] = Runner(delta=self._optim_deltas[pair])
                         self._data[pair] = deque(maxlen=self._config['lengths'][-1])
                     ie_prices = self._runners[pair].step(high=prices[pair], low=prices[pair])
                     for ie_price in ie_prices:
@@ -115,6 +121,7 @@ def trader():
         print(f"Portfolio {portfolio}")
         for portfolio_pair in portfolio.copy():
             if portfolio_pair not in top_pairs:
+                # TODO: Handle MIN_NOTIONAL error
                 balance = binance_account.get_balance(portfolio_pair)
                 print(f"Sell {balance} {portfolio_pair}")
                 binance_account.market_sell(trade_pair=portfolio_pair, volume=balance)
@@ -144,5 +151,8 @@ if __name__ == '__main__':
         try:
             trader()
         except ConnectionError as e:
-            print("Error!", e)
+            print("Error ConnectionError!", e)
+            time.sleep(10)
+        except binance.exceptions.BinanceAPIException as e:
+            print("Error BinanceAPIException!", e)
             time.sleep(10)
