@@ -1,3 +1,4 @@
+import os
 import json
 import pandas as pd
 import pyrate_limiter
@@ -6,6 +7,12 @@ from binance.client import Client
 
 
 def download_klines(client: Client, symbol: str, start_time: str):
+    file_path = f"cache/klines/{symbol}.csv"
+    print(f"Downloading {file_path}")
+    
+    if os.path.exists(file_path):
+        return
+
     limiter = pyrate_limiter.Limiter(pyrate_limiter.RequestRate(1, pyrate_limiter.Duration.SECOND))
 
     @limiter.ratelimit("download_print_status", delay=False)
@@ -31,9 +38,7 @@ def download_klines(client: Client, symbol: str, start_time: str):
             pass
 
     klines = pd.DataFrame(klines)
-    file_path = f"cache/klines/{symbol}.csv"
     klines.to_csv(file_path)
-    print(f"Saved {file_path}")
 
 
 def main():
