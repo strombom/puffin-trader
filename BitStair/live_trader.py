@@ -2,6 +2,7 @@ import pickle
 from datetime import datetime
 
 import binance.exceptions
+import requests.exceptions
 import zmq
 import json
 import time
@@ -155,4 +156,7 @@ if __name__ == '__main__':
             time.sleep(10)
         except binance.exceptions.BinanceAPIException as e:
             print("Error BinanceAPIException!", e)
+            time.sleep(10)
+        except requests.exceptions.ReadTimeout as e:
+            print("Error ReadTimeout!", e)
             time.sleep(10)
