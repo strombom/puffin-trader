@@ -14,6 +14,7 @@ def calculate_volume():
 
     volatilities = {}
     volumes = {}
+    symbols = []
 
     for file_path in glob.glob("cache/klines/*.hdf"):
         symbol = os.path.basename(file_path).replace('.hdf', '')
@@ -32,22 +33,25 @@ def calculate_volume():
 
         volatilities[symbol] = volatility
         volumes[symbol] = volume
+        symbols.append(symbol)
+
         print(timestamp, symbol, volatility)
 
-    return volumes, volatilities
+    volumes = sorted(volumes.items(), key=operator.itemgetter(1), reverse=True)
+    volatilities = sorted(volatilities.items(), key=operator.itemgetter(1), reverse=True)
+    print(volumes)
+    print(volatilities)
+
+    return symbols
 
 
 def main():
     volume_limit = 1000000000
 
-    volumes, volatilities = calculate_volume()
+    symbols = calculate_volume()
 
-    volumes = sorted(volumes.items(), key=operator.itemgetter(1), reverse=True)
-
-    volatilities = sorted(volatilities.items(), key=operator.itemgetter(1), reverse=True)
-
-    print(volumes)
-    print(volatilities)
+    with open(f"cache/filtered_symbols.pickle", 'wb') as f:
+        pickle.dump(symbols, f, pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == '__main__':
