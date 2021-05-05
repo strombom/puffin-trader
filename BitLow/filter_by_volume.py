@@ -1,34 +1,53 @@
-import glob
-import operator
 import os
+import glob
 import pickle
-
+import operator
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
 
 def calculate_volume():
+    start_timestamp = datetime.strptime("2020-01-01 01:00:00", "%Y-%m-%d %H:%M:%S")
+    min_volatility = 0.1
+    min_volume = 500000000
+
+    volatilities = {}
     volumes = {}
-    for file_path in glob.glob("cache/klines/*.csv"):
-        symbol = os.path.basename(file_path).replace('.csv', '')
-        print("Calculate volume", symbol)
 
-        data = pd.read_csv(f"cache/klines/{symbol}.csv")
+    for file_path in glob.glob("cache/klines/*.hdf"):
+        symbol = os.path.basename(file_path).replace('.hdf', '')
 
-        symbol_prices = data['close'].to_numpy()
-        symbol_volumes = data['volume'].to_numpy()
-        volumes[symbol] = np.sum(symbol_prices * symbol_volumes)
+        data = pd.read_hdf(file_path)
+        timestamp = datetime.fromtimestamp(data['open_time'].iloc[0] / 1000)
 
-    return volumes
+        if timestamp != start_timestamp:
+            continue
+
+        volatility = data['close'].std() / data['close'].mean()
+        volume = np.sum(data['close'].to_numpy() * data['volume'].to_numpy())
+
+        if volatility < min_volatility or volume < min_volume:
+            continue
+
+        volatilities[symbol] = volatility
+        volumes[symbol] = volume
+        print(timestamp, symbol, volatility)
+
+    return volumes, volatilities
 
 
 def main():
-    volumes = calculate_volume()
+    volume_limit = 1000000000
 
-    print(volumes)
+    volumes, volatilities = calculate_volume()
+
     volumes = sorted(volumes.items(), key=operator.itemgetter(1), reverse=True)
 
+    volatilities = sorted(volatilities.items(), key=operator.itemgetter(1), reverse=True)
+
     print(volumes)
+    print(volatilities)
 
 
 if __name__ == '__main__':
