@@ -110,7 +110,7 @@ def trader():
         time.sleep(0.5)
 
     logging.info("Start Binance client")
-    binance_account = BinanceAccount(api_key, api_secret, trade_pairs=indicators.get_pairs())
+    binance_account = BinanceAccount(api_key, api_secret, symbols=indicators.get_pairs())
 
     indicator_queue = indicators.get_queue()
     while True:

@@ -1,17 +1,13 @@
-import json
 import math
-import traceback
-import decimal
-from time import sleep
+import asyncio
+import threading
 
-import binance.enums
-import binance.exceptions
-from binance.client import Client
-from binance.websockets import BinanceSocketManager
+from binance import AsyncClient
+from binance import BinanceSocketManager
 
 
 class BinanceAccount:
-    def __init__(self, api_key, api_secret, trade_pairs):
+    def __init__(self, api_key, api_secret, symbols):
         self._api_key = api_key
         self._api_secret = api_secret
         self._balances = {}
@@ -19,10 +15,30 @@ class BinanceAccount:
         self._mark_prices = {}
         self._tick_sizes = {}
         self._min_lot_sizes = {}
-        self._client = Client(self._api_key, self._api_secret)
         self._total_equity = 0.0
+        self._kline_threads = {}
 
-        info = self._client.get_exchange_info()
+        self.event_loop = asyncio.get_event_loop()
+        self.event_loop.run_until_complete(self.__async__init(symbols))
+        self._update_account_status()
+
+    def kline_thread(self, symbol: str, loop):
+        async def kline_task():
+            ts = self._socket_manager.kline_socket(symbol, interval=self._client.KLINE_INTERVAL_1MINUTE)
+            async with ts as ts_c:
+                while True:
+                    data = await ts_c.recv()
+                    if data['e'] == 'kline':
+                        self._mark_prices[data['s']] = float(data['k']['c'])
+                        # print("set price", symbol, float(data['k']['c']))
+
+        loop.run_until_complete(kline_task())
+
+    async def __async__init(self, symbols: str):
+        self._client = await AsyncClient.create(api_key=self._api_key, api_secret=self._api_secret)
+        self._socket_manager = BinanceSocketManager(self._client)
+
+        info = await self._client.get_exchange_info()
         for symbol in info['symbols']:
             for symbol_filter in symbol['filters']:
                 if symbol_filter['filterType'] == "LOT_SIZE":
@@ -31,25 +47,16 @@ class BinanceAccount:
                     self._min_lot_sizes[symbol['symbol']] = float(symbol_filter['minQty'])
                     break
 
-        print("trade_pairs", trade_pairs)
+        print("symbols", symbols)
 
-        tickers = self._client.get_all_tickers()
+        tickers = await self._client.get_all_tickers()
         for ticker in tickers:
-            if ticker['symbol'] in trade_pairs:
+            if ticker['symbol'] in symbols:
                 self._mark_prices[ticker['symbol']] = float(ticker['price'])
 
-        self._kline_threads = {}
-        for trade_pair in trade_pairs:
-            kline_socket_manager = BinanceSocketManager(self._client)
-            kline_socket_manager.start_kline_socket(symbol=trade_pair, callback=self._process_kline_message, interval='1m')
-            kline_socket_manager.start()
-            self._kline_threads[trade_pair] = kline_socket_manager
-
-        self._update_account_status()
-
-    def _process_kline_message(self, data):
-        if data['e'] == 'kline':
-            self._mark_prices[data['s']] = float(data['k']['c'])
+        for symbol in symbols:
+            self._kline_threads[symbol] = threading.Thread(target=self.kline_thread, args=(symbol, asyncio.new_event_loop()))
+            self._kline_threads[symbol].start()
 
     def get_portfolio(self):
         self._update_account_status()
@@ -60,7 +67,7 @@ class BinanceAccount:
         return portfolio
 
     def _update_account_status(self):
-        account_info = self._client.get_account()
+        account_info = self.event_loop.run_until_complete(self._client.get_account())
         for symbol in account_info['balances']:
             if symbol['asset'] == 'USDT':
                 self._balance_usdt = float(symbol['free'])
@@ -99,9 +106,12 @@ class BinanceAccount:
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             return
-        order = self._client.order_market_buy(
-            symbol=trade_pair,
-            quantity=quantity
+
+        order = self.event_loop.run_until_complete(
+            self._client.order_market_buy(
+                symbol=trade_pair,
+                quantity=quantity
+            )
         )
         if order['status'] != 'FILLED':
             print(f"Market buy  {quantity} {trade_pair} FAILED! {order}")
@@ -113,9 +123,11 @@ class BinanceAccount:
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             return
-        order = self._client.order_market_sell(
-            symbol=trade_pair,
-            quantity=quantity
+        order = self.event_loop.run_until_complete(
+            self._client.order_market_sell(
+                symbol=trade_pair,
+                quantity=quantity
+            )
         )
         if order['status'] != 'FILLED':
             print(f"Market sell  {quantity} {trade_pair} FAILED! {order}")
