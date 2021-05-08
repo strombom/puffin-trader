@@ -1,5 +1,8 @@
 import os
 import glob
+from datetime import datetime, timezone
+
+import scipy
 import pickle
 import numpy as np
 import pandas as pd
@@ -31,28 +34,118 @@ def calc_smooth_volatility(data):
         clock_prices = runner_clock.step(price=price)
         ema_value = clock_ema.step(value=len(clock_prices))
         smooth_volatility[time_idx] = ema_value
+    return smooth_volatility
+
+
+def get_data_length(symbol: str, end_timestamp: datetime):
+    file_path = f"cache/klines/{symbol}.hdf"
+    klines = pd.DataFrame(pd.read_hdf(file_path))
+
+    data_length = 0
+    end_epoch = end_timestamp.timestamp() * 1000
+    for idx in reversed(klines.index):
+        if klines.open_time[idx] <= end_epoch:
+            data_length = idx
+            t_start = datetime.utcfromtimestamp(klines.open_time[0] / 1000)
+            t_end = datetime.utcfromtimestamp(klines.open_time[idx] / 1000)
+
+            print(f"get_data_length {symbol} {t_start.strftime('%Y-%m-%d %H:%M:%S %z')} {t_end.strftime('%Y-%m-%d %H:%M:%S %z')}")
+            break
+
+    return data_length
+
+
+def make_steps(symbols: list, end_timestamp: datetime):
+    try:
+        file_path = f"cache/steps.hdf"
+        return pd.DataFrame(pd.read_hdf(file_path))
+    except FileNotFoundError:
+        pass
+
+    data_length = get_data_length(symbol=symbols[0], end_timestamp=end_timestamp)
+
+    deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
+    steps = np.zeros((len(symbols), deltas.shape[0], data_length))
+    print(steps.shape)
+
+    for symbol_idx, symbol in enumerate(symbols):
+        file_path = f"cache/klines/{symbol}.hdf"
+        klines = pd.DataFrame(pd.read_hdf(file_path))
+        klines = klines[:data_length]
+
+        for delta_idx, delta in enumerate(deltas):
+            runner = Runner(delta=delta)
+            runner_length = 0
+            for idx, row in klines.iterrows():
+                ie_events = runner.step(row['close'])
+                runner_length += len(ie_events)
+
+            steps[symbol_idx, delta_idx] = runner_length
+            print(symbol, delta, runner_length)
+
+        if symbol_idx == 5:
+            break
+
+    steps = pd.DataFrame(steps)
+    steps.to_hdf(path_or_buf="cache/steps.hdf", key='steps')
+
+    return steps
 
 
 def main():
     with open(f"cache/filtered_symbols.pickle", 'rb') as f:
         symbols = pickle.load(f)
 
-    for symbol in symbols:
-        file_path = f"cache/klines/{symbol}.hdf"
-        data = pd.DataFrame(pd.read_hdf(file_path))
+    end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    steps = make_steps(symbols=symbols, end_timestamp=end_timestamp)
 
-        # data = data[:200000]
-        data = data[:100000]
+    print(steps)
+    quit()
+
+    for symbol in symbols:
 
         smooth_volatility = calc_smooth_volatility(data)
+        """
+        import matplotlib.pyplot as plt
+        plt.clf()
+        plt.plot(smooth_volatility)
+        plt.title(symbol)
+        plt.show()
+        """
 
+        def curve_fit(x, n_steps_target):
+            n_steps = 1
+
+            runner_trade = Runner(delta=0)
+            for idx, price in enumerate(data['close']):
+                runner_trade.delta = x[0] * smooth_volatility[idx] + x[1]
+                trade_prices = runner_trade.step(price=price)
+                n_steps += len(trade_prices)
+
+            return n_steps - n_steps_target
+
+        ass = []
+        bss = []
+        stepss = []
+        for a in np.arange(start=0.02, stop=0.2, step=0.01):
+            for b in np.arange(start=0.00, stop=0.006, step=0.001):
+                n_steps = curve_fit(x=(a, b), n_steps_target=0)
+                print(round(a, 3), round(b, 3), n_steps)
+                ass.append(a)
+                bss.append(b)
+                stepss.append(n_steps)
+
+        with open(f"cache/analysis.pickle", 'wb') as f:
+            pickle.dump((ass, bss, stepss), f, pickle.HIGHEST_PROTOCOL)
+
+        quit()
+        res = scipy.optimize.least_squares(fun=curve_fit, x0=[0.1, 0.0], args=(5000, ))
 
         print(sum(smooth_volatility))
 
         deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
 
         import matplotlib.pyplot as plt
-
         plt.clf()
         plt.ylim((0, 1))
         plt.plot(smooth_volatility)
