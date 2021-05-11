@@ -1,11 +1,9 @@
-import os
-import glob
-from datetime import datetime, timezone
 
 import scipy
 import pickle
 import numpy as np
 import pandas as pd
+from datetime import datetime, timezone, timedelta
 from scipy.optimize import least_squares
 
 from IntrinsicTime.runner import Runner
@@ -46,48 +44,58 @@ def get_data_length(symbol: str, end_timestamp: datetime):
     for idx in reversed(klines.index):
         if klines.open_time[idx] <= end_epoch:
             data_length = idx
-            t_start = datetime.utcfromtimestamp(klines.open_time[0] / 1000)
-            t_end = datetime.utcfromtimestamp(klines.open_time[idx] / 1000)
-
-            print(f"get_data_length {symbol} {t_start.strftime('%Y-%m-%d %H:%M:%S %z')} {t_end.strftime('%Y-%m-%d %H:%M:%S %z')}")
             break
 
     return data_length
 
 
 def make_steps(symbols: list, end_timestamp: datetime):
-    try:
-        file_path = f"cache/steps.hdf"
-        return pd.DataFrame(pd.read_hdf(file_path))
-    except FileNotFoundError:
-        pass
+    #steps_file_path = f"cache/steps.npy"
+    #try:
+    #    steps = np.load(file=steps_file_path)
+    #    return steps
+    #except FileNotFoundError:
+    #    pass
 
     data_length = get_data_length(symbol=symbols[0], end_timestamp=end_timestamp)
 
+    data_length = min(12000, data_length)
+    symbols = symbols[:1]
+
     deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
     steps = np.zeros((len(symbols), deltas.shape[0], data_length))
-    print(steps.shape)
+    steps_timestamps = None
 
     for symbol_idx, symbol in enumerate(symbols):
         file_path = f"cache/klines/{symbol}.hdf"
         klines = pd.DataFrame(pd.read_hdf(file_path))
         klines = klines[:data_length]
 
+        if steps_timestamps is None:
+            steps_timestamps = klines['open_time'][:data_length].to_numpy() / 1000
+
         for delta_idx, delta in enumerate(deltas):
             runner = Runner(delta=delta)
-            runner_length = 0
-            for idx, row in klines.iterrows():
+            for kline_idx, row in klines.iterrows():
                 ie_events = runner.step(row['close'])
-                runner_length += len(ie_events)
+                steps[symbol_idx, delta_idx, kline_idx] = len(ie_events)
 
-            steps[symbol_idx, delta_idx] = runner_length
-            print(symbol, delta, runner_length)
+    #np.save(file=steps_file_path, arr=steps)
+    return steps_timestamps, steps
 
-        if symbol_idx == 5:
-            break
 
-    steps = pd.DataFrame(steps)
-    steps.to_hdf(path_or_buf="cache/steps.hdf", key='steps')
+def calc_weekly_steps(steps_timestamps: np.ndarray, symbols: list, steps: np.ndarray):
+    start_timestamp = steps_timestamps[0]
+
+    for symbol in symbols:
+        current_week = datetime.utcfromtimestamp(start_timestamp)
+        current_week -= timedelta(days=current_week.weekday() % 7)
+        next_week = current_week + timedelta(weeks=1)
+
+        for kline_idx in range(steps_timestamps.shape[0]):
+            if steps_timestamps[kline_idx] > next_week:
+                print("a")
+            print(symbol)
 
     return steps
 
@@ -97,7 +105,8 @@ def main():
         symbols = pickle.load(f)
 
     end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    steps = make_steps(symbols=symbols, end_timestamp=end_timestamp)
+    steps_timestamps, steps = make_steps(symbols=symbols, end_timestamp=end_timestamp)
+    weekly_steps = calc_weekly_steps(steps_timestamps=steps_timestamps, symbols=symbols, steps=steps)
 
     print(steps)
     quit()
