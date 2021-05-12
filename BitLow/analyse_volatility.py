@@ -49,7 +49,15 @@ def get_data_length(symbol: str, end_timestamp: datetime):
     return data_length
 
 
-def make_steps(symbols: list, end_timestamp: datetime):
+def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
+    steps_file_path = f"cache/steps.pickle"
+    try:
+        with open(steps_file_path, 'rb') as f:
+            steps_timestamps, steps = pickle.load(f)
+            return steps_timestamps, steps
+    except FileNotFoundError:
+        pass
+
     #steps_file_path = f"cache/steps.npy"
     #try:
     #    steps = np.load(file=steps_file_path)
@@ -59,11 +67,10 @@ def make_steps(symbols: list, end_timestamp: datetime):
 
     data_length = get_data_length(symbol=symbols[0], end_timestamp=end_timestamp)
 
-    data_length = min(12000, data_length)
+    data_length = min(100000, data_length)
     symbols = symbols[:1]
 
-    deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
-    steps = np.zeros((len(symbols), deltas.shape[0], data_length))
+    steps = np.zeros((len(symbols), data_length, deltas.shape[0]))
     steps_timestamps = None
 
     for symbol_idx, symbol in enumerate(symbols):
@@ -78,37 +85,87 @@ def make_steps(symbols: list, end_timestamp: datetime):
             runner = Runner(delta=delta)
             for kline_idx, row in klines.iterrows():
                 ie_events = runner.step(row['close'])
-                steps[symbol_idx, delta_idx, kline_idx] = len(ie_events)
+                steps[symbol_idx, kline_idx, delta_idx] = len(ie_events)
+
+    with open(steps_file_path, 'wb') as f:
+        pickle.dump((steps_timestamps, steps), f)
 
     #np.save(file=steps_file_path, arr=steps)
     return steps_timestamps, steps
 
 
-def calc_weekly_steps(steps_timestamps: np.ndarray, symbols: list, steps: np.ndarray):
+def calc_accum_steps(steps_timestamps: np.ndarray, symbols: list, steps: np.ndarray, deltas: np.ndarray):
+    lookback_length = timedelta(weeks=1)
+    period_length = timedelta(days=1)
+    lookback_kline_length = int(lookback_length.total_seconds()) // 60
+    period_kline_length = int(period_length.total_seconds()) // 60
+
     start_timestamp = steps_timestamps[0]
+    accum_steps = {}
 
-    for symbol in symbols:
-        current_week = datetime.utcfromtimestamp(start_timestamp)
-        current_week -= timedelta(days=current_week.weekday() % 7)
-        next_week = current_week + timedelta(weeks=1)
+    for symbol_idx in range(steps.shape[0]):
+        symbol = symbols[symbol_idx]
+        current_date = datetime.fromtimestamp(start_timestamp, tz=timezone.utc) + lookback_length
+        accum_steps[symbol] = {}
+        kline_idx = lookback_kline_length
+        while kline_idx < steps_timestamps.shape[0]:
+            accum_steps[symbol][current_date] = steps[symbol_idx, kline_idx-lookback_kline_length:kline_idx].sum(axis=0)
+            current_date += period_length
+            kline_idx += period_kline_length
 
+
+        """
         for kline_idx in range(steps_timestamps.shape[0]):
-            if steps_timestamps[kline_idx] > next_week:
-                print("a")
-            print(symbol)
+            
+            if steps_timestamps[kline_idx] == current_date.timestamp():
+                lookback_minutes = int((current_date - lookback_date).total_seconds()) // 60
+                start_idx = kline_idx - lookback_minutes
+                accum_steps[symbol][current_date] = steps[symbol_idx, start_idx:kline_idx].sum(axis=0)
+                lookback_date += period_length
+                current_date += period_length
 
-    return steps
+        #current_date -= timedelta(days=current_week.weekday() % 7)
+        #next_week = current_week + timedelta(weeks=1)
+
+        weekly_steps[symbol] = {}
+
+        prev_timestamp = datetime.fromtimestamp(steps_timestamps[0], tz=timezone.utc) - timedelta(minutes=1)
+
+        kline_start_idx = 0
+        for kline_idx in range(steps_timestamps.shape[0]):
+
+            if steps_timestamps[kline_idx] == next_week.timestamp():
+                current_week = next_week
+                next_week += timedelta(weeks=1)
+
+                weekly_steps[symbol][current_week] = steps[symbol_idx, kline_start_idx:kline_idx].sum(axis=0)
+
+                print("a", datetime.fromtimestamp(steps_timestamps[kline_idx], tz=timezone.utc), next_week)
+
+            current_timestamp = datetime.fromtimestamp(steps_timestamps[kline_idx], tz=timezone.utc)
+            if current_timestamp - prev_timestamp != timedelta(minutes=1):
+                print("err", current_timestamp, prev_timestamp)
+            prev_timestamp = current_timestamp
+        """
+
+    return accum_steps
 
 
 def main():
     with open(f"cache/filtered_symbols.pickle", 'rb') as f:
         symbols = pickle.load(f)
 
-    end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    steps_timestamps, steps = make_steps(symbols=symbols, end_timestamp=end_timestamp)
-    weekly_steps = calc_weekly_steps(steps_timestamps=steps_timestamps, symbols=symbols, steps=steps)
+    deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
 
-    print(steps)
+    end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    steps_timestamps, steps = make_steps(symbols=symbols, end_timestamp=end_timestamp, deltas=deltas)
+    accum_steps = calc_accum_steps(steps_timestamps=steps_timestamps, symbols=symbols, steps=steps, deltas=deltas)
+
+    for symbol in accum_steps:
+        for date in accum_steps[symbol]:
+            print(symbol, date, accum_steps[symbol][date])
+
+    print(accum_steps)
     quit()
 
     for symbol in symbols:
