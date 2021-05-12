@@ -67,8 +67,8 @@ def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
 
     data_length = get_data_length(symbol=symbols[0], end_timestamp=end_timestamp)
 
-    data_length = min(100000, data_length)
-    symbols = symbols[:1]
+    # data_length = min(100000, data_length)
+    # symbols = symbols[:1]
 
     steps = np.zeros((len(symbols), data_length, deltas.shape[0]))
     steps_timestamps = None
@@ -113,42 +113,32 @@ def calc_accum_steps(steps_timestamps: np.ndarray, symbols: list, steps: np.ndar
             current_date += period_length
             kline_idx += period_kline_length
 
-
-        """
-        for kline_idx in range(steps_timestamps.shape[0]):
-            
-            if steps_timestamps[kline_idx] == current_date.timestamp():
-                lookback_minutes = int((current_date - lookback_date).total_seconds()) // 60
-                start_idx = kline_idx - lookback_minutes
-                accum_steps[symbol][current_date] = steps[symbol_idx, start_idx:kline_idx].sum(axis=0)
-                lookback_date += period_length
-                current_date += period_length
-
-        #current_date -= timedelta(days=current_week.weekday() % 7)
-        #next_week = current_week + timedelta(weeks=1)
-
-        weekly_steps[symbol] = {}
-
-        prev_timestamp = datetime.fromtimestamp(steps_timestamps[0], tz=timezone.utc) - timedelta(minutes=1)
-
-        kline_start_idx = 0
-        for kline_idx in range(steps_timestamps.shape[0]):
-
-            if steps_timestamps[kline_idx] == next_week.timestamp():
-                current_week = next_week
-                next_week += timedelta(weeks=1)
-
-                weekly_steps[symbol][current_week] = steps[symbol_idx, kline_start_idx:kline_idx].sum(axis=0)
-
-                print("a", datetime.fromtimestamp(steps_timestamps[kline_idx], tz=timezone.utc), next_week)
-
-            current_timestamp = datetime.fromtimestamp(steps_timestamps[kline_idx], tz=timezone.utc)
-            if current_timestamp - prev_timestamp != timedelta(minutes=1):
-                print("err", current_timestamp, prev_timestamp)
-            prev_timestamp = current_timestamp
-        """
-
     return accum_steps
+
+
+def optimize_delta(accum_steps: dict, deltas: np.ndarray):
+    target = 1000
+    optimized_deltas = {}
+
+    def curve_fun(x, a, b, c):
+        return a / np.log1p(b * x) + c
+
+    def curve_fit(x, y):
+        p_opt, _ = scipy.optimize.curve_fit(curve_fun, x, y, p0=[-5.24722065e-01, -9.76472032e-03, -6.61553567e+02])
+        return p_opt
+
+    for symbol in accum_steps:
+        optimized_deltas[symbol] = {}
+        for date in accum_steps[symbol]:
+            popt = curve_fit(deltas, accum_steps[symbol][date])
+            res = scipy.optimize.minimize_scalar(
+                lambda x: abs(curve_fun(x, *popt) - target),
+                bounds=(0.001, 0.2),
+                method='bounded'
+            )
+            optimized_deltas[symbol][date] = res.x
+
+    return optimized_deltas
 
 
 def main():
@@ -160,12 +150,14 @@ def main():
     end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     steps_timestamps, steps = make_steps(symbols=symbols, end_timestamp=end_timestamp, deltas=deltas)
     accum_steps = calc_accum_steps(steps_timestamps=steps_timestamps, symbols=symbols, steps=steps, deltas=deltas)
+    optim_deltas = optimize_delta(accum_steps=accum_steps, deltas=deltas)
 
-    for symbol in accum_steps:
-        for date in accum_steps[symbol]:
-            print(symbol, date, accum_steps[symbol][date])
+    optim_deltas_file = f"cache/optim_deltas.pkl"
+    with open(optim_deltas_file, 'wb') as f:
+        pickle.dump(optim_deltas, f)
 
-    print(accum_steps)
+    print(optim_deltas)
+
     quit()
 
     for symbol in symbols:
