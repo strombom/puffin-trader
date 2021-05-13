@@ -58,13 +58,6 @@ def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
     except FileNotFoundError:
         pass
 
-    #steps_file_path = f"cache/steps.npy"
-    #try:
-    #    steps = np.load(file=steps_file_path)
-    #    return steps
-    #except FileNotFoundError:
-    #    pass
-
     data_length = get_data_length(symbol=symbols[0], end_timestamp=end_timestamp)
 
     # data_length = min(100000, data_length)
@@ -90,28 +83,46 @@ def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
     with open(steps_file_path, 'wb') as f:
         pickle.dump((steps_timestamps, steps), f)
 
-    #np.save(file=steps_file_path, arr=steps)
     return steps_timestamps, steps
 
 
 def calc_accum_steps(steps_timestamps: np.ndarray, symbols: list, steps: np.ndarray, deltas: np.ndarray):
     lookback_length = timedelta(weeks=1)
     period_length = timedelta(days=1)
-    lookback_kline_length = int(lookback_length.total_seconds()) // 60
-    period_kline_length = int(period_length.total_seconds()) // 60
 
     start_timestamp = steps_timestamps[0]
     accum_steps = {}
 
     for symbol_idx in range(steps.shape[0]):
         symbol = symbols[symbol_idx]
+        print("Calc accum steps", symbol)
         current_date = datetime.fromtimestamp(start_timestamp, tz=timezone.utc) + lookback_length
-        accum_steps[symbol] = {}
-        kline_idx = lookback_kline_length
-        while kline_idx < steps_timestamps.shape[0]:
-            accum_steps[symbol][current_date] = steps[symbol_idx, kline_idx-lookback_kline_length:kline_idx].sum(axis=0)
+
+        kline_idx_start = 0
+
+        def find_kline(kline_idx, target_date):
+            target_timestamp = target_date.timestamp()
+            while kline_idx < steps_timestamps.shape[0] and steps_timestamps[kline_idx] < target_timestamp:
+                kline_idx += 1
+            return kline_idx
+
+        kline_idx_end = find_kline(kline_idx_start, current_date)
+
+        while kline_idx_end < steps_timestamps.shape[0]:
+            """
+            debug_str = f"current date, kline idx: {current_date}  {kline_idx_start} - {kline_idx_end}"
+            debug_str += f"   {datetime.fromtimestamp(steps_timestamps[kline_idx_start], tz=timezone.utc)}"
+            debug_str += f" - {datetime.fromtimestamp(steps_timestamps[kline_idx_end], tz=timezone.utc)}"
+            print(debug_str)
+            """
+
+            if current_date not in accum_steps:
+                accum_steps[current_date] = {}
+
+            accum_steps[current_date][symbol] = steps[symbol_idx, kline_idx_start:kline_idx_end].sum(axis=0)
             current_date += period_length
-            kline_idx += period_kline_length
+            kline_idx_start = kline_idx_end
+            kline_idx_end = find_kline(kline_idx_start, current_date)
 
     return accum_steps
 
@@ -127,16 +138,17 @@ def optimize_delta(accum_steps: dict, deltas: np.ndarray):
         p_opt, _ = scipy.optimize.curve_fit(curve_fun, x, y, p0=[-5.24722065e-01, -9.76472032e-03, -6.61553567e+02])
         return p_opt
 
-    for symbol in accum_steps:
-        optimized_deltas[symbol] = {}
-        for date in accum_steps[symbol]:
-            popt = curve_fit(deltas, accum_steps[symbol][date])
+    for date in accum_steps:
+        print("Optimize delta", date)
+        optimized_deltas[date] = {}
+        for symbol in accum_steps[date]:
+            popt = curve_fit(deltas, accum_steps[date][symbol])
             res = scipy.optimize.minimize_scalar(
                 lambda x: abs(curve_fun(x, *popt) - target),
                 bounds=(0.001, 0.2),
                 method='bounded'
             )
-            optimized_deltas[symbol][date] = res.x
+            optimized_deltas[date][symbol] = res.x
 
     return optimized_deltas
 
@@ -156,7 +168,7 @@ def main():
     with open(optim_deltas_file, 'wb') as f:
         pickle.dump(optim_deltas, f)
 
-    print(optim_deltas)
+    # print(optim_deltas)
 
     quit()
 
