@@ -32,7 +32,7 @@ def main():
     end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     klines_count = int((end_timestamp - start_timestamp).total_seconds() / 60)
 
-    direction_degree = 3
+    direction_degree = 2
     lengths = np.array([10, 12, 15, 18, 22, 27, 33, 39, 47, 56, 68, 82])
     lengths_df = pd.DataFrame(data={'length': lengths})
     lengths_df.to_csv('cache/regime_data_lengths.csv')
