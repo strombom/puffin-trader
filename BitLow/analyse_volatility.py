@@ -109,13 +109,6 @@ def calc_accum_steps(steps_timestamps: np.ndarray, symbols: list, steps: np.ndar
         kline_idx_end = find_kline(kline_idx_start, current_date)
 
         while kline_idx_end < steps_timestamps.shape[0]:
-            """
-            debug_str = f"current date, kline idx: {current_date}  {kline_idx_start} - {kline_idx_end}"
-            debug_str += f"   {datetime.fromtimestamp(steps_timestamps[kline_idx_start], tz=timezone.utc)}"
-            debug_str += f" - {datetime.fromtimestamp(steps_timestamps[kline_idx_end], tz=timezone.utc)}"
-            print(debug_str)
-            """
-
             if current_date not in accum_steps:
                 accum_steps[current_date] = {}
 
@@ -164,124 +157,11 @@ def main():
     accum_steps = calc_accum_steps(steps_timestamps=steps_timestamps, symbols=symbols, steps=steps, deltas=deltas)
     optim_deltas = optimize_delta(accum_steps=accum_steps, deltas=deltas)
 
-    optim_deltas_file = f"cache/optim_deltas.pkl"
+    optim_deltas_file = f"cache/optim_deltas.pickle"
     with open(optim_deltas_file, 'wb') as f:
         pickle.dump(optim_deltas, f)
 
-    # print(optim_deltas)
-
-    quit()
-
-    for symbol in symbols:
-
-        smooth_volatility = calc_smooth_volatility(data)
-        """
-        import matplotlib.pyplot as plt
-        plt.clf()
-        plt.plot(smooth_volatility)
-        plt.title(symbol)
-        plt.show()
-        """
-
-        def curve_fit(x, n_steps_target):
-            n_steps = 1
-
-            runner_trade = Runner(delta=0)
-            for idx, price in enumerate(data['close']):
-                runner_trade.delta = x[0] * smooth_volatility[idx] + x[1]
-                trade_prices = runner_trade.step(price=price)
-                n_steps += len(trade_prices)
-
-            return n_steps - n_steps_target
-
-        ass = []
-        bss = []
-        stepss = []
-        for a in np.arange(start=0.02, stop=0.2, step=0.01):
-            for b in np.arange(start=0.00, stop=0.006, step=0.001):
-                n_steps = curve_fit(x=(a, b), n_steps_target=0)
-                print(round(a, 3), round(b, 3), n_steps)
-                ass.append(a)
-                bss.append(b)
-                stepss.append(n_steps)
-
-        with open(f"cache/analysis.pickle", 'wb') as f:
-            pickle.dump((ass, bss, stepss), f, pickle.HIGHEST_PROTOCOL)
-
-        quit()
-        res = scipy.optimize.least_squares(fun=curve_fit, x0=[0.1, 0.0], args=(5000, ))
-
-        print(sum(smooth_volatility))
-
-        deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
-
-        import matplotlib.pyplot as plt
-        plt.clf()
-        plt.ylim((0, 1))
-        plt.plot(smooth_volatility)
-        # plt.plot(b)
-        plt.title(symbol)
-        print(f"Save {symbol}")
-        plt.savefig(fname=f"tmp/steps_{symbol}.png")
-
-        """
-        def f(x):
-            runner_trade = Runner(delta=0.005)
-            count = 0
-
-            for step_idx, step_value in enumerate(step_values):
-                runner_trade.delta = x[0] * step_value + 0.001
-                trade_prices = runner_trade.step(price=price)
-                count += len(trade_prices)
-
-            print(x, count)
-            return 40000 - count
-
-        res = least_squares(fun=f, x0=[0.005])
-
-        print(res)
-        print()
-        """
-
-        """
-        deltas = np.array([0.005, 0.007, 0.01, 0.02, 0.03, 0.05])
-        steps = np.zeros((data.shape[0], deltas.shape[0]))
-
-        for delta_idx, delta in enumerate(deltas):
-            runner = Runner(delta=delta)
-
-            for time_idx in range(data.shape[0]):
-                ie_prices = runner.step(price=data['close'][time_idx])
-                steps[time_idx, delta_idx] = len(ie_prices)
-
-        steps = pd.DataFrame(data=steps, columns=deltas)
-        s = steps[deltas[0]]
-        a = s.ewm(alpha=1/1000).mean()
-
-        import matplotlib.pyplot as plt
-
-        plt.plot(a)
-        # plt.plot(b)
-        plt.show()
-
-        print(symbol, steps.sum(axis=0))
-        # print()
-        """
-
-        """
-        ema = ExponentialMovingAverage(ema_weight_up=1/1000, ema_weight_down=1/1000, initial_value=0.0)
-        
-        b = np.empty((steps[deltas[0]].shape[0]))
-        for idx, price in enumerate(s):
-            b[idx] = ema.step(price)
-        # b = s.ewm(halflife=500).mean()
-        a /= np.max(a)
-        b /= np.max(b)
-        # b -= 0.1
-
-        """
-
-        # break
+    print(optim_deltas)
 
 
 if __name__ == '__main__':
