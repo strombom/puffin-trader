@@ -125,6 +125,7 @@ class BinanceSimulator:
 
     def market_order(self, order_size, symbol):
         self.order(order_size, symbol, 0.00075 * 2)
+        return True
 
     def sell_pair(self, symbol):
         if self.wallet[symbol] > 0:

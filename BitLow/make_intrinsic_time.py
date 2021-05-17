@@ -73,7 +73,8 @@ def main():
                       directions=directions)
 
         symbol_prices = np.array(symbol_prices)
-        prices.append(np.expand_dims(symbol_prices, axis=0))
+        prices.append(symbol_prices)
+        #prices.append(np.expand_dims(symbol_prices, axis=0))
 
         runner_idx = 0
         kline_idx = 0
@@ -88,6 +89,12 @@ def main():
                 runner_idx += 1
             indicators[symbol_idx, :, kline_idx] = directions[:, runner_idx]
             kline_idx += 1
+
+    min_len = 1e99
+    for price in prices:
+        min_len = min(min_len, price.shape[0])
+    for idx in range(len(prices)):
+        prices[idx] = np.expand_dims(prices[idx][:min_len], axis=0)
 
     prices = np.concatenate(prices, axis=0)
 
