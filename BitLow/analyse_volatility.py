@@ -1,8 +1,11 @@
+import queue
 
 import scipy
 import pickle
+import scipy.signal
 import numpy as np
 import pandas as pd
+import multiprocessing
 from datetime import datetime, timezone, timedelta
 from scipy.optimize import least_squares
 
@@ -36,6 +39,14 @@ def calc_smooth_volatility(data):
 
 
 def get_data_length(symbol: str, end_timestamp: datetime):
+    data_length_file_path = f"cache/tmp_get_data_length.pickle"
+    try:
+        with open(data_length_file_path, 'rb') as f:
+            data_length = pickle.load(f)
+            return data_length
+    except FileNotFoundError:
+        pass
+
     file_path = f"cache/klines/{symbol}.hdf"
     klines = pd.DataFrame(pd.read_hdf(file_path))
 
@@ -46,7 +57,41 @@ def get_data_length(symbol: str, end_timestamp: datetime):
             data_length = idx
             break
 
+    with open(data_length_file_path, 'wb') as f:
+        pickle.dump(data_length, f)
+
     return data_length
+
+
+def process_steps(task_queue_, result_queue_, data_length, deltas, process_id):
+    steps_timestamps = None
+    print(f"p start {process_id}")
+    while True:
+        try:
+            symbol_idx, symbol = task_queue_.get(block=False)
+        except queue.Empty:
+            break
+
+        print(f"Process[{process_id}] {symbol} start")
+
+        file_path = f"cache/klines/{symbol}.hdf"
+        klines = pd.DataFrame(pd.read_hdf(file_path))
+        klines = klines[:data_length]
+
+        if steps_timestamps is None:
+            steps_timestamps = klines['open_time'][:data_length].to_numpy() / 1000
+
+        steps = np.zeros((data_length, deltas.shape[0]))
+        for delta_idx, delta in enumerate(deltas):
+            runner = Runner(delta=delta)
+            for kline_idx, row in klines.iterrows():
+                ie_events = runner.step(row['close'])
+                steps[kline_idx, delta_idx] = len(ie_events)
+
+        result_queue_.put((symbol_idx, steps))
+        print(f"Process[{process_id}] {symbol} done")
+
+    print(f"p stop {process_id}")
 
 
 def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
@@ -63,22 +108,29 @@ def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
     # data_length = min(100000, data_length)
     # symbols = symbols[:1]
 
-    steps = np.zeros((len(symbols), data_length, deltas.shape[0]))
-    steps_timestamps = None
+    task_queue = multiprocessing.Queue()
+    result_queue = multiprocessing.Queue()
+
+    #task_queue.put((0, symbols[0]))
+    #process_steps(task_queue, result_queue, data_length, deltas)
 
     for symbol_idx, symbol in enumerate(symbols):
-        file_path = f"cache/klines/{symbol}.hdf"
-        klines = pd.DataFrame(pd.read_hdf(file_path))
-        klines = klines[:data_length]
+        task_queue.put((symbol_idx, symbol))
 
-        if steps_timestamps is None:
-            steps_timestamps = klines['open_time'][:data_length].to_numpy() / 1000
+    processes = []
+    for n in range(min(multiprocessing.cpu_count() - 3, len(symbols))):
+        p = multiprocessing.Process(target=process_steps, args=(task_queue, result_queue, data_length, deltas, n))
+        processes.append(p)
+        p.start()
 
-        for delta_idx, delta in enumerate(deltas):
-            runner = Runner(delta=delta)
-            for kline_idx, row in klines.iterrows():
-                ie_events = runner.step(row['close'])
-                steps[symbol_idx, kline_idx, delta_idx] = len(ie_events)
+    for p in processes:
+        p.join()
+
+    steps = np.zeros((len(symbols), data_length, deltas.shape[0]))
+    while not result_queue.empty():
+        symbol_idx, symbol_steps = result_queue.get()
+        print(f"Got result {symbol_idx}")
+        steps[symbol_idx] = symbol_steps
 
     with open(steps_file_path, 'wb') as f:
         pickle.dump((steps_timestamps, steps), f)
@@ -138,7 +190,7 @@ def optimize_delta(accum_steps: dict, deltas: np.ndarray):
             popt = curve_fit(deltas, accum_steps[date][symbol])
             res = scipy.optimize.minimize_scalar(
                 lambda x: abs(curve_fun(x, *popt) - target),
-                bounds=(0.001, 0.2),
+                bounds=(0.0002, 0.2),
                 method='bounded'
             )
             optimized_deltas[date][symbol] = res.x
@@ -146,16 +198,47 @@ def optimize_delta(accum_steps: dict, deltas: np.ndarray):
     return optimized_deltas
 
 
+def moving_median(data_set, periods=5):
+    import scipy.signal
+    symbols = list(data_set[next(iter(data_set))].keys())
+    values = np.empty((len(symbols), len(data_set)))
+
+    for symbol_idx_, symbol_ in enumerate(symbols):
+        for date_idx, date_ in enumerate(data_set):
+            values[symbol_idx_][date_idx] = data_set[date_][symbol_]
+
+    for symbol_idx_, symbol_ in enumerate(symbols):
+        offset = periods // 2
+        filtered = scipy.signal.medfilt(values[symbol_idx_], kernel_size=periods)
+        filtered = np.concatenate((
+            np.ones(offset) * filtered[0],
+            filtered[0:filtered.shape[0] - offset]
+        ))
+        values[symbol_idx_] = filtered
+
+    for symbol_idx_, symbol_ in enumerate(symbols):
+        for date_idx, date_ in enumerate(data_set):
+            data_set[date_][symbol_] = values[symbol_idx_][date_idx]
+
+    return data_set
+
+
 def main():
     with open(f"cache/filtered_symbols.pickle", 'rb') as f:
         symbols = pickle.load(f)
 
-    deltas = np.array([0.002, 0.004, 0.008, 0.016, 0.032, 0.064])
+    # symbols = ['ADAUSDT', 'BTCUSDT', 'FTMUSDT', 'ETHUSDT']
+
+    deltas = np.array([0.001, 0.003, 0.006, 0.016, 0.032, 0.064])
 
     end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     steps_timestamps, steps = make_steps(symbols=symbols, end_timestamp=end_timestamp, deltas=deltas)
+
+    avg = np.average(steps, axis=1)
     accum_steps = calc_accum_steps(steps_timestamps=steps_timestamps, symbols=symbols, steps=steps, deltas=deltas)
     optim_deltas = optimize_delta(accum_steps=accum_steps, deltas=deltas)
+
+    optim_deltas = moving_median(optim_deltas)
 
     optim_deltas_file = f"cache/optim_deltas.pickle"
     with open(optim_deltas_file, 'wb') as f:
