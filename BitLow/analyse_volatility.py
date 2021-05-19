@@ -1,3 +1,4 @@
+import io
 import queue
 
 import scipy
@@ -39,14 +40,6 @@ def calc_smooth_volatility(data):
 
 
 def get_data_length(symbol: str, end_timestamp: datetime):
-    data_length_file_path = f"cache/tmp_get_data_length.pickle"
-    try:
-        with open(data_length_file_path, 'rb') as f:
-            data_length = pickle.load(f)
-            return data_length
-    except FileNotFoundError:
-        pass
-
     file_path = f"cache/klines/{symbol}.hdf"
     klines = pd.DataFrame(pd.read_hdf(file_path))
 
@@ -57,18 +50,14 @@ def get_data_length(symbol: str, end_timestamp: datetime):
             data_length = idx
             break
 
-    with open(data_length_file_path, 'wb') as f:
-        pickle.dump(data_length, f)
-
     return data_length
 
 
-def process_steps(task_queue_, result_queue_, data_length, deltas, process_id):
+def process_steps(task_queue, data_length, deltas, process_id):
     steps_timestamps = None
-    print(f"p start {process_id}")
     while True:
         try:
-            symbol_idx, symbol = task_queue_.get(block=False)
+            symbol_idx, symbol = task_queue.get(block=False)
         except queue.Empty:
             break
 
@@ -82,16 +71,17 @@ def process_steps(task_queue_, result_queue_, data_length, deltas, process_id):
             steps_timestamps = klines['open_time'][:data_length].to_numpy() / 1000
 
         steps = np.zeros((data_length, deltas.shape[0]))
+
         for delta_idx, delta in enumerate(deltas):
             runner = Runner(delta=delta)
             for kline_idx, row in klines.iterrows():
                 ie_events = runner.step(row['close'])
                 steps[kline_idx, delta_idx] = len(ie_events)
 
-        result_queue_.put((symbol_idx, steps))
-        print(f"Process[{process_id}] {symbol} done")
+        with open(f'cache/volatility/{symbol}.np', 'wb') as f:
+            np.save(f, steps)
 
-    print(f"p stop {process_id}")
+        print(f"Process[{process_id}] {symbol} done")
 
 
 def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
@@ -105,32 +95,31 @@ def make_steps(symbols: list, end_timestamp: datetime, deltas: np.ndarray):
 
     data_length = get_data_length(symbol=symbols[0], end_timestamp=end_timestamp)
 
-    # data_length = min(100000, data_length)
-    # symbols = symbols[:1]
-
     task_queue = multiprocessing.Queue()
-    result_queue = multiprocessing.Queue()
-
-    #task_queue.put((0, symbols[0]))
-    #process_steps(task_queue, result_queue, data_length, deltas)
 
     for symbol_idx, symbol in enumerate(symbols):
         task_queue.put((symbol_idx, symbol))
 
-    processes = []
+    ps = []
     for n in range(min(multiprocessing.cpu_count() - 3, len(symbols))):
-        p = multiprocessing.Process(target=process_steps, args=(task_queue, result_queue, data_length, deltas, n))
-        processes.append(p)
+        p = multiprocessing.Process(target=process_steps, args=(task_queue, data_length, deltas, n))
+        ps.append(p)
         p.start()
 
-    for p in processes:
+    for p in ps:
         p.join()
 
     steps = np.zeros((len(symbols), data_length, deltas.shape[0]))
-    while not result_queue.empty():
-        symbol_idx, symbol_steps = result_queue.get()
-        print(f"Got result {symbol_idx}")
-        steps[symbol_idx] = symbol_steps
+
+    for symbol_idx, symbol in enumerate(symbols):
+        with open(f'cache/volatility/{symbol}.np', 'rb') as f:
+            steps_symbol = np.load(f)
+            steps[symbol_idx] = steps_symbol
+
+    file_path = f"cache/klines/{symbols[0]}.hdf"
+    klines = pd.DataFrame(pd.read_hdf(file_path))
+    klines = klines[:data_length]
+    steps_timestamps = klines['open_time'][:data_length].to_numpy() / 1000
 
     with open(steps_file_path, 'wb') as f:
         pickle.dump((steps_timestamps, steps), f)
@@ -227,11 +216,11 @@ def main():
     with open(f"cache/filtered_symbols.pickle", 'rb') as f:
         symbols = pickle.load(f)
 
-    # symbols = ['ADAUSDT', 'BTCUSDT', 'FTMUSDT', 'ETHUSDT']
+    symbols = ['ADAUSDT', 'BTCUSDT', 'FTMUSDT', 'ETHUSDT']
 
     deltas = np.array([0.001, 0.003, 0.006, 0.016, 0.032, 0.064])
 
-    end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    end_timestamp = datetime.strptime("2020-03-30 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     steps_timestamps, steps = make_steps(symbols=symbols, end_timestamp=end_timestamp, deltas=deltas)
 
     avg = np.average(steps, axis=1)
