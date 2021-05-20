@@ -24,7 +24,7 @@ if __name__ == '__main__':
     ax1.grid(which='minor', alpha=0.15)
     ax1.grid(which='major', alpha=0.4)
     ax1.set_yscale('log')
-    ax1.set_xscale('linear', base=1)
+    ax1.set_xscale('linear') # , base=1)
     ax1.yaxis.set_major_formatter(ScalarFormatter())
     ax1.ticklabel_format(axis='y', style='plain')
     ax1.xaxis.set_minor_locator(AutoMinorLocator())

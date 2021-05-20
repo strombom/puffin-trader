@@ -1,20 +1,26 @@
 
-import os, csv
+import os
+import csv
+import gzip
 import pickle
+import urllib.request
+from io import BytesIO, StringIO
 from datetime import datetime, timedelta, timezone
 
 from Common.Misc import string_to_datetime
 
 
 def make_data():
-    file_path = f"C:/Users/{os.getlogin()}/Downloads/bitstampUSD.csv/.bitstampUSD.csv"
+    response = urllib.request.urlopen('http://api.bitcoincharts.com/v1/csv/bitstampUSD.csv.gz')
+    compressed_data = BytesIO(response.read())
+    file_content = gzip.GzipFile(fileobj=compressed_data).read().decode('utf-8')
+
     last_hour = string_to_datetime("2011-09-14 00:00:00.0")
 
     timestamps, prices = [], []
-    with open(file_path, 'r') as csv_file:
+    with StringIO(file_content) as csv_file:
         for row in csv.reader(csv_file):
             timestamp = datetime.fromtimestamp(float(row[0]), tz=timezone.utc)
-
             if timestamp > last_hour:
                 price = float(row[1])
                 prices.append(price)

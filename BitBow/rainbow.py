@@ -1,4 +1,5 @@
 import math
+import os
 import pickle
 
 import numpy as np
@@ -8,7 +9,7 @@ from matplotlib.ticker import ScalarFormatter
 from scipy.optimize import leastsq
 
 from Common.Misc import string_to_datetime
-from make_data import get_data
+import make_data
 
 
 bitcoin_inception = string_to_datetime("2009-01-09 00:00:00.0")
@@ -56,13 +57,21 @@ def rainbow_indicator(params, timestamp: datetime, price, rainbow_n=7):
 
 
 if __name__ == '__main__':
-    timestamps_bitstamp, prices = get_data()
+    #timestamps, prices = make_data.make_data()
+
+    #if not os.path.exists('cache'):
+    #    os.makedirs('cache')
+
+    #with open(f"cache/bitstamp_hourly.pickle", 'wb') as f:
+    #    pickle.dump((timestamps, prices), f, pickle.HIGHEST_PROTOCOL)
+
+    timestamps_bitstamp, prices = make_data.get_data()
     timestamps_bitstamp, prices = np.array(timestamps_bitstamp), np.array(prices)
     print(f'start {timestamps_bitstamp[0]} - end {timestamps_bitstamp[-1]}')
 
     timestamps_extended = []
     timestamp = string_to_datetime("2011-01-01 00:00:00.0")
-    while timestamp < string_to_datetime("2022-01-01 00:00:00.0"):
+    while timestamp < string_to_datetime("2032-01-01 00:00:00.0"):
         timestamps_extended.append(timestamp)
         timestamp += timedelta(hours=1)
 
@@ -88,9 +97,10 @@ if __name__ == '__main__':
     rainbow_top = rainbow_generate(timestamps_extended, rainbow_top_params)
 
     timestamps_bot = [string_to_datetime("2012-10-27 00:00:00.0"),
-                      string_to_datetime("2015-08-24 00:00:00.0"),
-                      string_to_datetime("2020-03-23 00:00:00.0")]
-    prices_bot = [9.5, 202.0, 5816.0]
+                      string_to_datetime("2016-05-22 00:00:00.0"),
+                      string_to_datetime("2017-03-25 00:00:00.0"),
+                      string_to_datetime("2020-10-08 00:00:00.0")]
+    prices_bot = [9.5, 438.0, 900.0, 10557.0]
     regr_bot_params = rainbow_regression(timestamps_bot, prices_bot)
     rainbow_bot = rainbow_generate(timestamps_extended, regr_bot_params)
 
@@ -111,7 +121,7 @@ if __name__ == '__main__':
                 print(" ", timestamp, price)
                 break
 
-    rainbow_n = 7
+    rainbow_n = 9
     log_top, log_bot = np.log(rainbow_top), np.log(rainbow_bot)
     log_diff = (log_top - log_bot) / (rainbow_n - 2)
     log_bot = log_bot - log_diff
@@ -133,7 +143,7 @@ if __name__ == '__main__':
                          alpha=0.55)
 
     ax1.plot(timestamps_bitstamp, prices, c='white', linewidth=1.0)
-    ax1.plot(timestamps_bitstamp, prices, c='black', linewidth=0.5, label=f'Price')
+    ax1.plot(timestamps_bitstamp, prices, c='black', linewidth=0.5, label=f'BTCUSD')
     ax1.legend()
 
     # ax2.grid(True)
