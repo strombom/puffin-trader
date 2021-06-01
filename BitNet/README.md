@@ -11,4 +11,6 @@
 1. make_indicators.py
    - indicators/[symbol].pickle
    
-1. 
+1. make_training_data.py
+   - training_data.pickle
+   
