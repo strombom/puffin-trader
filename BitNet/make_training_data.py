@@ -81,7 +81,6 @@ def main():
         #break
 
     input_symbols = []
-
     data_input = np.empty((lengths.shape[0], total_data_length))
     data_output = np.empty((len(limits), total_data_length))
     data_offset = 0
@@ -93,6 +92,7 @@ def main():
         data_input[:, data_offset:data_offset + data_length] = indicators[symbol]['indicators'][:, skip_start:skip_start + data_length]
         data_output[:, data_offset:data_offset + data_length] = ground_truth[symbol]
         data_offset += data_length
+        input_symbols.extend([symbol] * data_length)
 
     with open(f"cache/training_data.pickle", 'wb') as f:
         pickle.dump({
