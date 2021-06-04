@@ -42,10 +42,10 @@ def make_indicator(lock, task_queue):
         direction_degree = parameters['direction_degree']
         n_timesteps = parameters['n_timesteps']
 
-        indicators = np.empty((len(lengths), n_timesteps))
+        indicators = np.zeros((len(lengths), n_timesteps))
 
         timestamps = np.array(intrinsic_events[symbol]['timestamps'])
-        prices = np.array(intrinsic_events[symbol]['prices'])
+        prices = np.array(intrinsic_events[symbol]['steps'])
 
         print(f"Processing {symbol}")
 
@@ -57,8 +57,8 @@ def make_indicator(lock, task_queue):
                       directions=directions)
 
         direction_idx = 0
-        for indicator_idx in range(n_timesteps):
-            while timestamps[direction_idx] < indicator_idx:
+        for indicator_idx in range(timestamps[0], n_timesteps):
+            while indicator_idx > timestamps[direction_idx]:
                 direction_idx += 1
             indicators[:, indicator_idx] = directions[:, direction_idx]
 
@@ -80,7 +80,7 @@ def main():
     end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
     direction_degree = 3
-    lengths = np.array([5, 10, 20, 50, 100, 200, 500])
+    lengths = np.array([7, 10, 15, 22, 33, 47, 68, 100, 150])
     lengths_df = pd.DataFrame(data={'length': lengths})
     lengths_df.to_csv('cache/regime_data_lengths.csv')
 
