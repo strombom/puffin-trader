@@ -33,11 +33,14 @@ def main():
     with open(f"cache/intrinsic_events.pickle", 'rb') as f:
         intrinsic_events = pickle.load(f)
 
+    intrinsic_events = dict(list(intrinsic_events.items())[:int(len(intrinsic_events) * 0.2)])
+
     limits = [
         (1.03, 0.93), (1.04, 0.94), (1.05, 0.95), (1.06, 0.96), (1.07, 0.97)
     ]
 
     lengths = pd.read_csv('cache/regime_data_lengths.csv')['length'].to_numpy()
+    degrees = [1, 2, 3]
 
     skip_start = 60 * 24 * 30
 
@@ -49,7 +52,7 @@ def main():
         with open(f"{path}/{symbol}.pickle", 'rb') as f:
             indicators[symbol] = pickle.load(f)
 
-        data_length = indicators[symbol]['indicators'].shape[1]
+        data_length = indicators[symbol]['indicators'].shape[2]
 
         ground_truth[symbol] = np.empty((len(limits), data_length))
 
@@ -78,10 +81,9 @@ def main():
         ground_truth[symbol] = ground_truth[symbol][:, skip_start:skip_end]
 
         total_data_length += ground_truth[symbol].shape[1]
-        #break
 
     input_symbols = []
-    data_input = np.empty((lengths.shape[0], total_data_length))
+    data_input = np.empty((lengths.shape[0] * len(degrees), total_data_length))
     data_output = np.empty((len(limits), total_data_length))
     data_offset = 0
     for symbol in indicators:
@@ -89,7 +91,9 @@ def main():
         if data_length <= 0:
             print("Bad length", symbol, data_length)
             continue
-        data_input[:, data_offset:data_offset + data_length] = indicators[symbol]['indicators'][:, skip_start:skip_start + data_length]
+        tmp_indicators = indicators[symbol]['indicators'][:, :, skip_start:skip_start + data_length]
+        tmp_indicators = tmp_indicators.reshape((tmp_indicators.shape[0] * tmp_indicators.shape[1], tmp_indicators.shape[2]))
+        data_input[:, data_offset:data_offset + data_length] = tmp_indicators
         data_output[:, data_offset:data_offset + data_length] = ground_truth[symbol]
         data_offset += data_length
         input_symbols.extend([symbol] * data_length)
@@ -100,7 +104,9 @@ def main():
             'skip_start': skip_start,
             'input': data_input,
             'input_symbols': input_symbols,
-            'output': data_output
+            'output': data_output,
+            'lengths': lengths,
+            'degrees': degrees
         }, f)
 
     print("done")

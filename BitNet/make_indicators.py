@@ -39,35 +39,36 @@ def make_indicator(lock, task_queue):
         lengths = parameters['lengths']
         start_timestamp = parameters['start_timestamp']
         end_timestamp = parameters['end_timestamp']
-        direction_degree = parameters['direction_degree']
+        direction_degrees = parameters['direction_degrees']
         n_timesteps = parameters['n_timesteps']
 
-        indicators = np.zeros((len(lengths), n_timesteps))
+        indicators = np.zeros((len(lengths), len(direction_degrees), n_timesteps))
 
         timestamps = np.array(intrinsic_events[symbol]['timestamps'])
         prices = np.array(intrinsic_events[symbol]['steps'])
 
         print(f"Processing {symbol}")
 
-        directions = np.zeros((len(lengths), timestamps.shape[0]))
+        for direction_degree in direction_degrees:
+            directions = np.zeros((len(lengths), timestamps.shape[0]))
 
-        make_spectrum(lengths=lengths,
-                      prices=prices,
-                      poly_order=direction_degree,
-                      directions=directions)
+            make_spectrum(lengths=lengths,
+                          prices=prices,
+                          poly_order=direction_degree,
+                          directions=directions)
 
-        direction_idx = 0
-        for indicator_idx in range(timestamps[0], n_timesteps):
-            while indicator_idx > timestamps[direction_idx]:
-                direction_idx += 1
-            indicators[:, indicator_idx] = directions[:, direction_idx]
+            direction_idx = 0
+            for indicator_idx in range(timestamps[0], n_timesteps):
+                while indicator_idx > timestamps[direction_idx]:
+                    direction_idx += 1
+                indicators[:, direction_degree - 1, indicator_idx] = directions[:, direction_idx]
 
         path = f"cache/indicators"
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         with open(f"{path}/{symbol}.pickle", 'wb') as f:
             pickle.dump({
                 'lengths': lengths,
-                'directions': directions,
+                #'directions': directions,
                 'indicators': indicators
             }, f)
 
@@ -79,7 +80,7 @@ def main():
     start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
-    direction_degree = 3
+    direction_degrees = [1, 2, 3]
     lengths = np.array([7, 10, 15, 22, 33, 47, 68, 100, 150])
     lengths_df = pd.DataFrame(data={'length': lengths})
     lengths_df.to_csv('cache/regime_data_lengths.csv')
@@ -95,7 +96,7 @@ def main():
             'start_timestamp': start_timestamp,
             'end_timestamp': end_timestamp,
             'lengths': list(lengths),
-            'direction_degree': direction_degree,
+            'direction_degrees': direction_degrees,
             'n_timesteps': n_timesteps
         })
 
