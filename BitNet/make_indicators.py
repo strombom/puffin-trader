@@ -81,7 +81,7 @@ def main():
     end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
     direction_degrees = [1, 2, 3]
-    lengths = np.array([7, 10, 15, 22, 33, 47, 68, 100, 150])
+    lengths = np.array([5, 7, 11, 15, 22, 33, 47, 68, 100])
     lengths_df = pd.DataFrame(data={'length': lengths})
     lengths_df.to_csv('cache/regime_data_lengths.csv')
 

@@ -10,7 +10,7 @@ from datetime import datetime
 def calculate_volume():
     start_timestamp = datetime.strptime("2020-01-01 01:00:00", "%Y-%m-%d %H:%M:%S")
     min_volatility = 0.1
-    min_volume = 500000000
+    min_volume = 15_000_000_000
 
     volatilities = {}
     volumes = {}
@@ -39,8 +39,8 @@ def calculate_volume():
 
     volumes = sorted(volumes.items(), key=operator.itemgetter(1), reverse=True)
     volatilities = sorted(volatilities.items(), key=operator.itemgetter(1), reverse=True)
-    print(volumes)
-    print(volatilities)
+    print(len(volumes), volumes)
+    print(len(volatilities), volatilities)
 
     return symbols
 

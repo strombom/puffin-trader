@@ -33,7 +33,7 @@ def main():
     with open(f"cache/intrinsic_events.pickle", 'rb') as f:
         intrinsic_events = pickle.load(f)
 
-    intrinsic_events = dict(list(intrinsic_events.items())[:int(len(intrinsic_events) * 0.2)])
+    intrinsic_events = dict(list(intrinsic_events.items())[:int(len(intrinsic_events) * 1.0)])
 
     limits = [
         (1.03, 0.93), (1.04, 0.94), (1.05, 0.95), (1.06, 0.96), (1.07, 0.97)
@@ -71,7 +71,6 @@ def main():
             #axs[0].set_yscale('log')
             #axs[1].plot(profits)
             #plt.show()
-            #break
 
         end_of_truth = ground_truth[symbol].shape[1] - 1
         while not np.all(ground_truth[symbol][:, end_of_truth]):
@@ -81,6 +80,7 @@ def main():
         ground_truth[symbol] = ground_truth[symbol][:, skip_start:skip_end]
 
         total_data_length += ground_truth[symbol].shape[1]
+        #break
 
     input_symbols = []
     data_input = np.empty((lengths.shape[0] * len(degrees), total_data_length))
@@ -92,6 +92,7 @@ def main():
             print("Bad length", symbol, data_length)
             continue
         tmp_indicators = indicators[symbol]['indicators'][:, :, skip_start:skip_start + data_length]
+        tmp_indicators = np.transpose(tmp_indicators, (1, 0, 2))
         tmp_indicators = tmp_indicators.reshape((tmp_indicators.shape[0] * tmp_indicators.shape[1], tmp_indicators.shape[2]))
         data_input[:, data_offset:data_offset + data_length] = tmp_indicators
         data_output[:, data_offset:data_offset + data_length] = ground_truth[symbol]
