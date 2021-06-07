@@ -1,5 +1,7 @@
 import os
 import json
+import pathlib
+
 import pandas as pd
 import pyrate_limiter
 from datetime import datetime
@@ -7,7 +9,9 @@ from binance.client import Client
 
 
 def download_klines(client: Client, symbol: str, start_time: str):
-    file_path = f"cache/klines/{symbol}.hdf"
+    path = f"cache/klines_new"
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    file_path = f"{path}/{symbol}.hdf"
     print(f"Downloading {file_path}")
 
     if os.path.exists(file_path):
@@ -60,14 +64,22 @@ def main():
 
     exchange_info = client.get_exchange_info()
 
-    symbol = "BTCUSDT"
-    download_klines(client=client, symbol=symbol, start_time=start_time)
+    #symbol = "BTCUSDT"
+    #download_klines(client=client, symbol=symbol, start_time=start_time)
 
-    quit()
+    #quit()
 
-    for symbol in exchange_info['symbols']:
-        if symbol['symbol'].endswith('USDT') and symbol['isMarginTradingAllowed'] and 'MARGIN' in symbol['permissions']:
-            download_klines(client=client, symbol=symbol['symbol'], start_time=start_time)
+    #symbols = {}
+
+    for base_symbol in ['USDT', 'BUSD', 'USDC']:
+        #symbols[base_symbol] = []
+        for symbol in exchange_info['symbols']:
+            if symbol['symbol'].endswith(base_symbol) and symbol['isMarginTradingAllowed'] and 'MARGIN' in symbol['permissions']:
+                #symbols[base_symbol].append(symbol['symbol'])
+                download_klines(client=client, symbol=symbol['symbol'], start_time=start_time)
+
+    #for base_symbol in symbols:
+    #    print(len(symbols[base_symbol]), symbols[base_symbol])
 
 
 if __name__ == '__main__':
