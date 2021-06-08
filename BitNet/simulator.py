@@ -60,6 +60,8 @@ def main():
     np.fill_diagonal(tmp_symbol_columns, True)
     df_symbols = pd.DataFrame(tmp_symbol_columns, columns=symbols)
 
+    random_symbol_order = list(range(len(symbols)))
+
     portfolio = Portfolio()
 
     for kline_idx in range(kline_start_idx, data_length):
@@ -67,24 +69,27 @@ def main():
             print(position)
 
         if portfolio.has_cash():
-
-            #symbols_random_order = random.sample(population=symbols, k=len(symbols))
-            #tmp_symbol_columns.fill(False)
-
             for symbol_idx, symbol in enumerate(symbols):
                 tmp_indicator_columns[symbol_idx] = indicators[symbol]['indicators'][:, :, kline_idx].transpose().flatten()
 
             df_indicators = pd.DataFrame(data=tmp_indicator_columns, columns=indicator_column_names)
-
             df = pd.concat([df_symbols, df_indicators], axis=1)
 
             test_dl = profit_model.dls.test_dl(df)
             predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
 
-            print(predictions)
+            random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
 
+            k = 0.001
+            for symbol_idx in random_symbol_order:
+                prediction = predictions[symbol_idx]
+                if prediction > 0:  # and predictions_ema50[idx] > 0:
+                    t = k * 100 ** prediction
+                    r = random.random()
+                    if r < t:
+                        print("buy", kline_idx, symbols[symbol_idx])
 
-
+            #print(predictions)
 
 
 if __name__ == '__main__':
