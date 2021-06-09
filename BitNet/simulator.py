@@ -80,14 +80,15 @@ def main():
 
             random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
 
-            k = 0.001
+            k = 0.0001
             for symbol_idx in random_symbol_order:
                 prediction = predictions[symbol_idx]
                 if prediction > 0:  # and predictions_ema50[idx] > 0:
-                    t = k * 100 ** prediction
+                    t = k * 25 ** prediction
                     r = random.random()
                     if r < t:
                         print("buy", kline_idx, symbols[symbol_idx])
+                        break
 
             #print(predictions)
 
