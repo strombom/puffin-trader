@@ -40,11 +40,14 @@ class BinanceSimulator:
     def set_mark_price(self, symbol, mark_price):
         self.mark_price[symbol] = mark_price
 
-    def get_value_usdt(self):
+    def get_equity_usdt(self):
         value = 0.0
         for pair in self.wallet:
             value += (self.wallet[pair] - self.debt[pair]) * self.mark_price[pair]
         return value
+
+    def get_cash_usdt(self):
+        return self.wallet['usdt'] - self.debt['usdt']
 
     def calculate_margin(self):
         total_asset_value = self.wallet['usdt']

@@ -10,12 +10,17 @@ from BinanceSimulator.binance_simulator import BinanceSimulator
 
 
 class Portfolio:
+    position_max_count = 10
+
     def __init__(self):
         self.cash = 1000
         self.positions = []
 
-    def has_cash(self):
-        return True
+    def add_position(self, symbol: str, position_size: float):
+        self.positions.append({
+            'symbol': symbol,
+            'size': position_size
+        })
 
 
 def main():
@@ -65,10 +70,16 @@ def main():
     portfolio = Portfolio()
 
     for kline_idx in range(kline_start_idx, data_length):
+        for symbol in symbols:
+            mark_price = klines[symbol]['close'][kline_idx]
+            simulator.set_mark_price(symbol=symbol, mark_price=mark_price)
+
         for position in portfolio.positions:
             print(position)
 
-        if portfolio.has_cash():
+        equity = simulator.get_equity_usdt()
+        cash = simulator.get_cash_usdt()
+        if cash > equity / portfolio.position_max_count:
             for symbol_idx, symbol in enumerate(symbols):
                 tmp_indicator_columns[symbol_idx] = indicators[symbol]['indicators'][:, :, kline_idx].transpose().flatten()
 
@@ -87,7 +98,16 @@ def main():
                     t = k * 25 ** prediction
                     r = random.random()
                     if r < t:
-                        print("buy", kline_idx, symbols[symbol_idx])
+                        mark_price = klines[symbols[symbol_idx]]['close'][kline_idx]
+                        simulator.set_mark_price(symbol=symbols[symbol_idx], mark_price=mark_price)
+
+                        position_value = min(equity / portfolio.position_max_count, cash)
+                        position_size = position_value / mark_price * 0.98
+
+                        simulator.market_order(order_size=position_size, symbol=symbols[symbol_idx])
+                        print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
+
+                        portfolio.add_position(symbol=symbols[symbol_idx], position_size=position_size)
                         break
 
             #print(predictions)
