@@ -7,66 +7,96 @@ from datetime import datetime, timedelta
 from binance import Client, ThreadedWebsocketManager
 
 
-class Klines:
+class MinutePriceBuffer:
     def __init__(self, symbol_count: int):
         self.symbol_count = symbol_count
 
+        # Only used while downloading historical klines
         self.last_idx = 0
+        self.history_prices = {}
+        #self.history_current_prices = {}
 
-        self.history_klines = []
-        self.history_current_kline = {}
-
-        self.buffer = collections.deque(maxlen=30 * 24 * 60)
-        self.buffer_current_kline = {}
+        # 30 day buffer
+        self.buffer_prices = collections.deque(maxlen=30 * 24 * 60)
 
         self.lock = threading.Lock()
 
-    def append(self, symbol: str, price: float):
+    def append(self, prices: dict):
+        # Append live data
         with self.lock:
-            self.buffer_current_kline[symbol] = price
-            if len(self.buffer_current_kline) == self.symbol_count:
-                self.buffer.append(self.buffer_current_kline)
-                self.last_idx += 1
-                self.buffer_current_kline.clear()
+            self.buffer_prices.append(prices)
 
     def history_append(self, symbol: str, price: float):
-        self.history_current_kline[symbol] = price
-        if len(self.history_current_kline) == self.symbol_count:
-            self.history_klines.append(self.history_current_kline)
-            self.history_current_kline = {}
+        # Create history
+        if symbol not in self.history_prices:
+            self.history_prices[symbol] = []
+        self.history_prices[symbol].append(price)
 
     def history_finish(self):
-        with self.lock:
-            for kline in reversed(self.history_klines):
-                self.buffer.appendleft(kline)
-                if len(self.buffer) == self.buffer.maxlen:
-                    break
+        # Check that all historical prices have the same length
+        lengths = [len(self.history_prices[symbol]) for symbol in self.history_prices]
+        if not all(x == lengths[0] for x in lengths):
+            print("Error! Not all historical prices have the same length!")
+            quit()
+
+        # Add history to buffer
+        for idx in range(lengths[0] - 1, 0, -1):
+            prices = {}
+            for symbol in self.history_prices:
+                prices[symbol] = self.history_prices[symbol][idx]
+            with self.lock:
+                if len(self.buffer_prices) == self.buffer_prices.maxlen:
+                    return
+                self.buffer_prices.appendleft(prices)
 
 
 class BinanceKlines:
-    def __init__(self, klines: Klines, binance_client: Client, start_time: datetime, symbols: list):
-        self.mark_prices = {}
-
+    def __init__(self, klines: MinutePriceBuffer, start_time: datetime, symbols: list):
         self._klines = klines
-        self._client = binance_client
-        self._assets = {}
-        self._kline_threads = {}
         self.symbols = symbols
+        self.current_prices = {}
+
+        history_end_time = datetime.utcnow()
+        self.next_timestamp = history_end_time + timedelta(seconds=4)
+
+        with open('binance_account.json') as f:
+            account_info = json.load(f)
+
+        self._client = Client(
+            api_key=account_info['api_key'],
+            api_secret=account_info['api_secret']
+        )
 
         #self.check_symbols()
 
-        def process_kline_message(data):
-            if data['e'] == 'kline':
-                self.mark_prices[data['s']] = float(data['k']['c'])
+        def process_tick_message(data):
+            symbol = data['data']['s']
+            last_price = float(data['data']['p'])
+            self.current_prices[symbol] = last_price
 
-        for symbol in self.symbols:
-            kline_socket_manager = BinanceSocketManager(self._client)
-            kline_socket_manager.start_kline_socket(symbol=symbol, callback=process_kline_message, interval='1m')
-            kline_socket_manager.start()
-            self._kline_threads[symbol] = kline_socket_manager
+            current_timestamp = datetime.now()
+            if current_timestamp > self.next_timestamp and len(self.current_prices) == len(self.symbols):
+                self.next_timestamp = current_timestamp
+                self._klines.append(self.current_prices)
 
-        self.download_history(start_time)
+        self.twm = ThreadedWebsocketManager(
+            api_key=account_info['api_key'],
+            api_secret=account_info['api_secret']
+        )
+        self.twm.start()
 
+        streams = [f"{symbol.lower()}@trade" for symbol in self.symbols]
+        self.twm.start_multiplex_socket(callback=process_tick_message, streams=streams)
+
+        #import time
+        # while True:
+        #     time.sleep(1)
+
+        #self._kline_threads[symbol] = kline_socket_manager
+
+        self.download_history(start_time=start_time, end_time=history_end_time)
+
+        """
         from time import sleep
         has_all_symbols = False
         while not has_all_symbols:
@@ -76,6 +106,7 @@ class BinanceKlines:
                     has_all_symbols = False
                     sleep(0.2)
                     break
+        """
 
     def check_symbols(self):
         all_symbols = set()
@@ -88,7 +119,7 @@ class BinanceKlines:
                 print(f"BinanceKlines, Error {symbol} is not available!")
                 quit()
 
-    def download_history(self, start_time: datetime):
+    def download_history(self, start_time: datetime, end_time: datetime):
         limiter = pyrate_limiter.Limiter(pyrate_limiter.RequestRate(1, pyrate_limiter.Duration.SECOND))
 
         @limiter.ratelimit("download_print_status", delay=False)
@@ -97,9 +128,10 @@ class BinanceKlines:
 
         for symbol in self.symbols:
             for kline in self._client.get_historical_klines_generator(
-                    symbol,
-                    Client.KLINE_INTERVAL_1MINUTE,
-                    start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+                    symbol=symbol,
+                    interval=Client.KLINE_INTERVAL_1MINUTE,
+                    start_str=start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    end_str=end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
             ):
                 close_price = float(kline[4])
                 self._klines.history_append(symbol, close_price)
@@ -112,21 +144,13 @@ def server():
         'ADAUSDT', 'BCHUSDT', 'BNBUSDT', 'BTCUSDT', 'BTTUSDT', 'CHZUSDT', 'DOGEUSDT', 'EOSUSDT', 'ETCUSDT', 'ETHUSDT',
         'LINKUSDT', 'LTCUSDT', 'MATICUSDT', 'NEOUSDT', 'THETAUSDT', 'TRXUSDT', 'VETUSDT', 'XLMUSDT', 'XRPUSDT'
     ]
-    symbols = ['ADAUSDT', 'BCHUSDT']
+    symbols = ['BTCUSDT', 'BNBUSDT']
 
-    klines = Klines(symbol_count=len(symbols))
+    klines = MinutePriceBuffer(symbol_count=len(symbols))
 
-    with open('binance_account.json') as f:
-        account_info = json.load(f)
+    history_start_time = datetime.utcnow() - timedelta(minutes=10)  # 30 * 24 * 60)
 
-    start_time = datetime.utcnow() - timedelta(minutes=3)  # 30 * 24 * 60)
-
-    client = Client(
-        api_key=account_info['api_key'],
-        api_secret=account_info['api_secret']
-    )
-
-    binance_klines = BinanceKlines(klines=klines, binance_client=client, start_time=start_time, symbols=symbols)
+    binance_klines = BinanceKlines(klines=klines, start_time=history_start_time, symbols=symbols)
 
     """
     context = zmq.Context()
