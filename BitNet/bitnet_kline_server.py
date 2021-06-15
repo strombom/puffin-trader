@@ -93,9 +93,9 @@ class BinanceKlines:
 
             current_timestamp = datetime.now(timezone.utc)
             if current_timestamp > self.next_timestamp and len(self.current_prices) == len(self.symbols):
-                print("Appending", self.next_timestamp)
+                print("Appending", self.next_timestamp, self.current_prices)
                 self.next_timestamp = self.next_timestamp + timedelta(minutes=1)
-                self._klines.append(self.current_prices)
+                self._klines.append(self.current_prices.copy())
 
         self.twm = ThreadedWebsocketManager(
             api_key=account_info['api_key'],
