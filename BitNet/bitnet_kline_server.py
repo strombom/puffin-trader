@@ -3,7 +3,7 @@ import json
 import threading
 import collections
 import pyrate_limiter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from binance import Client, ThreadedWebsocketManager
 
 
@@ -56,8 +56,8 @@ class BinanceKlines:
         self.symbols = symbols
         self.current_prices = {}
 
-        history_end_time = datetime.utcnow()
-        self.next_timestamp = history_end_time + timedelta(seconds=4)
+        history_end_time = datetime.now(timezone.utc)
+        self.next_timestamp = history_end_time + timedelta(minutes=1)
 
         with open('binance_account.json') as f:
             account_info = json.load(f)
@@ -74,9 +74,10 @@ class BinanceKlines:
             last_price = float(data['data']['p'])
             self.current_prices[symbol] = last_price
 
-            current_timestamp = datetime.now()
+            current_timestamp = datetime.now(timezone.utc)
             if current_timestamp > self.next_timestamp and len(self.current_prices) == len(self.symbols):
-                self.next_timestamp = current_timestamp
+                print("Appending", self.next_timestamp)
+                self.next_timestamp = self.next_timestamp + timedelta(minutes=1)
                 self._klines.append(self.current_prices)
 
         self.twm = ThreadedWebsocketManager(
@@ -127,11 +128,17 @@ class BinanceKlines:
             print(f"{datetime.now()} {timestamp}")
 
         for symbol in self.symbols:
+            start_str = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+            end_str = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            start_timestamp = int(datetime.timestamp(start_time) * 1000)
+            end_timestamp = int(datetime.timestamp(end_time) * 1000)
+
             for kline in self._client.get_historical_klines_generator(
                     symbol=symbol,
                     interval=Client.KLINE_INTERVAL_1MINUTE,
-                    start_str=start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    end_str=end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+                    start_str=start_timestamp,
+                    end_str=end_timestamp
             ):
                 close_price = float(kline[4])
                 self._klines.history_append(symbol, close_price)
@@ -148,9 +155,11 @@ def server():
 
     klines = MinutePriceBuffer(symbol_count=len(symbols))
 
-    history_start_time = datetime.utcnow() - timedelta(minutes=10)  # 30 * 24 * 60)
+    history_start_time = datetime.now(timezone.utc) - timedelta(minutes=20 * 24 * 60)  # 30 * 24 * 60)
 
     binance_klines = BinanceKlines(klines=klines, start_time=history_start_time, symbols=symbols)
+
+    print("now we have history")
 
     """
     context = zmq.Context()
