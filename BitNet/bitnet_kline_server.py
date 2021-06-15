@@ -1,7 +1,6 @@
-import itertools
-
 import zmq
 import json
+import itertools
 import threading
 import collections
 import pyrate_limiter
@@ -16,9 +15,8 @@ class MinutePriceBuffer:
         # Only used while downloading historical klines
         self.last_idx = 0
         self.history_prices = {}
-        #self.history_current_prices = {}
 
-        # 30 day buffer
+        # Price buffer
         self.buffer_prices = collections.deque(maxlen=30 * 24 * 60)
 
         self.lock = threading.Lock()
@@ -83,7 +81,7 @@ class BinanceKlines:
             api_secret=account_info['api_secret']
         )
 
-        #self.check_symbols()
+        self.check_symbols()
 
         def process_tick_message(data):
             symbol = data['data']['s']
@@ -105,25 +103,7 @@ class BinanceKlines:
         streams = [f"{symbol.lower()}@trade" for symbol in self.symbols]
         self.twm.start_multiplex_socket(callback=process_tick_message, streams=streams)
 
-        #import time
-        # while True:
-        #     time.sleep(1)
-
-        #self._kline_threads[symbol] = kline_socket_manager
-
         self.download_history(start_time=start_time, end_time=history_end_time)
-
-        """
-        from time import sleep
-        has_all_symbols = False
-        while not has_all_symbols:
-            has_all_symbols = True
-            for symbol in self.symbols:
-                if symbol + "USDT" not in self.mark_prices:
-                    has_all_symbols = False
-                    sleep(0.2)
-                    break
-        """
 
     def check_symbols(self):
         all_symbols = set()
@@ -137,16 +117,12 @@ class BinanceKlines:
                 quit()
 
     def download_history(self, start_time: datetime, end_time: datetime):
-        limiter = pyrate_limiter.Limiter(pyrate_limiter.RequestRate(1, pyrate_limiter.Duration.SECOND))
-
-        @limiter.ratelimit("download_print_status", delay=False)
-        def print_status(timestamp):
-            print(f"{datetime.now()} {timestamp}")
+        #limiter = pyrate_limiter.Limiter(pyrate_limiter.RequestRate(1, pyrate_limiter.Duration.SECOND))
+        #@limiter.ratelimit("download_print_status", delay=False)
+        #def print_status(timestamp):
+        #    print(f"{datetime.now()} {timestamp}")
 
         for symbol in self.symbols:
-            start_str = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
-            end_str = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
-
             start_timestamp = int(datetime.timestamp(start_time) * 1000)
             end_timestamp = int(datetime.timestamp(end_time) * 1000)
 
@@ -173,9 +149,11 @@ def server():
 
     history_start_time = datetime.now(timezone.utc) - timedelta(minutes=1 * 24 * 60)  # 30 * 24 * 60)
 
-    binance_klines = BinanceKlines(klines=klines, start_time=history_start_time, symbols=symbols)
+    print("Downloading history")
 
-    print("now we have history")
+    _binance_klines = BinanceKlines(klines=klines, start_time=history_start_time, symbols=symbols)
+
+    print("History downloaded")
 
     context = zmq.Context()
     socket = context.socket(zmq.REP)
@@ -201,7 +179,6 @@ def server():
             }
 
         socket.send_pyobj(send_data)
-
 
 
 if __name__ == "__main__":
