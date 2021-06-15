@@ -2,6 +2,7 @@ import zmq
 import json
 import itertools
 import threading
+import traceback
 import collections
 import pyrate_limiter
 from datetime import datetime, timedelta, timezone
@@ -39,6 +40,7 @@ class MinutePriceBuffer:
         # Append live data
         with self.lock:
             self.buffer_prices.append(prices)
+            self.last_idx += 1
 
     def history_append(self, symbol: str, price: float):
         # Create history
@@ -62,6 +64,7 @@ class MinutePriceBuffer:
                 if len(self.buffer_prices) == self.buffer_prices.maxlen:
                     return
                 self.buffer_prices.appendleft(prices)
+                self.last_idx += 1
 
 
 class BinanceKlines:
@@ -160,14 +163,20 @@ def server():
     socket.bind("tcp://*:31007")
 
     while True:
-        command, payload = socket.recv_pyobj()
+        try:
+            command, payload = socket.recv_pyobj()
+        except:
+            print("Receive pyobj error!")
+            traceback.print_exc()
+            continue
+
         send_data = None
 
         if command == 'get_all':
             last_idx, prices = klines.get_all()
             send_data = {
                 'last_idx': last_idx,
-                'mark_prices': prices
+                'prices': prices
             }
 
         elif command == 'get_since':
@@ -175,7 +184,7 @@ def server():
             last_idx, prices = klines.get_since(last_idx)
             send_data = {
                 'last_idx': last_idx,
-                'mark_prices': prices
+                'prices': prices
             }
 
         socket.send_pyobj(send_data)
