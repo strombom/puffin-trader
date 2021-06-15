@@ -1,3 +1,5 @@
+import itertools
+
 import zmq
 import json
 import threading
@@ -20,6 +22,20 @@ class MinutePriceBuffer:
         self.buffer_prices = collections.deque(maxlen=30 * 24 * 60)
 
         self.lock = threading.Lock()
+
+    def get_all(self):
+        with self.lock:
+            last_idx, prices = self.last_idx, list(self.buffer_prices)
+            return last_idx, prices
+
+    def get_since(self, since_idx):
+        with self.lock:
+            start_idx = len(self.buffer_prices) - (self.last_idx - since_idx)
+            start_idx = max(0, start_idx)
+            prices = []
+            if start_idx < len(self.buffer_prices):
+                prices = list(itertools.islice(self.buffer_prices, start_idx, None))
+            return self.last_idx, prices
 
     def append(self, prices: dict):
         # Append live data
@@ -155,13 +171,12 @@ def server():
 
     klines = MinutePriceBuffer(symbol_count=len(symbols))
 
-    history_start_time = datetime.now(timezone.utc) - timedelta(minutes=20 * 24 * 60)  # 30 * 24 * 60)
+    history_start_time = datetime.now(timezone.utc) - timedelta(minutes=1 * 24 * 60)  # 30 * 24 * 60)
 
     binance_klines = BinanceKlines(klines=klines, start_time=history_start_time, symbols=symbols)
 
     print("now we have history")
 
-    """
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind("tcp://*:31007")
@@ -170,24 +185,23 @@ def server():
         command, payload = socket.recv_pyobj()
         send_data = None
 
-        with history_lock:
-            if command == 'get_all':
-                send_data = {
-                    'last_idx': history_counter,
-                    'mark_prices': history
-                }
+        if command == 'get_all':
+            last_idx, prices = klines.get_all()
+            send_data = {
+                'last_idx': last_idx,
+                'mark_prices': prices
+            }
 
-            elif command == 'get_since':
-                last_idx = payload
-                history_idx = len(history) - 1 - (history_counter - last_idx)
-                history_idx = max(0, history_idx)
-                send_data = {
-                    'last_idx': history_counter,
-                    'mark_prices': list(itertools.islice(history, history_idx, len(history)))
-                }
+        elif command == 'get_since':
+            last_idx = payload
+            last_idx, prices = klines.get_since(last_idx)
+            send_data = {
+                'last_idx': last_idx,
+                'mark_prices': prices
+            }
 
         socket.send_pyobj(send_data)
-    """
+
 
 
 if __name__ == "__main__":
