@@ -30,6 +30,11 @@ def main():
 
     directions = None
 
+    directions_column_names = []
+    for _, direction_degree in enumerate(direction_degrees):
+        for _, length in enumerate(lengths):
+            directions_column_names.append(f"{direction_degree}-{length}")
+
     while True:
         command, payload = 'get_since', last_data_idx
         socket.send_pyobj((command, payload))
@@ -39,7 +44,7 @@ def main():
 
         if len(symbols) == 0:
             symbols = sorted(prices[0].keys())
-            directions = np.empty((len(symbols), len(direction_degrees), len(lengths)))
+            directions = np.empty((len(symbols), len(direction_degrees) * len(lengths)))
 
         # Runners
         for price in prices:
@@ -63,7 +68,13 @@ def main():
                     yp = np.poly1d(np.polyfit(xp, direction_steps, direction_degree))
                     curve = yp(xp)
                     direction = curve[-1] / curve[-2] - 1.0
-                    directions[symbol_idx, direction_degree_idx, length_idx] = direction
+                    directions[symbol_idx, direction_degree_idx * len(lengths) + length_idx] = direction
+
+        data_input = pd.DataFrame(data=directions, columns=directions_column_names)
+
+        input_symbols = np.array(symbols)
+        for symbol in symbols:
+            data_input[symbol] = np.where(input_symbols == symbol, True, False)
 
         quit()
 
