@@ -13,12 +13,12 @@ class MinutePriceBuffer:
     def __init__(self, symbol_count: int):
         self.symbol_count = symbol_count
 
-        # Only used while downloading historical klines
+        # Only used while downloading historical data
         self.last_idx = 0
         self.history_prices = {}
 
         # Price buffer
-        self.buffer_prices = collections.deque(maxlen=30 * 24 * 60)
+        self.buffer_prices = collections.deque(maxlen=7 * 24 * 60)
 
         self.lock = threading.Lock()
 
@@ -67,9 +67,9 @@ class MinutePriceBuffer:
                 self.last_idx += 1
 
 
-class BinanceKlines:
-    def __init__(self, klines: MinutePriceBuffer, start_time: datetime, symbols: list):
-        self._klines = klines
+class MinutePriceGetter:
+    def __init__(self, minute_price_buffer: MinutePriceBuffer, start_time: datetime, symbols: list):
+        self.minute_price_buffer = minute_price_buffer
         self.symbols = symbols
         self.current_prices = {}
 
@@ -95,7 +95,7 @@ class BinanceKlines:
             if current_timestamp > self.next_timestamp and len(self.current_prices) == len(self.symbols):
                 print("Appending", self.next_timestamp, self.current_prices)
                 self.next_timestamp = self.next_timestamp + timedelta(minutes=1)
-                self._klines.append(self.current_prices.copy())
+                self.minute_price_buffer.append(self.current_prices.copy())
 
         self.twm = ThreadedWebsocketManager(
             api_key=account_info['api_key'],
@@ -116,7 +116,7 @@ class BinanceKlines:
 
         for symbol in self.symbols:
             if symbol not in all_symbols:
-                print(f"BinanceKlines, Error {symbol} is not available!")
+                print(f"MinutePriceGetter, Error {symbol} is not available!")
                 quit()
 
     def download_history(self, start_time: datetime, end_time: datetime):
@@ -136,9 +136,10 @@ class BinanceKlines:
                     end_str=end_timestamp
             ):
                 close_price = float(kline[4])
-                self._klines.history_append(symbol, close_price)
+                self.minute_price_buffer.history_append(symbol, close_price)
+            print("Downloaded", symbol)
 
-        self._klines.history_finish()
+        self.minute_price_buffer.history_finish()
 
 
 def server():
@@ -146,15 +147,15 @@ def server():
         'ADAUSDT', 'BCHUSDT', 'BNBUSDT', 'BTCUSDT', 'BTTUSDT', 'CHZUSDT', 'DOGEUSDT', 'EOSUSDT', 'ETCUSDT', 'ETHUSDT',
         'LINKUSDT', 'LTCUSDT', 'MATICUSDT', 'NEOUSDT', 'THETAUSDT', 'TRXUSDT', 'VETUSDT', 'XLMUSDT', 'XRPUSDT'
     ]
-    symbols = ['BTCUSDT', 'BNBUSDT']
+    # symbols = ['BTCUSDT', 'BNBUSDT']
 
-    klines = MinutePriceBuffer(symbol_count=len(symbols))
+    minute_price_buffer = MinutePriceBuffer(symbol_count=len(symbols))
 
-    history_start_time = datetime.now(timezone.utc) - timedelta(minutes=1 * 24 * 60)  # 30 * 24 * 60)
+    history_start_time = datetime.now(timezone.utc) - timedelta(minutes=7 * 24 * 60)
 
     print("Downloading history")
 
-    _binance_klines = BinanceKlines(klines=klines, start_time=history_start_time, symbols=symbols)
+    _minute_price_getter = MinutePriceGetter(minute_price_buffer=minute_price_buffer, start_time=history_start_time, symbols=symbols)
 
     print("History downloaded")
 
@@ -173,7 +174,7 @@ def server():
         send_data = None
 
         if command == 'get_all':
-            last_idx, prices = klines.get_all()
+            last_idx, prices = minute_price_buffer.get_all()
             send_data = {
                 'last_idx': last_idx,
                 'prices': prices
@@ -181,7 +182,7 @@ def server():
 
         elif command == 'get_since':
             last_idx = payload
-            last_idx, prices = klines.get_since(last_idx)
+            last_idx, prices = minute_price_buffer.get_since(last_idx)
             send_data = {
                 'last_idx': last_idx,
                 'prices': prices
