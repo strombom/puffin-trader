@@ -88,7 +88,7 @@ class BinanceSimulator:
             return 0
 
         if order_size < 0 and self.wallet[symbol] < -order_size:
-            print("err")
+            print("err", order_size, symbol, fee)
 
         self.wallet[symbol] += order_size
         self.wallet['usdt'] -= order_size * self.mark_price[symbol]
