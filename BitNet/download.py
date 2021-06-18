@@ -10,8 +10,8 @@ from binance.client import Client
 
 def download_klines(client: Client, symbol: str, start_time: str):
     path = f"cache/klines_new"
-    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     file_path = f"{path}/{symbol}.hdf"
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     print(f"Downloading {file_path}")
 
     if os.path.exists(file_path):
