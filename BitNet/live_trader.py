@@ -6,12 +6,14 @@ import time
 import logging
 import numpy as np
 import pandas as pd
-from numba import jit
+from fastai.learner import load_learner
 
 from IntrinsicTime.runner import Runner
 
 
 def main():
+    profit_model = load_learner('model_all.pickle')
+
     logging.info("Connect to Binance delta server")
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
@@ -70,11 +72,13 @@ def main():
                     direction = curve[-1] / curve[-2] - 1.0
                     directions[symbol_idx, direction_degree_idx * len(lengths) + length_idx] = direction
 
+        # Predict values
         data_input = pd.DataFrame(data=directions, columns=directions_column_names)
-
         input_symbols = np.array(symbols)
         for symbol in symbols:
             data_input[symbol] = np.where(input_symbols == symbol, True, False)
+        test_dl = profit_model.dls.test_dl(data_input)
+        predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
 
         quit()
 
