@@ -64,7 +64,7 @@ class BinanceAccount:
             if data['e'] == 'outboundAccountPosition':
                 for position in data['B']:
                     asset = position['a']
-                    quantity = position['f']
+                    quantity = float(position['f'])
                     if asset not in self._balance or quantity != self._balance[asset]:
                         self._balance[asset] = quantity
                         print(f"Update balance {quantity} {asset}")
@@ -85,8 +85,8 @@ class BinanceAccount:
         return portfolio
     """
 
-    def get_balance(self, trade_pair):
-        return self._balance[trade_pair]
+    def get_balance(self, symbol):
+        return self._balance[symbol]
 
     #def get_balance_usdt(self):
     #    return self._balance['USDT']
@@ -99,8 +99,8 @@ class BinanceAccount:
             total_equity += self._balance[asset] * self._mark_price[asset + 'USDT']
         return total_equity
 
-    def get_mark_price(self, trade_pair):
-        return self._mark_price[trade_pair]
+    def get_mark_price(self, symbol):
+        return self._mark_price[symbol]
 
     def market_buy(self, trade_pair, volume):
         factor = 10 ** -self._tick_size[trade_pair]
