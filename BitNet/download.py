@@ -4,7 +4,7 @@ import pathlib
 
 import pandas as pd
 import pyrate_limiter
-from datetime import datetime
+from datetime import datetime, timezone
 from binance.client import Client
 
 
@@ -14,8 +14,13 @@ def download_klines(client: Client, symbol: str, start_time: str):
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     print(f"Downloading {file_path}")
 
+    last_open_time = 0
+    klines = []
     if os.path.exists(file_path):
-        return
+        old_klines = pd.read_hdf(path_or_buf=file_path)
+        last_open_time = old_klines.iloc[-1]['open_time']
+        start_time = datetime.fromtimestamp(last_open_time / 1000, tz=timezone.utc).strftime("%Y-%m-%d UTC")
+        klines = old_klines.to_dict('records')
 
     limiter = pyrate_limiter.Limiter(pyrate_limiter.RequestRate(1, pyrate_limiter.Duration.SECOND))
 
@@ -23,8 +28,9 @@ def download_klines(client: Client, symbol: str, start_time: str):
     def print_status(timestamp):
         print(f"{datetime.now()} {timestamp}")
 
-    klines = []
     for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE, start_time):
+        if kline[0] <= last_open_time:
+            continue
         klines.append({
             'open_time': kline[0],
             'open': float(kline[1]),
