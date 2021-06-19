@@ -46,14 +46,14 @@ class BinanceAccount:
             for asset in account_info['userAssets']:
                 if asset['asset'] + 'USDT' in symbols or asset['asset'] == 'USDT':
                     print(f"Update balance {asset['free']} {asset['asset']}")
-                    self._balance[asset['asset']] = asset['free']
+                    self._balance[asset['asset']] = float(asset['free'])
                     #self._debt[asset['asset']] = asset['borrowed']
 
         # Get all prices
         prices = self._client.get_all_tickers()
         for price in prices:
             if price['symbol'] in symbols:
-                self._mark_price[price['symbol']] = price['price']
+                self._mark_price[price['symbol']] = float(price['price'])
 
         streams = [f"{symbol.lower()}@trade" for symbol in self._symbols]
         self.twm.start_multiplex_socket(callback=self._process_tick_message, streams=streams)
@@ -92,9 +92,11 @@ class BinanceAccount:
     #    return self._balance['USDT']
 
     def get_total_equity_usdt(self):
-        total_equity = self._balance_usdt
-        for trade_pair in self._balance:
-            total_equity += self._balance[trade_pair] * self._mark_price[trade_pair]
+        total_equity = self._balance['USDT']
+        for asset in self._balance:
+            if asset == 'USDT':
+                continue
+            total_equity += self._balance[asset] * self._mark_price[asset + 'USDT']
         return total_equity
 
     def get_mark_price(self, trade_pair):
