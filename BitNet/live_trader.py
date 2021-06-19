@@ -1,18 +1,23 @@
-import collections
-import itertools
 
 import zmq
 import time
+import json
 import logging
+import itertools
+import collections
 import numpy as np
 import pandas as pd
 from fastai.learner import load_learner
 
 from IntrinsicTime.runner import Runner
+from binance_account import BinanceAccount
 
 
 def main():
     profit_model = load_learner('model_all.pickle')
+
+    with open('binance_account.json') as f:
+        account_info = json.load(f)
 
     logging.info("Connect to Binance delta server")
     context = zmq.Context()
@@ -31,6 +36,7 @@ def main():
     runners = {}
 
     directions = None
+    binance_account = None
 
     directions_column_names = []
     for _, direction_degree in enumerate(direction_degrees):
@@ -38,15 +44,22 @@ def main():
             directions_column_names.append(f"{direction_degree}-{length}")
 
     while True:
+        # Get latest price data
         command, payload = 'get_since', last_data_idx
         socket.send_pyobj((command, payload))
         message = socket.recv_pyobj()
         last_data_idx = message['last_idx']
         prices = message['prices']
 
+        # Initialise variables
         if len(symbols) == 0:
             symbols = sorted(prices[0].keys())
             directions = np.empty((len(symbols), len(direction_degrees) * len(lengths)))
+            binance_account = BinanceAccount(
+                api_key=account_info['api_key'],
+                api_secret=account_info['api_secret'],
+                symbols=symbols
+            )
 
         # Runners
         for price in prices:
@@ -57,7 +70,6 @@ def main():
                 runner_steps = runners[symbol].step(price[symbol])
                 for step in runner_steps:
                     steps[symbol].append(step)
-                    # print(symbol, step)
 
         # Make directions
         for symbol_idx, symbol in enumerate(symbols):
@@ -79,6 +91,8 @@ def main():
             data_input[symbol] = np.where(input_symbols == symbol, True, False)
         test_dl = profit_model.dls.test_dl(data_input)
         predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+
+
 
         quit()
 
