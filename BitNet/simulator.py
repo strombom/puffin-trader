@@ -3,24 +3,39 @@ import random
 
 import numpy as np
 import pandas as pd
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastai.learner import load_learner
 
 from BinanceSimulator.binance_simulator import BinanceSimulator
 
 
 class Portfolio:
-    position_max_count = 10
+    position_max_count = 5
+    take_profit = 1.05
+    stop_loss = 0.95
 
     def __init__(self):
-        self.cash = 1000
         self.positions = []
 
-    def add_position(self, symbol: str, position_size: float):
+    def add_position(self, symbol: str, position_size: float, mark_price: float):
         self.positions.append({
             'symbol': symbol,
-            'size': position_size
+            'size': position_size,
+            'mark_price': mark_price,
+            'take_profit': mark_price * self.take_profit,
+            'stop_loss': mark_price * self.stop_loss
         })
+
+
+class Logger:
+    def __init__(self):
+        self.timestamps = []
+        self.equities = []
+        self.file = open(f"log.txt", 'a')
+
+    def append(self, timestamp, equity):
+        self.file.write(f"{timestamp},{equity}\n")
+        self.file.flush()
 
 
 def main():
@@ -47,9 +62,6 @@ def main():
 
     simulator = BinanceSimulator(initial_usdt=1000, symbols=symbols)
 
-    take_profit = 1.05
-    stop_loss = 0.95
-
     first_symbol = list(indicators.keys())[0]
     lengths = indicators[first_symbol]['lengths']
     degrees = [1, 2, 3]
@@ -69,13 +81,34 @@ def main():
 
     portfolio = Portfolio()
 
+    logger = Logger()
+
+    def print_hodlings(kline_idx_):
+        timestamp = start_timestamp + timedelta(minutes=kline_idx_)
+        total_equity_ = simulator.get_equity_usdt()
+        stri = f"{timestamp} Hodlings {total_equity_:.1f} USDT"
+        for w_symbol in simulator.wallet:
+            if simulator.wallet[w_symbol] > 0:
+                s_value = simulator.wallet[w_symbol] * simulator.mark_price[w_symbol]
+                stri += f", {s_value:.1f} {w_symbol}"
+        print(stri)
+        logger.append(timestamp, total_equity_)
+
     for kline_idx in range(kline_start_idx, data_length):
         for symbol in symbols:
             mark_price = klines[symbol]['close'][kline_idx]
             simulator.set_mark_price(symbol=symbol, mark_price=mark_price)
 
-        for position in portfolio.positions:
-            print(position)
+        for position in portfolio.positions[:]:
+            # TODO: Sell
+            mark_price = simulator.mark_price[position['symbol']]
+            if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
+                order_size = -position['size']
+                if abs(position['size'] - simulator.wallet[position['symbol']]) / simulator.wallet[position['symbol']] < 0.1:
+                    order_size = -simulator.wallet[position['symbol']]
+                simulator.market_order(order_size=order_size, symbol=position['symbol'])
+                portfolio.positions.remove(position)
+                print_hodlings(kline_idx)
 
         equity = simulator.get_equity_usdt()
         cash = simulator.get_cash_usdt()
@@ -91,7 +124,7 @@ def main():
 
             random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
 
-            k = 0.0001
+            k = 0.00020
             for symbol_idx in random_symbol_order:
                 prediction = predictions[symbol_idx]
                 if prediction > 0:  # and predictions_ema50[idx] > 0:
@@ -105,12 +138,15 @@ def main():
                         position_size = position_value / mark_price * 0.98
 
                         simulator.market_order(order_size=position_size, symbol=symbols[symbol_idx])
-                        print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
+                        #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
 
-                        portfolio.add_position(symbol=symbols[symbol_idx], position_size=position_size)
+                        portfolio.add_position(symbol=symbols[symbol_idx], position_size=position_size, mark_price=mark_price)
+                        print_hodlings(kline_idx)
                         break
 
             #print(predictions)
+
+    print_hodlings(kline_idx - 1)
 
 
 if __name__ == '__main__':
