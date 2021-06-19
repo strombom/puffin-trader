@@ -14,12 +14,12 @@ class BinanceAccount:
         self._api_key = api_key
         self._api_secret = api_secret
         self._symbols = symbols
-        self._debt = {}
+        #self._debt = {}
         self._balance = {}
         self._mark_price = {}
         self._tick_size = {}
         self._min_lot_size = {}
-        self._account_lock = threading.Lock()
+        self._balance_lock = threading.Lock()
 
         self._client = Client(api_key=self._api_key, api_secret=self._api_secret)
 
@@ -40,27 +40,27 @@ class BinanceAccount:
         )
         self.twm.start()
 
-        streams = [f"{symbol.lower()}@trade" for symbol in self._symbols]
-        self.twm.start_multiplex_socket(callback=self._process_tick_message, streams=streams)
-        self.twm.start_margin_socket(callback=self._process_margin_message)
-
         # Get margin account balances
-        with self._account_lock:
+        with self._balance_lock:
             account_info = self._client.get_margin_account()
             for asset in account_info['userAssets']:
                 if asset['asset'] + 'USDT' in symbols or asset['asset'] == 'USDT':
                     print(f"Update balance {asset['free']} {asset['asset']}")
                     self._balance[asset['asset']] = asset['free']
+                    #self._debt[asset['asset']] = asset['borrowed']
 
-        # TODO: Wait until self._mark_prices has all symbols
+        # Get all prices
+        prices = self._client.get_all_tickers()
+        for price in prices:
+            if price['symbol'] in symbols:
+                self._mark_price[price['symbol']] = price['price']
 
-        #self._kline_threads = {}
-        #self.event_loop = asyncio.get_event_loop()
-        #self.event_loop.run_until_complete(self.__async__init(symbols))
-        #self._update_account_status()
+        streams = [f"{symbol.lower()}@trade" for symbol in self._symbols]
+        self.twm.start_multiplex_socket(callback=self._process_tick_message, streams=streams)
+        self.twm.start_margin_socket(callback=self._process_margin_message)
 
     def _process_margin_message(self, data):
-        with self._account_lock:
+        with self._balance_lock:
             if data['e'] == 'outboundAccountPosition':
                 for position in data['B']:
                     asset = position['a']
@@ -83,26 +83,6 @@ class BinanceAccount:
             if self._balance[trade_pair] > 0:
                 portfolio.add(trade_pair)
         return portfolio
-
-    def _update_account_status(self):
-        account_info = self.event_loop.run_until_complete(self._client.get_account())
-        for symbol in account_info['balances']:
-            if symbol['asset'] == 'USDT':
-                self._balance_usdt = float(symbol['free'])
-            else:
-                trade_pair = symbol['asset'] + 'USDT'
-                if trade_pair in self._mark_price:
-                    balance = float(symbol['free'])
-                    if balance < self._min_lot_size[trade_pair]:
-                        balance = 0.0
-                    self._balance[trade_pair] = balance
-
-        self._total_equity = self.get_total_equity_usdt()
-        print(f"Account balance: ", end='')
-        for trade_pair in self._balance:
-            if self._balance[trade_pair] > 0:
-                print(f"{trade_pair}: {self._balance[trade_pair]}  ", end='')
-        print(f"Account equity: {self._total_equity} USDT")
     """
 
     def get_balance(self, trade_pair):
