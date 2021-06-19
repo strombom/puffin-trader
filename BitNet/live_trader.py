@@ -13,6 +13,24 @@ from IntrinsicTime.runner import Runner
 from binance_account import BinanceAccount
 
 
+class Portfolio:
+    position_max_count = 5
+    take_profit = 1.05
+    stop_loss = 0.95
+
+    def __init__(self):
+        self.positions = []
+
+    def add_position(self, symbol: str, position_size: float, mark_price: float):
+        self.positions.append({
+            'symbol': symbol,
+            'size': position_size,
+            'mark_price': mark_price,
+            'take_profit': mark_price * self.take_profit,
+            'stop_loss': mark_price * self.stop_loss
+        })
+
+
 def main():
     profit_model = load_learner('model_all.pickle')
 
@@ -34,6 +52,7 @@ def main():
     symbols = []
     steps = {}
     runners = {}
+    portfolio = Portfolio()
 
     directions = None
     binance_account = None
@@ -92,6 +111,7 @@ def main():
         test_dl = profit_model.dls.test_dl(data_input)
         predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
 
+        # Sell
 
 
         quit()
