@@ -3,6 +3,7 @@ import asyncio
 import threading
 from datetime import datetime, timezone, timedelta
 
+import binance.enums
 from binance import ThreadedWebsocketManager, Client
 
 
@@ -45,7 +46,7 @@ class BinanceAccount:
             account_info = self._client.get_margin_account()
             for asset in account_info['userAssets']:
                 if asset['asset'] + 'USDT' in symbols or asset['asset'] == 'USDT':
-                    print(f"Update balance {asset['free']} {asset['asset']}")
+                    # print(f"Update balance {asset['free']} {asset['asset']}")
                     self._balance[asset['asset']] = float(asset['free'])
                     #self._debt[asset['asset']] = asset['borrowed']
 
@@ -67,7 +68,7 @@ class BinanceAccount:
                     quantity = float(position['f'])
                     if asset not in self._balance or quantity != self._balance[asset]:
                         self._balance[asset] = quantity
-                        print(f"Update balance {quantity} {asset}")
+                        # print(f"Update balance {quantity} {asset}")
 
     def _process_tick_message(self, data):
         symbol = data['data']['s']
@@ -85,8 +86,8 @@ class BinanceAccount:
         return portfolio
     """
 
-    def get_balance(self, symbol):
-        return self._balance[symbol]
+    def get_balance(self, asset):
+        return self._balance[asset]
 
     #def get_balance_usdt(self):
     #    return self._balance['USDT']
@@ -102,35 +103,47 @@ class BinanceAccount:
     def get_mark_price(self, symbol):
         return self._mark_price[symbol]
 
-    def market_buy(self, trade_pair, volume):
-        factor = 10 ** -self._tick_size[trade_pair]
+    def sell_all(self):
+        for asset in self._balance:
+            if asset != 'USDT' and self._balance[asset] > 0:
+                self.market_sell(symbol=asset + 'USDT', volume=self._balance[asset])
+
+    def market_buy(self, symbol, volume):
+        factor = 10 ** -self._tick_size[symbol]
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             return
 
-        order = self.event_loop.run_until_complete(
-            self._client.order_market_buy(
-                symbol=trade_pair,
-                quantity=quantity
-            )
+        order = self._client.create_margin_order(
+            symbol=symbol,
+            side=binance.enums.SIDE_BUY,
+            type=binance.enums.ORDER_TYPE_MARKET,
+            quantity=quantity
         )
-        if order['status'] != 'FILLED':
-            print(f"Market buy  {quantity} {trade_pair} FAILED! {order}")
-        else:
-            print(f"Market buy {quantity} {trade_pair} OK")
 
-    def market_sell(self, trade_pair, volume):
-        factor = 10 ** -self._tick_size[trade_pair]
+        if order['status'] != 'FILLED':
+            print(f"Market buy  {quantity} {symbol} FAILED! {order}")
+            return False
+        else:
+            print(f"Market buy {quantity} {symbol} OK")
+            return True
+
+    def market_sell(self, symbol, volume):
+        factor = 10 ** -self._tick_size[symbol]
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             return
-        order = self.event_loop.run_until_complete(
-            self._client.order_market_sell(
-                symbol=trade_pair,
-                quantity=quantity
-            )
+
+        order = self._client.create_margin_order(
+            symbol=symbol,
+            side=binance.enums.SIDE_SELL,
+            type=binance.enums.ORDER_TYPE_MARKET,
+            quantity=quantity
         )
+
         if order['status'] != 'FILLED':
-            print(f"Market sell  {quantity} {trade_pair} FAILED! {order}")
+            print(f"Market sell  {quantity} {symbol} FAILED! {order}")
+            return False
         else:
-            print(f"Market sell {quantity} {trade_pair} OK")
+            print(f"Market sell {quantity} {symbol} OK")
+            return True

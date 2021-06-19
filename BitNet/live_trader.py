@@ -2,6 +2,7 @@
 import zmq
 import time
 import json
+import random
 import logging
 import itertools
 import collections
@@ -23,13 +24,26 @@ class Portfolio:
         self.positions = []
 
     def add_position(self, symbol: str, position_size: float, mark_price: float):
-        self.positions.append({
+        position = {
             'symbol': symbol,
             'size': position_size,
             'mark_price': mark_price,
             'take_profit': mark_price * self.take_profit,
             'stop_loss': mark_price * self.stop_loss
-        })
+        }
+        self.positions.append(position)
+        return position
+
+
+class Logger:
+    def __init__(self):
+        self.timestamps = []
+        self.equities = []
+        self.file = open(f"log.txt", 'a')
+
+    def append(self, timestamp, equity):
+        self.file.write(f"{timestamp},{equity}\n")
+        self.file.flush()
 
 
 def main():
@@ -53,7 +67,10 @@ def main():
     symbols = []
     steps = {}
     runners = {}
+
+    random_symbol_order = None
     portfolio = Portfolio()
+    logger = Logger()
 
     directions = None
     binance_account = None
@@ -63,14 +80,15 @@ def main():
         for _, length in enumerate(lengths):
             directions_column_names.append(f"{direction_degree}-{length}")
 
-    def print_hodlings(kline_idx_):
+    def print_hodlings():
         timestamp = datetime.now(tz=timezone.utc)
         total_equity_ = binance_account.get_total_equity_usdt()
-        stri = f"{timestamp} Hodlings {total_equity_:.1f} USDT"
-        for w_symbol in simulator.wallet:
-            if simulator.wallet[w_symbol] > 0:
-                s_value = simulator.wallet[w_symbol] * simulator.mark_price[w_symbol]
-                stri += f", {s_value:.1f} {w_symbol}"
+        stri = f"{timestamp} Hodlings {total_equity_:.1f} USDT :"
+        for h_symbol in symbols:
+            balance = binance_account.get_balance(asset=h_symbol.replace('USDT', ''))
+            if balance > 0:
+                s_value = balance * binance_account.get_mark_price(symbol=h_symbol)
+                stri += f" {s_value:.1f} {h_symbol}"
         print(stri)
         logger.append(timestamp, total_equity_)
 
@@ -80,20 +98,23 @@ def main():
         socket.send_pyobj((command, payload))
         message = socket.recv_pyobj()
         if message['last_idx'] == last_data_idx:
-            time.sleep(secs=1)
+            time.sleep(1)
             continue
         last_data_idx = message['last_idx']
         prices = message['prices']
+        logging.info("New prices")
 
         # Initialise variables
         if len(symbols) == 0:
             symbols = sorted(prices[0].keys())
+            random_symbol_order = list(range(len(symbols)))
             directions = np.empty((len(symbols), len(direction_degrees) * len(lengths)))
             binance_account = BinanceAccount(
                 api_key=account_info['api_key'],
                 api_secret=account_info['api_secret'],
                 symbols=symbols
             )
+            binance_account.sell_all()
 
         # Runners
         for price in prices:
@@ -120,34 +141,28 @@ def main():
 
         # Sell
         for position in portfolio.positions[:]:
-            # TODO: Sell
             mark_price = binance_account.get_mark_price(position['symbol'])
             if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
-                order_size = -position['size']
-                if abs(position['size'] - simulator.wallet[position['symbol']]) / simulator.wallet[position['symbol']] < 0.1:
-                    order_size = -simulator.wallet[position['symbol']]
-                simulator.market_order(order_size=order_size, symbol=position['symbol'])
+                order_size = position['size']
+                asset = position['symbol'].replace('USDT', '')
+                account_balance = binance_account.get_balance(asset=asset)
+                if order_size > account_balance or (order_size - account_balance) / account_balance < 0.1:
+                    order_size = account_balance
+                binance_account.market_sell(symbol=position['symbol'], volume=order_size)
+                logging.info(f"Sold position {position}")
                 portfolio.positions.remove(position)
-                print_hodlings(kline_idx)
+                print_hodlings()
 
-        # Predict values
-        data_input = pd.DataFrame(data=directions, columns=directions_column_names)
-        input_symbols = np.array(symbols)
-        for symbol in symbols:
-            data_input[symbol] = np.where(input_symbols == symbol, True, False)
-        test_dl = profit_model.dls.test_dl(data_input)
-        predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
-
+        # Buy
         equity = binance_account.get_total_equity_usdt()
         cash = binance_account.get_balance('USDT')
-        if cash > equity / portfolio.position_max_count:
-            for symbol_idx, symbol in enumerate(symbols):
-                tmp_indicator_columns[symbol_idx] = indicators[symbol]['indicators'][:, :, kline_idx].transpose().flatten()
-
-            df_indicators = pd.DataFrame(data=tmp_indicator_columns, columns=indicator_column_names)
-            df = pd.concat([df_symbols, df_indicators], axis=1)
-
-            test_dl = profit_model.dls.test_dl(df)
+        if cash > equity / portfolio.position_max_count * 0.25:
+            # Predict values
+            data_input = pd.DataFrame(data=directions, columns=directions_column_names)
+            input_symbols = np.array(symbols)
+            for symbol in symbols:
+                data_input[symbol] = np.where(input_symbols == symbol, True, False)
+            test_dl = profit_model.dls.test_dl(data_input)
             predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
 
             random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
@@ -159,17 +174,17 @@ def main():
                     t = k * 25 ** prediction
                     r = random.random()
                     if r < t:
-                        mark_price = klines[symbols[symbol_idx]]['close'][kline_idx]
-                        simulator.set_mark_price(symbol=symbols[symbol_idx], mark_price=mark_price)
+                        symbol = symbols[symbol_idx]
+                        mark_price = binance_account.get_mark_price(symbol)
 
                         position_value = min(equity / portfolio.position_max_count, cash)
                         position_size = position_value / mark_price * 0.98
 
-                        simulator.market_order(order_size=position_size, symbol=symbols[symbol_idx])
                         #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
-
-                        portfolio.add_position(symbol=symbols[symbol_idx], position_size=position_size, mark_price=mark_price)
-                        print_hodlings(kline_idx)
+                        if binance_account.market_buy(symbol=symbol, volume=position_size):
+                            position = portfolio.add_position(symbol=symbol, position_size=position_size, mark_price=mark_price)
+                            logging.info(f"Bought position {position}")
+                            print_hodlings()
                         break
 
 
