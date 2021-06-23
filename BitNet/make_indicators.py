@@ -11,13 +11,14 @@ from datetime import datetime, timezone, timedelta
 warnings.simplefilter('ignore', np.RankWarning)
 
 
-@jit(nopython=False)
+#@jit(nopython=False)
 def make_spectrum(lengths, prices, poly_order, directions):
     for length_idx, length in enumerate(lengths):
         for idx in range(lengths[-1], prices.shape[0]):
+            # TODO Is the last price not used?
             start, end = idx - length, idx
             xp = np.arange(start, end)
-            yp = np.poly1d(np.polyfit(xp, prices[start:end], poly_order))
+            yp = np.poly1d(np.polyfit(xp, prices[start:end], poly_order))  # TODO end+1 ?
 
             curve = yp(xp)
             direction = curve[-1] / curve[-2] - 1.0
@@ -59,7 +60,7 @@ def make_indicator(lock, task_queue):
 
             direction_idx = 0
             for indicator_idx in range(timestamps[0], n_timesteps):
-                while indicator_idx > timestamps[direction_idx]:
+                while indicator_idx > timestamps[direction_idx] and direction_idx + 1 < len(timestamps):
                     direction_idx += 1
                 indicators[:, direction_degree - 1, indicator_idx] = directions[:, direction_idx]
 
@@ -78,7 +79,7 @@ def main():
         intrinsic_events = pickle.load(f)
 
     start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    end_timestamp = datetime.strptime("2021-06-19 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
     direction_degrees = [1, 2, 3]
     lengths = np.array([5, 7, 11, 15, 22, 33, 47, 68, 100])
