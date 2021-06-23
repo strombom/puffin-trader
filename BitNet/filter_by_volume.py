@@ -10,7 +10,7 @@ from datetime import datetime
 def calculate_volume():
     start_timestamp = datetime.strptime("2020-01-01 01:00:00", "%Y-%m-%d %H:%M:%S")
     min_volatility = 0.1
-    min_volume = 15_000_000_000
+    min_volume = 20 _000_000_000
 
     volatilities = {}
     volumes = {}
@@ -18,6 +18,9 @@ def calculate_volume():
 
     for file_path in glob.glob("cache/klines/*.hdf"):
         symbol = os.path.basename(file_path).replace('.hdf', '')
+
+        if 'USDT' not in symbol:
+            continue
 
         data = pd.read_hdf(file_path)
         timestamp = datetime.fromtimestamp(data['open_time'].iloc[0] / 1000)
