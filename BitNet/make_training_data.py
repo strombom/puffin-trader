@@ -62,7 +62,7 @@ def main():
 
             direction_idx = 0
             for indicator_idx in range(data_length):
-                while intrinsic_events[symbol]['timestamps'][direction_idx] < indicator_idx:
+                while intrinsic_events[symbol]['timestamps'][direction_idx] < indicator_idx and direction_idx + 1 < profits.shape[0]:
                     direction_idx += 1
                 ground_truth[symbol][limit_idx, indicator_idx] = profits[direction_idx]
 
