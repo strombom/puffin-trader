@@ -5,9 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 import binance.enums
 from binance import ThreadedWebsocketManager, Client
-
-
-#from binance import AsyncClient, BinanceSocketManager
+from binance.exceptions import BinanceAPIException
 
 
 class BinanceAccount:
@@ -114,19 +112,27 @@ class BinanceAccount:
         if quantity == 0:
             return
 
-        order = self._client.create_margin_order(
-            symbol=symbol,
-            side=binance.enums.SIDE_BUY,
-            type=binance.enums.ORDER_TYPE_MARKET,
-            quantity=quantity
-        )
+        for retry in range(3):
+            try:
+                order = self._client.create_margin_order(
+                    symbol=symbol,
+                    side=binance.enums.SIDE_BUY,
+                    type=binance.enums.ORDER_TYPE_MARKET,
+                    quantity=quantity
+                )
 
-        if order['status'] != 'FILLED':
-            print(f"Market buy  {quantity} {symbol} FAILED! {order}")
-            return False
-        else:
-            print(f"Market buy {quantity} {symbol} OK")
-            return True
+                if order['status'] != 'FILLED':
+                    print(f"Market buy  {quantity} {symbol} FAILED! {order}")
+                    return False
+                else:
+                    print(f"Market buy {quantity} {symbol} OK")
+                    return True
+
+            except BinanceAPIException as e:
+                print(f"Market buy  {quantity} {symbol} error: {e}")
+
+        print(f"Market buy  {quantity} {symbol} FAILED!")
+        return False
 
     def market_sell(self, symbol, volume):
         factor = 10 ** -self._tick_size[symbol]
@@ -134,16 +140,23 @@ class BinanceAccount:
         if quantity == 0:
             return
 
-        order = self._client.create_margin_order(
-            symbol=symbol,
-            side=binance.enums.SIDE_SELL,
-            type=binance.enums.ORDER_TYPE_MARKET,
-            quantity=quantity
-        )
+        for retry in range(3):
+            try:
+                order = self._client.create_margin_order(
+                    symbol=symbol,
+                    side=binance.enums.SIDE_SELL,
+                    type=binance.enums.ORDER_TYPE_MARKET,
+                    quantity=quantity
+                )
+                if order['status'] != 'FILLED':
+                    print(f"Market sell  {quantity} {symbol} FAILED! {order}")
+                    return False
+                else:
+                    print(f"Market sell {quantity} {symbol} OK")
+                    return True
 
-        if order['status'] != 'FILLED':
-            print(f"Market sell  {quantity} {symbol} FAILED! {order}")
-            return False
-        else:
-            print(f"Market sell {quantity} {symbol} OK")
-            return True
+            except BinanceAPIException as e:
+                print(f"Market sell  {quantity} {symbol} error: {e}")
+
+        print(f"Market sell  {quantity} {symbol} FAILED!")
+        return False
