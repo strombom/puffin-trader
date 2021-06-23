@@ -49,16 +49,17 @@ def main():
             indicators[symbol] = pickle.load(f)
         klines[symbol] = pd.read_hdf(f"cache/klines/{symbol}.hdf")
 
-    profit_model = load_learner('model_all.pickle')
+    profit_model = load_learner('model_all_2021-06-23.pickle')
 
     #with open(f"cache/intrinsic_events.pickle", 'rb') as f:
     #    intrinsic_events = pickle.load(f)
 
     data_length = indicators[list(indicators.keys())[0]]['indicators'].shape[2]
-    start_timestamp = datetime.strptime("2020-02-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    end_timestamp = datetime.strptime("2021-05-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    # start_timestamp is start of kline data
+    start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    end_timestamp = datetime.strptime("2021-06-15 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
-    kline_start_idx = 14 * 24 * 60
+    kline_start_idx = (31 + 14) * 24 * 60
 
     simulator = BinanceSimulator(initial_usdt=1000, symbols=symbols)
 
@@ -80,6 +81,9 @@ def main():
     random_symbol_order = list(range(len(symbols)))
 
     portfolio = Portfolio()
+    #portfolios = []
+    #for idx in range(5):
+    #    portfolios.append(Portfolio())
 
     logger = Logger()
 
