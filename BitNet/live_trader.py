@@ -17,13 +17,13 @@ from binance_account import BinanceAccount
 
 
 class Portfolio:
-    position_max_count = 5
+    position_max_count = 80
     take_profit = 1.05
     stop_loss = 0.95
 
-    def __init__(self, portfolios):
-        self._portfolios = portfolios
+    def __init__(self):
         self.positions = []
+        self.load()
 
     def add_position(self, symbol: str, position_size: float, mark_price: float):
         position = {
@@ -34,14 +34,31 @@ class Portfolio:
             'stop_loss': mark_price * self.stop_loss
         }
         self.positions.append(position)
-        self._portfolios.save()
+        self.save()
         return position
 
     def remove_position(self, position):
         self.positions.remove(position)
-        self._portfolios.save()
+        self.save()
 
+    def save(self):
+        with open(f"portfolio.pickle", 'wb') as f:
+            pickle.dump(self.positions, f)
 
+    def load(self):
+        try:
+            with open(f"portfolio.pickle", 'rb') as f:
+                self.positions = pickle.load(f)
+        except FileNotFoundError:
+            pass
+
+    def __str__(self):
+        s = "Portfolio:"
+        for position in self.positions:
+            s += f"\n  {position}"
+        return s
+
+"""
 class Portfolios:
     portfolio_count = 20
 
@@ -67,6 +84,7 @@ class Portfolios:
         #for position in self.positions:
         #    s += f"\n  {position}"
         return s
+"""
 
 
 class Logger:
@@ -121,8 +139,8 @@ def main():
 
     random_symbol_order = None
 
-    #portfolio = Portfolio()
-    portfolios = Portfolios()
+    portfolio = Portfolio()
+    #portfolios = Portfolios()
     #for idx in range(20):
     #    portfolios.append(Portfolio())
 
@@ -198,59 +216,62 @@ def main():
                     directions[symbol_idx, direction_degree_idx * len(lengths) + length_idx] = direction
 
         # Sell
-        for portfolio in portfolios.portfolios:
-            for position in portfolio.positions[:]:
-                mark_price = binance_account.get_mark_price(position['symbol'])
-                if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
-                    order_size = position['size']
-                    asset = position['symbol'].replace('USDT', '')
-                    account_balance = binance_account.get_balance(asset=asset)
-                    if order_size > account_balance or abs(order_size - account_balance) / account_balance < 0.1:
-                        order_size = account_balance
-                    if binance_account.market_sell(symbol=position['symbol'], volume=order_size):
-                        logging.info(f"Sold position {order_size} @ {mark_price}, {position}")
-                        portfolio.remove_position(position)
-                    else:
-                        logging.info(f"Sold position FAILED {order_size} @ {mark_price}, {position}")
-                    print_hodlings()
+        #for portfolio in portfolios.portfolios:
+        for position in portfolio.positions[:]:
+            mark_price = binance_account.get_mark_price(position['symbol'])
+            if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
+                order_size = position['size']
+                asset = position['symbol'].replace('USDT', '')
+                account_balance = binance_account.get_balance(asset=asset)
+                if order_size > account_balance or abs(order_size - account_balance) / account_balance < 0.1:
+                    order_size = account_balance
+                if binance_account.market_sell(symbol=position['symbol'], volume=order_size):
+                    logging.info(f"Sold position {order_size} @ {mark_price}, {position}")
+                    portfolio.remove_position(position)
+                else:
+                    logging.info(f"Sold position FAILED {order_size} @ {mark_price}, {position}")
+                print_hodlings()
 
         # Buy
+        # Predict values
+        data_input = pd.DataFrame(data=directions, columns=directions_column_names)
+        input_symbols = np.array(symbols)
+        for symbol in symbols:
+            data_input[symbol] = np.where(input_symbols == symbol, True, False)
+        test_dl = profit_model.dls.test_dl(data_input)
+        predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+
         equity = binance_account.get_total_equity_usdt()
         cash = binance_account.get_balance('USDT')
         # if cash > equity / portfolio.position_max_count * 0.25:
-        if cash > equity / (portfolios.portfolio_count * portfolios.portfolios[0].position_max_count):
-            # Predict values
-            data_input = pd.DataFrame(data=directions, columns=directions_column_names)
-            input_symbols = np.array(symbols)
-            for symbol in symbols:
-                data_input[symbol] = np.where(input_symbols == symbol, True, False)
-            test_dl = profit_model.dls.test_dl(data_input)
-            predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+        for _ in range(int(portfolio.position_max_count / 4)):
+            if cash < equity / portfolio.position_max_count:
+                break
 
+            k = 0.00020
             random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
+            for symbol_idx in random_symbol_order:
+                prediction = predictions[symbol_idx]
+                if prediction > 0:  # and predictions_ema50[idx] > 0:
+                    t = k * 25 ** prediction
+                    r = random.random()
+                    if r < t:
+                        symbol = symbols[symbol_idx]
+                        mark_price = binance_account.get_mark_price(symbol)
 
-            for portfolio in portfolios.portfolios:
-                k = 0.00020
-                for symbol_idx in random_symbol_order:
-                    prediction = predictions[symbol_idx]
-                    if prediction > 0:  # and predictions_ema50[idx] > 0:
-                        t = k * 25 ** prediction
-                        r = random.random()
-                        if r < t:
-                            symbol = symbols[symbol_idx]
-                            mark_price = binance_account.get_mark_price(symbol)
+                        position_value = min(equity / portfolio.position_max_count, cash)
+                        position_size = position_value / mark_price * 0.98
 
-                            position_value = min(equity / portfolio.position_max_count, cash)
-                            position_size = position_value / mark_price * 0.98
+                        # Todo: Save correct position_size
 
-                            #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
-                            if binance_account.market_buy(symbol=symbol, volume=position_size):
-                                position = portfolio.add_position(symbol=symbol, position_size=position_size, mark_price=mark_price)
-                                logging.info(f"Bought position {position_size} @ {mark_price}, {position}")
-                            else:
-                                logging.info(f"Bought position FAILED {position_size} @ {mark_price}, {position}")
-                            print_hodlings()
-                            break
+                        #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
+                        if binance_account.market_buy(symbol=symbol, volume=position_size):
+                            position = portfolio.add_position(symbol=symbol, position_size=position_size, mark_price=mark_price)
+                            logging.info(f"Bought position {position_size} @ {mark_price}, {position}")
+                        else:
+                            logging.info(f"Bought position FAILED {position_size} @ {mark_price}")
+                        print_hodlings()
+                        break
 
 
 if __name__ == '__main__':
