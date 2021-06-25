@@ -18,6 +18,7 @@ class BinanceAccount:
         self._mark_price = {}
         self._tick_size = {}
         self._min_lot_size = {}
+        self._min_notional = {}
         self._balance_lock = threading.Lock()
 
         self._client = Client(api_key=self._api_key, api_secret=self._api_secret)
@@ -31,7 +32,8 @@ class BinanceAccount:
                     # TODO: Potential bug if tick size doesn't end in 1
                     self._tick_size[symbol['symbol']] = int(math.log10(float(symbol_filter['stepSize'])))
                     self._min_lot_size[symbol['symbol']] = float(symbol_filter['minQty'])
-                    break
+                if symbol_filter['filterType'] == "MIN_NOTIONAL":
+                    self._min_notional[symbol['symbol']] = float(symbol_filter['minNotional'])
 
         self.twm = ThreadedWebsocketManager(
             api_key=self._api_key,
@@ -110,7 +112,14 @@ class BinanceAccount:
         factor = 10 ** -self._tick_size[symbol]
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
-            return
+            print(f"Market buy {volume} {symbol} FAILED! Volume too low.")
+            return False
+        elif quantity < self._min_lot_size[symbol]:
+            print(f"Market buy {volume} {symbol} FAILED! Volume below min lot size: {self._min_lot_size[symbol]}.")
+            return False
+        elif quantity * self._mark_price[symbol] < self._min_notional[symbol]:
+            print(f"Market buy {volume} {symbol} FAILED! Price * quantity below min notional: {self._min_notional[symbol]}.")
+            return False
 
         for retry in range(3):
             try:
@@ -138,7 +147,8 @@ class BinanceAccount:
         factor = 10 ** -self._tick_size[symbol]
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
-            return
+            print(f"Market sell {volume} {symbol} FAILED! Volume too low.")
+            return False
 
         for retry in range(3):
             try:
@@ -149,7 +159,7 @@ class BinanceAccount:
                     quantity=quantity
                 )
                 if order['status'] != 'FILLED':
-                    print(f"Market sell  {quantity} {symbol} FAILED! {order}")
+                    print(f"Market sell {quantity} {symbol} FAILED! {order}")
                     return False
                 else:
                     print(f"Market sell {quantity} {symbol} OK")
