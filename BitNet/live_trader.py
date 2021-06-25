@@ -37,6 +37,10 @@ class Portfolio:
         self.save()
         return position
 
+    def remove_position(self, position):
+        self.positions.remove(position)
+        self.save()
+
     def save(self):
         with open(f"position.pickle", 'wb') as f:
             pickle.dump(self.positions, f)
@@ -48,6 +52,12 @@ class Portfolio:
         except FileNotFoundError:
             pass
 
+    def __str__(self):
+        s = "Portfolio:"
+        for position in self.positions:
+            s += f"\n  {position}"
+        return s
+
 
 class Logger:
     def __init__(self):
@@ -58,6 +68,23 @@ class Logger:
     def append(self, timestamp, equity):
         self.file.write(f"{timestamp},{equity}\n")
         self.file.flush()
+
+
+def check_positions(portfolio, binance_account):
+    # Todo: Add missing positions
+    # Todo: Modify position sizes
+    used = {}
+    new_positions = []
+    for position in portfolio.positions:
+        symbol = position['symbol']
+        if symbol not in used:
+            used[symbol] = 0
+        used[symbol] += position['size']
+
+        if binance_account.get_balance(asset=symbol.replace('USDT', '')) > used[symbol] * 0.9:
+            new_positions.append(position)
+
+    portfolio.positions = new_positions
 
 
 def main():
@@ -84,6 +111,7 @@ def main():
 
     random_symbol_order = None
     portfolio = Portfolio()
+    print(portfolio)
     logger = Logger()
 
     directions = None
@@ -130,6 +158,8 @@ def main():
             )
             # binance_account.sell_all()
 
+        check_positions(portfolio, binance_account)
+
         # Runners
         for price in prices:
             for symbol in symbols:
@@ -162,9 +192,11 @@ def main():
                 account_balance = binance_account.get_balance(asset=asset)
                 if order_size > account_balance or abs(order_size - account_balance) / account_balance < 0.1:
                     order_size = account_balance
-                binance_account.market_sell(symbol=position['symbol'], volume=order_size)
-                logging.info(f"Sold position {position} @ {mark_price}")
-                portfolio.positions.remove(position)
+                if binance_account.market_sell(symbol=position['symbol'], volume=order_size):
+                    logging.info(f"Sold position {order_size} @ {mark_price}, {position}")
+                    portfolio.remove_position(position)
+                else:
+                    logging.info(f"Sold position FAILED {order_size} @ {mark_price}, {position}")
                 print_hodlings()
 
         # Buy
@@ -197,8 +229,10 @@ def main():
                         #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
                         if binance_account.market_buy(symbol=symbol, volume=position_size):
                             position = portfolio.add_position(symbol=symbol, position_size=position_size, mark_price=mark_price)
-                            logging.info(f"Bought position {position} @ {mark_price}")
-                            print_hodlings()
+                            logging.info(f"Bought position {position_size} @ {mark_price}, {position}")
+                        else:
+                            logging.info(f"Bought position FAILED {position_size} @ {mark_price}, {position}")
+                        print_hodlings()
                         break
 
 
