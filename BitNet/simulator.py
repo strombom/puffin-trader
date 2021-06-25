@@ -54,7 +54,15 @@ def main():
     #with open(f"cache/intrinsic_events.pickle", 'rb') as f:
     #    intrinsic_events = pickle.load(f)
 
-    data_length = indicators[list(indicators.keys())[0]]['indicators'].shape[2]
+    data_length = None
+    for symbol in symbols:
+        data_length_symbol = klines[symbol]['close'].shape[0]
+        if data_length is None:
+            data_length = data_length_symbol
+        else:
+            data_length = min(data_length, data_length_symbol)
+    #mark_price = klines[symbol]['close'][kline_idx]
+    #data_length = indicators[list(indicators.keys())[0]]['indicators'].shape[2]
     # start_timestamp is start of kline data
     start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     end_timestamp = datetime.strptime("2021-06-15 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
