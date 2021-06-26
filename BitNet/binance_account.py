@@ -134,8 +134,15 @@ class BinanceAccount:
                     print(f"Market buy  {quantity} {symbol} FAILED! {order}")
                     return {'quantity': 0, 'price': 0}
                 else:
+                    fill_quantity = 0
+                    fill_value = 0
+                    for fill in order['fills']:
+                        fill_quantity += float(fill['qty'])
+                        fill_value += float(fill['qty']) * float(fill['price'])
+                    price = fill_value / fill_quantity
+
                     print(f"Market buy {quantity} {symbol} OK")
-                    return {'quantity': float(order['executedQty']), 'price': float(order['price'])}
+                    return {'quantity': float(order['executedQty']), 'price': price}
 
             except BinanceAPIException as e:
                 print(f"Market buy  {quantity} {symbol} error: {e}")
@@ -162,8 +169,15 @@ class BinanceAccount:
                     print(f"Market sell {quantity} {symbol} FAILED! {order}")
                     return {'quantity': 0, 'price': 0}
                 else:
-                    print(f"Market sell {quantity} {symbol} OK")
-                    return {'quantity': float(order['executedQty']), 'price': float(order['price'])}
+                    fill_quantity = 0
+                    fill_value = 0
+                    for fill in order['fills']:
+                        fill_quantity += float(fill['qty'])
+                        fill_value += float(fill['qty']) * float(fill['price'])
+                    price = fill_value / fill_quantity
+
+                    print(f"Market sell {quantity} @ {price} {symbol} OK, {order}")
+                    return {'quantity': float(order['executedQty']), 'price': price}
 
             except BinanceAPIException as e:
                 print(f"Market sell  {quantity} {symbol} error: {e}")
