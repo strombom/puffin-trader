@@ -17,7 +17,6 @@ from binance_account import BinanceAccount
 
 
 class Portfolio:
-    position_max_count = 80
     take_profit = 1.05
     stop_loss = 0.95
 
@@ -118,6 +117,7 @@ def check_positions(portfolio, binance_account):
 def main():
     # Todo: keep notional value at ~15
     # Todo: spread out trades over each minute
+    # Todo: circuit breaker
 
     profit_model = load_learner('model_all_2021-06-23.pickle')
 
@@ -129,6 +129,7 @@ def main():
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:31007")
 
+    nominal_order_size = 12.0  # usdt, slightly larger than min notional
     delta = 0.01
     direction_degrees = [1, 2, 3]
     lengths = pd.read_csv('cache/regime_data_lengths.csv')['length'].to_list()
@@ -238,6 +239,8 @@ def main():
                     logging.info(f"Sold position FAILED {order_size} @ {mark_price}, {position}")
                 print_hodlings()
 
+        position_max_count = int(binance_account.get_total_equity_usdt() / nominal_order_size)
+
         # Buy
         # Predict values
         data_input = pd.DataFrame(data=directions, columns=directions_column_names)
@@ -247,11 +250,13 @@ def main():
         test_dl = profit_model.dls.test_dl(data_input)
         predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
 
-        equity = binance_account.get_total_equity_usdt()
-        cash = binance_account.get_balance('USDT')
         # if cash > equity / portfolio.position_max_count * 0.25:
-        for _ in range(int(portfolio.position_max_count / 4)):
-            if cash < equity / portfolio.position_max_count:
+        for _ in range(int(position_max_count / 5)):
+            # Todo: make chunks if the same symbol is bought multiple times
+
+            equity = binance_account.get_total_equity_usdt()
+            cash = binance_account.get_balance('USDT')
+            if cash < equity / position_max_count:
                 break
 
             k = 0.00020
@@ -265,7 +270,7 @@ def main():
                         symbol = symbols[symbol_idx]
                         mark_price = binance_account.get_mark_price(symbol)
 
-                        order_value = min(equity / portfolio.position_max_count, cash)
+                        order_value = min(equity / position_max_count, cash * 0.95)
                         order_size = order_value / mark_price * 0.98
 
                         #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
