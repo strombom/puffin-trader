@@ -1,9 +1,11 @@
+import logging
 import math
 import asyncio
 import threading
 from datetime import datetime, timezone, timedelta
 
 import binance.enums
+import requests.exceptions
 from binance import ThreadedWebsocketManager, Client
 from binance.exceptions import BinanceAPIException
 
@@ -147,6 +149,9 @@ class BinanceAccount:
             except BinanceAPIException as e:
                 print(f"Market buy  {quantity} {symbol} error: {e}")
 
+            except requests.exceptions.ConnectionError as e:
+                logging.error(f"market_buy ConnectionError: {e}")
+
         print(f"Market buy  {quantity} {symbol} FAILED!")
         return {'quantity': 0, 'price': 0}
 
@@ -181,6 +186,9 @@ class BinanceAccount:
 
             except BinanceAPIException as e:
                 print(f"Market sell  {quantity} {symbol} error: {e}")
+
+            except requests.exceptions.ConnectionError as e:
+                logging.error(f"market_buy ConnectionError: {e}")
 
         print(f"Market sell  {quantity} {symbol} FAILED!")
         return {'quantity': 0, 'price': 0}
