@@ -221,7 +221,7 @@ def main():
 
         # Sell
         #for portfolio in portfolios.portfolios:
-        for position in portfolio.positions[:]:
+        for position in portfolio.positions.copy():
             mark_price = binance_account.get_mark_price(position['symbol'])
             if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
                 order_size = position['size']
