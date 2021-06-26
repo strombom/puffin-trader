@@ -10,7 +10,7 @@ from BinanceSimulator.binance_simulator import BinanceSimulator
 
 
 class Portfolio:
-    position_max_count = 5
+    position_max_count = 1000
     take_profit = 1.05
     stop_loss = 0.95
 
@@ -129,22 +129,28 @@ def main():
 
     random_symbol_order = list(range(len(symbols)))
 
-    #portfolio = Portfolio()
-    portfolios = []
-    for idx in range(20):
-        portfolios.append(Portfolio())
+    portfolio = Portfolio()
+    #portfolios = []
+    #for idx in range(100):
+    #    portfolios.append(Portfolio())
 
     logger = Logger()
 
+    previous_print = start_timestamp
+
     def print_hodlings(kline_idx_):
-        timestamp = start_timestamp + timedelta(minutes=kline_idx_)
+        nonlocal previous_print
+
         total_equity_ = simulator.get_equity_usdt()
-        stri = f"{timestamp} Hodlings {total_equity_:.1f} USDT"
-        for w_symbol in simulator.wallet:
-            if simulator.wallet[w_symbol] > 0:
-                s_value = simulator.wallet[w_symbol] * simulator.mark_price[w_symbol]
-                stri += f", {s_value:.1f} {w_symbol}"
-        print(stri)
+        timestamp = start_timestamp + timedelta(minutes=kline_idx_)
+        if timestamp > previous_print + timedelta(days=1):
+            previous_print += timedelta(days=1)
+            stri = f"{timestamp} Hodlings {total_equity_:.1f} USDT"
+            for w_symbol in simulator.wallet:
+                if simulator.wallet[w_symbol] > 0:
+                    s_value = simulator.wallet[w_symbol] * simulator.mark_price[w_symbol]
+                    stri += f", {s_value:.1f} {w_symbol}"
+            print(stri)
         logger.append(timestamp, total_equity_, simulator.wallet['usdt'])
 
     for kline_idx in range(kline_start_idx, kline_end_idx):
@@ -152,35 +158,39 @@ def main():
             mark_price = klines[symbol]['close'][kline_idx]
             simulator.set_mark_price(symbol=symbol, mark_price=mark_price)
 
-        for portfolio in portfolios:
-            # Sell
-            for position in portfolio.positions[:]:
-                mark_price = simulator.mark_price[position['symbol']]
-                if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
-                    order_size = -position['size']
-                    if abs(position['size'] - simulator.wallet[position['symbol']]) / simulator.wallet[position['symbol']] < 0.1:
-                        order_size = -simulator.wallet[position['symbol']]
-                    simulator.market_order(order_size=order_size, symbol=position['symbol'])
-                    portfolio.remove_position(position)
-                    print_hodlings(kline_idx)
+        #for portfolio in portfolios:
+        # Sell
+        for position in portfolio.positions[:]:
+            mark_price = simulator.mark_price[position['symbol']]
+            if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
+                order_size = -position['size']
+                if abs(position['size'] - simulator.wallet[position['symbol']]) / simulator.wallet[position['symbol']] < 0.1:
+                    order_size = -simulator.wallet[position['symbol']]
+                simulator.market_order(order_size=order_size, symbol=position['symbol'])
+                portfolio.remove_position(position)
+                print_hodlings(kline_idx)
 
         # Buy
         equity = simulator.get_equity_usdt()
         cash = simulator.get_cash_usdt()
-        if cash > equity / (len(portfolios) * portfolios[0].position_max_count):
-            #for symbol_idx, symbol in enumerate(symbols):
-            #    tmp_indicator_columns[symbol_idx] = indicators[symbol]['indicators'][:, :, kline_idx].transpose().flatten()
+        # if cash > equity / (len(portfolios) * portfolios[0].position_max_count):
+        for _ in range(int(portfolio.position_max_count / 20)):
+            if cash > equity / portfolio.position_max_count:
+                #for symbol_idx, symbol in enumerate(symbols):
+                #    tmp_indicator_columns[symbol_idx] = indicators[symbol]['indicators'][:, :, kline_idx].transpose().flatten()
 
-            #df_indicators = pd.DataFrame(data=tmp_indicator_columns, columns=indicator_column_names)
-            #df = pd.concat([df_symbols, df_indicators], axis=1)
+                #df_indicators = pd.DataFrame(data=tmp_indicator_columns, columns=indicator_column_names)
+                #df = pd.concat([df_symbols, df_indicators], axis=1)
 
-            #test_dl = profit_model.dls.test_dl(df)
-            #predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+                #test_dl = profit_model.dls.test_dl(df)
+                #predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
 
-            random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
+                #for portfolio in portfolios:
+                #    if len(portfolio.positions) == portfolio.position_max_count:
+                #        continue
 
-            for portfolio in portfolios:
-                k = 0.00020
+                k = 0.00020 * 4
+                random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
                 for symbol_idx in random_symbol_order:
                     prediction = predictions[kline_idx - kline_start_idx][symbol_idx]
                     if prediction > 0:  # and predictions_ema50[idx] > 0:
@@ -190,7 +200,8 @@ def main():
                             mark_price = klines[symbols[symbol_idx]]['close'][kline_idx]
                             simulator.set_mark_price(symbol=symbols[symbol_idx], mark_price=mark_price)
 
-                            position_value = min(equity / (len(portfolios) * portfolio.position_max_count), cash)
+                            # position_value = min(equity / (len(portfolios) * portfolio.position_max_count), cash)
+                            position_value = min(equity / portfolio.position_max_count, cash)
                             position_size = position_value / mark_price * 0.98
 
                             simulator.market_order(order_size=position_size, symbol=symbols[symbol_idx])
@@ -200,7 +211,7 @@ def main():
                             print_hodlings(kline_idx)
                             break
 
-            #print(predictions)
+                #print(predictions)
 
     print_hodlings(kline_end_idx - 1)
 
