@@ -116,6 +116,9 @@ def check_positions(portfolio, binance_account):
 
 
 def main():
+    # Todo: keep notional value at ~15
+    # Todo: spread out trades over each minute
+
     profit_model = load_learner('model_all_2021-06-23.pickle')
 
     with open('binance_account.json') as f:
@@ -225,8 +228,11 @@ def main():
                 account_balance = binance_account.get_balance(asset=asset)
                 if order_size > account_balance or abs(order_size - account_balance) / account_balance < 0.1:
                     order_size = account_balance
-                if binance_account.market_sell(symbol=position['symbol'], volume=order_size):
-                    logging.info(f"Sold position {order_size} @ {mark_price}, {position}")
+                order_result = binance_account.market_sell(symbol=position['symbol'], volume=order_size)
+                if order_result['quantity'] > 0:
+                    logging.info(f"Sold position: {order_size} @ {order_result['price']}, expected price: {mark_price}, {position}")
+                    if position['size'] != order_result['quantity']:
+                        logging.warning(f"Executed quantity ({order_result['quantity']}) doesn't match position size ({position['size']})")
                     portfolio.remove_position(position)
                 else:
                     logging.info(f"Sold position FAILED {order_size} @ {mark_price}, {position}")
@@ -259,17 +265,18 @@ def main():
                         symbol = symbols[symbol_idx]
                         mark_price = binance_account.get_mark_price(symbol)
 
-                        position_value = min(equity / portfolio.position_max_count, cash)
-                        position_size = position_value / mark_price * 0.98
-
-                        # Todo: Save correct position_size
+                        order_value = min(equity / portfolio.position_max_count, cash)
+                        order_size = order_value / mark_price * 0.98
 
                         #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
-                        if binance_account.market_buy(symbol=symbol, volume=position_size):
-                            position = portfolio.add_position(symbol=symbol, position_size=position_size, mark_price=mark_price)
-                            logging.info(f"Bought position {position_size} @ {mark_price}, {position}")
+                        order_result = binance_account.market_buy(symbol=symbol, volume=order_size)
+                        if order_result['quantity'] > 0:
+                            position = portfolio.add_position(symbol=symbol, position_size=order_result['quantity'], mark_price=order_result['price'])
+                            logging.info(f"Bought position {order_result['quantity']} @ {order_result['price']} ({order_result['quantity'] * order_result['price']} USDT), {position}")
+                            if order_result['quantity'] != order_size:
+                                logging.warning(f"Executed quantity ({order_result['quantity']}) doesn't match quoted quantity ({order_size})")
                         else:
-                            logging.info(f"Bought position FAILED {position_size} @ {mark_price}")
+                            logging.info(f"Bought position FAILED {order_size} @ {order_result['price']}")
                         print_hodlings()
                         break
 

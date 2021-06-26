@@ -113,13 +113,13 @@ class BinanceAccount:
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             print(f"Market buy {volume} {symbol} FAILED! Volume too low.")
-            return False
+            return {'quantity': 0, 'price': 0}
         elif quantity < self._min_lot_size[symbol]:
             print(f"Market buy {volume} {symbol} FAILED! Volume below min lot size: {self._min_lot_size[symbol]}.")
-            return False
+            return {'quantity': 0, 'price': 0}
         elif quantity * self._mark_price[symbol] < self._min_notional[symbol]:
             print(f"Market buy {volume} {symbol} FAILED! Price * quantity below min notional: {self._min_notional[symbol]}.")
-            return False
+            return {'quantity': 0, 'price': 0}
 
         for retry in range(3):
             try:
@@ -132,23 +132,23 @@ class BinanceAccount:
 
                 if order['status'] != 'FILLED':
                     print(f"Market buy  {quantity} {symbol} FAILED! {order}")
-                    return False
+                    return {'quantity': 0, 'price': 0}
                 else:
                     print(f"Market buy {quantity} {symbol} OK")
-                    return True
+                    return {'quantity': float(order['executedQty']), 'price': float(order['price'])}
 
             except BinanceAPIException as e:
                 print(f"Market buy  {quantity} {symbol} error: {e}")
 
         print(f"Market buy  {quantity} {symbol} FAILED!")
-        return False
+        return {'quantity': 0, 'price': 0}
 
     def market_sell(self, symbol, volume):
         factor = 10 ** -self._tick_size[symbol]
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             print(f"Market sell {volume} {symbol} FAILED! Volume too low.")
-            return False
+            return {'quantity': 0, 'price': 0}
 
         for retry in range(3):
             try:
@@ -160,13 +160,13 @@ class BinanceAccount:
                 )
                 if order['status'] != 'FILLED':
                     print(f"Market sell {quantity} {symbol} FAILED! {order}")
-                    return False
+                    return {'quantity': 0, 'price': 0}
                 else:
                     print(f"Market sell {quantity} {symbol} OK")
-                    return True
+                    return {'quantity': float(order['executedQty']), 'price': float(order['price'])}
 
             except BinanceAPIException as e:
                 print(f"Market sell  {quantity} {symbol} error: {e}")
 
         print(f"Market sell  {quantity} {symbol} FAILED!")
-        return False
+        return {'quantity': 0, 'price': 0}
