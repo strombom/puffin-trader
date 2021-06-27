@@ -118,6 +118,7 @@ def main():
     # Todo: keep notional value at ~15
     # Todo: spread out trades over each minute
     # Todo: circuit breaker
+    # Todo: handle BNB fees
 
     profit_model = load_learner('model_all_2021-06-23.pickle')
 
@@ -127,7 +128,7 @@ def main():
     logging.info("Connect to Binance delta server")
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:31007")
+    socket.connect("tcp://192.168.1.90:31007")
 
     nominal_order_size = 12.0  # usdt, slightly larger than min notional
     delta = 0.01
