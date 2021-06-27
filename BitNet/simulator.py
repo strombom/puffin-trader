@@ -16,8 +16,9 @@ class Portfolio:
     def __init__(self):
         self.positions = []
 
-    def add_position(self, symbol: str, position_size: float, mark_price: float):
+    def add_position(self, symbol: str, position_size: float, mark_price: float, kline_idx: int):
         self.positions.append({
+            'kline_idx': kline_idx,
             'symbol': symbol,
             'size': position_size,
             'mark_price': mark_price,
@@ -218,7 +219,7 @@ def main():
             position_size = buy_orders[symbol]
             mark_price = klines[symbol]['close'][kline_idx]
             simulator.market_order(order_size=position_size, symbol=symbol)
-            portfolio.add_position(symbol=symbol, position_size=position_size, mark_price=mark_price)
+            portfolio.add_position(symbol=symbol, position_size=position_size, mark_price=mark_price, kline_idx=kline_idx)
             print_hodlings(kline_idx)
 
     print_hodlings(kline_end_idx - 1)
