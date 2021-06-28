@@ -1,3 +1,5 @@
+import os
+import sys
 
 import zmq
 import time
@@ -14,6 +16,7 @@ from fastai.learner import load_learner
 
 from IntrinsicTime.runner import Runner
 from binance_account import BinanceAccount
+from live_trader_logging import live_trader_setup_logging
 
 
 class Portfolio:
@@ -161,7 +164,7 @@ def main():
     def print_hodlings():
         timestamp = datetime.now(tz=timezone.utc)
         total_equity_ = binance_account.get_total_equity_usdt()
-        stri = f"{timestamp} Hodlings {total_equity_:.1f} USDT :"
+        stri = f"Hodlings {total_equity_:.1f} USDT :"
         for h_symbol in symbols:
             balance = binance_account.get_balance(asset=h_symbol.replace('USDT', ''))
             if balance > 0:
@@ -281,9 +284,11 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)-8s %(message)s',
-        level=logging.INFO,
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.Formatter.converter = time.gmtime
+    live_trader_setup_logging(script_name=os.path.splitext(os.path.basename(sys.argv[0]))[0])
+
+    #logging.basicConfig(
+    #    format='%(asctime)s %(levelname)-8s %(message)s',
+    #    level=logging.INFO,
+    #    datefmt='%Y-%m-%d %H:%M:%S')
+    #logging.Formatter.converter = time.gmtime
     main()
