@@ -95,7 +95,7 @@ def main():
             indicators[symbol] = pickle.load(f)
         klines[symbol] = pd.read_hdf(f"cache/klines/{symbol}.hdf")
 
-    profit_model = load_learner('model_all_2021-06-23.pickle')
+    profit_model = load_learner('model_all.pickle')
 
     #with open(f"cache/intrinsic_events.pickle", 'rb') as f:
     #    intrinsic_events = pickle.load(f)
@@ -114,7 +114,7 @@ def main():
     start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     end_timestamp = datetime.strptime("2021-06-15 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
-    simulator = BinanceSimulator(initial_usdt=2000, symbols=symbols)
+    simulator = BinanceSimulator(initial_usdt=10000, symbols=symbols)
 
     degrees = [1, 2, 3]
 
@@ -127,15 +127,8 @@ def main():
         kline_end_idx
     )
 
-    random_symbol_order = list(range(len(symbols)))
-
     portfolio = Portfolio()
-    #portfolios = []
-    #for idx in range(100):
-    #    portfolios.append(Portfolio())
-
     logger = Logger()
-
     previous_print = start_timestamp
 
     def print_hodlings(kline_idx_):
@@ -158,7 +151,6 @@ def main():
             mark_price = klines[symbol]['close'][kline_idx]
             simulator.set_mark_price(symbol=symbol, mark_price=mark_price)
 
-        #for portfolio in portfolios:
         # Sell
         for position in portfolio.positions.copy():
             mark_price = simulator.mark_price[position['symbol']]
@@ -170,50 +162,33 @@ def main():
                 portfolio.remove_position(position)
                 print_hodlings(kline_idx)
 
-        position_max_count = int(simulator.get_equity_usdt() / 12)
+        position_max_count = min(50, int(simulator.get_equity_usdt() / 12))
 
         # Buy
-        # if cash > equity / (len(portfolios) * portfolios[0].position_max_count):
         buy_orders = {}
-        equity = simulator.get_equity_usdt()
-        cash = simulator.get_cash_usdt()
-        for _ in range(int(position_max_count / 5)):
-            if cash > equity / position_max_count:
-                #for symbol_idx, symbol in enumerate(symbols):
-                #    tmp_indicator_columns[symbol_idx] = indicators[symbol]['indicators'][:, :, kline_idx].transpose().flatten()
+        cash, equity = simulator.get_equity_usdt(), simulator.get_cash_usdt()
+        for _ in range(int(position_max_count)):
+            if cash < equity / position_max_count * 0.9:
+                break
 
-                #df_indicators = pd.DataFrame(data=tmp_indicator_columns, columns=indicator_column_names)
-                #df = pd.concat([df_symbols, df_indicators], axis=1)
+            symbol_idx = random.randint(0, len(symbols) - 1)
+            prediction = predictions[kline_idx - kline_start_idx][symbol_idx]
+            if prediction > 0 and 0.00020 * 10 * 25 ** prediction > random.random():
+                symbol = symbols[symbol_idx]
+                mark_price = klines[symbol]['close'][kline_idx]
+                simulator.set_mark_price(symbol=symbol, mark_price=mark_price)
 
-                #test_dl = profit_model.dls.test_dl(df)
-                #predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+                position_value = min(equity / position_max_count, cash * 0.95)
+                if position_value < 10:
+                    break
+                position_size = position_value / mark_price * 0.99
 
-                #for portfolio in portfolios:
-                #    if len(portfolio.positions) == portfolio.position_max_count:
-                #        continue
-
-                k = 0.00020
-                random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
-                for symbol_idx in random_symbol_order:
-                    prediction = predictions[kline_idx - kline_start_idx][symbol_idx]
-                    if prediction > 0:  # and predictions_ema50[idx] > 0:
-                        t = k * 25 ** prediction
-                        r = random.random()
-                        if r < t:
-                            symbol = symbols[symbol_idx]
-                            mark_price = klines[symbols[symbol_idx]]['close'][kline_idx]
-                            simulator.set_mark_price(symbol=symbols[symbol_idx], mark_price=mark_price)
-
-                            position_value = min(equity / position_max_count, cash * 0.95)
-                            if position_value < 10:
-                                break
-                            position_size = position_value / mark_price * 0.98
-
-                            if symbol not in buy_orders:
-                                buy_orders[symbol] = 0
-                            buy_orders[symbol] += position_size
-                            cash -= position_size * mark_price * 1.00075
-                            break
+                if symbol not in buy_orders:
+                    buy_orders[symbol] = 0
+                buy_orders[symbol] += position_size
+                cash -= position_size * mark_price * (1 + 2 * 0.00075)
+                equity -= position_size * mark_price * 2 * 0.00075
+                #break
 
         for symbol in buy_orders:
             position_size = buy_orders[symbol]
