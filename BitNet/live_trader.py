@@ -115,12 +115,11 @@ def check_positions(portfolio, binance_account):
 
 
 def main():
-    # Todo: keep notional value at ~15
     # Todo: spread out trades over each minute
     # Todo: circuit breaker
     # Todo: handle BNB fees
 
-    profit_model = load_learner('model_all_2021-06-23.pickle')
+    profit_model = load_learner('model_all_2021-06-27.pickle')
 
     with open('binance_account.json') as f:
         account_info = json.load(f)
@@ -168,7 +167,7 @@ def main():
             if balance > 0:
                 s_value = balance * binance_account.get_mark_price(symbol=h_symbol)
                 stri += f" {s_value:.1f} {h_symbol}"
-        print(stri)
+        logging.info(stri)
         logger.append(timestamp, total_equity_)
 
     while True:
@@ -232,15 +231,13 @@ def main():
                     order_size = account_balance
                 order_result = binance_account.market_sell(symbol=position['symbol'], volume=order_size)
                 if order_result['quantity'] > 0:
-                    logging.info(f"Sold position: {order_size} @ {order_result['price']}, expected price: {mark_price}, {position}")
+                    logging.info(f"Sold {position['symbol']}: {order_size} @ {order_result['price']}, expected price: {mark_price}, {position}")
                     if position['size'] != order_result['quantity']:
-                        logging.warning(f"Executed quantity ({order_result['quantity']}) doesn't match position size ({position['size']})")
+                        logging.info(f"Executed quantity ({order_result['quantity']}) doesn't match position size ({position['size']})")
                     portfolio.remove_position(position)
                 else:
-                    logging.info(f"Sold position FAILED {order_size} @ {mark_price}, {position}")
+                    logging.info(f"Sold {position['symbol']} FAILED: {order_size} @ {mark_price}, {position}")
                 print_hodlings()
-
-        position_max_count = int(binance_account.get_total_equity_usdt() / nominal_order_size)
 
         # Buy
         # Predict values
@@ -251,40 +248,36 @@ def main():
         test_dl = profit_model.dls.test_dl(data_input)
         predictions = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
 
-        # if cash > equity / portfolio.position_max_count * 0.25:
-        for _ in range(int(position_max_count / 5)):
+        position_max_count = min(100, int(binance_account.get_total_equity_usdt() / nominal_order_size))
+        for _ in range(int(position_max_count)):
             # Todo: make chunks if the same symbol is bought multiple times
 
-            equity = binance_account.get_total_equity_usdt()
-            cash = binance_account.get_balance('USDT')
-            if cash < equity / position_max_count:
+            cash, equity = binance_account.get_balance('USDT'), binance_account.get_total_equity_usdt(),
+            if cash < equity / position_max_count * 0.9:
                 break
 
-            k = 0.00020
-            random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
-            for symbol_idx in random_symbol_order:
-                prediction = predictions[symbol_idx]
-                if prediction > 0:  # and predictions_ema50[idx] > 0:
-                    t = k * 25 ** prediction
-                    r = random.random()
-                    if r < t:
-                        symbol = symbols[symbol_idx]
-                        mark_price = binance_account.get_mark_price(symbol)
+            symbol_idx = random.randint(0, len(symbols) - 1)
+            #random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
+            #for symbol_idx in random_symbol_order:
+            prediction = predictions[symbol_idx]
+            if prediction > 0 and 0.00020 * 5 * 25 ** prediction > random.random():
+                symbol = symbols[symbol_idx]
+                mark_price = binance_account.get_mark_price(symbol)
 
-                        order_value = min(equity / position_max_count, cash * 0.95)
-                        order_size = order_value / mark_price * 0.98
+                order_value = min(equity / position_max_count, cash * 0.95)
+                order_size = order_value / mark_price * 0.99
 
-                        #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
-                        order_result = binance_account.market_buy(symbol=symbol, volume=order_size)
-                        if order_result['quantity'] > 0:
-                            position = portfolio.add_position(symbol=symbol, position_size=order_result['quantity'], mark_price=order_result['price'])
-                            logging.info(f"Bought position {order_result['quantity']} @ {order_result['price']} ({order_result['quantity'] * order_result['price']} USDT), {position}")
-                            if order_result['quantity'] != order_size:
-                                logging.warning(f"Executed quantity ({order_result['quantity']}) doesn't match quoted quantity ({order_size})")
-                        else:
-                            logging.info(f"Bought position FAILED {order_size} @ {order_result['price']}")
-                        print_hodlings()
-                        break
+                #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
+                order_result = binance_account.market_buy(symbol=symbol, volume=order_size)
+                if order_result['quantity'] > 0:
+                    position = portfolio.add_position(symbol=symbol, position_size=order_result['quantity'], mark_price=order_result['price'])
+                    logging.info(f"Bought {symbol} {order_result['quantity']} @ {order_result['price']} ({order_result['quantity'] * order_result['price']} USDT), {position}")
+                    if order_result['quantity'] != order_size:
+                        logging.info(f"Executed quantity ({order_result['quantity']}) doesn't match quoted quantity ({order_size})")
+                else:
+                    logging.info(f"Bought {symbol} FAILED {order_size} @ {order_result['price']}")
+                print_hodlings()
+                #break
 
 
 if __name__ == '__main__':
