@@ -43,7 +43,7 @@ def download_klines(client: Client, symbol: str, start_time: str):
         })
 
         try:
-            print_status(timestamp=datetime.fromtimestamp(klines[-1]['close_time'] / 1000))
+            print_status(timestamp=datetime.fromtimestamp(klines[-1]['close_time'] / 1000, tz=timezone.utc))
         except pyrate_limiter.BucketFullException as err:
             pass
 
