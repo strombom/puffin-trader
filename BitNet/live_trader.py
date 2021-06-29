@@ -282,6 +282,8 @@ def main():
                 print_hodlings()
                 #break
 
+        binance_account.update_balance()
+
 
 if __name__ == '__main__':
     live_trader_setup_logging(script_name=os.path.splitext(os.path.basename(sys.argv[0]))[0])

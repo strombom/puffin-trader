@@ -44,13 +44,7 @@ class BinanceAccount:
         self.twm.start()
 
         # Get margin account balances
-        with self._balance_lock:
-            account_info = self._client.get_margin_account()
-            for asset in account_info['userAssets']:
-                if asset['asset'] + 'USDT' in symbols or asset['asset'] == 'USDT':
-                    # print(f"Update balance {asset['free']} {asset['asset']}")
-                    self._balance[asset['asset']] = float(asset['free'])
-                    #self._debt[asset['asset']] = asset['borrowed']
+        self.update_balance()
 
         # Get all prices
         prices = self._client.get_all_tickers()
@@ -63,6 +57,7 @@ class BinanceAccount:
         self.twm.start_margin_socket(callback=self._process_margin_message)
 
     def _process_margin_message(self, data):
+        # Todo: 2021-06-29 MATIC was showing a balance of 110 but was 30 on the exchange.
         with self._balance_lock:
             if data['e'] == 'outboundAccountPosition':
                 for position in data['B']:
@@ -78,6 +73,15 @@ class BinanceAccount:
         #if symbol in self._mark_prices and self._mark_prices[symbol] != last_price:
         #    print(f"Process tick message {symbol} {last_price}")
         self._mark_price[symbol] = last_price
+
+    def update_balance(self):
+        with self._balance_lock:
+            account_info = self._client.get_margin_account()
+            for asset in account_info['userAssets']:
+                if asset['asset'] + 'USDT' in self._symbols or asset['asset'] == 'USDT':
+                    # print(f"Update balance {asset['free']} {asset['asset']}")
+                    self._balance[asset['asset']] = float(asset['free'])
+                    #self._debt[asset['asset']] = asset['borrowed']
 
     """
     def get_portfolio(self):
