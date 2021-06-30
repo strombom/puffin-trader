@@ -23,7 +23,7 @@ def calculate_volume():
             continue
 
         data = pd.read_hdf(file_path)
-        timestamp = datetime.fromtimestamp(data['open_time'].iloc[0] / 1000)
+        timestamp = datetime.fromtimestamp(data['open_time'].iloc[0] / 1000, tz=timezone.utc)
 
         if timestamp != start_timestamp:
             continue
