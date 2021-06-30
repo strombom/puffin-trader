@@ -12,6 +12,7 @@ from cache import cache_it
 from IntrinsicTime.runner import Runner
 
 
+"""
 #@cache_it
 def make_steps(symbol: str, delta: float) -> (list, list):
     runner = Runner(delta=delta)
@@ -23,6 +24,7 @@ def make_steps(symbol: str, delta: float) -> (list, list):
             timestamps.append(kline_idx)
             steps.append(step)
     return timestamps, steps
+"""
 
 
 def make_steps_process(task_queue_lock, task_queue, results_queue_lock, results_queue, process_id):
@@ -38,24 +40,25 @@ def make_steps_process(task_queue_lock, task_queue, results_queue_lock, results_
         print(process_id, "Processing", symbol)
 
         runner = Runner(delta=delta)
-        timestamps, steps = [], []
+        kline_idxs, steps_price = [], []
         klines = pd.read_hdf(f"cache/klines/{symbol}.hdf")
         for kline_idx, kline in klines.iterrows():
-            mark_price = kline['close']
-            for step in runner.step(mark_price):
-                timestamps.append(kline_idx)
-                steps.append(step)
+            mark_price = kline['open']
+            for step_price in runner.step(mark_price):
+                kline_idxs.append(kline_idx)
+                steps_price.append(step_price)
             #if len(steps) > 1000:
             #    break
 
         with results_queue_lock:
             results_queue.put({
                 'symbol': parameters['symbol'],
-                'timestamps': timestamps,
-                'steps': steps
+                'steps_idx': kline_idxs,
+                'steps_price': steps_price
             })
 
 
+"""
 @cache_it
 def make_timesteps(symbol: str, delta: float):
     runner = Runner(delta=delta)
@@ -99,6 +102,7 @@ def make_pid_timesteps(symbol: str, delta: float, setpoint: float):
         'timestamps': timestamps,
         'prices': prices
     }
+"""
 
 
 def main():
@@ -138,8 +142,8 @@ def main():
             with task_queue_lock:
                 result = results_queue.get(block=True, timeout=1)
                 intrinsic_events[result['symbol']] = {
-                    'timestamps': result['timestamps'],
-                    'steps': result['steps']
+                    'steps_idx': result['steps_idx'],
+                    'steps_price': result['steps_price']
                 }
         except queue.Empty:
             time.sleep(0.1)
