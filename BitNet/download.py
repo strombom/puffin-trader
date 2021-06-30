@@ -58,6 +58,8 @@ def download_klines(client: Client, symbol: str, start_time: str):
 
 
 def main():
+    # Important: klines can have gaps due to exchange downtime
+
     with open('binance_account.json') as f:
         account_info = json.load(f)
 
