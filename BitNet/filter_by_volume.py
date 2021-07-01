@@ -48,7 +48,7 @@ def calculate_volume():
     return symbols
 
 
-def main():
+def filter_by_volume():
     symbols = calculate_volume()
 
     with open(f"cache/filtered_symbols.pickle", 'wb') as f:
@@ -56,4 +56,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    filter_by_volume()

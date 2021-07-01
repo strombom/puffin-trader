@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 from binance.client import Client
 
 
-def download_klines(client: Client, symbol: str, start_time: str):
-    path = f"cache/klines_new"
+def download_klines_symbol(client: Client, symbol: str, start_time: str):
+    path = f"cache/klines"
     file_path = f"{path}/{symbol}.hdf"
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     print(f"Downloading {file_path}")
@@ -57,7 +57,7 @@ def download_klines(client: Client, symbol: str, start_time: str):
     )
 
 
-def main():
+def download_klines():
     # Important: klines can have gaps due to exchange downtime
 
     with open('binance_account.json') as f:
@@ -72,23 +72,11 @@ def main():
 
     exchange_info = client.get_exchange_info()
 
-    #symbol = "BTCUSDT"
-    #download_klines(client=client, symbol=symbol, start_time=start_time)
-
-    #quit()
-
-    #symbols = {}
-
     for base_symbol in ['USDT', 'BUSD', 'USDC']:
-        #symbols[base_symbol] = []
         for symbol in exchange_info['symbols']:
             if symbol['symbol'].endswith(base_symbol) and symbol['isMarginTradingAllowed'] and 'MARGIN' in symbol['permissions']:
-                #symbols[base_symbol].append(symbol['symbol'])
-                download_klines(client=client, symbol=symbol['symbol'], start_time=start_time)
-
-    #for base_symbol in symbols:
-    #    print(len(symbols[base_symbol]), symbols[base_symbol])
+                download_klines_symbol(client=client, symbol=symbol['symbol'], start_time=start_time)
 
 
 if __name__ == '__main__':
-    main()
+    download_klines()
