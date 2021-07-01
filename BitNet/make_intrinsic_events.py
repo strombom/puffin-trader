@@ -1,6 +1,7 @@
 import queue
 import pickle
 import time
+from datetime import datetime, timezone
 
 import pandas as pd
 import multiprocessing
@@ -23,19 +24,19 @@ def make_ie_process(task_queue_lock, task_queue, results_queue_lock, results_que
         print(process_id, "Processing", symbol)
 
         runner = Runner(delta=delta)
-        ie_kline_idxs, ie_prices = [], []
+        timestamps, prices = [], []
         klines = pd.read_hdf(f"cache/klines/{symbol}.hdf")
         for kline_idx, kline in klines.iterrows():
             mark_price = kline['open']
             for ie_price in runner.step(mark_price):
-                ie_kline_idxs.append(kline_idx)
-                ie_prices.append(ie_price)
+                timestamps.append(datetime.fromtimestamp(kline['open_time'] / 1000, tz=timezone.utc))
+                prices.append(ie_price)
 
         with results_queue_lock:
             results_queue.put({
                 'symbol': parameters['symbol'],
-                'ie_kline_idxs': ie_kline_idxs,
-                'ie_prices': ie_prices
+                'timestamps': timestamps,
+                'prices': prices
             })
 
 
@@ -75,8 +76,8 @@ def make_intrinsic_events(delta: float):
             with task_queue_lock:
                 result = results_queue.get(block=True, timeout=1)
                 intrinsic_events[result['symbol']] = {
-                    'ie_kline_idxs': result['ie_kline_idxs'],
-                    'ie_prices': result['ie_prices']
+                    'timestamps': result['timestamps'],
+                    'prices': result['prices']
                 }
         except queue.Empty:
             time.sleep(0.1)
@@ -86,7 +87,7 @@ def make_intrinsic_events(delta: float):
 
     fig, axs = plt.subplots(nrows=2, sharex='row', gridspec_kw={'height_ratios': [4, 1]})
     #axs[0].plot(timesteps)
-    axs[0].plot(intrinsic_events['BTCUSDT']['ie_prices'])
+    axs[0].plot(intrinsic_events['BTCUSDT']['prices'])
     axs[0].set_yscale('log')
     #axs[1].plot(pid_result['deltas'])
     plt.show()
