@@ -86,7 +86,7 @@ def make_intrinsic_events(delta: float):
 
     fig, axs = plt.subplots(nrows=2, sharex='row', gridspec_kw={'height_ratios': [4, 1]})
     #axs[0].plot(timesteps)
-    axs[0].plot(intrinsic_events['BTCUSDT']['step_prices'])
+    axs[0].plot(intrinsic_events['BTCUSDT']['ie_prices'])
     axs[0].set_yscale('log')
     #axs[1].plot(pid_result['deltas'])
     plt.show()
