@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from IntrinsicTime.runner import Runner
 
 
-def make_steps_process(task_queue_lock, task_queue, results_queue_lock, results_queue, process_id):
+def make_ie_process(task_queue_lock, task_queue, results_queue_lock, results_queue, process_id):
     while True:
         try:
             with task_queue_lock:
@@ -23,28 +23,27 @@ def make_steps_process(task_queue_lock, task_queue, results_queue_lock, results_
         print(process_id, "Processing", symbol)
 
         runner = Runner(delta=delta)
-        kline_idxs, step_prices = [], []
+        ie_kline_idxs, ie_prices = [], []
         klines = pd.read_hdf(f"cache/klines/{symbol}.hdf")
         for kline_idx, kline in klines.iterrows():
             mark_price = kline['open']
-            for step_price in runner.step(mark_price):
-                kline_idxs.append(kline_idx)
-                step_prices.append(step_price)
+            for ie_price in runner.step(mark_price):
+                ie_kline_idxs.append(kline_idx)
+                ie_prices.append(ie_price)
 
         with results_queue_lock:
             results_queue.put({
                 'symbol': parameters['symbol'],
-                'kline_idxs': kline_idxs,
-                'step_prices': step_prices
+                'ie_kline_idxs': ie_kline_idxs,
+                'ie_prices': ie_prices
             })
 
 
-def make_runner_events():
+def make_intrinsic_events(delta: float):
     with open(f"cache/filtered_symbols.pickle", 'rb') as f:
         symbols = pickle.load(f)
 
-    print(symbols)
-    delta = 0.01
+    print(f"make_intrinsic_events: {symbols}")
 
     task_queue = multiprocessing.Queue()
     task_queue_lock = multiprocessing.Lock()
@@ -60,8 +59,9 @@ def make_runner_events():
 
     ps = []
     for n in range(min(multiprocessing.cpu_count() - 3, len(symbols))):
-        p = multiprocessing.Process(target=make_steps_process, args=(
-            task_queue_lock, task_queue, results_queue_lock, results_queue, n)
+        p = multiprocessing.Process(
+            target=make_ie_process,
+            args=(task_queue_lock, task_queue, results_queue_lock, results_queue, n)
         )
         ps.append(p)
         p.start()
@@ -75,8 +75,8 @@ def make_runner_events():
             with task_queue_lock:
                 result = results_queue.get(block=True, timeout=1)
                 intrinsic_events[result['symbol']] = {
-                    'kline_idxs': result['kline_idxs'],
-                    'step_prices': result['step_prices']
+                    'ie_kline_idxs': result['ie_kline_idxs'],
+                    'ie_prices': result['ie_prices']
                 }
         except queue.Empty:
             time.sleep(0.1)
@@ -93,4 +93,4 @@ def make_runner_events():
 
 
 if __name__ == '__main__':
-    make_runner_events()
+    make_intrinsic_events(delta=0.01)

@@ -12,6 +12,7 @@
    - out: *intrinsic_events.pickle*
    
 1. **make_indicators.py** - set end_timestamp
+   - in: *intrinsic_events.pickle*
    - out: *indicators/{symbol}.pickle*
    
 1. **make_training_data.py**
