@@ -16,6 +16,7 @@
    - out: *indicators/{symbol}.pickle*
    
 1. **make_training_data.py**
+   - in: *indicators/{symbol}.pickle*
    - out: *training_data.pickle*
 
 

@@ -1,5 +1,7 @@
 
 import pickle
+from datetime import datetime, timezone
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -18,7 +20,7 @@ def mark_steps(steps: np.ndarray, take_profit: float, stop_loss: float, symbol: 
                 profits[position_idx] = 1
                 del positions[position_idx]
             elif mark_price <= positions[position_idx]['stop_loss']:
-                profits[position_idx] = 0
+                profits[position_idx] = -1
                 del positions[position_idx]
 
         positions[step_idx] = {
@@ -33,6 +35,8 @@ def main():
     with open(f"cache/intrinsic_events.pickle", 'rb') as f:
         intrinsic_events = pickle.load(f)
 
+    start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
     intrinsic_events = dict(list(intrinsic_events.items())[:int(len(intrinsic_events) * 1.0)])
 
     limits = [
@@ -42,7 +46,7 @@ def main():
     lengths = pd.read_csv('cache/regime_data_lengths.csv')['length'].to_numpy()
     degrees = [1, 2, 3]
 
-    skip_start = 60 * 24 * 30
+    skip_start = 30 * 24 * 60
 
     total_data_length = 0
     indicators = {}
@@ -57,14 +61,19 @@ def main():
         ground_truth[symbol] = np.empty((len(limits), data_length))
 
         for limit_idx, (take_profit, stop_loss) in enumerate(limits):
-            steps = np.array(intrinsic_events[symbol]['steps'])
-            profits = mark_steps(steps=steps, take_profit=take_profit, stop_loss=stop_loss, symbol=symbol)
+            ie_prices = np.array(intrinsic_events[symbol]['prices'])
+            ie_timestamps = np.array(intrinsic_events[symbol]['timestamps'])
+            profits = mark_steps(steps=ie_prices, take_profit=take_profit, stop_loss=stop_loss, symbol=symbol)
 
-            direction_idx = 0
-            for indicator_idx in range(data_length):
-                while intrinsic_events[symbol]['timestamps'][direction_idx] < indicator_idx and direction_idx + 1 < profits.shape[0]:
-                    direction_idx += 1
-                ground_truth[symbol][limit_idx, indicator_idx] = profits[direction_idx]
+            ie_idx = 0
+            first_timestamp = int((ie_timestamps[ie_idx] - start_timestamp).total_seconds() / 60)
+            next_timestamp = int((ie_timestamps[ie_idx + 1] - start_timestamp).total_seconds() / 60)
+
+            for indicator_idx in range(first_timestamp, data_length):
+                while indicator_idx >= next_timestamp and ie_idx + 1 < profits.shape[0]:
+                    ie_idx += 1
+                    next_timestamp = int((ie_timestamps[ie_idx + 1] - start_timestamp).total_seconds() / 60)
+                ground_truth[symbol][limit_idx, indicator_idx] = profits[ie_idx]
 
             #fig, axs = plt.subplots(nrows=2, sharex=True, gridspec_kw={'height_ratios': [4, 1]})
             #axs[0].plot(steps)
@@ -72,10 +81,10 @@ def main():
             #axs[1].plot(profits)
             #plt.show()
 
-        end_of_truth = ground_truth[symbol].shape[1] - 1
-        while not np.all(ground_truth[symbol][:, end_of_truth]):
-            end_of_truth -= 1
-        skip_end = end_of_truth + 1
+        end_of_truth = ground_truth[symbol].shape[1] - 7 * 24 * 60
+        while np.all(ground_truth[symbol][:, end_of_truth]) and end_of_truth < ground_truth[symbol].shape[1] - 1:
+            end_of_truth += 1
+        skip_end = end_of_truth
 
         ground_truth[symbol] = ground_truth[symbol][:, skip_start:skip_end]
 
