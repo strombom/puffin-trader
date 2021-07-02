@@ -1,8 +1,7 @@
 import pickle
-from datetime import datetime, timezone
-
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from fastai.learner import load_learner
 
 
