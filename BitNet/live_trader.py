@@ -1,6 +1,7 @@
 import os
 import sys
 
+import requests
 import zmq
 import time
 import json
@@ -121,8 +122,10 @@ def main():
     # Todo: spread out trades over each minute
     # Todo: circuit breaker
     # Todo: handle BNB fees
+    # Todo: binance_account handle websocket errors https://github.com/sammchardy/python-binance/issues/834
+    # Todo: long and short
 
-    profit_model = load_learner('model_all_2021-06-27.pickle')
+    profit_model = load_learner('model_all_2021-07-01.pickle')
 
     with open('binance_account.json') as f:
         account_info = json.load(f)
@@ -195,7 +198,8 @@ def main():
                 api_secret=account_info['api_secret'],
                 symbols=symbols
             )
-            # binance_account.sell_all()
+            #binance_account.sell_all()
+            #quit()
 
         # check_positions(portfolio, binance_account)
 
@@ -283,6 +287,12 @@ def main():
                 #break
 
         binance_account.update_balance()
+
+        # Reset watchdog
+        try:
+            requests.get("http://localhost:31008/live_trader", timeout=5)
+        except:
+            pass
 
 
 if __name__ == '__main__':
