@@ -1,9 +1,7 @@
-import logging
+import sys
 import math
-import asyncio
+import logging
 import threading
-from datetime import datetime, timezone, timedelta
-
 import binance.enums
 import requests.exceptions
 from binance import ThreadedWebsocketManager, Client
@@ -76,7 +74,14 @@ class BinanceAccount:
 
     def update_balance(self):
         with self._balance_lock:
-            account_info = self._client.get_margin_account()
+            try:
+                account_info = self._client.get_margin_account()
+            except requests.exceptions.ConnectionError as e:
+                logging.error(f"binance_account.update_balance error: {e}")
+                return
+            except:
+                logging.error(f"binance_account.update_balance unexpected error: {sys.exc_info()[0]}")
+                return
             for asset in account_info['userAssets']:
                 if asset['asset'] + 'USDT' in self._symbols or asset['asset'] == 'USDT':
                     # print(f"Update balance {asset['free']} {asset['asset']}")
