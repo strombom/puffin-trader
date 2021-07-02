@@ -19,7 +19,9 @@
    - in: *indicators/{symbol}.pickle*
    - out: *training_data.pickle*
 
-
-
+1. **make_predictions.py**
+   - in: *training_data.pickle*
+   - out: *predictions.pickle*
+   
 Note:
 python-binance before v1.0.12 doesn't have support for python 3.9
