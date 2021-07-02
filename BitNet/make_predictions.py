@@ -1,10 +1,14 @@
 import pickle
+from datetime import datetime, timezone
+
 import numpy as np
 import pandas as pd
 from fastai.learner import load_learner
 
 
 def calculate_predictions(symbols, degrees, indicators, profit_model):
+    start_timestamp = datetime.now()
+
     first_symbol = list(indicators.keys())[0]
     data_length = indicators[first_symbol]['indicators'].shape[2]
     lengths = indicators[first_symbol]['lengths']
@@ -29,8 +33,12 @@ def calculate_predictions(symbols, degrees, indicators, profit_model):
 
         test_dl = profit_model.dls.test_dl(df)
         predictions[idx] = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
-        if idx % 100 == 0:
-            print(f"Computing predictions {idx / data_length * 100:.2f}%, {idx} / {data_length}")
+        if idx % 100 == 0 and idx > 0:
+            current_timestamp = datetime.now()
+            elapsed = current_timestamp - start_timestamp
+            predicted_end = start_timestamp + elapsed / (idx / data_length)
+
+            print(f"Computing predictions {idx / data_length * 100:.2f}%, {idx} / {data_length}, {predicted_end}")
 
     file_path = f"cache/predictions.pickle"
     with open(file_path, 'wb') as f:
