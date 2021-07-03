@@ -59,10 +59,10 @@ void BinanceKlines::save(const std::string& file_path) const
 
 time_point_ms BinanceKlines::get_timestamp_begin(void) const
 {
-    return time_point_ms{}; // timestamp_start;
+    return rows.front().timestamp;
 }
 
 time_point_ms BinanceKlines::get_timestamp_end(void) const
 {
-    return time_point_ms{}; // timestamp_start + binance_kline * (rows.size() - 1);
+    return rows.back().timestamp;
 }

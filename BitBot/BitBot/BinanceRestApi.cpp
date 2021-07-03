@@ -49,22 +49,21 @@ std::tuple<sptrTicks, long long> BinanceRestApi::get_aggregate_trades(const std:
 
 int BinanceRestApi::get_klines(const std::string& symbol, time_point_ms start_time, sptrBinanceKlines binance_klines)
 {
-    auto end_time = start_time + 1h - 1ms; // Difference between start time and end time must be less than one hour
-
-    auto parameters =json11::Json::object{
+    auto parameters = json11::Json::object{
         { "symbol", symbol },
         { "interval", "1m" },
-        { "startTime", BitBase::Binance::Tick::max_rows },
+        { "startTime", (double)start_time.time_since_epoch().count() },
         { "limit", 1000 }
     };
 
     auto response = http_get("klines", parameters);
 
     auto count = 0;
-    for (auto kline : response.array_items()) {
-        const auto timestamp = time_point_ms{ std::chrono::milliseconds{(long long)kline["T"].number_value()} };
-        const auto open = std::stof(kline["p"].string_value());
-        const auto volume = std::stof(kline["q"].string_value());
+    for (const auto &kline : response.array_items()) {
+        const auto kline_items = kline.array_items();
+        const auto timestamp = time_point_ms{ std::chrono::milliseconds{(long long)kline_items[0].number_value()} };
+        const auto open = std::stof(kline_items[1].string_value());
+        const auto volume = std::stof(kline_items[5].string_value());
         binance_klines->rows.push_back(BinanceKline{ timestamp, open, volume });
         count++;
     }
