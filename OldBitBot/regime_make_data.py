@@ -16,6 +16,26 @@ from position import Position
 from regime_plotter import Plotter
 
 
+class MouseLines(object):
+    def __init__(self, fig, axs):
+        self.fig = fig
+        self.axs = axs
+        self.figcanvas = self.fig.canvas
+
+        self.line1 = axs[0].plot([0, 0], [28000, 34000])[0]
+        self.line2 = axs[1].plot([0, 0], [0, 200])[0]
+        # self.line3 = axs[2].plot([0, 0], [0, 200])[0]
+        self.figcanvas.mpl_connect('motion_notify_event', self.mouse_move)
+
+    def mouse_move(self, event):
+        #x = event.xydata[0]
+        print(event.xdata)
+        self.line1.set_data([event.xdata, event.xdata], [20000, 40000])
+        self.line2.set_data([event.xdata, event.xdata], [0, 200])
+        # self.line3.set_data([event.xdata, event.xdata], [0, 200])
+        self.fig.canvas.draw()
+
+
 def make_spectrum(lengths, prices, poly_order, volatilities, directions):
     for length_idx, length in enumerate(lengths):
         vols = []
@@ -32,11 +52,12 @@ def make_spectrum(lengths, prices, poly_order, volatilities, directions):
 
 
 if __name__ == '__main__':
-    delta = 0.008
-    n_degree = 5
+    delta = 0.01
+    degrees = [3]
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
 
-    n_samples = 19416
+    # n_samples = min(runner_data.shape[0], 19416)
+    n_samples = min(runner_data.shape[0], 9000)
     runner_prices = runner_data['price'].to_numpy()[:n_samples]
     runner_deltas = runner_data['delta'].to_numpy()[:n_samples]
     runner_volumes = runner_data['volume'].to_numpy()[:n_samples]
@@ -49,27 +70,29 @@ if __name__ == '__main__':
     #lengths = np.array((5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 31, 33, 37,
     #                    39, 43, 47, 51, 57, 63, 69, 75, 83, 91, 100, 111, 121,
     #                    131, 151, 161, 181, 201))
-    lengths = np.arange(7, 60, 2)
+    lengths = np.arange(7, 200, 2)
 
     lengths_df = pd.DataFrame(data={'length': lengths})
     lengths_df.to_csv('../tmp/regime_data_lengths.csv')
 
-    spectrum = np.zeros((len(lengths), n_degree * 2, runner_prices.shape[0]))
+    volatilities = np.zeros((len(lengths), len(degrees), runner_prices.shape[0]))
+    directions = np.zeros((len(lengths), len(degrees), runner_prices.shape[0]))
 
-    for i in range(n_degree):
+    for i, degree in enumerate(degrees):
         make_spectrum(lengths=lengths,
                       prices=runner_prices,
-                      poly_order=i + 1,
-                      volatilities=spectrum[:, i * 2 + 0, :],
-                      directions=spectrum[:, i * 2 + 1, :])
+                      poly_order=degree,
+                      volatilities=volatilities[:, i, :],
+                      directions=directions[:, i, :])
 
     volatility_factor = (1 / np.power(lengths * 0.0000126, 0.636))[:, None] * 0.3
     direction_factor = pow(lengths * 9.11848707e+02, 5.67883215e-01)[:, None] * 0.3
 
-    for i in range(n_degree):
-        spectrum[:, i * 2 + 0, lengths[-1]:] *= volatility_factor
-        spectrum[:, i * 2 + 1, lengths[-1]:] *= direction_factor
+    for i, degree in enumerate(degrees):
+        volatilities[:, i + 0, lengths[-1]:] *= volatility_factor
+        directions[:, i, lengths[-1]:] *= direction_factor
 
+    """
     out_data = {'price': runner_prices[lengths[-1]:],
                 'delta': runner_deltas[lengths[-1]:],
                 'volume': runner_volumes[lengths[-1]:],
@@ -79,14 +102,46 @@ if __name__ == '__main__':
         for length_idx, length in enumerate(lengths):
             out_data[f'vol_{i}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, lengths[-1]:]
             out_data[f'dir_{i}_{length_idx}'] = spectrum[length_idx, i * 2 + 1, lengths[-1]:]
+    """
+
+    out_data = {
+        # 'price': runner_prices[lengths[-1]:],
+        # 'delta': runner_deltas[lengths[-1]:],
+        # 'volume': runner_volumes[lengths[-1]:],
+        # 'duration': runner_durations[lengths[-1]:]
+    }
+
+    for i, degree in enumerate(degrees):
+        for length_idx, length in enumerate(lengths):
+            # out_data[f'vol_{i}_{length_idx}'] = spectrum[length_idx, i * 2 + 0, lengths[-1]:]
+            out_data[f'dir_{degree}_{length_idx}'] = directions[length_idx, i, lengths[-1]:]
 
     spectrum_df = pd.DataFrame(data=out_data)
     spectrum_df.to_csv('../tmp/regime_data.csv')
 
-    fig, axs = plt.subplots(1 + n_degree * 2, 1, sharex=True, gridspec_kw={'wspace': 0, 'hspace': 0})
+    fig, axs = plt.subplots(1 + len(degrees), 1, sharex=True, gridspec_kw={'wspace': 0, 'hspace': 0})
+    # fig, axs = plt.subplots(1 + n_degree * 2, 1, sharex=True, gridspec_kw={'wspace': 0, 'hspace': 0})
     axs[0].plot(runner_prices[lengths[-1]:])
 
     x = np.arange(runner_prices.shape[0] - lengths[-1])
+    #volatility = 1 - spectrum[:, i * 2 + 0, lengths[-1]:]
+    #axs[0 * 2 + 1].pcolormesh(x, lengths, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Blues'))
+    #axs[1].set_title("Volatility")
+
+    for i, degree in enumerate(degrees):
+        direction = directions[:, i, lengths[-1]:]
+        direction_amplitude = np.max(np.abs(direction))
+        direction = (direction_amplitude + direction) / (2 * direction_amplitude)
+        axs[1 + i].pcolormesh(x, lengths, direction, vmin=np.min(direction), vmax=np.max(direction), shading='auto', cmap=plt.get_cmap('RdYlGn'))
+
+    #i = n_degree - 1
+    #direction = spectrum[:, i * 2 + 1, lengths[-1]:]
+    #direction_amplitude = np.max(np.abs(direction))
+    #direction = (direction_amplitude + direction) / (2 * direction_amplitude)
+    #axs[2].pcolormesh(x, lengths, direction, vmin=np.min(direction), vmax=np.max(direction), shading='auto', cmap=plt.get_cmap('RdYlGn'))
+    #axs[2].set_title("Direction")
+
+    """
     for i in range(n_degree):
         volatility = 1 - spectrum[:, i * 2 + 0, lengths[-1]:]
         axs[i * 2 + 1].pcolormesh(x, lengths, volatility, vmin=np.min(volatility), vmax=np.max(volatility), shading='auto', cmap=plt.get_cmap('Blues'))
@@ -97,6 +152,9 @@ if __name__ == '__main__':
         direction = (direction_amplitude + direction) / (2 * direction_amplitude)
         axs[i * 2 + 2].pcolormesh(x, lengths, direction, vmin=np.min(direction), vmax=np.max(direction), shading='auto', cmap=plt.get_cmap('RdYlGn'))
         #axs[2].set_title("Direction")
+    """
+
+    mouse_lines = MouseLines(fig=fig, axs=axs)
 
     plt.tight_layout()
     plt.show()

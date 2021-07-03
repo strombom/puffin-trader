@@ -5,6 +5,21 @@ import pandas as pd
 from Common.Misc import PositionDirection, Regime
 
 
+"""
+class Position:
+    def __init__(self, delta: float, direction: PositionDirection, plotter):
+        self.delta = delta
+        self.direction = direction
+        self.plotter = plotter
+        self.regime = Regime.chop
+        self.prev_slope_angle = 0
+
+    def step(self, ie_idx: int, mark_price: float, mark_price_prev: float, duration: int, duration_prev: int, slope: pd.DataFrame) -> bool:
+        return True
+
+
+
+"""
 class Position:
     def __init__(self, delta: float, direction: PositionDirection, plotter):
         self.delta = delta
@@ -67,5 +82,7 @@ class Position:
         if make_trade and self.regime == Regime.trend:
             self.regime = Regime.chop
             self.plotter.regime_change(x=ie_idx, mark_price=mark_price, regime=self.regime)
+
+        # Calculate next threshold
 
         return make_trade

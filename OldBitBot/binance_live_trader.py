@@ -1,11 +1,13 @@
 import time
 
+import ratelimit
 import zmq
 import json
 import msgpack
 import logging
 import numpy as np
 from time import sleep
+from ratelimit import limits
 from collections import deque
 from binance.client import Client
 from datetime import datetime, timedelta
@@ -16,6 +18,9 @@ from slopes import Slopes, make_slope
 from position_live import PositionLive
 from Common.Misc import PositionDirection
 from IntrinsicTime.live_runner import LiveRunner
+
+# https://binance-docs.github.io/apidocs/spot/en/#trade-streams
+# https://python-binance.readthedocs.io/en/latest/binance.html?highlight=MARGIN_BUY#binance.client.Client.order_market_buy
 
 
 def get_historic_data(runner: LiveRunner, ie_prices: deque, initial_timestamp: datetime):
@@ -89,6 +94,7 @@ def trader():
     if len(ie_prices) < ie_prices.maxlen:
         logging.error(f"Tick history not filled {len(ie_prices)}/{ie_prices.maxlen}")
         quit()
+    logging.info("Historic event buffer filled")
 
     def process_ticker_message(data):
         # {'e': 'trade', 'E': 1614958138067, 's': 'BTCUSDT', 't': 686038737, 'p': '48253.49000000', 'q': '0.00270700', 'b': 5108573132, 'a': 5108573234, 'T': 1614958138066, 'm': True, 'M': True}
@@ -97,11 +103,19 @@ def trader():
         price = float(data['p'])
         volume = float(data['q'])
         buy = not data['m']
-        # trade_id = data['t']
-        # print(f'sym({symbol}) ts({timestamp}) p({price}) v({volume}) buy({buy})')
+        trade_id = data['t']
 
         if symbol != 'BTCUSDT':
             return
+
+        @limits(calls=1, period=10)
+        def print_tick():
+            logging.info(f'Tick sym({symbol}) ts({timestamp}) p({price}) v({volume}) buy({buy}) trade_id({trade_id})')
+            #print(f'sym({symbol}) ts({timestamp}) p({price}) v({volume}) buy({buy})')
+        # try:
+        #     print_tick()
+        # except ratelimit.RateLimitException:
+        #     pass
 
         new_ie_prices = runner.step(timestamp=timestamp, price=price, volume=volume, buy=buy)
         for ie_price, ie_duration in new_ie_prices:
@@ -125,7 +139,7 @@ def trader():
 
             price = ie_prices[len(ie_prices) - 1][0]
             duration = ie_prices[len(ie_prices) - 1][1].total_seconds()
-            logging.info(f"New event ({price}) dur({duration:.1f}s) slope_len({slope['length']}) slope_ang({slope['angle']}), dir({position.direction})")
+            logging.info(f"New event ({price:.2f}) dur({duration:.1f}s) slope_len({slope['length']:.3f}) slope_ang({slope['angle']:.3f}), dir({position.direction})")
 
     logging.info("Start Binance BTCUSDT ticker stream")
     trade_socket_manager = BinanceSocketManager(binance_client)

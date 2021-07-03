@@ -17,13 +17,21 @@ if __name__ == '__main__':
     # with open(f"cache/intrinsic_time_runner.pickle", 'rb') as f:
     #     delta, runner = pickle.load(f)
 
-    delta = 0.0025
+    delta = 0.004
     runner_data = pd.read_csv('../tmp/binance_runner.csv')
+
+    maxrow = np.argmax(runner_data['price'].to_numpy())
+
+    print(maxrow)
+    print(runner_data.loc[maxrow]['price'])
+    print(runner_data.loc[maxrow])
+    quit()
+
     runner_prices = runner_data['price'].to_numpy()
     runner_durations = runner_data['duration'].to_numpy()
 
     x = np.arange(runner_data.shape[0])
-    slopes = Slopes(runner_prices, use_cache=True)
+    slopes = Slopes(runner_prices, use_cache=False)
 
     slopes_history_count = 0
     first_idx = Slopes.max_slope_length + slopes_history_count
@@ -37,6 +45,8 @@ if __name__ == '__main__':
 
     previous_trade_value = simulator.get_value_usdt(mark_price=runner_prices[first_idx])
 
+    previous_make_trade = False
+
     for idx in range(first_idx, runner_prices.shape[0]):
         slope = slopes.slopes.iloc[idx - Slopes.max_slope_length]
         ie_price = runner_prices[idx]
@@ -49,12 +59,12 @@ if __name__ == '__main__':
 
         make_trade = position.step(idx, ie_price, runner_prices[idx - 1], duration, previous_duration, slope)
 
-        if make_trade:
+        if make_trade and previous_make_trade:
             if position.direction == PositionDirection.short:
-                order_size = simulator.calculate_order_size_btc(leverage=1.0, mark_price=ie_price)
+                order_size = simulator.calculate_order_size_btc(leverage=2.5, mark_price=ie_price)
                 simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
             else:
-                order_size = simulator.calculate_order_size_btc(leverage=-1.0, mark_price=ie_price)
+                order_size = simulator.calculate_order_size_btc(leverage=-1.5, mark_price=ie_price)
                 simulator.market_order(order_size_btc=order_size, mark_price=ie_price)
             position.direction *= -1
             made_trade = True
@@ -64,6 +74,8 @@ if __name__ == '__main__':
             previous_trade_value = value_after
 
             plotter.append_annotation(x=idx, y=ie_price, direction=PositionDirection.short, profit=profit)
+
+        previous_make_trade = make_trade
 
         plotter.append_value(idx, simulator.get_value_usdt(mark_price=ie_price))
         plotter.append_angle(idx, slope.angle)
