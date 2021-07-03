@@ -7,3 +7,4 @@
 #pragma warning(pop)
 
 #include "BitLib/date/date.h"
+#include "BitLib/Logger.h"

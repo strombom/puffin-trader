@@ -16,6 +16,15 @@
     <Filter Include="Header Files\BitLib">
       <UniqueIdentifier>{c5db5eb5-382c-48ae-bc65-f2a91dd17fde}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\BitLib">
+      <UniqueIdentifier>{c75326e7-9bc6-4e3a-8fe3-285fe5a728f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Binance">
+      <UniqueIdentifier>{9e3021de-cdcb-456a-b74a-08612223956d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Binance">
+      <UniqueIdentifier>{9052c0ec-f074-4b4a-82d9-8acd69d7bbdb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBot.cpp">
@@ -23,6 +32,12 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\Logger.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceDownloadKlines.cpp">
+      <Filter>Source Files\Binance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +49,15 @@
     </ClInclude>
     <ClInclude Include="BitLib\csv\csv.h">
       <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\Logger.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\BitBotConstants.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceDownloadKlines.h">
+      <Filter>Header Files\Binance</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
