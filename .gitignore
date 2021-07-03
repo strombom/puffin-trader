@@ -12,3 +12,4 @@
 old
 *.sqlite-journal
 tmp
+BitBot/BitBot/Debug/BitBot.pch

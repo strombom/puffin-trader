@@ -2,3 +2,5 @@
 BitBot/Debug
 BitBot/Release
 *.exe
+BitBot/x64
+x64
