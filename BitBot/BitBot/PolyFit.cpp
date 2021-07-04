@@ -5,7 +5,7 @@
 
 PolyFit::PolyFit(int degree, int length) : degree(degree), length(length)
 {
-    for (auto i = 0; i < max_length; i++) {
+    for (auto i = 0; i < length; i++) {
         x[i] = i;
     }
 }
@@ -167,7 +167,7 @@ bool PolyFit::matrix_solve(void)
     return false;
 }
 
-float PolyFit::calculate_direction(std::vector<double> y)
+float PolyFit::calculate_direction(std::array<double, max_length> y)
 {
     for (auto i = 0, idx = 0; i < PolyFitN; i++) {
         y2[i] = 0;
@@ -181,13 +181,12 @@ float PolyFit::calculate_direction(std::vector<double> y)
     for (auto i = 0; i < PolyFitN; i++) {
         for (auto j = i + 1; j < PolyFitN; j++) {
             auto temp = 0.0;
-            auto n = i + j;
             auto idx = 0;
             for (idx = 0; idx < length; idx++) {
-                temp += std::pow(x[idx], n);
+                temp += std::pow(x[idx], i + j);
             }
             idx = j;
-            for (n = i; n < PolyFitN; n++) {
+            for (auto n = i; n < PolyFitN; n++) {
                 if (idx >= 0) {
                     x2[n * PolyFitN + idx] = temp;
                 }
@@ -196,12 +195,11 @@ float PolyFit::calculate_direction(std::vector<double> y)
         }
     }
 
-    auto n = PolyFitN * 2 - 2;
     auto temp = 0.0;
     for (auto i = 0; i < length; i++) {
-        temp += std::pow(x[i], n);
+        temp += std::pow(x[i], PolyFitN * 2 - 2);
     }
-    x2[PolyFitN * 2 - 1] = temp;
+    x2[PolyFitN * PolyFitN - 1] = temp;
     for (auto i = 0; i < PolyFitN; i++) {
         temp = 0;
         for (auto j = 0; j < length; j++) {
@@ -210,7 +208,9 @@ float PolyFit::calculate_direction(std::vector<double> y)
         y2[i] = temp;
     }
 
-    matrix_solve();
+    if (matrix_solve()) {
+        return 1.0;
+    }
 
-    return 1;
+    return 0.0;
 }

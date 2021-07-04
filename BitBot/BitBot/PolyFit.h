@@ -12,7 +12,7 @@ class PolyFit
 public:
     PolyFit(int degree, int length);
 
-    float calculate_direction(std::vector<double> y);
+    float calculate_direction(std::array<double, max_length> y);
 
     bool matrix_solve(void);
     void matrix_t(void);
