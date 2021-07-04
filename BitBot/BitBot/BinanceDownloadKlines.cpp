@@ -1,9 +1,10 @@
 #include "pch.h"
-#include "BinanceDownloadKlines.h"
 
-#include "BitLib/BitBotConstants.h"
+#include "BinanceDownloadKlines.h"
 #include "BinanceRestApi.h"
 #include "BinanceKlines.h"
+#include "BitLib/Logger.h"
+#include "BitLib/BitBotConstants.h"
 
 #include <filesystem>
 

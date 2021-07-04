@@ -2,6 +2,8 @@
 
 #include "BinanceKlines.h"
 
+#include <fstream>
+
 
 std::ostream& operator<<(std::ostream& stream, const BinanceKline& row)
 {

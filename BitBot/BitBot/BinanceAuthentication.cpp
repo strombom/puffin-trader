@@ -3,6 +3,8 @@
 #include "BitLib/BitBotConstants.h"
 #include "BinanceAuthentication.h"
 
+#include <iomanip>
+
 
 BinanceAuthentication::BinanceAuthentication(void)
 {

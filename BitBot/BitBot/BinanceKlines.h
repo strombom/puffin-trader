@@ -1,11 +1,13 @@
 #pragma once
 #include "pch.h"
 
+#include "BitLib/DateTime.h"
+
 
 class BinanceKline
 {
 public:
-    BinanceKline(void) : open(0), volume(0) {}
+    BinanceKline(void) : timestamp(), open(0), volume(0) {}
     BinanceKline(time_point_ms timestamp, float open, float volume) : //, const step_prices_t& prices_buy, const step_prices_t& prices_sell) :
         timestamp(timestamp), open(open), volume(volume) {} //, prices_buy(prices_buy), prices_sell(prices_sell) {}
 

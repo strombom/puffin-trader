@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "BitLib/BitBotConstants.h"
+#include "BitLib/Logger.h"
 #include "BinanceRestApi.h"
 
 #include <iostream>
@@ -57,6 +58,10 @@ int BinanceRestApi::get_klines(const std::string& symbol, time_point_ms start_ti
     };
 
     auto response = http_get("klines", parameters);
+
+    if (!response.is_array()) {
+        printf("get_klines: response is not an array: %s\n", response.dump().c_str());
+    }
 
     auto count = 0;
     for (const auto &kline : response.array_items()) {
