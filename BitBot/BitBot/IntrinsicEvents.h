@@ -52,3 +52,4 @@ public:
     std::vector<IntrinsicEvent> events;
 };
 
+using sptrIntrinsicEvents = std::shared_ptr<IntrinsicEvents>;

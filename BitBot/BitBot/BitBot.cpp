@@ -2,6 +2,7 @@
 
 #include "BinanceDownloadKlines.h"
 #include "IntrinsicEvents.h"
+#include "Indicators.h"
 #include "BitLib/BitBotConstants.h"
 #include "BitLib/Logger.h"
 
@@ -30,6 +31,13 @@ int main()
         }
     }
     else if (command == "make_indicators") {
+        for (const auto symbol : BitBot::symbols) {
+            const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
+            intrinsic_events->load();
+
+            auto indicators = Indicators{ symbol };
+            indicators.calculate(intrinsic_events);
+        }
 
     }
 }

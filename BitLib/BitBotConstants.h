@@ -25,6 +25,15 @@ namespace BitBot
     {
         constexpr auto start_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
         constexpr auto end_timestamp = time_point_ms{ date::sys_days(date::year{2021} / 7 / 4) + std::chrono::hours{ 0 } };
+        constexpr auto n_timestamps = std::chrono::duration_cast<std::chrono::minutes>(end_timestamp - start_timestamp).count();
+
+        constexpr auto degrees = std::array<int, 3>{1, 2, 3};
+        constexpr auto lengths = std::array<int, 10>{5, 7, 11, 15, 22, 33, 47, 68, 100, 150};
+        constexpr auto indicator_width = degrees.size() * lengths.size();
+
+        constexpr auto max_degree = degrees.back();
+        constexpr auto max_length = lengths.back();
+        constexpr auto PolyFitN = degrees.back() + 1;
     }
 }
 
