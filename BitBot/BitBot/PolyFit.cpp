@@ -10,8 +10,99 @@ PolyFit::PolyFit(int degree, int length) : degree(degree), length(length)
     }
 }
 
+bool PolyFit::matrix_lu(void)
+{
+    for (auto i = 0, a = 0; i < PolyFitN; i++) {
+        for (auto j = 0; j < PolyFitN; j++) {
+            L[a + j] = U[a + j] = 0;
+        }
+        U[a + i] = 1;
+        a += PolyFitN;
+    }
+    for (auto j = 0, d = 0; j < PolyFitN; j++) {
+        for (auto i = j, b = d; i < PolyFitN; i++) {
+            auto temp = 0.0;
+            auto a = 0, c = j;
+            while (a < j) {
+                temp += L[b + a] * U[c];
+                c += PolyFitN;
+                a++;
+            }
+            L[b + j] = Kmul[b + j] - temp;
+            b += PolyFitN;
+        }
+        auto i = j + 1;
+        while (i < PolyFitN) {
+            auto temp = 0.0;
+            auto a = 0, c = i;
+            while (a < j) {
+                temp += L[d + a] * U[c];
+                a++;
+                c += PolyFitN;
+            }
+            if (L[d + j] == 0) {
+                return false;
+            }
+            U[d + i] = (Kmul[d + i] - temp) / L[d + j];
+            i++;
+        }
+        d += PolyFitN;
+    }
+    return true;
+}
+
 bool PolyFit::matrix_inv(void)
 {
+    if (matrix_lu()) {
+        auto a = PolyFitN * PolyFitN;
+        for (auto i = 0; i < PolyFitN; i++) {
+            ix[i] = id[i] = 0;
+        }
+        for (auto i = 0; i < PolyFitN; i++) {
+            auto j = 0;
+            for (j = 0; j < PolyFitN; j++) {
+                ie[j] = 0;
+            }
+            ie[i] = 1;
+            j = 0;
+            auto b = 0;
+            while (j < PolyFitN) {
+                auto temp = 0.0;
+                a = 0;
+                while (a < j) {
+                    temp += id[a] * L[b + a];
+                    a++;
+                }
+                id[j] = ie[j] - temp;
+                id[j] /= L[b + j];
+                j++;
+                b += PolyFitN;
+            }
+            j = PolyFitN - 1;
+            b -= PolyFitN;
+            while (j > -1) {
+                auto temp = 0.0;
+                a = j + 1;
+                while (a < PolyFitN) {
+                    temp += U[b + a] * ix[a];
+                    a++;
+                }
+                ix[j] = id[j] - temp;
+                ix[j] /= U[b + j];
+                j--;
+                b -= PolyFitN;
+            }
+            for (j = 0, b = i; j < PolyFitN; j++) {
+                Kinv[b] = ix[j];
+                b += PolyFitN;
+            }
+        }
+    }
+    else
+    {
+        return false;
+    }
+
     return true;
 }
 

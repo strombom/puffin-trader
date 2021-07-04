@@ -20,6 +20,7 @@ public:
     void matrix_mul_b(void);
     void matrix_mul_c(void);
     bool matrix_inv(void);
+    bool matrix_lu(void);
 
 private:
     int degree;
@@ -34,4 +35,11 @@ private:
     std::array<double, PolyFitN * PolyFitN> Kmul;
     std::array<double, PolyFitN * PolyFitN> Kinv;
     std::array<double, PolyFitN> Kb;
+
+    std::array<double, PolyFitN * PolyFitN> L;
+    std::array<double, PolyFitN * PolyFitN> U;
+
+    std::array<double, PolyFitN> id;
+    std::array<double, PolyFitN> ix;
+    std::array<double, PolyFitN> ie;
 };
