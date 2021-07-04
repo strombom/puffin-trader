@@ -34,6 +34,8 @@ namespace BitBot
         constexpr auto max_degree = degrees.back();
         constexpr auto max_length = lengths.back();
         constexpr auto max_polyfit_n = degrees.back() + 1;
+
+        constexpr auto path = "E:\\BitBot\\indicators";
     }
 }
 

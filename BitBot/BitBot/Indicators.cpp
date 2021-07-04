@@ -1,7 +1,10 @@
 #include "pch.h"
+
 #include "Indicators.h"
 #include "PolyFit.h"
 #include "BitLib/Logger.h"
+
+#include <filesystem>
 
 
 Indicators::Indicators(std::string symbol) : symbol(symbol) 
@@ -11,6 +14,8 @@ Indicators::Indicators(std::string symbol) : symbol(symbol)
 
 void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
 {
+    n_steps = intrinsic_events->events.size();
+
     auto price_steps = std::array<double, BitBot::Indicators::max_length>{};
 
     for (auto degree_idx = 0; degree_idx < BitBot::Indicators::degrees.size(); degree_idx++) {
@@ -20,7 +25,7 @@ void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
             const auto length = BitBot::Indicators::lengths[length_idx];
 
             const auto indicator_idx = degree_idx * BitBot::Indicators::lengths.size() * 2 + length_idx * 2;
-            logger.info("degree_idx(%d) length_idx(%d) indicator_idx(%d)", degree_idx, length_idx, indicator_idx);
+            logger.info("Indicators::calculate (%s) degree_idx(%d) length_idx(%d) indicator_idx(%d)", symbol.c_str(), degree_idx, length_idx, indicator_idx);
 
             auto poly_fit = PolyFit{degree, length};
 
@@ -36,8 +41,59 @@ void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
 
                 indicators->at(idx).at(indicator_idx + 0) = (float)price_diff;
                 indicators->at(idx).at(indicator_idx + 1) = (float)direction;
-                //logger.info("%f, %f, %f, %f, %f", p0, p1, price, price_diff, direction);
             }
         }
     }
+}
+
+std::ostream& operator<<(std::ostream& stream, const Indicators& indicators)
+{
+    for (auto ts = 0; ts < indicators.n_steps; ts++) {
+        for (auto indx = 0; indx < BitBot::Indicators::indicator_width; indx++) {
+            stream.write(reinterpret_cast<const char*>(&indicators.indicators->at(ts).at(indx)), sizeof(float));
+        }
+    }
+
+    return stream;
+}
+
+std::istream& operator>>(std::istream& stream, Indicators& indicators)
+{
+    auto ts = 0;
+    auto indx = 0;
+    float indicator_value;
+
+    while (stream >> indicator_value) {
+        indicators.indicators->at(ts).at(indx) = indicator_value;
+        indx = (indx + 1) % BitBot::Indicators::indicator_width;
+        if (indx == 0) {
+            ts++;
+        }
+    }
+
+    return stream;
+}
+
+void Indicators::load(void)
+{
+    /*
+    const auto file_path = std::string{ BitBot::IntrinsicEvents::path } + "\\" + symbol + ".dat";
+    auto data_file = std::ifstream{ file_path, std::ios::binary };
+    auto intrinsic_event = IntrinsicEvent{};
+    while (data_file >> intrinsic_event) {
+        events.push_back(intrinsic_event);
+    }
+    data_file.close();
+    */
+}
+
+void Indicators::save(void) const
+{
+    auto file_path = std::string{ BitBot::Indicators::path };
+    std::filesystem::create_directories(file_path);
+    file_path += "\\" + symbol + ".dat";
+
+    auto data_file = std::ofstream{ file_path, std::ios::binary };
+    data_file << *this;
+    data_file.close();
 }
