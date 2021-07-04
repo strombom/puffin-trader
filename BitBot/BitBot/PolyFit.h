@@ -14,11 +14,12 @@ public:
 
     float calculate_direction(std::vector<double> y);
 
-    void matrix_solve(void);
+    bool matrix_solve(void);
     void matrix_t(void);
     void matrix_mul_a(void);
     void matrix_mul_b(void);
     void matrix_mul_c(void);
+    bool matrix_inv(void);
 
 private:
     int degree;

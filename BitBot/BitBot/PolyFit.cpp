@@ -10,27 +10,53 @@ PolyFit::PolyFit(int degree, int length) : degree(degree), length(length)
     }
 }
 
+bool PolyFit::matrix_inv(void)
+{
+    return true;
+}
+
 void PolyFit::matrix_mul_a(void)
 {
-
+    for (auto i = 0, a = 0, c = 0; i < PolyFitN; i++) {
+        for (auto j = 0; j < PolyFitN; j++)
+        {
+            const auto b = a + j;
+            Kmul[b] = 0;
+            for (auto k = 0, d = 0; k < PolyFitN * PolyFitN; k++)
+            {
+                Kmul[b] += KT[c + k] * x2[d + j];
+                d += PolyFitN;
+            }
+        }
+        c += PolyFitN * PolyFitN;
+        a += PolyFitN;
+    }
 }
 
 void PolyFit::matrix_mul_b(void)
 {
-
+    for (auto i = 0; i < PolyFitN; i++) {
+        Kb[i] = 0;
+        for (auto k = 0; k < PolyFitN; k++) {
+            Kb[i] += KT[i * PolyFitN + k] * y2[k];
+        }
+    }
 }
 
 void PolyFit::matrix_mul_c(void)
 {
-
+    for (auto i = 0; i < PolyFitN; i++) {
+        ks[i] = 0;
+        for (auto k = 0; k < PolyFitN; k++) {
+            ks[i] += Kinv[i * PolyFitN + k] * Kb[k];
+        }
+    }
 }
 
 void PolyFit::matrix_t(void)
 {
-    for (auto i = 0, a = 0; i < PolyFitN; i++)
-    {
-        for (auto j = 0, b = 0; j < PolyFitN; j++)
-        {
+    for (auto i = 0, a = 0; i < PolyFitN; i++) {
+        for (auto j = 0, b = 0; j < PolyFitN; j++) {
             KT[b + i] = x2[a + j];
             b += PolyFitN;
         }
@@ -38,10 +64,16 @@ void PolyFit::matrix_t(void)
     }
 }
 
-void PolyFit::matrix_solve(void)
+bool PolyFit::matrix_solve(void)
 {
     matrix_t();
-    //matrix_mul();
+    matrix_mul_a();
+    matrix_mul_b();
+    if (matrix_inv()) {
+        matrix_mul_c();
+        return true;
+    }
+    return false;
 }
 
 float PolyFit::calculate_direction(std::vector<double> y)
