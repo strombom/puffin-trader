@@ -4,7 +4,29 @@
 
 #include <array>
 
-using namespace std::chrono_literals;
+
+namespace BitBot
+{
+    constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
+    constexpr auto symbols = std::array<const char*, 18>{ "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT" };
+
+    namespace Klines
+    {
+        constexpr auto path = "E:\\BitBot\\klines";
+    }
+
+    namespace IntrinsicEvents
+    {
+        constexpr auto delta = 0.0025;
+        constexpr auto path = "E:\\BitBot\\intrinsic_events";
+    }
+
+    namespace Indicators
+    {
+        constexpr auto start_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
+        constexpr auto end_timestamp = time_point_ms{ date::sys_days(date::year{2021} / 7 / 4) + std::chrono::hours{ 0 } };
+    }
+}
 
 namespace BitBase
 {
@@ -34,7 +56,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 6>{ 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f };
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 0>{ };
         }
     }
 
@@ -53,7 +75,7 @@ namespace BitBase
             constexpr auto rest_api_port = "443";
             constexpr auto rest_api_url = "/api/v3/";
 
-            constexpr auto rate_limit = 100ms;
+            constexpr auto rate_limit = 1000ms;
             constexpr auto max_rows = 1000;
         }
 
@@ -69,7 +91,7 @@ namespace BitBase
             constexpr auto steps = std::array<float, 0>{};
             constexpr auto batch_timeout = 1s;
             constexpr auto batch_size = 10000;
-            constexpr auto intervals = std::array<std::chrono::milliseconds, 3>{ 250ms, 500ms, 1s };
+            constexpr auto intervals = std::array<std::chrono::milliseconds, 0>{ };
         }
     }
 
@@ -113,7 +135,8 @@ namespace BitBase
     namespace Database
     {
         constexpr auto time_format = "%F %T";
-        constexpr auto root_path = "C:\\development\\github\\puffin-trader\\database";
+        //constexpr auto root_path = "C:\\development\\github\\puffin-trader\\database";
+        constexpr auto root_path = "E:\\BitBase";
         constexpr auto sqlite_busy_timeout_ms = 5000;
     }
 }
@@ -121,7 +144,7 @@ namespace BitBase
 namespace BitSim
 {
     constexpr auto interval = 1000ms;
-    constexpr auto aggregate = 100ms;
+    constexpr auto aggregate = 2000ms;
 
     namespace LiveData
     {
@@ -130,7 +153,7 @@ namespace BitSim
 
     namespace BitBase
     {
-        constexpr auto address = "tcp://192.168.1.65:31001";
+        constexpr auto address = "tcp://localhost:31001";
     }
 
     namespace FeatureEncoder
@@ -145,7 +168,7 @@ namespace BitSim
     }
 
     constexpr auto timestamp_start = date::sys_days(date::year{ 2020 } / 1 / 1) + 0h + 0min + 0s;
-    constexpr auto timestamp_end = date::sys_days(date::year{ 2020 } / 5 / 1) + 0h + 0min + 0s;
+    constexpr auto timestamp_end = date::sys_days(date::year{ 2021 } / 2 / 27) + 0h + 0min + 0s;
     constexpr auto intervals_length = (timestamp_end - timestamp_start) / interval;
 
     //constexpr auto feature_encoder_weights_filename = "fe_weights_20200524e.pt";

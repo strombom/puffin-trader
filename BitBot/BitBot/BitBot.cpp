@@ -12,7 +12,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_intrinsic_events" };
+    const auto command = std::string{ "make_indicators" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
@@ -20,7 +20,7 @@ int main()
     }
     else if (command == "make_intrinsic_events") {
         for (const auto symbol : BitBot::symbols) {
-            const auto file_path = std::string{ BitBot::Binance::Klines::path } + "\\" + symbol + ".dat";
+            const auto file_path = std::string{ BitBot::Klines::path } + "\\" + symbol + ".dat";
             const auto binance_klines = std::make_shared<BinanceKlines>(file_path);
             auto intrinsic_events = IntrinsicEvents{ symbol };
             intrinsic_events.insert(binance_klines);
@@ -28,5 +28,8 @@ int main()
 
             logger.info("Inserted %d events from %s", intrinsic_events.events.size(), symbol);
         }
+    }
+    else if (command == "make_indicators") {
+
     }
 }

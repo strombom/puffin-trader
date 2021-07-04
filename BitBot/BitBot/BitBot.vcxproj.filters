@@ -25,10 +25,10 @@
     <Filter Include="Source Files\Binance">
       <UniqueIdentifier>{9052c0ec-f074-4b4a-82d9-8acd69d7bbdb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\IntrinsicEvents">
+    <Filter Include="Header Files\Indicators">
       <UniqueIdentifier>{8bbd9f72-9e89-47f4-b715-1f62c25abe8c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\IntrinsicEvents">
+    <Filter Include="Source Files\Indicators">
       <UniqueIdentifier>{71d468d5-d2ea-40a8-a204-486cf3c5a952}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -58,10 +58,13 @@
       <Filter>Source Files\Binance</Filter>
     </ClCompile>
     <ClCompile Include="IntrinsicEvents.cpp">
-      <Filter>Source Files\IntrinsicEvents</Filter>
+      <Filter>Source Files\Indicators</Filter>
     </ClCompile>
     <ClCompile Include="BitLib\DateTime.cpp">
       <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="Indicators.cpp">
+      <Filter>Source Files\Indicators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -93,13 +96,16 @@
       <Filter>Header Files\Binance</Filter>
     </ClInclude>
     <ClInclude Include="IntrinsicEvents.h">
-      <Filter>Header Files\IntrinsicEvents</Filter>
+      <Filter>Header Files\Indicators</Filter>
     </ClInclude>
     <ClInclude Include="BitLib\DateTime.h">
       <Filter>Header Files\BitLib</Filter>
     </ClInclude>
     <ClInclude Include="BitLib\BitBotConstants.h">
       <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="Indicators.h">
+      <Filter>Header Files\Indicators</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

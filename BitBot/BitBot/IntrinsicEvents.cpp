@@ -44,7 +44,7 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvents& intrinsic_events
 
 void IntrinsicEvents::load(void)
 {
-    const auto file_path = std::string{ BitBot::Binance::IntrinsicEvents::path } + "\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBot::IntrinsicEvents::path } + "\\" + symbol + ".dat";
     auto data_file = std::ifstream{ file_path, std::ios::binary };
     auto intrinsic_event = IntrinsicEvent{};
     while (data_file >> intrinsic_event) {
@@ -55,7 +55,7 @@ void IntrinsicEvents::load(void)
 
 void IntrinsicEvents::save(void) const
 {
-    auto file_path = std::string{ BitBot::Binance::IntrinsicEvents::path };
+    auto file_path = std::string{ BitBot::IntrinsicEvents::path };
     std::filesystem::create_directories(file_path);
     file_path += "\\" + symbol + ".dat";
 
@@ -102,21 +102,21 @@ std::vector<double> IntrinsicEventRunner::step(double price)
     const auto delta_down = (ie_max_price - current_price) / ie_max_price;
     const auto delta_up = (current_price - ie_min_price) / ie_min_price;
 
-    if (ie_delta_top + delta_down >= BitBot::Binance::IntrinsicEvents::delta || ie_delta_bot + delta_up >= BitBot::Binance::IntrinsicEvents::delta) {
+    if (ie_delta_top + delta_down >= BitBot::IntrinsicEvents::delta || ie_delta_bot + delta_up >= BitBot::IntrinsicEvents::delta) {
         auto remaining_delta = 0.0;
         auto ie_price = 0.0;
 
         if (delta_dir == 1) {
             remaining_delta = ie_delta_bot + delta_up;
-            ie_price = ie_min_price * (1.0 + (BitBot::Binance::IntrinsicEvents::delta - ie_delta_bot));
+            ie_price = ie_min_price * (1.0 + (BitBot::IntrinsicEvents::delta - ie_delta_bot));
         }
         else {
             remaining_delta = ie_delta_top + delta_down;
-            ie_price = ie_max_price * (1.0 - (BitBot::Binance::IntrinsicEvents::delta - ie_delta_top));
+            ie_price = ie_max_price * (1.0 - (BitBot::IntrinsicEvents::delta - ie_delta_top));
 
         }
 
-        while (remaining_delta >= 2 * BitBot::Binance::IntrinsicEvents::delta) {
+        while (remaining_delta >= 2 * BitBot::IntrinsicEvents::delta) {
             if (delta_dir == 1) {
                 ie_max_price = std::min(ie_max_price, ie_price);
             }
@@ -126,7 +126,7 @@ std::vector<double> IntrinsicEventRunner::step(double price)
 
             ie_prices.push_back(ie_price);
 
-            const auto next_price = ie_price * (1.0 + delta_dir * BitBot::Binance::IntrinsicEvents::delta);
+            const auto next_price = ie_price * (1.0 + delta_dir * BitBot::IntrinsicEvents::delta);
             ie_start_price = ie_price;
 
             if (delta_dir == 1) {
@@ -142,7 +142,7 @@ std::vector<double> IntrinsicEventRunner::step(double price)
             ie_delta_bot = (ie_start_price - ie_min_price) / ie_start_price;
 
             ie_price = next_price;
-            remaining_delta -= BitBot::Binance::IntrinsicEvents::delta;
+            remaining_delta -= BitBot::IntrinsicEvents::delta;
         }
 
         ie_prices.push_back(ie_price);
