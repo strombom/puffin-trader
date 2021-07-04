@@ -108,19 +108,14 @@ bool PolyFit::matrix_inv(void)
 
 void PolyFit::matrix_mul_a(void)
 {
-    for (auto i = 0, a = 0, c = 0; i < PolyFitN; i++) {
-        for (auto j = 0; j < PolyFitN; j++)
-        {
-            const auto b = a + j;
+    for (auto i = 0; i < PolyFitN; i++) {
+        for (auto j = 0; j < PolyFitN; j++) {
+            const auto b = i * PolyFitN + j;
             Kmul[b] = 0;
-            for (auto k = 0, d = 0; k < PolyFitN * PolyFitN; k++)
-            {
-                Kmul[b] += KT[c + k] * x2[d + j];
-                d += PolyFitN;
+            for (auto k = 0; k < PolyFitN; k++) {
+                Kmul[b] += KT[i * PolyFitN + k] * x2[k * PolyFitN + j];
             }
         }
-        c += PolyFitN * PolyFitN;
-        a += PolyFitN;
     }
 }
 
