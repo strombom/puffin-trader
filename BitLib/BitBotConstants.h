@@ -29,11 +29,11 @@ namespace BitBot
 
         constexpr auto degrees = std::array<int, 3>{1, 2, 3};
         constexpr auto lengths = std::array<int, 10>{5, 7, 11, 15, 22, 33, 47, 68, 100, 150};
-        constexpr auto indicator_width = degrees.size() * lengths.size();
+        constexpr auto indicator_width = degrees.size() * lengths.size() * 2;
 
         constexpr auto max_degree = degrees.back();
         constexpr auto max_length = lengths.back();
-        constexpr auto PolyFitN = degrees.back() + 1;
+        constexpr auto max_polyfit_n = degrees.back() + 1;
     }
 }
 

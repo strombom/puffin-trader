@@ -37,6 +37,7 @@ int main()
 
             auto indicators = Indicators{ symbol };
             indicators.calculate(intrinsic_events);
+            indicators.save();
         }
 
     }

@@ -2,9 +2,13 @@
 
 #include "PolyFit.h"
 
+// https://github.com/gullibility/leastsquare
+
 
 PolyFit::PolyFit(int degree, int length) : degree(degree), length(length)
 {
+    polyfit_n = degree + 1;
+
     for (auto i = 0; i < length; i++) {
         x[i] = i;
     }
@@ -12,32 +16,32 @@ PolyFit::PolyFit(int degree, int length) : degree(degree), length(length)
 
 bool PolyFit::matrix_lu(void)
 {
-    for (auto i = 0; i < PolyFitN; i++) {
-        for (auto j = 0; j < PolyFitN; j++) {
-            L[i * PolyFitN + j] = U[i * PolyFitN + j] = 0;
+    for (auto i = 0; i < polyfit_n; i++) {
+        for (auto j = 0; j < polyfit_n; j++) {
+            L[i * polyfit_n + j] = U[i * polyfit_n + j] = 0;
         }
-        U[i * PolyFitN + i] = 1;
+        U[i * polyfit_n + i] = 1;
     }
-    for (auto j = 0, d = 0; j < PolyFitN; j++) {
-        for (auto i = j, b = d; i < PolyFitN; i++) {
+    for (auto j = 0, d = 0; j < polyfit_n; j++) {
+        for (auto i = j, b = d; i < polyfit_n; i++) {
             auto temp = 0.0;
             auto a = 0, c = j;
             while (a < j) {
                 temp += L[b + a] * U[c];
-                c += PolyFitN;
+                c += polyfit_n;
                 a++;
             }
             L[b + j] = Kmul[b + j] - temp;
-            b += PolyFitN;
+            b += polyfit_n;
         }
         auto i = j + 1;
-        while (i < PolyFitN) {
+        while (i < polyfit_n) {
             auto temp = 0.0;
             auto a = 0, c = i;
             while (a < j) {
                 temp += L[d + a] * U[c];
                 a++;
-                c += PolyFitN;
+                c += polyfit_n;
             }
             if (L[d + j] == 0) {
                 return false;
@@ -45,7 +49,7 @@ bool PolyFit::matrix_lu(void)
             U[d + i] = (Kmul[d + i] - temp) / L[d + j];
             i++;
         }
-        d += PolyFitN;
+        d += polyfit_n;
     }
     return true;
 }
@@ -56,19 +60,19 @@ bool PolyFit::matrix_inv(void)
         return false;
     }
 
-    auto a = PolyFitN * PolyFitN;
-    for (auto i = 0; i < PolyFitN; i++) {
+    auto a = polyfit_n * polyfit_n;
+    for (auto i = 0; i < polyfit_n; i++) {
         ix[i] = id[i] = 0;
     }
-    for (auto i = 0; i < PolyFitN; i++) {
+    for (auto i = 0; i < polyfit_n; i++) {
         auto j = 0;
-        for (j = 0; j < PolyFitN; j++) {
+        for (j = 0; j < polyfit_n; j++) {
             ie[j] = 0;
         }
         ie[i] = 1;
         j = 0;
         auto b = 0;
-        while (j < PolyFitN) {
+        while (j < polyfit_n) {
             auto temp = 0.0;
             a = 0;
             while (a < j) {
@@ -78,25 +82,25 @@ bool PolyFit::matrix_inv(void)
             id[j] = ie[j] - temp;
             id[j] /= L[b + j];
             j++;
-            b += PolyFitN;
+            b += polyfit_n;
         }
-        j = PolyFitN - 1;
-        b -= PolyFitN;
+        j = polyfit_n - 1;
+        b -= polyfit_n;
         while (j > -1) {
             auto temp = 0.0;
             a = j + 1;
-            while (a < PolyFitN) {
+            while (a < polyfit_n) {
                 temp += U[b + a] * ix[a];
                 a++;
             }
             ix[j] = id[j] - temp;
             ix[j] /= U[b + j];
             j--;
-            b -= PolyFitN;
+            b -= polyfit_n;
         }
-        for (j = 0, b = i; j < PolyFitN; j++) {
+        for (j = 0, b = i; j < polyfit_n; j++) {
             Kinv[b] = ix[j];
-            b += PolyFitN;
+            b += polyfit_n;
         }
     }
     return true;
@@ -104,12 +108,12 @@ bool PolyFit::matrix_inv(void)
 
 void PolyFit::matrix_mul_a(void)
 {
-    for (auto i = 0; i < PolyFitN; i++) {
-        for (auto j = 0; j < PolyFitN; j++) {
-            const auto b = i * PolyFitN + j;
+    for (auto i = 0; i < polyfit_n; i++) {
+        for (auto j = 0; j < polyfit_n; j++) {
+            const auto b = i * polyfit_n + j;
             Kmul[b] = 0;
-            for (auto k = 0; k < PolyFitN; k++) {
-                Kmul[b] += KT[i * PolyFitN + k] * x2[k * PolyFitN + j];
+            for (auto k = 0; k < polyfit_n; k++) {
+                Kmul[b] += KT[i * polyfit_n + k] * x2[k * polyfit_n + j];
             }
         }
     }
@@ -117,32 +121,32 @@ void PolyFit::matrix_mul_a(void)
 
 void PolyFit::matrix_mul_b(void)
 {
-    for (auto i = 0; i < PolyFitN; i++) {
+    for (auto i = 0; i < polyfit_n; i++) {
         Kb[i] = 0;
-        for (auto k = 0; k < PolyFitN; k++) {
-            Kb[i] += KT[i * PolyFitN + k] * y2[k];
+        for (auto k = 0; k < polyfit_n; k++) {
+            Kb[i] += KT[i * polyfit_n + k] * y2[k];
         }
     }
 }
 
 void PolyFit::matrix_mul_c(void)
 {
-    for (auto i = 0; i < PolyFitN; i++) {
+    for (auto i = 0; i < polyfit_n; i++) {
         ks[i] = 0;
-        for (auto k = 0; k < PolyFitN; k++) {
-            ks[i] += Kinv[i * PolyFitN + k] * Kb[k];
+        for (auto k = 0; k < polyfit_n; k++) {
+            ks[i] += Kinv[i * polyfit_n + k] * Kb[k];
         }
     }
 }
 
 void PolyFit::matrix_t(void)
 {
-    for (auto i = 0, a = 0; i < PolyFitN; i++) {
-        for (auto j = 0, b = 0; j < PolyFitN; j++) {
+    for (auto i = 0, a = 0; i < polyfit_n; i++) {
+        for (auto j = 0, b = 0; j < polyfit_n; j++) {
             KT[b + i] = x2[a + j];
-            b += PolyFitN;
+            b += polyfit_n;
         }
-        a += PolyFitN;
+        a += polyfit_n;
     }
 }
 
@@ -158,28 +162,29 @@ bool PolyFit::matrix_solve(void)
     return false;
 }
 
-float PolyFit::calculate_direction(std::array<double, max_length> y)
+std::tuple<double, double> PolyFit::calculate_direction(std::array<double, max_length> price_steps)
 {
-    for (auto i = 0, idx = 0; i < PolyFitN; i++) {
+
+    for (auto i = 0, idx = 0; i < polyfit_n; i++) {
         y2[i] = 0;
-        for (auto j = 0; j < PolyFitN; j++) {
+        for (auto j = 0; j < polyfit_n; j++) {
             x2[idx + j] = 0;
         }
-        idx += PolyFitN;
+        idx += polyfit_n;
     }
 
     x2[0] = length;
-    for (auto i = 0; i < PolyFitN; i++) {
-        for (auto j = i + 1; j < PolyFitN; j++) {
+    for (auto i = 0; i < polyfit_n; i++) {
+        for (auto j = i + 1; j < polyfit_n; j++) {
             auto temp = 0.0;
             auto idx = 0;
             for (idx = 0; idx < length; idx++) {
                 temp += std::pow(x[idx], i + j);
             }
             idx = j;
-            for (auto n = i; n < PolyFitN; n++) {
+            for (auto n = i; n < polyfit_n; n++) {
                 if (idx >= 0) {
-                    x2[n * PolyFitN + idx] = temp;
+                    x2[n * polyfit_n + idx] = temp;
                 }
                 idx--;
             }
@@ -188,20 +193,29 @@ float PolyFit::calculate_direction(std::array<double, max_length> y)
 
     auto temp = 0.0;
     for (auto i = 0; i < length; i++) {
-        temp += std::pow(x[i], PolyFitN * 2 - 2);
+        temp += std::pow(x[i], polyfit_n * 2 - 2);
     }
-    x2[PolyFitN * PolyFitN - 1] = temp;
-    for (auto i = 0; i < PolyFitN; i++) {
+    x2[polyfit_n * polyfit_n - 1] = temp;
+    for (auto i = 0; i < polyfit_n; i++) {
         temp = 0;
         for (auto j = 0; j < length; j++) {
-            temp += y[j] * std::pow(x[j], i);
+            temp += price_steps[j] * std::pow(x[j], i);
         }
         y2[i] = temp;
     }
 
     if (matrix_solve()) {
-        return 1.0;
+        // Todo: calculate direction from ks
+
+        auto p0 = ks.at(0);
+        auto p1 = ks.at(0);
+        for (auto i = 1; i < polyfit_n; i++) {
+            p0 += ks[i] * std::pow(x[length - 2], i);
+            p1 += ks[i] * std::pow(x[length - 1], i);
+        }
+
+        return { p0, p1 };
     }
 
-    return 0.0;
+    return { 0.0, 0.0 };
 }

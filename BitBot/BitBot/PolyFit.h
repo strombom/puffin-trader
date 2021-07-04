@@ -12,7 +12,7 @@ class PolyFit
 public:
     PolyFit(int degree, int length);
 
-    float calculate_direction(std::array<double, max_length> y);
+    std::tuple<double, double> calculate_direction(std::array<double, max_length> price_steps);
 
     bool matrix_solve(void);
     void matrix_t(void);
@@ -25,21 +25,22 @@ public:
 private:
     int degree;
     int length;
+    int polyfit_n;
 
     std::array<double, max_length> x;
-    std::array<double, PolyFitN * PolyFitN> x2;
-    std::array<double, PolyFitN> y2;
-    std::array<double, PolyFitN> ks;
+    std::array<double, max_polyfit_n * max_polyfit_n> x2;
+    std::array<double, max_polyfit_n> y2;
+    std::array<double, max_polyfit_n> ks;
 
-    std::array<double, PolyFitN * PolyFitN> KT;
-    std::array<double, PolyFitN * PolyFitN> Kmul;
-    std::array<double, PolyFitN * PolyFitN> Kinv;
-    std::array<double, PolyFitN> Kb;
+    std::array<double, max_polyfit_n * max_polyfit_n> KT;
+    std::array<double, max_polyfit_n * max_polyfit_n> Kmul;
+    std::array<double, max_polyfit_n * max_polyfit_n> Kinv;
+    std::array<double, max_polyfit_n> Kb;
 
-    std::array<double, PolyFitN * PolyFitN> L;
-    std::array<double, PolyFitN * PolyFitN> U;
+    std::array<double, max_polyfit_n * max_polyfit_n> L;
+    std::array<double, max_polyfit_n * max_polyfit_n> U;
 
-    std::array<double, PolyFitN> id;
-    std::array<double, PolyFitN> ix;
-    std::array<double, PolyFitN> ie;
+    std::array<double, max_polyfit_n> id;
+    std::array<double, max_polyfit_n> ix;
+    std::array<double, max_polyfit_n> ie;
 };
