@@ -4,6 +4,8 @@
 #include "BitLib/Logger.h"
 #include "BitLib/BitBotConstants.h"
 
+#include <filesystem>
+
 
 std::ostream& operator<<(std::ostream& stream, const IntrinsicEvent& row)
 {
@@ -40,8 +42,9 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvents& intrinsic_events
     return stream;
 }
 
-void IntrinsicEvents::load(const std::string& file_path)
+void IntrinsicEvents::load(void)
 {
+    const auto file_path = std::string{ BitBot::Binance::IntrinsicEvents::path } + "\\" + symbol + ".dat";
     auto data_file = std::ifstream{ file_path, std::ios::binary };
     auto intrinsic_event = IntrinsicEvent{};
     while (data_file >> intrinsic_event) {
@@ -50,8 +53,12 @@ void IntrinsicEvents::load(const std::string& file_path)
     data_file.close();
 }
 
-void IntrinsicEvents::save(const std::string& file_path) const
+void IntrinsicEvents::save(void) const
 {
+    auto file_path = std::string{ BitBot::Binance::IntrinsicEvents::path };
+    std::filesystem::create_directories(file_path);
+    file_path += "\\" + symbol + ".dat";
+
     auto data_file = std::ofstream{ file_path, std::ios::binary };
     data_file << *this;
     data_file.close();

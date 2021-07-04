@@ -39,12 +39,15 @@ private:
 class IntrinsicEvents
 {
 public:
+    IntrinsicEvents(std::string symbol) : symbol(symbol) {}
+
     void insert(BinanceKline binance_kline);
     void insert(sptrBinanceKlines binance_klines);
 
-    void load(const std::string& file_path);
-    void save(const std::string& file_path) const;
+    void load(void);
+    void save(void) const;
 
+    std::string symbol;
     IntrinsicEventRunner runner;
     std::vector<IntrinsicEvent> events;
 };
