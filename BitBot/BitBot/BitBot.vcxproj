@@ -130,9 +130,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DHAVE_SNPRINTF;HAS_UNCAUGHT_EXCEPTIONS=1;ZMQ_CPP17;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0A00;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\github\puffin-trader\BitLib;C:\development\libraries\libtorch-1.9.0-debug\include;C:\development\libraries\libtorch-1.9.0-debug\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);C:\development\libraries\libtorch-1.9.0-debug\include;C:\development\libraries\libtorch-1.9.0-debug\include\torch\csrc\api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,6 +161,8 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -171,9 +175,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\BitLib\DateTime.cpp" />
     <ClCompile Include="..\..\BitLib\json11\json11.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\BitLib\Logger.cpp" />
     <ClCompile Include="BinanceAuthentication.cpp" />
@@ -181,21 +186,26 @@
     <ClCompile Include="BinanceKlines.cpp" />
     <ClCompile Include="BinanceRestApi.cpp" />
     <ClCompile Include="BitBot.cpp" />
+    <ClCompile Include="BitLib\DateTime.cpp" />
+    <ClCompile Include="IntrinsicEvents.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
-    <ClInclude Include="..\..\BitLib\DateTime.h" />
     <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
     <ClInclude Include="..\..\BitLib\Logger.h" />
     <ClInclude Include="BinanceAuthentication.h" />
     <ClInclude Include="BinanceDownloadKlines.h" />
     <ClInclude Include="BinanceKlines.h" />
     <ClInclude Include="BinanceRestApi.h" />
+    <ClInclude Include="BitLib\BitBotConstants.h" />
     <ClInclude Include="BitLib\csv\csv.h" />
+    <ClInclude Include="BitLib\DateTime.h" />
     <ClInclude Include="BitLib\date\date.h" />
+    <ClInclude Include="IntrinsicEvents.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
