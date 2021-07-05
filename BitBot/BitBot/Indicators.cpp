@@ -14,7 +14,7 @@ Indicators::Indicators(std::string symbol) : symbol(symbol)
 
 void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
 {
-    n_steps = intrinsic_events->events.size();
+    n_steps = (int)intrinsic_events->events.size();
 
     auto price_steps = std::array<double, BitBot::Indicators::max_length>{};
 
@@ -61,10 +61,14 @@ std::istream& operator>>(std::istream& stream, Indicators& indicators)
 {
     auto ts = 0;
     auto indx = 0;
-    float indicator_value;
 
-    while (stream >> indicator_value) {
-        indicators.indicators->at(ts).at(indx) = indicator_value;
+    while (true) {
+        float value;
+        stream.read(reinterpret_cast <char*> (&value), sizeof(value));
+        if (!stream) {
+            break;
+        }
+        indicators.indicators->at(ts).at(indx) = value;
         indx = (indx + 1) % BitBot::Indicators::indicator_width;
         if (indx == 0) {
             ts++;
@@ -76,15 +80,10 @@ std::istream& operator>>(std::istream& stream, Indicators& indicators)
 
 void Indicators::load(void)
 {
-    /*
-    const auto file_path = std::string{ BitBot::IntrinsicEvents::path } + "\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBot::Indicators::path } + "\\" + symbol + ".dat";
     auto data_file = std::ifstream{ file_path, std::ios::binary };
-    auto intrinsic_event = IntrinsicEvent{};
-    while (data_file >> intrinsic_event) {
-        events.push_back(intrinsic_event);
-    }
+    data_file >> *this;
     data_file.close();
-    */
 }
 
 void Indicators::save(void) const
