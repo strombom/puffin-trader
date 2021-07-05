@@ -14,59 +14,37 @@ Indicators::Indicators(std::string symbol) : symbol(symbol)
 
 void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
 {
-    //n_steps = (int)intrinsic_events->events.size();
-
     auto price_steps = std::array<double, max_length>{};
     for (auto i = 0; i < max_length; i++) {
         price_steps[i] = intrinsic_events->events[i].price;
     }
 
-    for (auto idx = max_length - 1; idx < intrinsic_events->events.size(); idx++) {
-        price_steps[max_length - 1] = intrinsic_events->events[idx].price;
+    auto poly_fit = PolyFit{ };
+    auto tmp_indicator = std::array<float, BitBot::Indicators::indicator_width>{};
 
+    for (auto ie_idx = max_length - 1; ie_idx < intrinsic_events->events.size(); ie_idx++) {
+        price_steps[max_length - 1] = intrinsic_events->events[ie_idx].price;
 
+        auto indicator_idx = 0;
+        for (auto degree_idx = 0; degree_idx < BitBot::Indicators::degrees.size(); degree_idx++) {
+            const auto degree = BitBot::Indicators::degrees[degree_idx];
 
-        std::rotate(price_steps.begin(), price_steps.begin() + 1, price_steps.end());
-    }
+            for (auto length_idx = 0; length_idx < BitBot::Indicators::lengths.size(); length_idx++) {
+                const auto length = BitBot::Indicators::lengths[length_idx];
 
-
-
-
-
-
-
-    /*
-    auto price_steps = std::array<double, BitBot::Indicators::max_length>{};
-
-    for (auto degree_idx = 0; degree_idx < BitBot::Indicators::degrees.size(); degree_idx++) {
-        const auto degree = BitBot::Indicators::degrees[degree_idx];
-
-        for (auto length_idx = 0; length_idx < BitBot::Indicators::lengths.size(); length_idx++) {
-            const auto length = BitBot::Indicators::lengths[length_idx];
-
-            const auto indicator_idx = degree_idx * BitBot::Indicators::lengths.size() * 2 + length_idx * 2;
-            logger.info("Indicators::calculate (%s) degree_idx(%d) length_idx(%d) indicator_idx(%d)", symbol.c_str(), degree_idx, length_idx, indicator_idx);
-
-            auto poly_fit = PolyFit{degree, length};
-
-            for (auto idx = max_length - 1; idx < intrinsic_events->events.size(); idx++) {
-                for (auto i = 0; i < length; i++) {
-                    price_steps[i] = intrinsic_events->events[idx - length + i + 1].price;
-                }
-
-                const auto [p0, p1] = poly_fit.calculate_direction(price_steps);
-                const auto price = intrinsic_events->events[idx].price;
-                const auto price_diff = p1 / price - 1.0;
+                const auto [p0, p1] = poly_fit.calculate_direction(price_steps, degree, length);
+                const auto price_diff = p1 / intrinsic_events->events[ie_idx].price - 1.0;
                 const auto direction = p1 / p0 - 1.0;
 
-
-
-                indicators->at(idx).at(indicator_idx + 0) = (float)price_diff;
-                indicators->at(idx).at(indicator_idx + 1) = (float)direction;
+                tmp_indicator[indicator_idx + 0] = (float)price_diff;
+                tmp_indicator[indicator_idx + 1] = (float)direction;
+                indicator_idx += 2;
             }
         }
+
+        indicators.push_back(tmp_indicator);
+        std::rotate(price_steps.begin(), price_steps.begin() + 1, price_steps.end());
     }
-    */
 }
 
 std::ostream& operator<<(std::ostream& stream, const Indicators& indicators)

@@ -5,11 +5,9 @@
 // https://github.com/gullibility/leastsquare
 
 
-PolyFit::PolyFit(int degree, int length) : degree(degree), length(length)
+PolyFit::PolyFit(void) : degree(degree), length(length)
 {
-    polyfit_n = degree + 1;
-
-    for (auto i = 0; i < length; i++) {
+    for (auto i = 0; i < max_length; i++) {
         x[i] = i;
     }
 }
@@ -162,8 +160,11 @@ bool PolyFit::matrix_solve(void)
     return false;
 }
 
-std::tuple<double, double> PolyFit::calculate_direction(std::array<double, max_length> price_steps)
+std::tuple<double, double> PolyFit::calculate_direction(std::array<double, max_length> price_steps, int degree, int length)
 {
+    this->degree = degree;
+    this->length = length;
+    polyfit_n = degree + 1;
 
     for (auto i = 0, idx = 0; i < polyfit_n; i++) {
         y2[i] = 0;
@@ -199,7 +200,7 @@ std::tuple<double, double> PolyFit::calculate_direction(std::array<double, max_l
     for (auto i = 0; i < polyfit_n; i++) {
         temp = 0;
         for (auto j = 0; j < length; j++) {
-            temp += price_steps[j] * std::pow(x[j], i);
+            temp += price_steps[max_length - length + j] * std::pow(x[j], i);
         }
         y2[i] = temp;
     }

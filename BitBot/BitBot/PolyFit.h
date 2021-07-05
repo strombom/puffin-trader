@@ -10,9 +10,9 @@ using namespace BitBot::Indicators;
 class PolyFit
 {
 public:
-    PolyFit(int degree, int length);
+    PolyFit(void);
 
-    std::tuple<double, double> calculate_direction(std::array<double, max_length> price_steps);
+    std::tuple<double, double> calculate_direction(std::array<double, max_length> price_steps, int degree, int length);
 
     bool matrix_solve(void);
     void matrix_t(void);
