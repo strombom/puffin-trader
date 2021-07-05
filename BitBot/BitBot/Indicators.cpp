@@ -14,6 +14,16 @@ Indicators::Indicators(std::string symbol) : symbol(symbol)
 
 void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
 {
+    logger.info("Indicators calculate %s", symbol.c_str());
+
+    if (indicators.size() == intrinsic_events->events.size() - max_length + 1) {
+        return;
+    }
+    else {
+        indicators.clear();
+        indicators.reserve(intrinsic_events->events.size() - max_length + 1);
+    }
+
     auto price_steps = std::array<double, max_length>{};
     for (auto i = 0; i < max_length; i++) {
         price_steps[i] = intrinsic_events->events[i].price;
