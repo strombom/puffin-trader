@@ -19,3 +19,5 @@ public:
     std::unique_ptr<std::array<std::array<float, BitBot::Indicators::indicator_width>, BitBot::Indicators::n_timestamps>> indicators;
     int n_steps;
 };
+
+using sptrIndicators = std::shared_ptr<Indicators>;

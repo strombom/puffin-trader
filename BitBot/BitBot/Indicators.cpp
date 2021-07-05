@@ -10,6 +10,7 @@
 Indicators::Indicators(std::string symbol) : symbol(symbol) 
 {
     indicators = std::make_unique<std::array<std::array<float, BitBot::Indicators::indicator_width>, BitBot::Indicators::n_timestamps>>();
+    load();
 }
 
 void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
@@ -82,15 +83,17 @@ std::istream& operator>>(std::istream& stream, Indicators& indicators)
 
 void Indicators::load(void)
 {
-    const auto file_path = std::string{ BitBot::Indicators::path } + "\\" + symbol + ".dat";
-    auto data_file = std::ifstream{ file_path, std::ios::binary };
-    data_file >> *this;
-    data_file.close();
+    const auto file_path = std::string{ BitBot::path } + "\\indicators\\" + symbol + ".dat";
+    if (std::filesystem::exists(file_path)) {
+        auto data_file = std::ifstream{ file_path, std::ios::binary };
+        data_file >> *this;
+        data_file.close();
+    }
 }
 
 void Indicators::save(void) const
 {
-    auto file_path = std::string{ BitBot::Indicators::path };
+    auto file_path = std::string{ BitBot::path } + "\\indicators";
     std::filesystem::create_directories(file_path);
     file_path += "\\" + symbol + ".dat";
 

@@ -51,7 +51,7 @@ BinanceKlines::BinanceKlines(const std::string& symbol) : symbol(symbol)
 
 void BinanceKlines::load(void)
 {
-    const auto file_path = std::string{ BitBot::Klines::path } + "\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBot::path } + "\\klines\\" + symbol + ".dat";
 
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
@@ -65,7 +65,7 @@ void BinanceKlines::load(void)
 
 void BinanceKlines::save(void) const
 {
-    const auto file_path = std::string{ BitBot::Klines::path } + "\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBot::path } + "\\klines\\" + symbol + ".dat";
     auto data_file = std::ofstream{ file_path, std::ios::binary };
     data_file << *this;
     data_file.close();

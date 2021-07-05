@@ -3,6 +3,7 @@
 #include "BinanceDownloadKlines.h"
 #include "IntrinsicEvents.h"
 #include "Indicators.h"
+#include "TrainingData.h"
 #include "BitLib/BitBotConstants.h"
 #include "BitLib/Logger.h"
 
@@ -33,7 +34,6 @@ int main()
     else if (command == "make_indicators") {
         for (const auto symbol : BitBot::symbols) {
             const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
-            intrinsic_events->load();
 
             auto indicators = Indicators{ symbol };
             indicators.calculate(intrinsic_events);
@@ -43,9 +43,10 @@ int main()
     else if (command == "make_training_data") {
         for (const auto symbol : BitBot::symbols) {
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
-            auto indicators = Indicators{ symbol };
-            indicators.load();
+            const auto indicators = std::make_shared<Indicators>(symbol);
 
+            auto training_data = TrainingData{ symbol };
+            training_data.make(binance_klines, indicators);
         }
     }
 }

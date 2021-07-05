@@ -44,7 +44,7 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvents& intrinsic_events
 
 void IntrinsicEvents::load(void)
 {
-    const auto file_path = std::string{ BitBot::IntrinsicEvents::path } + "\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBot::path } + "\\intrinsic_events\\" + symbol + ".dat";
     auto data_file = std::ifstream{ file_path, std::ios::binary };
     auto intrinsic_event = IntrinsicEvent{};
     while (data_file >> intrinsic_event) {
@@ -55,7 +55,7 @@ void IntrinsicEvents::load(void)
 
 void IntrinsicEvents::save(void) const
 {
-    auto file_path = std::string{ BitBot::IntrinsicEvents::path };
+    auto file_path = std::string{ BitBot::path } + "\\intrinsic_events";
     std::filesystem::create_directories(file_path);
     file_path += "\\" + symbol + ".dat";
 

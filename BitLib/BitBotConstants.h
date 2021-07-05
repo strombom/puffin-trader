@@ -10,15 +10,15 @@ namespace BitBot
     constexpr auto first_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
     constexpr auto symbols = std::array<const char*, 18>{ "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT" };
 
+    constexpr auto path = "E:\\BitBot";
+
     namespace Klines
     {
-        constexpr auto path = "E:\\BitBot\\klines";
     }
 
     namespace IntrinsicEvents
     {
         constexpr auto delta = 0.0025;
-        constexpr auto path = "E:\\BitBot\\intrinsic_events";
     }
 
     namespace Indicators
@@ -34,8 +34,12 @@ namespace BitBot
         constexpr auto max_degree = degrees.back();
         constexpr auto max_length = lengths.back();
         constexpr auto max_polyfit_n = degrees.back() + 1;
+    }
 
-        constexpr auto path = "E:\\BitBot\\indicators";
+    namespace TrainingData
+    {
+        constexpr auto take_profit = 1.02;
+        constexpr auto stop_loss = 0.98;
     }
 }
 
