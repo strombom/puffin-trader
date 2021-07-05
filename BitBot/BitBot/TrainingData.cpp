@@ -16,9 +16,6 @@ void TrainingData::make(const std::string& symbol, const sptrBinanceKlines binan
 {
     auto ground_truth = make_ground_truth(intrinsic_events);
 
-    // indicators:    259803 = ground_truth - (max_length - 1)
-    // ground_truth : 259952
-
     auto file_path = std::string{ BitBot::path } + "\\training_data";
     std::filesystem::create_directories(file_path);
     file_path += "\\" + symbol + ".csv";
@@ -27,13 +24,14 @@ void TrainingData::make(const std::string& symbol, const sptrBinanceKlines binan
 
     for (auto&& degree : BitBot::Indicators::degrees) {
         for (auto&& length : BitBot::Indicators::lengths) {
-            csv_file << std::to_string(degree) << "-" << std::to_string(length) << ",";
+            csv_file << "\"" << std::to_string(degree) << "-" << std::to_string(length) << "-p\",";
+            csv_file << "\"" << std::to_string(degree) << "-" << std::to_string(length) << "-d\",";
         }
     }
 
     auto symbols_string = std::string{};
     for (auto&& a_symbol : BitBot::symbols) {
-        csv_file << std::string{ a_symbol } + ",";
+        csv_file << "\"" << std::string{a_symbol} + "\",";
         if (a_symbol == symbol) {
             symbols_string += "True,";
         }
@@ -43,17 +41,23 @@ void TrainingData::make(const std::string& symbol, const sptrBinanceKlines binan
     }
 
     csv_file.precision(2);
-    csv_file << std::fixed << "(" << BitBot::TrainingData::take_profit << "," << BitBot::TrainingData::stop_loss << ")\n";
+    csv_file << std::fixed << "\"(" << BitBot::TrainingData::take_profit << "," << BitBot::TrainingData::stop_loss << ")\"\n";
     csv_file << std::defaultfloat;
 
+    // indicators:    259803 = ground_truth - (max_length - 1)
+    // ground_truth : 259952
+
     for (auto idx = BitBot::Indicators::max_length - 1; idx < ground_truth.size(); idx++) {
-        const auto& indicator = indicators->indicators.at(idx + (BitBot::Indicators::max_length - 1));
-        
-        auto row = std::string{};
+
+        if (ground_truth.at(idx) == 0) {
+            break;
+        }
+        const auto& indicator = indicators->indicators.at(idx - (BitBot::Indicators::max_length - 1));
         for (auto i = 0; i < indicator.size(); i++) {
             csv_file << indicator.at(i) << ",";
         }
         csv_file << symbols_string;
+        csv_file << ground_truth.at(idx) << "\n";
     }
 
     csv_file.close();

@@ -48,7 +48,6 @@ int main()
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             training_data.make(symbol, binance_klines, intrinsic_events, indicators);
-            break;
         }
     }
 }
