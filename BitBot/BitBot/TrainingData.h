@@ -5,7 +5,21 @@
 #include "Indicators.h"
 
 
-struct Position
+
+class TrainingData
+{
+public:
+    TrainingData();
+
+    void make(const std::string& symbol, const sptrBinanceKlines binance_klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators);
+
+private:
+    std::vector<int> make_ground_truth(const sptrIntrinsicEvents intrinsic_events);
+
+    struct Position;
+};
+
+struct TrainingData::Position
 {
 public:
     Position(int idx, float take_profit, float stop_loss) :
@@ -16,19 +30,3 @@ public:
     float stop_loss;
     bool remove;
 };
-
-
-class TrainingData
-{
-public:
-    TrainingData(const std::string& symbol);
-
-    void make(const sptrBinanceKlines binance_klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators);
-
-private:
-    void make_ground_truth(const sptrIntrinsicEvents intrinsic_events);
-
-    const std::string symbol;
-    std::vector<int> ground_truth;
-};
-

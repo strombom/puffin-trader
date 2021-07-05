@@ -41,13 +41,14 @@ int main()
         }
     }
     else if (command == "make_training_data") {
+        auto training_data = TrainingData{ };
         for (const auto symbol : BitBot::symbols) {
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
             const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
             const auto indicators = std::make_shared<Indicators>(symbol);
 
-            auto training_data = TrainingData{ symbol };
-            training_data.make(binance_klines, intrinsic_events, indicators);
+            training_data.make(symbol, binance_klines, intrinsic_events, indicators);
+            break;
         }
     }
 }

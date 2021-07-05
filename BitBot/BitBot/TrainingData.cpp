@@ -4,19 +4,64 @@
 #include "BitLib/Logger.h"
 #include "BitLib/BitBotConstants.h"
 
+#include <filesystem>
 
-TrainingData::TrainingData(const std::string& symbol) : symbol(symbol)
+
+TrainingData::TrainingData()
 {
 
 }
 
-void TrainingData::make(const sptrBinanceKlines binance_klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators)
+void TrainingData::make(const std::string& symbol, const sptrBinanceKlines binance_klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators)
 {
-    make_ground_truth(intrinsic_events);
-}
+    auto ground_truth = make_ground_truth(intrinsic_events);
 
-void TrainingData::make_ground_truth(const sptrIntrinsicEvents intrinsic_events)
+    // indicators:    259803 = ground_truth - (max_length - 1)
+    // ground_truth : 259952
+
+    auto file_path = std::string{ BitBot::path } + "\\training_data";
+    std::filesystem::create_directories(file_path);
+    file_path += "\\" + symbol + ".csv";
+
+    auto csv_file = std::ofstream{ file_path, std::ios::binary };
+
+    for (auto&& degree : BitBot::Indicators::degrees) {
+        for (auto&& length : BitBot::Indicators::lengths) {
+            csv_file << std::to_string(degree) << "-" << std::to_string(length) << ",";
+        }
+    }
+
+    auto symbols_string = std::string{};
+    for (auto&& a_symbol : BitBot::symbols) {
+        csv_file << std::string{ a_symbol } + ",";
+        if (a_symbol == symbol) {
+            symbols_string += "True,";
+        }
+        else {
+            symbols_string += "False,";
+        }
+    }
+
+    csv_file.precision(2);
+    csv_file << std::fixed << "(" << BitBot::TrainingData::take_profit << "," << BitBot::TrainingData::stop_loss << ")\n";
+    csv_file << std::defaultfloat;
+
+    for (auto idx = BitBot::Indicators::max_length - 1; idx < ground_truth.size(); idx++) {
+        const auto& indicator = indicators->indicators.at(idx + (BitBot::Indicators::max_length - 1));
+        
+        auto row = std::string{};
+        for (auto i = 0; i < indicator.size(); i++) {
+            csv_file << indicator.at(i) << ",";
+        }
+        csv_file << symbols_string;
+    }
+
+    csv_file.close();
+}
+ 
+std::vector<int> TrainingData::make_ground_truth(const sptrIntrinsicEvents intrinsic_events)
 {
+    auto ground_truth = std::vector<int>{};
     ground_truth.resize(intrinsic_events->events.size());
 
     auto positions = std::list<Position>{};
@@ -44,8 +89,10 @@ void TrainingData::make_ground_truth(const sptrIntrinsicEvents intrinsic_events)
 
         positions.emplace_back(
             idx, 
-            mark_price * BitBot::TrainingData::take_profit, 
-            mark_price * BitBot::TrainingData::stop_loss
+            (float)(mark_price * BitBot::TrainingData::take_profit), 
+            (float)(mark_price * BitBot::TrainingData::stop_loss)
         );
     }
+
+    return ground_truth;
 }
