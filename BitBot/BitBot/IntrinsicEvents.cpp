@@ -7,6 +7,11 @@
 #include <filesystem>
 
 
+IntrinsicEvents::IntrinsicEvents(std::string symbol) : symbol(symbol)
+{
+    load();
+}
+
 std::ostream& operator<<(std::ostream& stream, const IntrinsicEvent& row)
 {
     stream.write(reinterpret_cast<const char*>(&row.timestamp), sizeof(row.timestamp));
@@ -45,12 +50,14 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvents& intrinsic_events
 void IntrinsicEvents::load(void)
 {
     const auto file_path = std::string{ BitBot::path } + "\\intrinsic_events\\" + symbol + ".dat";
-    auto data_file = std::ifstream{ file_path, std::ios::binary };
-    auto intrinsic_event = IntrinsicEvent{};
-    while (data_file >> intrinsic_event) {
-        events.push_back(intrinsic_event);
+    if (std::filesystem::exists(file_path)) {
+        auto data_file = std::ifstream{ file_path, std::ios::binary };
+        auto intrinsic_event = IntrinsicEvent{};
+        while (data_file >> intrinsic_event) {
+            events.push_back(intrinsic_event);
+        }
+        data_file.close();
     }
-    data_file.close();
 }
 
 void IntrinsicEvents::save(void) const

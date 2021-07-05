@@ -39,7 +39,7 @@ private:
 class IntrinsicEvents
 {
 public:
-    IntrinsicEvents(std::string symbol) : symbol(symbol) {}
+    IntrinsicEvents(std::string symbol);
 
     void insert(BinanceKline binance_kline);
     void insert(sptrBinanceKlines binance_klines);

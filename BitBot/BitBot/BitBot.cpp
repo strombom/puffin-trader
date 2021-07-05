@@ -14,7 +14,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_training_data" };
+    const auto command = std::string{ "make_indicators" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};

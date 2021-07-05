@@ -16,8 +16,8 @@ public:
     void save(void) const;
 
     const std::string symbol;
-    std::unique_ptr<std::array<std::array<float, BitBot::Indicators::indicator_width>, BitBot::n_timestamps>> indicators;
-    int n_steps;
+    std::vector<std::array<float, BitBot::Indicators::indicator_width>> indicators;
+    //int n_steps;
 };
 
 using sptrIndicators = std::shared_ptr<Indicators>;

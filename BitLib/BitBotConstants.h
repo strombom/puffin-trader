@@ -8,7 +8,7 @@
 namespace BitBot
 {
     constexpr auto start_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
-    constexpr auto end_timestamp = time_point_ms{ date::sys_days(date::year{2021} / 7 / 4) + std::chrono::hours{ 0 } };
+    constexpr auto end_timestamp = time_point_ms{ date::sys_days(date::year{2021} / 7 / 5) + std::chrono::hours{ 0 } };
     constexpr auto n_timestamps = std::chrono::duration_cast<std::chrono::minutes>(end_timestamp - start_timestamp).count();
 
     constexpr auto symbols = std::array<const char*, 18>{ "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT" };

@@ -8,14 +8,14 @@
 class TrainingData
 {
 public:
-    TrainingData(const std::string &symbol) : symbol(symbol) {}
+    TrainingData(const std::string& symbol);
 
     void make(const sptrBinanceKlines binance_klines, const sptrIndicators indicators);
 
 private:
-    void make_ground_truth(const sptrBinanceKlines binance_klines);
+    void make_ground_truth(const sptrIndicators indicators);
 
     const std::string symbol;
-    std::array<int, BitBot::n_timestamps> ground_truth;
+    std::vector<int> ground_truth;
 };
 
