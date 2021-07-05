@@ -16,7 +16,7 @@ void BinanceDownloadKlines::download(void)
 
         auto klines = std::make_shared<BinanceKlines>(symbol);
 
-        auto start_timestamp = BitBot::first_timestamp;
+        auto start_timestamp = BitBot::start_timestamp;
         while (true) {
             if (klines->rows.size() > 0) {
                 start_timestamp = klines->get_timestamp_end() + std::chrono::minutes{ 1 };

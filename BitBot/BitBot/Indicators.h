@@ -16,7 +16,7 @@ public:
     void save(void) const;
 
     const std::string symbol;
-    std::unique_ptr<std::array<std::array<float, BitBot::Indicators::indicator_width>, BitBot::Indicators::n_timestamps>> indicators;
+    std::unique_ptr<std::array<std::array<float, BitBot::Indicators::indicator_width>, BitBot::n_timestamps>> indicators;
     int n_steps;
 };
 

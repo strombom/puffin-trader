@@ -13,6 +13,9 @@ public:
     void make(const sptrBinanceKlines binance_klines, const sptrIndicators indicators);
 
 private:
+    void make_ground_truth(const sptrBinanceKlines binance_klines);
+
     const std::string symbol;
+    std::array<int, BitBot::n_timestamps> ground_truth;
 };
 

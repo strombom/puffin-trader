@@ -9,7 +9,7 @@
 
 Indicators::Indicators(std::string symbol) : symbol(symbol) 
 {
-    indicators = std::make_unique<std::array<std::array<float, BitBot::Indicators::indicator_width>, BitBot::Indicators::n_timestamps>>();
+    indicators = std::make_unique<std::array<std::array<float, BitBot::Indicators::indicator_width>, BitBot::n_timestamps>>();
     load();
 }
 
