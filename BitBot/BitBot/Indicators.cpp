@@ -20,8 +20,7 @@ void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
         return;
     }
     else {
-        indicators.clear();
-        indicators.reserve(intrinsic_events->events.size() - max_length + 1);
+        indicators.resize(intrinsic_events->events.size() - max_length + 1);
     }
 
     auto price_steps = std::array<double, max_length>{};
@@ -52,7 +51,7 @@ void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
             }
         }
 
-        indicators.push_back(tmp_indicator);
+        indicators.at(ie_idx - max_length + 1) = tmp_indicator;
         std::rotate(price_steps.begin(), price_steps.begin() + 1, price_steps.end());
     }
 }
