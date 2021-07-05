@@ -37,8 +37,8 @@ namespace BitBot
 
     namespace TrainingData
     {
-        constexpr auto take_profit = 1.02;
-        constexpr auto stop_loss = 0.98;
+        constexpr auto take_profit = 1.03;
+        constexpr auto stop_loss = 0.97;
     }
 }
 
