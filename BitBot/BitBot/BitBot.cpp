@@ -14,7 +14,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_indicators" };
+    const auto command = std::string{ "make_training_data" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
@@ -43,10 +43,11 @@ int main()
     else if (command == "make_training_data") {
         for (const auto symbol : BitBot::symbols) {
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
+            const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             auto training_data = TrainingData{ symbol };
-            training_data.make(binance_klines, indicators);
+            training_data.make(binance_klines, intrinsic_events, indicators);
         }
     }
 }
