@@ -1,8 +1,10 @@
 #include "pch.h"
 
 #include "BinanceKlines.h"
+#include "BitLib/BitBotConstants.h"
 
 #include <fstream>
+#include <filesystem>
 
 
 std::ostream& operator<<(std::ostream& stream, const BinanceKline& row)
@@ -42,18 +44,28 @@ std::istream& operator>>(std::istream& stream, BinanceKlines& binance_klines_dat
     return stream;
 }
 
-void BinanceKlines::load(const std::string& file_path)
+BinanceKlines::BinanceKlines(const std::string& symbol) : symbol(symbol)
 {
-    auto data_file = std::ifstream{ file_path, std::ios::binary };
-    auto database_binance_kline = BinanceKline{};
-    while (data_file >> database_binance_kline) {
-        rows.push_back(database_binance_kline);
-    }
-    data_file.close();
+    load();
 }
 
-void BinanceKlines::save(const std::string& file_path) const
+void BinanceKlines::load(void)
 {
+    const auto file_path = std::string{ BitBot::Klines::path } + "\\" + symbol + ".dat";
+
+    if (std::filesystem::exists(file_path)) {
+        auto data_file = std::ifstream{ file_path, std::ios::binary };
+        auto database_binance_kline = BinanceKline{};
+        while (data_file >> database_binance_kline) {
+            rows.push_back(database_binance_kline);
+        }
+        data_file.close();
+    }
+}
+
+void BinanceKlines::save(void) const
+{
+    const auto file_path = std::string{ BitBot::Klines::path } + "\\" + symbol + ".dat";
     auto data_file = std::ofstream{ file_path, std::ios::binary };
     data_file << *this;
     data_file.close();

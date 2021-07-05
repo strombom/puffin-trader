@@ -21,8 +21,8 @@ int main()
     }
     else if (command == "make_intrinsic_events") {
         for (const auto symbol : BitBot::symbols) {
-            const auto file_path = std::string{ BitBot::Klines::path } + "\\" + symbol + ".dat";
-            const auto binance_klines = std::make_shared<BinanceKlines>(file_path);
+            const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
+
             auto intrinsic_events = IntrinsicEvents{ symbol };
             intrinsic_events.insert(binance_klines);
             intrinsic_events.save();
@@ -42,6 +42,7 @@ int main()
     }
     else if (command == "make_training_data") {
         for (const auto symbol : BitBot::symbols) {
+            const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
             auto indicators = Indicators{ symbol };
             indicators.load();
 

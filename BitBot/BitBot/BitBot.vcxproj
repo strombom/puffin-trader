@@ -195,6 +195,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="PolyFit.cpp" />
+    <ClCompile Include="TrainingData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\BitLib\json11\json11.hpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="IntrinsicEvents.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PolyFit.h" />
+    <ClInclude Include="TrainingData.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

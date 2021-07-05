@@ -15,11 +15,7 @@ void BinanceDownloadKlines::download(void)
         logger.info("Downloading %s", symbol);
 
         const auto file_path = std::string{ BitBot::Klines::path } + "\\" + symbol + ".dat";
-        auto klines = std::make_shared<BinanceKlines>();
-
-        if (std::filesystem::exists(file_path)) {
-            klines = std::make_shared<BinanceKlines>(file_path);
-        }
+        auto klines = std::make_shared<BinanceKlines>(symbol);
 
         auto start_timestamp = BitBot::first_timestamp;
         while (true) {
@@ -35,6 +31,6 @@ void BinanceDownloadKlines::download(void)
             logger.info("Downloading %s %s", symbol, DateTime::to_string_iso_8601(start_timestamp).c_str());
         }
 
-        klines->save(file_path);
+        klines->save();
     }
 }

@@ -69,6 +69,9 @@
     <ClCompile Include="PolyFit.cpp">
       <Filter>Source Files\Indicators</Filter>
     </ClCompile>
+    <ClCompile Include="TrainingData.cpp">
+      <Filter>Source Files\Indicators</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -111,6 +114,9 @@
       <Filter>Header Files\Indicators</Filter>
     </ClInclude>
     <ClInclude Include="PolyFit.h">
+      <Filter>Header Files\Indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="TrainingData.h">
       <Filter>Header Files\Indicators</Filter>
     </ClInclude>
   </ItemGroup>

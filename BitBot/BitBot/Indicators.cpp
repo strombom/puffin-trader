@@ -75,6 +75,8 @@ std::istream& operator>>(std::istream& stream, Indicators& indicators)
         }
     }
 
+    indicators.n_steps = ts;
+
     return stream;
 }
 
