@@ -12,9 +12,72 @@ TrainingData::TrainingData()
 
 }
 
-void TrainingData::make(const std::string& symbol, const sptrBinanceKlines binance_klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators)
+void TrainingData::make_section(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
 {
-    auto ground_truth = make_ground_truth(intrinsic_events);
+    if (ground_truth.size() == 0 || ground_truth_symbol != symbol) {
+        ground_truth = make_ground_truth(intrinsic_events);
+    }
+
+    auto file_path = std::string{ BitBot::path } + "\\training_data_sections";
+    std::filesystem::create_directories(file_path);
+    file_path += "\\" + date::format("%F", timestamp_start) + "_" + symbol + ".csv";
+
+    auto csv_file = std::ofstream{ file_path, std::ios::binary };
+
+    for (auto&& degree : BitBot::Indicators::degrees) {
+        for (auto&& length : BitBot::Indicators::lengths) {
+            csv_file << "\"" << std::to_string(degree) << "-" << std::to_string(length) << "-p\",";
+            csv_file << "\"" << std::to_string(degree) << "-" << std::to_string(length) << "-d\",";
+        }
+    }
+
+    auto symbols_string = std::string{};
+    for (auto&& a_symbol : BitBot::symbols) {
+        csv_file << "\"" << std::string{ a_symbol } + "\",";
+        if (a_symbol == symbol) {
+            symbols_string += "True,";
+        }
+        else {
+            symbols_string += "False,";
+        }
+    }
+
+    csv_file.precision(2);
+    csv_file << std::fixed << "\"(" << BitBot::TrainingData::take_profit << "," << BitBot::TrainingData::stop_loss << ")\"\n";
+    csv_file << std::defaultfloat;
+
+    // indicators:    259803 = ground_truth - (max_length - 1)
+    // ground_truth : 259952
+
+    for (auto gt_idx = BitBot::Indicators::max_length - 1; gt_idx < ground_truth.size(); gt_idx++) {
+        if (ground_truth.at(gt_idx) == 0) {
+            break;
+        }
+
+        if (intrinsic_events->events[gt_idx].timestamp < timestamp_start) {
+            continue;
+        }
+
+        if (intrinsic_events->events[gt_idx].timestamp > timestamp_end) {
+            break;
+        }
+
+        const int indicator_idx = gt_idx - (BitBot::Indicators::max_length - 1);
+
+        const auto& indicator = indicators->indicators.at(indicator_idx);
+        for (auto i = 0; i < indicator.size(); i++) {
+            csv_file << indicator.at(i) << ",";
+        }
+        csv_file << symbols_string;
+        csv_file << ground_truth.at(gt_idx) << "\n";
+    }
+
+    csv_file.close();
+}
+
+void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators)
+{
+    ground_truth = make_ground_truth(intrinsic_events);
 
     auto file_path = std::string{ BitBot::path } + "\\training_data";
     std::filesystem::create_directories(file_path);

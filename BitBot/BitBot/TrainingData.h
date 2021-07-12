@@ -11,12 +11,15 @@ class TrainingData
 public:
     TrainingData();
 
-    void make(const std::string& symbol, const sptrBinanceKlines binance_klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators);
+    void make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators);
+    void make_section(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end);
 
 private:
     std::vector<int> make_ground_truth(const sptrIntrinsicEvents intrinsic_events);
 
     struct Position;
+    std::vector<int> ground_truth;
+    std::string ground_truth_symbol;
 };
 
 struct TrainingData::Position
