@@ -12,17 +12,17 @@ TrainingData::TrainingData()
 
 }
 
-void TrainingData::make_section(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
+void TrainingData::make_section(const std::string& symbol, const std::string& suffix, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
 {
-    if (ground_truth.size() == 0 || ground_truth_symbol != symbol) {
-        ground_truth = make_ground_truth(intrinsic_events);
-    }
+    make_ground_truth(symbol, intrinsic_events);
 
     auto file_path = std::string{ BitBot::path } + "\\training_data_sections";
     std::filesystem::create_directories(file_path);
-    file_path += "\\" + date::format("%F", timestamp_start) + "_" + symbol + ".csv";
+    file_path += "\\" + date::format("%F", timestamp_start) + "_" + symbol + "_" + suffix + ".csv";
 
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
+
+    csv_file << "\"timestamp\"";
 
     for (auto&& degree : BitBot::Indicators::degrees) {
         for (auto&& length : BitBot::Indicators::lengths) {
@@ -62,7 +62,17 @@ void TrainingData::make_section(const std::string& symbol, const sptrIntrinsicEv
             break;
         }
 
+        if (ground_truth_timestamps.at(gt_idx) < timestamp_start) {
+            break;
+        }
+
+        if (suffix != "valid" && ground_truth_timestamps.at(gt_idx) > timestamp_end) {
+            break;
+        }
+
         const int indicator_idx = gt_idx - (BitBot::Indicators::max_length - 1);
+
+        csv_file << "\"" << DateTime::to_string_iso_8601(indicators->timestamps.at(indicator_idx)) << "\",";
 
         const auto& indicator = indicators->indicators.at(indicator_idx);
         for (auto i = 0; i < indicator.size(); i++) {
@@ -77,7 +87,7 @@ void TrainingData::make_section(const std::string& symbol, const sptrIntrinsicEv
 
 void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators)
 {
-    ground_truth = make_ground_truth(intrinsic_events);
+    make_ground_truth(symbol, intrinsic_events);
 
     auto file_path = std::string{ BitBot::path } + "\\training_data";
     std::filesystem::create_directories(file_path);
@@ -126,10 +136,16 @@ void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents int
     csv_file.close();
 }
  
-std::vector<int> TrainingData::make_ground_truth(const sptrIntrinsicEvents intrinsic_events)
+void TrainingData::make_ground_truth(const std::string symbol, const sptrIntrinsicEvents intrinsic_events)
 {
-    auto ground_truth = std::vector<int>{};
+    if (ground_truth_symbol != symbol) {
+        ground_truth.clear();
+        ground_truth_timestamps.clear();
+        ground_truth_symbol = symbol;
+    }
+
     ground_truth.resize(intrinsic_events->events.size());
+    ground_truth_timestamps.resize(intrinsic_events->events.size());
 
     auto positions = std::list<Position>{};
 
@@ -140,11 +156,13 @@ std::vector<int> TrainingData::make_ground_truth(const sptrIntrinsicEvents intri
         for (auto&& position : positions) {
             if (mark_price >= position.take_profit) {
                 ground_truth.at(position.idx) = 1;
+                ground_truth_timestamps.at(position.idx) = intrinsic_events->events.at(idx).timestamp;
                 position.remove = true;
                 remove = true;
             }
             else if (mark_price <= position.stop_loss) {
                 ground_truth.at(position.idx) = -1;
+                ground_truth_timestamps.at(position.idx) = intrinsic_events->events.at(idx).timestamp;
                 position.remove = true;
                 remove = true;
             }
@@ -160,6 +178,4 @@ std::vector<int> TrainingData::make_ground_truth(const sptrIntrinsicEvents intri
             (float)(mark_price * BitBot::TrainingData::stop_loss)
         );
     }
-
-    return ground_truth;
 }

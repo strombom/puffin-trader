@@ -17,6 +17,7 @@ public:
 
     const std::string symbol;
     std::vector<std::array<float, BitBot::Indicators::indicator_width>> indicators;
+    std::vector<time_point_ms> timestamps;
     //int n_steps;
 };
 

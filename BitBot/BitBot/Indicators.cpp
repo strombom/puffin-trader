@@ -21,7 +21,9 @@ void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
     //}
     //else {
     indicators.clear();
+    timestamps.clear();
     indicators.resize(intrinsic_events->events.size() - max_length + 1);
+    timestamps.resize(intrinsic_events->events.size() - max_length + 1);
     //}
 
     auto price_steps = std::array<double, max_length>{};
@@ -53,6 +55,7 @@ void Indicators::calculate(const sptrIntrinsicEvents intrinsic_events)
         }
 
         indicators.at(ie_idx - max_length + 1) = tmp_indicator;
+        timestamps.at(ie_idx - max_length + 1) = intrinsic_events->events[ie_idx].timestamp;;
         std::rotate(price_steps.begin(), price_steps.begin() + 1, price_steps.end());
     }
 }
@@ -63,6 +66,7 @@ std::ostream& operator<<(std::ostream& stream, const Indicators& indicators)
         for (auto indx = 0; indx < BitBot::Indicators::indicator_width; indx++) {
             stream.write(reinterpret_cast<const char*>(&indicators.indicators.at(ts).at(indx)), sizeof(float));
         }
+        stream.write(reinterpret_cast<const char*>(&indicators.timestamps.at(ts)), sizeof(time_point_ms));
     }
 
     return stream;
@@ -86,6 +90,13 @@ std::istream& operator>>(std::istream& stream, Indicators& indicators)
         indx = (indx + 1) % BitBot::Indicators::indicator_width;
         if (indx == 0) {
             indicators.indicators.push_back(tmp_indicator);
+            time_point_ms timestamp;
+            stream.read(reinterpret_cast <char*> (&timestamp), sizeof(timestamp));
+            if (!stream) {
+                printf("Error, read indicators!\n");
+                break;
+            }
+            indicators.timestamps.push_back(timestamp);
             ts++;
         }
     }

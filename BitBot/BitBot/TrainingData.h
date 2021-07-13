@@ -12,13 +12,14 @@ public:
     TrainingData();
 
     void make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators);
-    void make_section(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end);
+    void make_section(const std::string& symbol, const std::string& suffix, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end);
 
 private:
-    std::vector<int> make_ground_truth(const sptrIntrinsicEvents intrinsic_events);
+    void make_ground_truth(const std::string symbol, const sptrIntrinsicEvents intrinsic_events);
 
     struct Position;
     std::vector<int> ground_truth;
+    std::vector<time_point_ms> ground_truth_timestamps;
     std::string ground_truth_symbol;
 };
 

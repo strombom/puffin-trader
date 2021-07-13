@@ -56,19 +56,15 @@ int main()
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             auto year = 2020;
-            auto month = 1;
-            while (!(year == 2020 && month == 12)) {
-                const auto timestamp_start = time_point_ms{ date::sys_days(date::year{year} / month / 1) + std::chrono::hours{ 0 } };
-                const auto timestamp_end = timestamp_start + date::months{ 7 };
-                training_data.make_section(symbol, intrinsic_events, indicators, timestamp_start, timestamp_end);
+            auto day = 1;
+            while (day < 180) {
+                const auto timestamp_start = time_point_ms{ date::sys_days(date::year{year} / 01 / 01) + date::days{day}};
+                const auto timestamp_end = timestamp_start + date::months{ 12 };
+                training_data.make_section(symbol, "train", intrinsic_events, indicators, timestamp_start, timestamp_end);
+                training_data.make_section(symbol, "valid", intrinsic_events, indicators, timestamp_end, timestamp_end + date::days{ 2 });
 
-                month++;
-                if (month == 13) {
-                    month = 1;
-                    year++;
-                }
+                day += 2;
             }
-
         }
     }
 }
