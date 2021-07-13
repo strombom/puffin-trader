@@ -94,4 +94,4 @@ def make_intrinsic_events(delta: float):
 
 
 if __name__ == '__main__':
-    make_intrinsic_events(delta=0.01)
+    make_intrinsic_events(delta=0.0025)

@@ -40,21 +40,21 @@ def make_steps_process(task_queue_lock, task_queue, results_queue_lock, results_
         print(process_id, "Processing", symbol)
 
         runner = Runner(delta=delta)
-        kline_idxs, steps_price = [], []
+        kline_idxs, step_prices = [], []
         klines = pd.read_hdf(f"cache/klines/{symbol}.hdf")
         for kline_idx, kline in klines.iterrows():
             mark_price = kline['open']
             for step_price in runner.step(mark_price):
                 kline_idxs.append(kline_idx)
-                steps_price.append(step_price)
+                step_prices.append(step_price)
             #if len(steps) > 1000:
             #    break
 
         with results_queue_lock:
             results_queue.put({
                 'symbol': parameters['symbol'],
-                'steps_idx': kline_idxs,
-                'steps_price': steps_price
+                'kline_idxs': kline_idxs,
+                'step_prices': step_prices
             })
 
 
@@ -142,8 +142,8 @@ def main():
             with task_queue_lock:
                 result = results_queue.get(block=True, timeout=1)
                 intrinsic_events[result['symbol']] = {
-                    'steps_idx': result['steps_idx'],
-                    'steps_price': result['steps_price']
+                    'kline_idxs': result['kline_idxs'],
+                    'step_prices': result['step_prices']
                 }
         except queue.Empty:
             time.sleep(0.1)
@@ -193,7 +193,7 @@ def main():
 
     fig, axs = plt.subplots(nrows=2, sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     #axs[0].plot(timesteps)
-    axs[0].plot(intrinsic_events['BTCUSDT']['steps'])
+    axs[0].plot(intrinsic_events['BTCUSDT']['step_prices'])
     axs[0].set_yscale('log')
     #axs[1].plot(pid_result['deltas'])
     plt.show()

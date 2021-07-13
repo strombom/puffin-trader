@@ -125,7 +125,7 @@ def main():
     # Todo: binance_account handle websocket errors https://github.com/sammchardy/python-binance/issues/834
     # Todo: long and short
 
-    profit_model = load_learner('model_all_2021-07-01.pickle')
+    profit_model = load_learner('model_all_2021-07-02.pickle')
 
     with open('binance_account.json') as f:
         account_info = json.load(f)
@@ -243,7 +243,11 @@ def main():
                         logging.info(f"Executed quantity ({order_result['quantity']}) doesn't match position size ({position['size']})")
                     portfolio.remove_position(position)
                 else:
-                    logging.info(f"Sold {position['symbol']} FAILED: {order_size} @ {mark_price}, {position}")
+                    if order_result['error'] == 'low volume':
+                        logging.info(f"Sold {position['symbol']} FAILED (low volume), removed position: {order_size} @ {mark_price}, {position}")
+                        portfolio.remove_position(position)
+                    else:
+                        logging.info(f"Sold {position['symbol']} FAILED: {order_size} @ {mark_price}, {position}")
                 print_hodlings()
 
         # Buy

@@ -1,6 +1,5 @@
 import pickle
 import random
-
 import pandas as pd
 from datetime import datetime, timezone, timedelta
 
@@ -46,7 +45,7 @@ def main():
     with open(f"cache/filtered_symbols.pickle", 'rb') as f:
         symbols = pickle.load(f)
 
-    file_path = f"cache/tmp_predictions.pickle"
+    file_path = f"cache/predictions.pickle"
     try:
         with open(file_path, 'rb') as f:
             predictions = pickle.load(f)

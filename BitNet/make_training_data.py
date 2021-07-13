@@ -40,7 +40,8 @@ def main():
     intrinsic_events = dict(list(intrinsic_events.items())[:int(len(intrinsic_events) * 1.0)])
 
     limits = [
-        (1.03, 0.93), (1.04, 0.94), (1.05, 0.95), (1.06, 0.96), (1.07, 0.97)
+        #(1.03, 0.93), (1.04, 0.94), (1.05, 0.95), (1.06, 0.96), (1.07, 0.97)
+        (1.03, 0.93), (1.04, 0.94), (1.05, 0.95), (1.06, 0.96), (1.07, 0.97)#
     ]
 
     lengths = pd.read_csv('cache/regime_data_lengths.csv')['length'].to_numpy()

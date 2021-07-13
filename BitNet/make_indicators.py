@@ -123,7 +123,7 @@ def make_indicators(start_timestamp: datetime, end_timestamp: datetime):
         })
 
     ps = []
-    for n in range(min(multiprocessing.cpu_count() - 3, len(intrinsic_events))):
+    for n in range(min(multiprocessing.cpu_count() - 5, len(intrinsic_events))):
         print("New thread", n)
         p = multiprocessing.Process(target=make_indicator, args=(lock, task_queue))
         ps.append(p)

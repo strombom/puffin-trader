@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 
 def main():
     df = pd.read_csv(
-        "log/simlog 2021-06-25 165607.txt",
+        "log/simlog 2021-07-03 092134.txt",
         parse_dates=['date'],
         date_parser=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S%z")
     )
 
-    fig, (ax1, ax2) = plt.subplots(2)
+    fig, (ax1, ax2) = plt.subplots(2, sharex='col')
     ax1.plot(df['date'], df['equity'])
     ax1.set_yscale('log')
-    ax2.plot(df['date'], df['cash'] / df['equity'])
+    ax2.plot(df['date'], 1 - df['cash'] / df['equity'])
     plt.show()
 
 

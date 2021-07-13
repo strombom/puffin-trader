@@ -124,13 +124,13 @@ class BinanceAccount:
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             logging.info(f"Market buy {volume} {symbol} FAILED! Volume too low.")
-            return {'quantity': 0, 'price': 0}
+            return {'quantity': 0, 'price': 0, 'error': 'low volume'}
         elif quantity < self._min_lot_size[symbol]:
             logging.info(f"Market buy {volume} {symbol} FAILED! Volume below min lot size: {self._min_lot_size[symbol]}.")
-            return {'quantity': 0, 'price': 0}
+            return {'quantity': 0, 'price': 0, 'error': 'low volume'}
         elif quantity * self._mark_price[symbol] < self._min_notional[symbol]:
             logging.info(f"Market buy {volume} {symbol} FAILED! Price * quantity below min notional: {self._min_notional[symbol]}.")
-            return {'quantity': 0, 'price': 0}
+            return {'quantity': 0, 'price': 0, 'error': 'low volume'}
 
         for retry in range(3):
             try:
@@ -143,7 +143,7 @@ class BinanceAccount:
 
                 if order['status'] != 'FILLED':
                     logging.info(f"Market buy  {quantity} {symbol} FAILED! {order}")
-                    return {'quantity': 0, 'price': 0}
+                    return {'quantity': 0, 'price': 0, 'error': 'not filled'}
                 else:
                     fill_quantity = 0
                     fill_value = 0
@@ -153,7 +153,7 @@ class BinanceAccount:
                     price = fill_value / fill_quantity
 
                     logging.info(f"Market buy {quantity} {symbol} OK")
-                    return {'quantity': float(order['executedQty']), 'price': price}
+                    return {'quantity': float(order['executedQty']), 'price': price, 'error': 'ok'}
 
             except BinanceAPIException as e:
                 logging.info(f"Market buy  {quantity} {symbol} error: {e}")
@@ -162,7 +162,7 @@ class BinanceAccount:
                 logging.error(f"market_buy ConnectionError: {e}")
 
         logging.info(f"Market buy  {quantity} {symbol} FAILED!")
-        return {'quantity': 0, 'price': 0}
+        return {'quantity': 0, 'price': 0, 'error': 'fail'}
 
     def market_sell(self, symbol, volume):
         balance = self._balance[symbol.replace('USDT', '')]
@@ -172,7 +172,7 @@ class BinanceAccount:
         quantity = math.floor(volume * factor) / factor
         if quantity == 0:
             logging.info(f"Market sell {volume} {symbol} FAILED! Volume too low.")
-            return {'quantity': 0, 'price': 0}
+            return {'quantity': 0, 'price': 0, 'error': 'low volume'}
 
         for retry in range(3):
             try:
@@ -184,7 +184,7 @@ class BinanceAccount:
                 )
                 if order['status'] != 'FILLED':
                     logging.info(f"Market sell {quantity} {symbol} FAILED! {order}")
-                    return {'quantity': 0, 'price': 0}
+                    return {'quantity': 0, 'price': 0, 'error': 'fail'}
                 else:
                     fill_quantity = 0
                     fill_value = 0
@@ -194,7 +194,7 @@ class BinanceAccount:
                     price = fill_value / fill_quantity
 
                     logging.info(f"Market sell {quantity} @ {price} {symbol} OK, {order}")
-                    return {'quantity': float(order['executedQty']), 'price': price}
+                    return {'quantity': float(order['executedQty']), 'price': price, 'error': 'ok'}
 
             except BinanceAPIException as e:
                 logging.info(f"Market sell  {quantity} {symbol} error: {e}")
@@ -203,4 +203,4 @@ class BinanceAccount:
                 logging.error(f"market_buy ConnectionError: {e}")
 
         logging.info(f"Market sell  {quantity} {symbol} FAILED!")
-        return {'quantity': 0, 'price': 0}
+        return {'quantity': 0, 'price': 0, 'error': 'fail'}
