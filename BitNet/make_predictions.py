@@ -72,6 +72,9 @@ def calculate_predictions(indicators):
         indicator_next_timestamp[symbol] = indicators[symbol].iloc[0]['timestamp']
 
     predictions = {}
+    for symbol in symbols:
+        predictions[symbol] = []
+
     timestamp = start_date
     while timestamp < end_date:
 
@@ -87,11 +90,15 @@ def calculate_predictions(indicators):
                             break
                         end_idx += 1
 
-                    print(start_idx, indicators[symbol]['timestamp'].iloc[start_idx])
-                    print(end_idx, indicators[symbol]['timestamp'].iloc[end_idx])
-                    print()
+                    print(f"Predict {symbol} {start_idx}-{end_idx}")
 
+                    indicator_section = indicators[symbol].iloc[start_idx:end_idx]
+                    indicator_section = indicator_section.rename(columns={'1-5-p': 'timestamp"1-5-p'})
 
+                    test_dl = profit_model.dls.test_dl(indicator_section)
+                    predictions[symbol].append(profit_model.get_preds(dl=test_dl)[0][:, 0].numpy())
+
+                    indicator_idx[symbol] = end_idx
 
                 model_idx += 1
                 profit_model = load_learner((model_files[model_idx]['filename']))
@@ -111,6 +118,9 @@ def calculate_predictions(indicators):
         """
 
         timestamp += timedelta(minutes=1)
+
+    for symbol in symbols:
+        predictions[symbol] = np.concatenate(predictions[symbol])
 
     data_length = (end_date - start_date).minutes
     predictions = []
