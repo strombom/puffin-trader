@@ -26,6 +26,8 @@ def calculate_predictions(indicators):
     #tmp_indicator_columns = np.empty((len(symbols), len(degrees) * len(indicators[first_symbol]['lengths'])))
     #predictions = np.empty((data_length, len(symbols)))
 
+    symbols = set(indicators.keys())
+
     model_files = []
     for filename in glob.glob('model_all_*_*.pickle'):
         model_files.append({
@@ -38,9 +40,9 @@ def calculate_predictions(indicators):
     profit_model = load_learner(model_files[model_idx]['filename'])
 
     start_date, end_date = None, None
-    for symbol in indicators:
-        first_date = indicators[symbol].iloc[0]['date']
-        last_date = indicators[symbol].iloc[-1]['date']
+    for symbol in symbols:
+        first_date = indicators[symbol].iloc[0]['timestamp']
+        last_date = indicators[symbol].iloc[-1]['timestamp']
         if start_date is None:
             start_date = first_date
         if end_date is None:
@@ -49,12 +51,64 @@ def calculate_predictions(indicators):
         start_date = max(start_date, first_date)
         end_date = max(end_date, last_date)
 
+    """
+    predictions = {}
+    for symbol in symbols:
+        predictions[symbol] = []
+        indicator = indicators[symbol].drop(columns=['timestamp'])
+        indicator = indicator.rename(columns={'1-5-p': 'timestamp"1-5-p'})
+
+        for idx in range(indicator.shape[0]):
+            print(idx)
+
+        test_dl = profit_model.dls.test_dl(indicator)
+        predictions[symbol].append(profit_model.get_preds(dl=test_dl)[0][:, 0].numpy() - 0.5)
+    """
+
+    indicator_idx = {}
+    indicator_next_timestamp = {}
+    for symbol in symbols:
+        indicator_idx[symbol] = 0
+        indicator_next_timestamp[symbol] = indicators[symbol].iloc[0]['timestamp']
+
+    predictions = {}
     timestamp = start_date
     while timestamp < end_date:
+
+        # Load current model
         if model_idx + 1 < len(model_files):
             if timestamp >= model_files[model_idx + 1]['timestamp']:
+
+                for symbol in symbols:
+                    start_idx = indicator_idx[symbol]
+                    end_idx = start_idx
+                    while end_idx + 1 < indicators[symbol].shape[0]:
+                        if indicators[symbol]['timestamp'].iloc[end_idx + 1] >= timestamp:
+                            break
+                        end_idx += 1
+
+                    print(start_idx, indicators[symbol]['timestamp'].iloc[start_idx])
+                    print(end_idx, indicators[symbol]['timestamp'].iloc[end_idx])
+                    print()
+
+
+
                 model_idx += 1
                 profit_model = load_learner((model_files[model_idx]['filename']))
+
+        """
+        prediction = {}
+        
+        for symbol in symbols:
+            if timestamp == indicator_next_timestamp[symbol]:
+                indicator = indicators[symbol].iloc[indicator_idx[symbol]]
+
+                if indicator_idx[symbol] + 1 < indicators[symbol].shape[0]:
+                    indicator_idx[symbol] += 1
+                    indicator_next_timestamp[symbol] = indicators[symbol].iloc[0]['date']
+
+        predictions.append(prediction)
+        """
 
         timestamp += timedelta(minutes=1)
 
