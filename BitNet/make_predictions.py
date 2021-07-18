@@ -1,12 +1,13 @@
 import os
+import glob
 import pickle
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fastai.learner import load_learner
 
 
-def calculate_predictions(indicators, profit_model):
+def calculate_predictions(indicators):
     start_timestamp = datetime.now()
 
     #first_symbol = list(indicators.keys())[0]
@@ -25,13 +26,54 @@ def calculate_predictions(indicators, profit_model):
     #tmp_indicator_columns = np.empty((len(symbols), len(degrees) * len(indicators[first_symbol]['lengths'])))
     #predictions = np.empty((data_length, len(symbols)))
 
-    all_indicators = []
-    for symbol in indicators:
-        start_idx = int(indicators[symbol].shape[0] * 0.85)
-        all_indicators.append(indicators[symbol][start_idx:])
-    all_indicators = pd.concat(all_indicators)
+    model_files = []
+    for filename in glob.glob('model_all_*_*.pickle'):
+        model_files.append({
+            'timestamp': datetime.strptime(filename[21:31], "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(hours=6),
+            'filename': filename
+        })
+    model_files = sorted(model_files, key=lambda x: x['timestamp'])
 
-    predictions = np.empty((all_indicators.shape[0], len(symbols)))
+    model_idx = 0
+    profit_model = load_learner(model_files[model_idx]['filename'])
+
+    start_date, end_date = None, None
+    for symbol in indicators:
+        first_date = indicators[symbol].iloc[0]['date']
+        last_date = indicators[symbol].iloc[-1]['date']
+        if start_date is None:
+            start_date = first_date
+        if end_date is None:
+            end_date = last_date
+
+        start_date = max(start_date, first_date)
+        end_date = max(end_date, last_date)
+
+    timestamp = start_date
+    while timestamp < end_date:
+        if model_idx + 1 < len(model_files):
+            if timestamp >= model_files[model_idx + 1]['timestamp']:
+                model_idx += 1
+                profit_model = load_learner((model_files[model_idx]['filename']))
+
+        timestamp += timedelta(minutes=1)
+
+    data_length = (end_date - start_date).minutes
+    predictions = []
+
+    print(data_length)
+
+    #predictions = np.empty((all_indicators.shape[0], len(indicators)))
+
+
+
+    #all_indicators = []
+    #for symbol in indicators:
+    #    start_idx = int(indicators[symbol].shape[0] * 0.85)
+    #    all_indicators.append(indicators[symbol][start_idx:])
+    #all_indicators = pd.concat(all_indicators)
+
+    #predictions = np.empty((all_indicators.shape[0], len(indicators)))
 
     for idx in range(data_length):
         #for symbol_idx, symbol in enumerate(symbols):
@@ -54,10 +96,11 @@ def calculate_predictions(indicators, profit_model):
 
 
 def make_predictions():
-    training_path = 'E:/BitBot/training_data_sections/'
+    training_path = 'E:/BitBot/training_data/'
     symbols = set()
     for filename in os.listdir(training_path):
-        symbols.add(filename[11:].replace('.csv', ''))
+        symbols.add(filename.replace('.csv', ''))
+        break
     symbols = list(symbols)
 
     #with open(f"cache/filtered_symbols.pickle", 'rb') as f:
@@ -67,15 +110,10 @@ def make_predictions():
 
     indicators = {}
     for symbol in symbols:
-        with open(f"E:/BitBot/training_data_sections/2020-01-01_{symbol}.csv", 'rb') as f:
-            indicators[symbol] = pd.read_csv(f)
+        with open(f"E:/BitBot/training_data/{symbol}.csv", 'rb') as f:
+            indicators[symbol] = pd.read_csv(f, parse_dates=[0])
 
-    profit_model = load_learner('model_all_a.pickle')
-
-    calculate_predictions(
-        indicators,
-        profit_model
-    )
+    calculate_predictions(indicators)
 
 
 if __name__ == '__main__':
