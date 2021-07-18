@@ -85,7 +85,7 @@ void TrainingData::make_section(const std::string& symbol, const std::string& su
     csv_file.close();
 }
 
-void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators)
+void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
 {
     make_ground_truth(symbol, intrinsic_events);
 
@@ -94,6 +94,8 @@ void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents int
     file_path += "\\" + symbol + ".csv";
 
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
+
+    csv_file << "\"date\",";
 
     for (auto&& degree : BitBot::Indicators::degrees) {
         for (auto&& length : BitBot::Indicators::lengths) {
@@ -120,17 +122,28 @@ void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents int
     // indicators:    259803 = ground_truth - (max_length - 1)
     // ground_truth : 259952
 
-    for (auto idx = BitBot::Indicators::max_length - 1; idx < ground_truth.size(); idx++) {
+    for (auto gt_idx = BitBot::Indicators::max_length - 1; gt_idx < ground_truth.size(); gt_idx++) {
 
-        if (ground_truth.at(idx) == 0) {
+        if (ground_truth.at(gt_idx) == 0) {
             break;
         }
-        const auto& indicator = indicators->indicators.at(idx - (BitBot::Indicators::max_length - 1));
+
+        if (intrinsic_events->events[gt_idx].timestamp < timestamp_start) {
+            continue;
+        }
+
+        if (intrinsic_events->events[gt_idx].timestamp > timestamp_end) {
+            break;
+        }
+
+        csv_file << DateTime::to_string_iso_8601(indicators->timestamps.at(gt_idx - (BitBot::Indicators::max_length - 1))) << ",";
+
+        const auto& indicator = indicators->indicators.at(gt_idx - (BitBot::Indicators::max_length - 1));
         for (auto i = 0; i < indicator.size(); i++) {
             csv_file << indicator.at(i) << ",";
         }
         csv_file << symbols_string;
-        csv_file << ground_truth.at(idx) << "\n";
+        csv_file << ground_truth.at(gt_idx) << "\n";
     }
 
     csv_file.close();

@@ -11,7 +11,7 @@ class TrainingData
 public:
     TrainingData();
 
-    void make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators);
+    void make(const std::string& symbol, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end);
     void make_section(const std::string& symbol, const std::string& suffix, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end);
 
 private:
