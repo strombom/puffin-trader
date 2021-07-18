@@ -134,7 +134,7 @@ json11::Json BinanceRestApi::http_post(const std::string& endpoint, json11::Json
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(boost::beast::http::field::content_type, "application/json");
     req.set(boost::beast::http::field::accept, "application/json");
-    req.set("api-expires", expires);
+    req.set("api-expires", std::to_string(expires));
     req.set("api-key", BitBase::Binance::Tick::api_key);
     req.set("api-signature", signature);
     req.body() = body;
@@ -164,7 +164,7 @@ json11::Json BinanceRestApi::http_delete(const std::string& endpoint, json11::Js
     req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(boost::beast::http::field::content_type, "application/json");
     req.set(boost::beast::http::field::accept, "application/json");
-    req.set("api-expires", expires);
+    req.set("api-expires", std::to_string(expires));
     req.set("api-key", BitBase::Binance::Tick::api_key);
     req.set("api-signature", signature);
     req.body() = body;
@@ -178,7 +178,7 @@ json11::Json BinanceRestApi::http_delete(const std::string& endpoint, json11::Js
 
 const std::string BinanceRestApi::http_request(const boost::beast::http::request<boost::beast::http::string_body>& request)
 {
-    try
+    //try
     {
         // The io_context is required for all I/O
         boost::asio::io_context ioc;
@@ -195,6 +195,13 @@ const std::string BinanceRestApi::http_request(const boost::beast::http::request
         // These objects perform our I/O
         boost::asio::ip::tcp::resolver resolver(ioc);
         boost::beast::ssl_stream<boost::beast::tcp_stream> stream(ioc, ctx);
+
+        // Set SNI Hostname (many hosts need this to handshake successfully)
+        //if (!SSL_set_tlsext_host_name(stream.native_handle(), host))
+        //{
+        //    beast::error_code ec{ static_cast<int>(::ERR_get_error()), net::error::get_ssl_category() };
+        //    throw beast::system_error{ ec };
+        //}
 
         // Look up the domain name
         const auto results = resolver.resolve(BitBase::Binance::Tick::rest_api_host, BitBase::Binance::Tick::rest_api_port);
@@ -225,10 +232,10 @@ const std::string BinanceRestApi::http_request(const boost::beast::http::request
 
         return body;
     }
-    catch (std::exception const& e)
-    {
-        logger.warn("BinanceRestApi::http_request fail (%s)", e.what());
-    }
+    //catch (std::exception const& e)
+    //{
+    //    logger.warn("BinanceRestApi::http_request fail (%s)", e.what());
+    //}
 
     return "";
 }
