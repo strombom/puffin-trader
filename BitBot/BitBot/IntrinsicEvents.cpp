@@ -173,6 +173,7 @@ void IntrinsicEvents::insert(BinanceKline binance_kline)
 
 void IntrinsicEvents::insert(sptrBinanceKlines binance_klines)
 {
+    events.clear();
     for (const auto& binance_kline : binance_klines->rows) {
         insert(binance_kline);
     }

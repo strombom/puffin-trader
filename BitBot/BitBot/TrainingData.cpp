@@ -22,7 +22,7 @@ void TrainingData::make_section(const std::string& symbol, const std::string& su
 
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
 
-    csv_file << "\"timestamp\"";
+    csv_file << "\"timestamp\",";
 
     for (auto&& degree : BitBot::Indicators::degrees) {
         for (auto&& length : BitBot::Indicators::lengths) {
@@ -50,12 +50,12 @@ void TrainingData::make_section(const std::string& symbol, const std::string& su
     // ground_truth : 259952
 
     for (auto gt_idx = BitBot::Indicators::max_length - 1; gt_idx < ground_truth.size(); gt_idx++) {
-        if (ground_truth.at(gt_idx) == 0) {
-            break;
-        }
-
         if (intrinsic_events->events[gt_idx].timestamp < timestamp_start) {
             continue;
+        }
+
+        if (ground_truth.at(gt_idx) == 0) {
+            break;
         }
 
         if (intrinsic_events->events[gt_idx].timestamp > timestamp_end) {
@@ -95,7 +95,7 @@ void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents int
 
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
 
-    csv_file << "\"date\",";
+    csv_file << "\"timestamp\",";
 
     for (auto&& degree : BitBot::Indicators::degrees) {
         for (auto&& length : BitBot::Indicators::lengths) {
@@ -123,13 +123,12 @@ void TrainingData::make(const std::string& symbol, const sptrIntrinsicEvents int
     // ground_truth : 259952
 
     for (auto gt_idx = BitBot::Indicators::max_length - 1; gt_idx < ground_truth.size(); gt_idx++) {
+        if (intrinsic_events->events[gt_idx].timestamp < timestamp_start) {
+            continue;
+        }
 
         if (ground_truth.at(gt_idx) == 0) {
             break;
-        }
-
-        if (intrinsic_events->events[gt_idx].timestamp < timestamp_start) {
-            continue;
         }
 
         if (intrinsic_events->events[gt_idx].timestamp > timestamp_end) {

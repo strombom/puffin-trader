@@ -14,7 +14,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_simulator_data" };
+    const auto command = std::string{ "make_training_data_sections" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
@@ -47,7 +47,7 @@ int main()
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             const auto timestamp_start = time_point_ms{ date::sys_days(date::year{2021} / 01 / 01) };
-            const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 07 / 01) };
+            const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 07 / 18) };
             training_data.make(symbol, intrinsic_events, indicators, timestamp_start, timestamp_end);
         }
     }
@@ -59,7 +59,7 @@ int main()
 
             auto year = 2020;
             auto day = 1;
-            while (day < 190) {
+            while (day < 200) {
                 const auto timestamp_start = time_point_ms{ date::sys_days(date::year{year} / 01 / 01) + date::days{day}};
                 const auto timestamp_end = timestamp_start + date::months{ 12 };
                 training_data.make_section(symbol, "train", intrinsic_events, indicators, timestamp_start, timestamp_end);
