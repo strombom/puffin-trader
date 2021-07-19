@@ -87,7 +87,7 @@ def make_predictions():
 
     timestamp_start, timestamp_end = indicators.get_start_end_date()
     timestamp_end = min(timestamp_end, profit_model.last_predictable_timestamp())
-    #timestamp_end = datetime(year=2021, month=1, day=5, tzinfo=timezone.utc)
+    timestamp_end = datetime(year=2021, month=1, day=10, tzinfo=timezone.utc)
 
     timestamp = timestamp_start
     while timestamp < timestamp_end:
@@ -126,7 +126,10 @@ def make_predictions():
 
     file_path = f"cache/predictions.pickle"
     with open(file_path, 'wb') as f:
-        pickle.dump(predictions, f)
+        pickle.dump({
+            'symbols': symbols,
+            'predictions': predictions
+        }, f)
 
 
 if __name__ == '__main__':
