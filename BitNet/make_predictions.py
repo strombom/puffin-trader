@@ -79,7 +79,6 @@ def make_predictions():
     symbols = set()
     for filename in os.listdir(training_path):
         symbols.add(filename.replace('.csv', ''))
-        break
     symbols = list(symbols)
 
     profit_model = ProfitModel()
@@ -88,8 +87,7 @@ def make_predictions():
 
     timestamp_start, timestamp_end = indicators.get_start_end_date()
     timestamp_end = min(timestamp_end, profit_model.last_predictable_timestamp())
-
-    timestamp_end = datetime(year=2021, month=1, day=5, tzinfo=timezone.utc)
+    #timestamp_end = datetime(year=2021, month=1, day=5, tzinfo=timezone.utc)
 
     timestamp = timestamp_start
     while timestamp < timestamp_end:
@@ -99,7 +97,6 @@ def make_predictions():
                 raw_predictions[symbol].append(profit_model.predict(section))
                 print(f"Predict {symbol} {timestamp}")
             profit_model.load_next_model()
-
         timestamp += timedelta(minutes=1)
 
     for symbol in symbols:
@@ -113,6 +110,7 @@ def make_predictions():
     predictions = []
     prediction_idx = {symbol: 0 for symbol in symbols}
     timestamp = timestamp_start
+    timestamp_print = timestamp + timedelta(days=1)
     while timestamp < timestamp_end:
         prediction = {'timestamp': timestamp}
         for symbol in symbols:
@@ -120,8 +118,11 @@ def make_predictions():
                 prediction[symbol] = raw_predictions[symbol][prediction_idx[symbol]]
                 prediction_idx[symbol] += 1
         predictions.append(prediction)
-
         timestamp += timedelta(minutes=1)
+
+        if timestamp >= timestamp_print:
+            print(f"Compiling predictions {timestamp}")
+            timestamp_print = timestamp + timedelta(days=1)
 
     file_path = f"cache/predictions.pickle"
     with open(file_path, 'wb') as f:
