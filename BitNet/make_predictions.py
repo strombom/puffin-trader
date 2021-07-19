@@ -7,156 +7,71 @@ from datetime import datetime, timedelta, timezone
 from fastai.learner import load_learner
 
 
-def calculate_predictions(indicators):
-    start_timestamp = datetime.now()
+class ProfitModel:
+    def __init__(self):
+        self.model_idx = 0
+        self.model_files = []
+        for filename in glob.glob('E:/BitBot/models/model_*_*.pickle'):
+            timestamp = datetime.strptime(filename[-17:-7], "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(hours=6)
+            self.model_files.append({'timestamp': timestamp, 'filename': filename})
+        self.model_files = sorted(self.model_files, key=lambda x: x['timestamp'])
 
-    #first_symbol = list(indicators.keys())[0]
-    #data_length = indicators[first_symbol]['indicators'].shape[2]
-    #lengths = indicators[first_symbol]['lengths']
-    #indicator_column_names = []
-    #for degree in degrees:
-    #    for length in lengths:
-    #        indicator_column_names.append(f"{degree}-{length}")
+        self.model = load_learner(self.model_files[self.model_idx]['filename'])
 
-    #tmp_symbol_columns = np.empty((len(symbols), len(symbols)), dtype=bool)
-    #tmp_symbol_columns.fill(False)
-    #np.fill_diagonal(tmp_symbol_columns, True)
-    #df_symbols = pd.DataFrame(tmp_symbol_columns, columns=symbols)
+    def has_new_model(self, timestamp):
+        if self.model_idx + 1 < len(self.model_files) and timestamp >= self.model_files[self.model_idx + 1]['timestamp']:
+            return True
+        else:
+            return False
 
-    #tmp_indicator_columns = np.empty((len(symbols), len(degrees) * len(indicators[first_symbol]['lengths'])))
-    #predictions = np.empty((data_length, len(symbols)))
+    def predict(self, indicators):
+        test_dl = self.model.dls.test_dl(indicators)
+        return self.model.get_preds(dl=test_dl)[0][:, 0].numpy()
 
-    symbols = set(indicators.keys())
+    def load_next_model(self):
+        self.model = load_learner(self.model_files[self.model_idx]['filename'])
+        self.model_idx += 1
 
-    model_files = []
-    for filename in glob.glob('model_all_*_*.pickle'):
-        model_files.append({
-            'timestamp': datetime.strptime(filename[21:31], "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(hours=6),
-            'filename': filename
-        })
-    model_files = sorted(model_files, key=lambda x: x['timestamp'])
+    def last_predictable_timestamp(self):
+        timespan = self.model_files[1]['timestamp'] - self.model_files[0]['timestamp']
+        return self.model_files[-1]['timestamp'] + timespan
 
-    model_idx = 0
-    profit_model = load_learner(model_files[model_idx]['filename'])
 
-    start_date, end_date = None, None
-    for symbol in symbols:
-        first_date = indicators[symbol].iloc[0]['timestamp']
-        last_date = indicators[symbol].iloc[-1]['timestamp']
-        if start_date is None:
-            start_date = first_date
-        if end_date is None:
-            end_date = last_date
+class Indicators:
+    def __init__(self, path, symbols):
+        self.indicators = {}
+        self.idx = {}
+        self.next_timestamp = {}
 
-        start_date = max(start_date, first_date)
-        end_date = max(end_date, last_date)
-
-    """
-    predictions = {}
-    for symbol in symbols:
-        predictions[symbol] = []
-        indicator = indicators[symbol].drop(columns=['timestamp'])
-        indicator = indicator.rename(columns={'1-5-p': 'timestamp"1-5-p'})
-
-        for idx in range(indicator.shape[0]):
-            print(idx)
-
-        test_dl = profit_model.dls.test_dl(indicator)
-        predictions[symbol].append(profit_model.get_preds(dl=test_dl)[0][:, 0].numpy() - 0.5)
-    """
-
-    indicator_idx = {}
-    indicator_next_timestamp = {}
-    for symbol in symbols:
-        indicator_idx[symbol] = 0
-        indicator_next_timestamp[symbol] = indicators[symbol].iloc[0]['timestamp']
-
-    predictions = {}
-    for symbol in symbols:
-        predictions[symbol] = []
-
-    timestamp = start_date
-    while timestamp < end_date:
-
-        # Load current model
-        if model_idx + 1 < len(model_files):
-            if timestamp >= model_files[model_idx + 1]['timestamp']:
-
-                for symbol in symbols:
-                    start_idx = indicator_idx[symbol]
-                    end_idx = start_idx
-                    while end_idx + 1 < indicators[symbol].shape[0]:
-                        if indicators[symbol]['timestamp'].iloc[end_idx + 1] >= timestamp:
-                            break
-                        end_idx += 1
-
-                    print(f"Predict {symbol} {start_idx}-{end_idx}")
-
-                    indicator_section = indicators[symbol].iloc[start_idx:end_idx]
-                    indicator_section = indicator_section.rename(columns={'1-5-p': 'timestamp"1-5-p'})
-
-                    test_dl = profit_model.dls.test_dl(indicator_section)
-                    predictions[symbol].append(profit_model.get_preds(dl=test_dl)[0][:, 0].numpy())
-
-                    indicator_idx[symbol] = end_idx
-
-                model_idx += 1
-                profit_model = load_learner((model_files[model_idx]['filename']))
-
-        """
-        prediction = {}
-        
         for symbol in symbols:
-            if timestamp == indicator_next_timestamp[symbol]:
-                indicator = indicators[symbol].iloc[indicator_idx[symbol]]
+            file_path = os.path.join(path, f"{symbol}.csv")
+            with open(file_path, 'rb') as f:
+                self.indicators[symbol] = pd.read_csv(f, parse_dates=[0])
+            self.idx[symbol] = 0
+            self.next_timestamp[symbol] = self.indicators[symbol].iloc[0]['timestamp']
 
-                if indicator_idx[symbol] + 1 < indicators[symbol].shape[0]:
-                    indicator_idx[symbol] += 1
-                    indicator_next_timestamp[symbol] = indicators[symbol].iloc[0]['date']
+    def get_start_end_date(self):
+        start_date, end_date = None, None
+        for symbol in self.indicators:
+            first_date = self.indicators[symbol].iloc[0]['timestamp']
+            last_date = self.indicators[symbol].iloc[-1]['timestamp']
+            if start_date is None:
+                start_date = first_date
+            if end_date is None:
+                end_date = last_date
+            start_date = max(start_date, first_date)
+            end_date = max(end_date, last_date)
+        return start_date, end_date
 
-        predictions.append(prediction)
-        """
-
-        timestamp += timedelta(minutes=1)
-
-    for symbol in symbols:
-        predictions[symbol] = np.concatenate(predictions[symbol])
-
-    data_length = (end_date - start_date).minutes
-    predictions = []
-
-    print(data_length)
-
-    #predictions = np.empty((all_indicators.shape[0], len(indicators)))
-
-
-
-    #all_indicators = []
-    #for symbol in indicators:
-    #    start_idx = int(indicators[symbol].shape[0] * 0.85)
-    #    all_indicators.append(indicators[symbol][start_idx:])
-    #all_indicators = pd.concat(all_indicators)
-
-    #predictions = np.empty((all_indicators.shape[0], len(indicators)))
-
-    for idx in range(data_length):
-        #for symbol_idx, symbol in enumerate(symbols):
-        #    tmp_indicator_columns[symbol_idx] = indicators[symbol]['indicators'][:, :, idx].transpose().flatten()
-        #df_indicators = pd.DataFrame(data=tmp_indicator_columns, columns=indicator_column_names)
-        #df = pd.concat([df_symbols, df_indicators], axis=1)
-
-        test_dl = profit_model.dls.test_dl(indicators[1])
-        predictions[idx] = profit_model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
-        if idx % 100 == 0 and idx > 0:
-            current_timestamp = datetime.now()
-            elapsed = current_timestamp - start_timestamp
-            predicted_end = start_timestamp + elapsed / (idx / data_length)
-
-            print(f"Computing predictions {idx / data_length * 100:.2f}%, {idx} / {data_length}, {predicted_end}")
-
-    file_path = f"cache/predictions.pickle"
-    with open(file_path, 'wb') as f:
-        pickle.dump(predictions, f)
+    def get_next_section(self, symbol, timestamp):
+        start_idx = self.idx[symbol]
+        end_idx = start_idx
+        while end_idx + 1 < self.indicators[symbol].shape[0]:
+            if self.indicators[symbol]['timestamp'].iloc[end_idx + 1] >= timestamp:
+                break
+            end_idx += 1
+        self.idx[symbol] = end_idx
+        return self.indicators[symbol].iloc[start_idx:end_idx]
 
 
 def make_predictions():
@@ -167,17 +82,34 @@ def make_predictions():
         break
     symbols = list(symbols)
 
-    #with open(f"cache/filtered_symbols.pickle", 'rb') as f:
-    #    symbols = pickle.load(f)
+    profit_model = ProfitModel()
+    indicators = Indicators(training_path, symbols)
+    predictions = {symbol: [] for symbol in symbols}
 
-    degrees = [1, 2, 3]
+    timestamp, timestamp_end = indicators.get_start_end_date()
+    timestamp_end = min(timestamp_end, profit_model.last_predictable_timestamp())
 
-    indicators = {}
+    while timestamp < timestamp_end:
+        if profit_model.has_new_model(timestamp):
+            for symbol in symbols:
+                section = indicators.get_next_section(symbol, timestamp)
+                predictions[symbol].append(profit_model.predict(section))
+                print(f"Predict {symbol} {timestamp}")
+            profit_model.load_next_model()
+
+        timestamp += timedelta(minutes=1)
+
     for symbol in symbols:
-        with open(f"E:/BitBot/training_data/{symbol}.csv", 'rb') as f:
-            indicators[symbol] = pd.read_csv(f, parse_dates=[0])
+        section = indicators.get_next_section(symbol, timestamp_end)
+        predictions[symbol].append(profit_model.predict(section))
+        print(f"Predict {symbol} {timestamp_end}")
+    
+    for symbol in symbols:
+        predictions[symbol] = np.concatenate(predictions[symbol])
 
-    calculate_predictions(indicators)
+    file_path = f"cache/predictions.pickle"
+    with open(file_path, 'wb') as f:
+        pickle.dump(predictions, f)
 
 
 if __name__ == '__main__':
