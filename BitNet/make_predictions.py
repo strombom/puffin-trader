@@ -53,8 +53,8 @@ class Indicators:
     def get_start_end_date(self):
         start_date, end_date = None, None
         for symbol in self.indicators:
-            first_date = self.indicators[symbol].iloc[0]['timestamp']
-            last_date = self.indicators[symbol].iloc[-1]['timestamp']
+            first_date = self.indicators[symbol].iloc[0]['timestamp'].to_pydatetime()
+            last_date = self.indicators[symbol].iloc[-1]['timestamp'].to_pydatetime()
             if start_date is None:
                 start_date = first_date
             if end_date is None:
@@ -84,16 +84,19 @@ def make_predictions():
 
     profit_model = ProfitModel()
     indicators = Indicators(training_path, symbols)
-    predictions = {symbol: [] for symbol in symbols}
+    raw_predictions = {symbol: [] for symbol in symbols}
 
-    timestamp, timestamp_end = indicators.get_start_end_date()
+    timestamp_start, timestamp_end = indicators.get_start_end_date()
     timestamp_end = min(timestamp_end, profit_model.last_predictable_timestamp())
 
+    timestamp_end = datetime(year=2021, month=1, day=5, tzinfo=timezone.utc)
+
+    timestamp = timestamp_start
     while timestamp < timestamp_end:
         if profit_model.has_new_model(timestamp):
             for symbol in symbols:
                 section = indicators.get_next_section(symbol, timestamp)
-                predictions[symbol].append(profit_model.predict(section))
+                raw_predictions[symbol].append(profit_model.predict(section))
                 print(f"Predict {symbol} {timestamp}")
             profit_model.load_next_model()
 
@@ -101,11 +104,24 @@ def make_predictions():
 
     for symbol in symbols:
         section = indicators.get_next_section(symbol, timestamp_end)
-        predictions[symbol].append(profit_model.predict(section))
+        raw_predictions[symbol].append(profit_model.predict(section))
         print(f"Predict {symbol} {timestamp_end}")
-    
+
     for symbol in symbols:
-        predictions[symbol] = np.concatenate(predictions[symbol])
+        raw_predictions[symbol] = np.concatenate(raw_predictions[symbol])
+
+    predictions = []
+    prediction_idx = {symbol: 0 for symbol in symbols}
+    timestamp = timestamp_start
+    while timestamp < timestamp_end:
+        prediction = {'timestamp': timestamp}
+        for symbol in symbols:
+            while prediction_idx[symbol] < raw_predictions[symbol].shape[0] and timestamp >= indicators.indicators[symbol].iloc[prediction_idx[symbol]]['timestamp']:
+                prediction[symbol] = raw_predictions[symbol][prediction_idx[symbol]]
+                prediction_idx[symbol] += 1
+        predictions.append(prediction)
+
+        timestamp += timedelta(minutes=1)
 
     file_path = f"cache/predictions.pickle"
     with open(file_path, 'wb') as f:
