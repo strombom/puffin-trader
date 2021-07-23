@@ -22,10 +22,15 @@ int main()
     }
     else if (command == "make_intrinsic_events") {
         for (const auto symbol : BitBot::symbols) {
+            if (symbol != "BTCUSDT") {
+                //continue;
+            }
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
 
             auto intrinsic_events = IntrinsicEvents{ symbol };
             intrinsic_events.calculate(binance_klines);
+
+            //return 1;
 
             //std::cout << symbol <<  "  delta: " << intrinsic_events.delta << ", count: " << intrinsic_events.events.size() << std::endl;
 

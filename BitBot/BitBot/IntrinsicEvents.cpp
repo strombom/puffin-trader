@@ -4,6 +4,7 @@
 #include "BitLib/Logger.h"
 #include "BitLib/BitBotConstants.h"
 #include "LeastSquares.h"
+#include "PID.h"
 
 #include <filesystem>
 
@@ -17,6 +18,7 @@ std::ostream& operator<<(std::ostream& stream, const IntrinsicEvent& row)
 {
     stream.write(reinterpret_cast<const char*>(&row.timestamp), sizeof(row.timestamp));
     stream.write(reinterpret_cast<const char*>(&row.price), sizeof(row.price));
+    stream.write(reinterpret_cast<const char*>(&row.delta), sizeof(row.delta));
 
     return stream;
 }
@@ -25,6 +27,7 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvent& row)
 {
     stream.read(reinterpret_cast <char*> (&row.timestamp), sizeof(row.timestamp));
     stream.read(reinterpret_cast <char*> (&row.price), sizeof(row.price));
+    stream.read(reinterpret_cast <char*> (&row.delta), sizeof(row.delta));
 
     return stream;
 }
@@ -195,7 +198,7 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
         events.clear();
         for (const auto& binance_kline : binance_klines->rows) {
             for (const auto price : runner.step(binance_kline.open)) {
-                events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price });
+                events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, 0 });
             }
         }
         counts.push_back(events.size());
@@ -218,11 +221,49 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
 
     delta = result.xval(0) + result.xval(1) * std::pow(BitBot::IntrinsicEvents::target_event_count, result.xval(2));
 
+    //delta = 0.00268467;
+    const auto delta_min = delta * 0.25;
+    const auto delta_max = delta * 8.0;
+
     auto runner = IntrinsicEventRunner{ delta };
     events.clear();
+
+    auto pid_in = 10.0;
+    auto pid_out = delta;
+    auto pid_setpoint = 10.0;
+    const double pid_kp = 0.05;
+    const double pid_ki = 0.1;
+    const double pid_kd = 0.0;
+
+    auto file_path = std::ostringstream{};
+    file_path << "E:/BitBot/tmp_" << symbol << "_intrinsic_events.csv";
+
+    auto csv_file = std::ofstream{};
+    csv_file.open(file_path.str(), std::ios::out);
+    csv_file << "\"klinecount\";\"delta\";\"pid_out\";\"price\"" << std::endl;
+
+    //std::cout << "Delta: " << delta << std::endl;
+
+    auto pid = PID(&pid_in, &pid_out, &pid_setpoint, pid_kp, pid_ki, pid_kd);
+
+    auto kline_count = 0;
     for (const auto& binance_kline : binance_klines->rows) {
+        kline_count++;
         for (const auto price : runner.step(binance_kline.open)) {
-            events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price });
+            pid_in = kline_count;
+            pid.Compute();
+
+            auto new_delta = delta * (1 + pid_out / 1000);
+            new_delta = std::min(std::max(new_delta, delta_min), delta_max);
+            runner.delta = new_delta;
+
+            csv_file << pid_in << ";" << new_delta << ";" << pid_out << ";" << price << std::endl;
+
+            kline_count = 0;
+
+            events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, (float)new_delta });
         }
     }
+
+    csv_file.close();
 }
