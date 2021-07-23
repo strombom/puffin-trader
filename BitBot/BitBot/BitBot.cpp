@@ -14,7 +14,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_intrinsic_events" };
+    const auto command = std::string{ "make_training_data_sections" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
@@ -22,18 +22,10 @@ int main()
     }
     else if (command == "make_intrinsic_events") {
         for (const auto symbol : BitBot::symbols) {
-            if (symbol != "BTCUSDT") {
-                //continue;
-            }
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
 
             auto intrinsic_events = IntrinsicEvents{ symbol };
             intrinsic_events.calculate(binance_klines);
-
-            //return 1;
-
-            //std::cout << symbol <<  "  delta: " << intrinsic_events.delta << ", count: " << intrinsic_events.events.size() << std::endl;
-
             intrinsic_events.save();
 
             logger.info("Inserted %d events from %s, delta: %f", intrinsic_events.events.size(), symbol, intrinsic_events.delta);
@@ -51,17 +43,19 @@ int main()
     else if (command == "make_simulator_data") {
         auto training_data = TrainingData{ };
         for (const auto symbol : BitBot::symbols) {
+            const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
             const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             const auto timestamp_start = time_point_ms{ date::sys_days(date::year{2021} / 01 / 01) };
             const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 07 / 19) };
-            training_data.make(symbol, intrinsic_events, indicators, timestamp_start, timestamp_end);
+            training_data.make(symbol, binance_klines, intrinsic_events, indicators, timestamp_start, timestamp_end);
         }
     }
     else if (command == "make_training_data_sections") {
         auto training_data = TrainingData{ };
         for (const auto symbol : BitBot::symbols) {
+            const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
             const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
             const auto indicators = std::make_shared<Indicators>(symbol);
 
@@ -70,8 +64,8 @@ int main()
             while (day < 200) {
                 const auto timestamp_start = time_point_ms{ date::sys_days(date::year{year} / 01 / 01) + date::days{day}};
                 const auto timestamp_end = timestamp_start + date::months{ 12 };
-                training_data.make_section(symbol, "train", intrinsic_events, indicators, timestamp_start, timestamp_end);
-                training_data.make_section(symbol, "valid", intrinsic_events, indicators, timestamp_end, timestamp_end + date::days{ 2 });
+                training_data.make_section(symbol, "train", binance_klines, intrinsic_events, indicators, timestamp_start, timestamp_end);
+                training_data.make_section(symbol, "valid", binance_klines, intrinsic_events, indicators, timestamp_end, timestamp_end + date::days{ 2 });
 
                 day += 2;
             }
