@@ -14,7 +14,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_training_data_sections" };
+    const auto command = std::string{ "make_intrinsic_events" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
@@ -25,10 +25,13 @@ int main()
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
 
             auto intrinsic_events = IntrinsicEvents{ symbol };
-            intrinsic_events.insert(binance_klines);
+            intrinsic_events.calculate(binance_klines);
+
+            //std::cout << symbol <<  "  delta: " << intrinsic_events.delta << ", count: " << intrinsic_events.events.size() << std::endl;
+
             intrinsic_events.save();
 
-            logger.info("Inserted %d events from %s", intrinsic_events.events.size(), symbol);
+            logger.info("Inserted %d events from %s, delta: %f", intrinsic_events.events.size(), symbol, intrinsic_events.delta);
         }
     }
     else if (command == "make_indicators") {
@@ -47,7 +50,7 @@ int main()
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             const auto timestamp_start = time_point_ms{ date::sys_days(date::year{2021} / 01 / 01) };
-            const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 07 / 18) };
+            const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 07 / 19) };
             training_data.make(symbol, intrinsic_events, indicators, timestamp_start, timestamp_end);
         }
     }

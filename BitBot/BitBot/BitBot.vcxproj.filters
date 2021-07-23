@@ -31,6 +31,12 @@
     <Filter Include="Source Files\Indicators">
       <UniqueIdentifier>{71d468d5-d2ea-40a8-a204-486cf3c5a952}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Libraries">
+      <UniqueIdentifier>{ad1db7db-7afd-49c8-b940-dc530702a0cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries">
+      <UniqueIdentifier>{e22c6487-d26c-427e-8100-79eba7bc17f5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BitBot.cpp">
@@ -71,6 +77,9 @@
     </ClCompile>
     <ClCompile Include="TrainingData.cpp">
       <Filter>Source Files\Indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="LeastSquares.cpp">
+      <Filter>Source Files\Libraries</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -118,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="TrainingData.h">
       <Filter>Header Files\Indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="LeastSquares.h">
+      <Filter>Header Files\Libraries</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -189,6 +189,7 @@
     <ClCompile Include="BitLib\DateTime.cpp" />
     <ClCompile Include="Indicators.cpp" />
     <ClCompile Include="IntrinsicEvents.cpp" />
+    <ClCompile Include="LeastSquares.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -210,6 +211,7 @@
     <ClInclude Include="BitLib\date\date.h" />
     <ClInclude Include="Indicators.h" />
     <ClInclude Include="IntrinsicEvents.h" />
+    <ClInclude Include="LeastSquares.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PolyFit.h" />
     <ClInclude Include="TrainingData.h" />

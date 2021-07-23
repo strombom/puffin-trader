@@ -22,9 +22,11 @@ public:
 class IntrinsicEventRunner
 {
 public:
+    IntrinsicEventRunner(double delta) : delta(delta) {}
     std::vector<double> step(double price);
 
 private:
+    double delta;
     double current_price = 0.0;
     double previous_price = 0.0;
     double ie_start_price = 0.0;
@@ -41,15 +43,14 @@ class IntrinsicEvents
 public:
     IntrinsicEvents(std::string symbol);
 
-    void insert(BinanceKline binance_kline);
-    void insert(sptrBinanceKlines binance_klines);
+    void calculate(sptrBinanceKlines binance_klines);
 
     void load(void);
     void save(void) const;
 
     std::string symbol;
-    IntrinsicEventRunner runner;
     std::vector<IntrinsicEvent> events;
+    double delta;
 };
 
 using sptrIntrinsicEvents = std::shared_ptr<IntrinsicEvents>;

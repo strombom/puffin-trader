@@ -3,6 +3,7 @@
 #include "IntrinsicEvents.h"
 #include "BitLib/Logger.h"
 #include "BitLib/BitBotConstants.h"
+#include "LeastSquares.h"
 
 #include <filesystem>
 
@@ -109,21 +110,21 @@ std::vector<double> IntrinsicEventRunner::step(double price)
     const auto delta_down = (ie_max_price - current_price) / ie_max_price;
     const auto delta_up = (current_price - ie_min_price) / ie_min_price;
 
-    if (ie_delta_top + delta_down >= BitBot::IntrinsicEvents::delta || ie_delta_bot + delta_up >= BitBot::IntrinsicEvents::delta) {
+    if (ie_delta_top + delta_down >= delta || ie_delta_bot + delta_up >= delta) {
         auto remaining_delta = 0.0;
         auto ie_price = 0.0;
 
         if (delta_dir == 1) {
             remaining_delta = ie_delta_bot + delta_up;
-            ie_price = ie_min_price * (1.0 + (BitBot::IntrinsicEvents::delta - ie_delta_bot));
+            ie_price = ie_min_price * (1.0 + (delta - ie_delta_bot));
         }
         else {
             remaining_delta = ie_delta_top + delta_down;
-            ie_price = ie_max_price * (1.0 - (BitBot::IntrinsicEvents::delta - ie_delta_top));
+            ie_price = ie_max_price * (1.0 - (delta - ie_delta_top));
 
         }
 
-        while (remaining_delta >= 2 * BitBot::IntrinsicEvents::delta) {
+        while (remaining_delta >= 2 * delta) {
             if (delta_dir == 1) {
                 ie_max_price = std::min(ie_max_price, ie_price);
             }
@@ -133,7 +134,7 @@ std::vector<double> IntrinsicEventRunner::step(double price)
 
             ie_prices.push_back(ie_price);
 
-            const auto next_price = ie_price * (1.0 + delta_dir * BitBot::IntrinsicEvents::delta);
+            const auto next_price = ie_price * (1.0 + delta_dir * delta);
             ie_start_price = ie_price;
 
             if (delta_dir == 1) {
@@ -149,7 +150,7 @@ std::vector<double> IntrinsicEventRunner::step(double price)
             ie_delta_bot = (ie_start_price - ie_min_price) / ie_start_price;
 
             ie_price = next_price;
-            remaining_delta -= BitBot::IntrinsicEvents::delta;
+            remaining_delta -= delta;
         }
 
         ie_prices.push_back(ie_price);
@@ -164,17 +165,64 @@ std::vector<double> IntrinsicEventRunner::step(double price)
     return ie_prices;
 }
 
-void IntrinsicEvents::insert(BinanceKline binance_kline)
+class StepSizeError
 {
-    for (const auto price : runner.step(binance_kline.open)) {
-        events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price });
-    }
-}
+public:
+    StepSizeError(void) {}
+    StepSizeError(std::vector<double> deltas, std::vector<double> counts) : deltas(deltas), counts(counts) {}
 
-void IntrinsicEvents::insert(sptrBinanceKlines binance_klines)
+    void operator() (const Eigen::VectorXd& xval, Eigen::VectorXd& fval, Eigen::MatrixXd&) const
+    {
+        fval.resize(deltas.size());
+        for (auto idx = 0; idx < deltas.size(); idx++) {
+            const auto y = xval(0) + xval(1) * std::pow(counts.at(idx), xval(2));
+            fval(idx) = deltas.at(idx) - y;
+        }
+    }
+
+private:
+    std::vector<double> deltas;
+    std::vector<double> counts;
+};
+
+void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
 {
+    const auto deltas = std::vector<double>{0.001, 0.0012, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01};
+    auto counts = std::vector<double>{};
+
+    for (const auto d : deltas) {
+        auto runner = IntrinsicEventRunner{ d };
+        events.clear();
+        for (const auto& binance_kline : binance_klines->rows) {
+            for (const auto price : runner.step(binance_kline.open)) {
+                events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price });
+            }
+        }
+        counts.push_back(events.size());
+    }
+
+    lsq::LevenbergMarquardt<double, StepSizeError> optimizer;
+    auto error_function = StepSizeError{deltas, counts};
+    optimizer.setErrorFunction(error_function);
+    optimizer.setMaxIterationsLM(100);
+    optimizer.setMaxIterations(100);
+    optimizer.setVerbosity(0);
+
+    Eigen::VectorXd initialGuess(3);
+    initialGuess << 0.0, 100.0, -0.5;
+    auto result = optimizer.minimize(initialGuess);
+
+    //std::cout << "Done! Converged: " << (result.converged ? "true" : "false") << " Iterations: " << result.iterations << std::endl;
+    //std::cout << "Final fval: " << result.fval.transpose() << std::endl;
+    //std::cout << "Final xval: " << result.xval.transpose() << std::endl;
+
+    delta = result.xval(0) + result.xval(1) * std::pow(BitBot::IntrinsicEvents::target_event_count, result.xval(2));
+
+    auto runner = IntrinsicEventRunner{ delta };
     events.clear();
     for (const auto& binance_kline : binance_klines->rows) {
-        insert(binance_kline);
+        for (const auto price : runner.step(binance_kline.open)) {
+            events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price });
+        }
     }
 }
