@@ -60,12 +60,12 @@ int main()
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             auto year = 2020;
-            auto day = 1;
-            while (day < 200) {
+            auto day = 0;
+            while (day < 204) {
                 const auto timestamp_start = time_point_ms{ date::sys_days(date::year{year} / 01 / 01) + date::days{day}};
                 const auto timestamp_end = timestamp_start + date::months{ 12 };
                 training_data.make_section(symbol, "train", binance_klines, intrinsic_events, indicators, timestamp_start, timestamp_end);
-                training_data.make_section(symbol, "valid", binance_klines, intrinsic_events, indicators, timestamp_end, timestamp_end + date::days{ 2 });
+                training_data.make_section(symbol, "valid", binance_klines, intrinsic_events, indicators, timestamp_end, timestamp_end + date::days{ 1 });
 
                 day += 2;
             }
