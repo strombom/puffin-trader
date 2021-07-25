@@ -48,7 +48,7 @@ int main()
             const auto indicators = std::make_shared<Indicators>(symbol);
 
             const auto timestamp_start = time_point_ms{ date::sys_days(date::year{2021} / 01 / 01) };
-            const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 07 / 19) };
+            const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 07 / 22) };
             training_data.make(symbol, binance_klines, intrinsic_events, indicators, timestamp_start, timestamp_end);
         }
     }
@@ -70,5 +70,7 @@ int main()
                 day += 2;
             }
         }
+
+        training_data.join();
     }
 }
