@@ -140,77 +140,6 @@ void TrainingData::make(const std::string& symbol, const sptrBinanceKlines kline
 
     const auto path = "simulation_data";
     make_section_thread(symbol, "sim", path, klines, intrinsic_events, indicators, timestamp_start, timestamp_end, ground_truth, ground_truth_timestamps);
-
-    /*
-    auto file_path = std::string{ BitBot::path } + "\\training_data";
-    std::filesystem::create_directories(file_path);
-    file_path += "\\" + symbol + ".csv";
-
-    auto csv_file = std::ofstream{ file_path, std::ios::binary };
-
-    csv_file << "\"timestamp\"";
-    csv_file << ",\"delta\"";
-
-    for (auto&& degree : BitBot::Indicators::degrees) {
-        for (auto&& length : BitBot::Indicators::lengths) {
-            csv_file << ",\"" << std::to_string(degree) << "-" << std::to_string(length) << "-p\"";
-            csv_file << ",\"" << std::to_string(degree) << "-" << std::to_string(length) << "-d\"";
-        }
-    }
-
-    auto symbols_string = std::string{};
-    for (auto&& a_symbol : BitBot::symbols) {
-        csv_file << ",\"" << std::string{a_symbol} + "\"";
-        if (a_symbol == symbol) {
-            symbols_string += ",True";
-        }
-        else {
-            symbols_string += ",False";
-        }
-    }
-
-    csv_file.precision(3);
-    for (auto idx = 0; idx < BitBot::TrainingData::take_profit.size(); idx++) {
-        csv_file << std::fixed << ",\"(" << BitBot::TrainingData::take_profit.at(idx) << "," << BitBot::TrainingData::stop_loss.at(idx) << ")\"";
-    }
-    csv_file << "\n";
-    csv_file << std::defaultfloat;
-
-    // indicators:    259803 = ground_truth - (max_length - 1)
-    // ground_truth : 259952
-
-    for (auto gt_idx = BitBot::Indicators::max_length - 1; gt_idx < ground_truth->size(); gt_idx++) {
-        if (intrinsic_events->events[gt_idx].timestamp < timestamp_start) {
-            continue;
-        }
-
-        if (intrinsic_events->events[gt_idx].timestamp > timestamp_end) {
-            break;
-        }
-
-        for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
-            if (ground_truth->at(gt_idx).at(profit_idx) == 0) {
-                goto end_of_loop;
-            }
-        }
-
-        csv_file << "\"" << DateTime::to_string_iso_8601(indicators->timestamps.at(gt_idx - (BitBot::Indicators::max_length - 1))) << "\"";
-        csv_file << "," << intrinsic_events->events[gt_idx].delta;
-
-        const auto& indicator = indicators->indicators.at(gt_idx - (BitBot::Indicators::max_length - 1));
-        for (auto i = 0; i < indicator.size(); i++) {
-            csv_file << "," << indicator.at(i);
-        }
-        csv_file << symbols_string;
-        for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
-            csv_file << "," << ground_truth->at(gt_idx).at(profit_idx);
-        }
-        csv_file << "\n";
-    }
-
-end_of_loop:
-    csv_file.close();
-    */
 }
  
 void TrainingData::make_ground_truth(const std::string symbol, const sptrBinanceKlines klines, const sptrIntrinsicEvents intrinsic_events)
@@ -224,46 +153,86 @@ void TrainingData::make_ground_truth(const std::string symbol, const sptrBinance
     ground_truth->resize(intrinsic_events->events.size());
     ground_truth_timestamps->resize(intrinsic_events->events.size());
 
-    auto positions = std::list<Position>{};
-
+    auto positions = std::array<std::list<Position>, BitBot::TrainingData::take_profit.size()>{};
     auto ie_idx = 0;
 
+    std::array<int, 9> maxcount = { 0 };
+
     for (auto kline_idx = 0; kline_idx < klines->rows.size(); kline_idx++) {
-        const auto mark_price = klines->rows.at(ie_idx).open;
+        const auto mark_price = klines->rows[kline_idx].open;
 
         auto remove = false;
-        for (auto&& position : positions) {
-            if (mark_price >= position.take_profit) {
-                ground_truth->at(position.ie_idx).at(position.profit_idx) = 1;
-                ground_truth_timestamps->at(position.ie_idx).at(position.profit_idx) = intrinsic_events->events.at(ie_idx).timestamp;
-                position.remove = true;
+
+        for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
+            maxcount[profit_idx] = std::max(maxcount[profit_idx], (int)positions[profit_idx].size());
+
+            auto position = positions[profit_idx].begin();
+            while (position != positions[profit_idx].end()) {
+                if (mark_price < position->take_profit) {
+                    break;
+                }
+                (*ground_truth)[position->ie_idx][profit_idx] = 1;
+                (*ground_truth_timestamps)[position->ie_idx][profit_idx] = intrinsic_events->events[ie_idx].timestamp;
+                position->remove = true;
                 remove = true;
+
+                position = std::next(position);
             }
-            else if (mark_price <= position.stop_loss) {
-                ground_truth->at(position.ie_idx).at(position.profit_idx) = -1;
-                ground_truth_timestamps->at(position.ie_idx).at(position.profit_idx) = intrinsic_events->events.at(ie_idx).timestamp;
-                position.remove = true;
-                remove = true;
+
+            if (positions[profit_idx].size() > 0) {
+                position = positions[profit_idx].end();
+                while (position != positions[profit_idx].begin()) {
+                    position = std::prev(position);
+                    if (mark_price > position->stop_loss) {
+                        break;
+                    }
+                    (*ground_truth)[position->ie_idx][profit_idx] = -1;
+                    (*ground_truth_timestamps)[position->ie_idx][profit_idx] = intrinsic_events->events[ie_idx].timestamp;
+                    position->remove = true;
+                    remove = true;
+                }
+            }
+
+            if (remove) {
+                positions[profit_idx].remove_if([](const Position& position) { return position.remove; });
             }
         }
 
-        if (remove) {
-            positions.remove_if([](const Position& position) { return position.remove; });
-        }
+        while (klines->rows[kline_idx].timestamp >= intrinsic_events->events[ie_idx].timestamp && intrinsic_events->events.size() > ie_idx + 1) {
+            printf(
+                "while kline (%d) %s   event (%d) %s\n", 
+                kline_idx,
+                DateTime::to_string_iso_8601(klines->rows[kline_idx].timestamp).c_str(), 
+                ie_idx,
+                DateTime::to_string_iso_8601(intrinsic_events->events[ie_idx].timestamp).c_str()
+            );
 
-        while (klines->rows.at(kline_idx).timestamp >= intrinsic_events->events.at(ie_idx).timestamp && intrinsic_events->events.size() > ie_idx + 1) {
             //const auto mark_price = intrinsic_events->events.at(ie_idx).price;
-            
+
             for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
-                positions.emplace_back(
+                const auto take_profit = (float)(mark_price * BitBot::TrainingData::take_profit[profit_idx]);
+                const auto stop_loss = (float)(mark_price * BitBot::TrainingData::stop_loss[profit_idx]);
+
+                //auto pos_idx = 0;
+                auto position = positions[profit_idx].begin();
+                for (; position != positions[profit_idx].end(); ++position) {
+                    if (position->take_profit > take_profit) {
+                        break;
+                    }
+                }
+                positions[profit_idx].insert(position, {
                     ie_idx,
-                    profit_idx,
-                    (float)(mark_price * BitBot::TrainingData::take_profit.at(profit_idx)),
-                    (float)(mark_price * BitBot::TrainingData::stop_loss.at(profit_idx))
-                );
+                    take_profit,
+                    stop_loss
+                });
             }
 
             ie_idx++;
         }
+    }
+
+    printf("Maxcount:");
+    for (auto idx = 0; idx < BitBot::TrainingData::take_profit.size(); idx++) {
+        printf("(%d) %d", idx, maxcount[idx]);
     }
 }

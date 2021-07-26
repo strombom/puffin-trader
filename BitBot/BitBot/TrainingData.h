@@ -30,11 +30,10 @@ private:
 struct TrainingData::Position
 {
 public:
-    Position(int ie_idx, int profit_idx, float take_profit, float stop_loss) :
-        ie_idx(ie_idx), profit_idx(profit_idx), take_profit(take_profit), stop_loss(stop_loss), remove(false) {}
+    Position(int ie_idx, float take_profit, float stop_loss) :
+        ie_idx(ie_idx), take_profit(take_profit), stop_loss(stop_loss), remove(false) {}
 
     int ie_idx;
-    int profit_idx;
     float take_profit;
     float stop_loss;
     bool remove;
