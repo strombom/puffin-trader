@@ -9,18 +9,9 @@
 #include <filesystem>
 
 
-IntrinsicEvents::IntrinsicEvents(std::string symbol) : symbol(symbol)
+IntrinsicEvents::IntrinsicEvents(std::string symbol)
 {
-    load();
-}
-
-std::ostream& operator<<(std::ostream& stream, const IntrinsicEvent& row)
-{
-    stream.write(reinterpret_cast<const char*>(&row.timestamp), sizeof(row.timestamp));
-    stream.write(reinterpret_cast<const char*>(&row.price), sizeof(row.price));
-    stream.write(reinterpret_cast<const char*>(&row.delta), sizeof(row.delta));
-
-    return stream;
+    load(symbol);
 }
 
 std::istream& operator>>(std::istream& stream, IntrinsicEvent& row)
@@ -28,15 +19,6 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvent& row)
     stream.read(reinterpret_cast <char*> (&row.timestamp), sizeof(row.timestamp));
     stream.read(reinterpret_cast <char*> (&row.price), sizeof(row.price));
     stream.read(reinterpret_cast <char*> (&row.delta), sizeof(row.delta));
-
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const IntrinsicEvents& intrinsic_events)
-{
-    for (auto&& row : intrinsic_events.events) {
-        stream << row;
-    }
 
     return stream;
 }
@@ -51,7 +33,7 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvents& intrinsic_events
     return stream;
 }
 
-void IntrinsicEvents::load(void)
+void IntrinsicEvents::load(std::string symbol)
 {
     events.clear();
     const auto file_path = std::string{ BitBot::path } + "\\intrinsic_events\\" + symbol + ".dat";
@@ -63,17 +45,6 @@ void IntrinsicEvents::load(void)
         }
         data_file.close();
     }
-}
-
-void IntrinsicEvents::save(void) const
-{
-    auto file_path = std::string{ BitBot::path } + "\\intrinsic_events";
-    std::filesystem::create_directories(file_path);
-    file_path += "\\" + symbol + ".dat";
-
-    auto data_file = std::ofstream{ file_path, std::ios::binary };
-    data_file << *this;
-    data_file.close();
 }
 
 std::vector<double> IntrinsicEventRunner::step(double price)
@@ -189,10 +160,12 @@ private:
     std::vector<double> counts;
 };
 
-void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
+void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_klines)
 {
-    const auto deltas = std::vector<double>{0.001, 0.0012, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01};
+    const auto deltas = std::vector<double>{ 0.001, 0.0012, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01 };
     auto counts = std::vector<double>{};
+
+    std::vector<IntrinsicEvent> events;
 
     for (const auto d : deltas) {
         auto runner = IntrinsicEventRunner{ d };
@@ -206,7 +179,7 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
     }
 
     lsq::LevenbergMarquardt<double, StepSizeError> optimizer;
-    auto error_function = StepSizeError{deltas, counts};
+    auto error_function = StepSizeError{ deltas, counts };
     optimizer.setErrorFunction(error_function);
     optimizer.setMaxIterationsLM(100);
     optimizer.setMaxIterations(100);
@@ -220,7 +193,7 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
     //std::cout << "Final fval: " << result.fval.transpose() << std::endl;
     //std::cout << "Final xval: " << result.xval.transpose() << std::endl;
 
-    delta = result.xval(0) + result.xval(1) * std::pow(BitBot::IntrinsicEvents::target_event_count, result.xval(2));
+    auto delta = result.xval(0) + result.xval(1) * std::pow(BitBot::IntrinsicEvents::target_event_count, result.xval(2));
 
     events.clear();
     auto runner = IntrinsicEventRunner{ delta };
@@ -229,6 +202,22 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
             events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, (float)delta });
         }
     }
+
+    auto file_path = std::string{ BitBot::path } + "\\intrinsic_events";
+    std::filesystem::create_directories(file_path);
+    file_path += "\\" + symbol + ".dat";
+
+    auto data_file = std::ofstream{ file_path, std::ios::binary };
+
+    for (auto&& row : events) {
+        data_file.write(reinterpret_cast<const char*>(&row.timestamp), sizeof(row.timestamp));
+        data_file.write(reinterpret_cast<const char*>(&row.price), sizeof(row.price));
+        data_file.write(reinterpret_cast<const char*>(&row.delta), sizeof(row.delta));
+    }
+
+    data_file.close();
+
+    logger.info("Inserted %d events from %s, delta: %f", events.size(), symbol, delta);
 
     /*
     //delta = 0.00268467;
@@ -277,4 +266,23 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
 
     csv_file.close();
     */
+}
+
+void IntrinsicEvents::calculate_and_save(std::string symbol, sptrBinanceKlines binance_klines)
+{
+    auto thread = std::thread{ calculate_thread, symbol, binance_klines };
+    threads.push_back(std::move(thread));
+
+    if (threads.size() == (int)(std::thread::hardware_concurrency() * 0.8)) {
+        threads.begin()->join();
+        threads.erase(threads.begin());
+    }
+}
+
+void IntrinsicEvents::join(void)
+{
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    threads.clear();
 }

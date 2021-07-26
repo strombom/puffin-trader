@@ -42,16 +42,19 @@ private:
 class IntrinsicEvents
 {
 public:
+    IntrinsicEvents(void) {}
     IntrinsicEvents(std::string symbol);
 
-    void calculate(sptrBinanceKlines binance_klines);
+    void calculate_and_save(std::string symbol, sptrBinanceKlines binance_klines);
+    void join(void);
 
-    void load(void);
-    void save(void) const;
+    void load(std::string symbol);
 
-    std::string symbol;
     std::vector<IntrinsicEvent> events;
     double delta;
+
+private:
+    std::vector<std::thread> threads;
 };
 
 using sptrIntrinsicEvents = std::shared_ptr<IntrinsicEvents>;

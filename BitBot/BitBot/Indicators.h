@@ -8,17 +8,19 @@
 class Indicators
 {
 public:
+    Indicators(void) {}
     Indicators(std::string symbol);
 
-    void calculate(const sptrIntrinsicEvents intrinsic_events);
+    void calculate_and_save(std::string symbol, sptrIntrinsicEvents intrinsic_events);
+    void join(void);
 
-    void load(void);
-    void save(void) const;
+    void load(std::string symbol);
 
-    const std::string symbol;
     std::vector<std::array<float, BitBot::Indicators::indicator_width>> indicators;
     std::vector<time_point_ms> timestamps;
-    //int n_steps;
+
+private:
+    std::vector<std::thread> threads;
 };
 
 using sptrIndicators = std::shared_ptr<Indicators>;

@@ -199,6 +199,7 @@ void TrainingData::make_ground_truth(const std::string symbol, const sptrBinance
         }
 
         while (klines->rows[kline_idx].timestamp >= intrinsic_events->events[ie_idx].timestamp && intrinsic_events->events.size() > ie_idx + 1) {
+            /*
             printf(
                 "while kline (%d) %s   event (%d) %s\n", 
                 kline_idx,
@@ -206,6 +207,7 @@ void TrainingData::make_ground_truth(const std::string symbol, const sptrBinance
                 ie_idx,
                 DateTime::to_string_iso_8601(intrinsic_events->events[ie_idx].timestamp).c_str()
             );
+            */
 
             //const auto mark_price = intrinsic_events->events.at(ie_idx).price;
 
@@ -231,8 +233,9 @@ void TrainingData::make_ground_truth(const std::string symbol, const sptrBinance
         }
     }
 
-    printf("Maxcount:");
+    printf("Maxcount %s:", symbol.c_str());
     for (auto idx = 0; idx < BitBot::TrainingData::take_profit.size(); idx++) {
-        printf("(%d) %d", idx, maxcount[idx]);
+        printf("   (%d) %d", idx, maxcount[idx]);
     }
+    printf("\n");
 }
