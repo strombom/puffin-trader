@@ -53,6 +53,7 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvents& intrinsic_events
 
 void IntrinsicEvents::load(void)
 {
+    events.clear();
     const auto file_path = std::string{ BitBot::path } + "\\intrinsic_events\\" + symbol + ".dat";
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
@@ -221,6 +222,15 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
 
     delta = result.xval(0) + result.xval(1) * std::pow(BitBot::IntrinsicEvents::target_event_count, result.xval(2));
 
+    events.clear();
+    auto runner = IntrinsicEventRunner{ delta };
+    for (const auto& binance_kline : binance_klines->rows) {
+        for (const auto price : runner.step(binance_kline.open)) {
+            events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, (float)delta });
+        }
+    }
+
+    /*
     //delta = 0.00268467;
     const auto delta_min = delta * 0.25;
     const auto delta_max = delta * 8.0;
@@ -266,4 +276,5 @@ void IntrinsicEvents::calculate(sptrBinanceKlines binance_klines)
     }
 
     csv_file.close();
+    */
 }
