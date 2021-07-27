@@ -14,31 +14,29 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_simulator_data" };
+    const auto command = std::string{ "make_training_data_sections" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
         binance_download_klines.download();
     }
     else if (command == "make_intrinsic_events") {
+        auto intrinsic_events = IntrinsicEvents{};
         for (const auto symbol : BitBot::symbols) {
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
 
-            auto intrinsic_events = IntrinsicEvents{ symbol };
-            intrinsic_events.calculate(binance_klines);
-            intrinsic_events.save();
-
-            logger.info("Inserted %d events from %s, delta: %f", intrinsic_events.events.size(), symbol, intrinsic_events.delta);
+            intrinsic_events.calculate_and_save(symbol, binance_klines);
         }
+        intrinsic_events.join();
     }
     else if (command == "make_indicators") {
+        auto indicators = Indicators{};
         for (const auto symbol : BitBot::symbols) {
             const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
 
-            auto indicators = Indicators{ symbol };
-            indicators.calculate(intrinsic_events);
-            indicators.save();
+            indicators.calculate_and_save(symbol, intrinsic_events);
         }
+        indicators.join();
     }
     else if (command == "make_simulator_data") {
         auto training_data = TrainingData{ };
@@ -61,14 +59,16 @@ int main()
 
             auto year = 2020;
             auto day = 0;
-            while (day < 204) {
+            while (day < 207) {
                 const auto timestamp_start = time_point_ms{ date::sys_days(date::year{year} / 01 / 01) + date::days{day}};
                 const auto timestamp_end = timestamp_start + date::months{ 12 };
+                printf("%s %s, %d\n", symbol, DateTime::to_string_iso_8601(timestamp_start).c_str(), day);
                 training_data.make_section(symbol, "train", binance_klines, intrinsic_events, indicators, timestamp_start, timestamp_end);
                 training_data.make_section(symbol, "valid", binance_klines, intrinsic_events, indicators, timestamp_end, timestamp_end + date::days{ 1 });
 
                 day += 2;
             }
+            //break;
         }
 
         training_data.join();
