@@ -8,8 +8,8 @@ from BinanceSimulator.binance_simulator import BinanceSimulator
 
 
 class Portfolio:
-    take_profit = 1.025
-    stop_loss = 0.975
+    take_profit = 1.035
+    stop_loss = 0.965
 
     def __init__(self):
         self.positions = []
@@ -127,7 +127,7 @@ def main():
             while klines[symbol].iloc[kline_idx[symbol]]['open_time'] < predictions[prediction_idx]['timestamp'].timestamp() * 1000:
                 kline_idx[symbol] += 1
                 if kline_idx[symbol] >= klines[symbol].shape[0]:
-                    end_of_klines
+                    end_of_klines = True
                     break
 
         if end_of_klines:
@@ -172,7 +172,7 @@ def main():
             if simulator.wallet[symbol] > 0:
                 continue
 
-            p = predictions[prediction_idx][symbol][4]
+            p = predictions[prediction_idx][symbol][6]
             if 0.3 <= p <= 1.0:  # max(0.35, prediction_filters[symbol].smooth[-1]):  # 0.4:
                 mark_price = klines[symbol]['close'][kline_idx[symbol]]
                 simulator.set_mark_price(symbol=symbol, mark_price=mark_price)
