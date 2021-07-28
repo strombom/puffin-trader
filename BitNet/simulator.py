@@ -2,6 +2,7 @@ import pickle
 import random
 import pandas as pd
 from datetime import datetime, timezone, timedelta
+from prediction_filter import PredictionFilter
 
 from BinanceSimulator.binance_simulator import BinanceSimulator
 
@@ -66,13 +67,9 @@ def main():
         klines[symbol] = pd.read_hdf(f"cache/klines/{symbol}.hdf")
 
     start_timestamp_ms = start_timestamp.timestamp() * 1000
-    kline_start_idx = {}
+    kline_start_idx = {symbol: 0 for symbol in symbols}
     for symbol in symbols:
-        if not kline_start_idx:
-            kline_start_idx[symbol] = int((start_timestamp_ms - klines[symbol].iloc[0]['open_time']) / 60000)
-        else:
-            kline_start_idx[symbol] = kline_start_idx[symbols[0]]
-
+        kline_start_idx[symbol] = int((start_timestamp_ms - klines[symbol].iloc[0]['open_time']) / 60000)
         while klines[symbol].iloc[kline_start_idx[symbol]]['open_time'] > start_timestamp_ms:
             kline_start_idx[symbol] -= 1
         while klines[symbol].iloc[kline_start_idx[symbol]]['open_time'] < start_timestamp_ms:
@@ -98,11 +95,13 @@ def main():
     logger = Logger()
     previous_print = start_timestamp
 
+    prediction_filters = {symbol: PredictionFilter() for symbol in symbols}
+
     def print_hodlings(_timestamp):
         nonlocal previous_print
         total_equity_ = simulator.get_equity_usdt()
         if _timestamp > previous_print + timedelta(days=1):
-            previous_print += timedelta(days=1)
+            previous_print += timedelta(hours=1)
             stri = f"{_timestamp} Hodlings {total_equity_:.1f} USDT"
             for w_symbol in simulator.wallet:
                 if simulator.wallet[w_symbol] > 0:
@@ -111,11 +110,28 @@ def main():
             print(stri)
         logger.append(_timestamp, total_equity_, simulator.wallet['usdt'])
 
+    """
+    for symbol in symbols:
+        ts_start = datetime.fromtimestamp(klines[symbol].iloc[0]['open_time'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        ts_end = datetime.fromtimestamp(klines[symbol].iloc[-1]['open_time'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        print(symbol, ts_start, ts_end)
+
+    print("pred start", predictions[0]['timestamp'])
+    print("pred end", predictions[-1]['timestamp'])
+    """
+
     kline_idx = kline_start_idx.copy()
     for prediction_idx in range(len(predictions)):
+        end_of_klines = False
         for symbol in symbols:
             while klines[symbol].iloc[kline_idx[symbol]]['open_time'] < predictions[prediction_idx]['timestamp'].timestamp() * 1000:
                 kline_idx[symbol] += 1
+                if kline_idx[symbol] >= klines[symbol].shape[0]:
+                    end_of_klines
+                    break
+
+        if end_of_klines:
+            break
 
         #for kline_idx in range(kline_start_idx, kline_end_idx):
         #prediction_idx = kline_idx - kline_start_idx
@@ -135,7 +151,7 @@ def main():
                 portfolio.remove_position(position)
                 print_hodlings(predictions[prediction_idx]['timestamp'])
 
-        position_max_count = min(50, int(simulator.get_equity_usdt() / 12))
+        position_max_count = min(3, int(simulator.get_equity_usdt() / 12))
 
         # Buy
         buy_orders = {}
@@ -144,12 +160,24 @@ def main():
         prediction_symbols = list(predictions[prediction_idx].keys())[1:]
         random.shuffle(prediction_symbols)
 
+        position_count = len(portfolio.positions)
+
         for symbol in prediction_symbols:
-            if predictions[prediction_idx][symbol] > 0.5:
+
+            if position_count >= position_max_count:
+                break
+
+            # prediction_filters[symbol].append(predictions[prediction_idx][symbol])
+
+            if simulator.wallet[symbol] > 0:
+                continue
+
+            p = predictions[prediction_idx][symbol][4]
+            if 0.3 <= p <= 1.0:  # max(0.35, prediction_filters[symbol].smooth[-1]):  # 0.4:
                 mark_price = klines[symbol]['close'][kline_idx[symbol]]
                 simulator.set_mark_price(symbol=symbol, mark_price=mark_price)
 
-                position_value = min(equity / position_max_count, cash * 0.95)
+                position_value = min(equity / position_max_count, cash * 0.98)
                 if position_value < 10:
                     break
                 position_size = position_value / mark_price * 0.99
@@ -159,7 +187,7 @@ def main():
                 buy_orders[symbol] += position_size
                 cash -= position_size * mark_price * (1 + 2 * 0.00075)
                 equity -= position_size * mark_price * 2 * 0.00075
-
+                position_count += 1
 
         """
         for _ in range(int(position_max_count)):
