@@ -29,6 +29,7 @@ public:
     static const std::string to_string(const time_point_ms);
     static const std::string to_string_iso_8601(const time_point_ms);
     static const time_point_ms random_timestamp(const time_point_ms timestamp_start, const time_point_ms timestamp_end, const std::chrono::milliseconds interval);
+    static const time_point_ms now(void);
 
 private:
     static constexpr auto time_format = "%F %T";

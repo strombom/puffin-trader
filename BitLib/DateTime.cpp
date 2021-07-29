@@ -69,3 +69,8 @@ const time_point_ms DateTime::random_timestamp(const time_point_ms timestamp_sta
     auto timestamp = time_point_ms{ std::chrono::seconds{ timestamp_int } };
     return timestamp;
 }
+
+const time_point_ms DateTime::now(void)
+{
+    return std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+}
