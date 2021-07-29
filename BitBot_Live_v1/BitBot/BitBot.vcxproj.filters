@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\BitLib">
+      <UniqueIdentifier>{c5db5eb5-382c-48ae-bc65-f2a91dd17fde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BitLib">
+      <UniqueIdentifier>{c75326e7-9bc6-4e3a-8fe3-285fe5a728f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Binance">
+      <UniqueIdentifier>{9e3021de-cdcb-456a-b74a-08612223956d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Binance">
+      <UniqueIdentifier>{9052c0ec-f074-4b4a-82d9-8acd69d7bbdb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Indicators">
+      <UniqueIdentifier>{8bbd9f72-9e89-47f4-b715-1f62c25abe8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Indicators">
+      <UniqueIdentifier>{71d468d5-d2ea-40a8-a204-486cf3c5a952}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Libraries">
+      <UniqueIdentifier>{ad1db7db-7afd-49c8-b940-dc530702a0cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries">
+      <UniqueIdentifier>{e22c6487-d26c-427e-8100-79eba7bc17f5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BitBot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\Logger.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceDownloadKlines.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceKlines.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceRestApi.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BitLib\json11\json11.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="BinanceAuthentication.cpp">
+      <Filter>Source Files\Binance</Filter>
+    </ClCompile>
+    <ClCompile Include="IntrinsicEvents.cpp">
+      <Filter>Source Files\Indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="BitLib\DateTime.cpp">
+      <Filter>Source Files\BitLib</Filter>
+    </ClCompile>
+    <ClCompile Include="Indicators.cpp">
+      <Filter>Source Files\Indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="PolyFit.cpp">
+      <Filter>Source Files\Indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="TrainingData.cpp">
+      <Filter>Source Files\Indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="LeastSquares.cpp">
+      <Filter>Source Files\Libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="PID.cpp">
+      <Filter>Source Files\Libraries</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\date\date.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\csv\csv.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\Logger.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceDownloadKlines.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceKlines.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceRestApi.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BitLib\json11\json11.hpp">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BinanceAuthentication.h">
+      <Filter>Header Files\Binance</Filter>
+    </ClInclude>
+    <ClInclude Include="IntrinsicEvents.h">
+      <Filter>Header Files\Indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\DateTime.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="BitLib\BitBotConstants.h">
+      <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="Indicators.h">
+      <Filter>Header Files\Indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="PolyFit.h">
+      <Filter>Header Files\Indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="TrainingData.h">
+      <Filter>Header Files\Indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="LeastSquares.h">
+      <Filter>Header Files\Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="PID.h">
+      <Filter>Header Files\Libraries</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
