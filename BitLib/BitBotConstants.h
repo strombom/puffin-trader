@@ -21,7 +21,7 @@ namespace BitBot
 
     namespace IntrinsicEvents
     {
-        constexpr auto delta = 0.0025;
+        constexpr auto target_event_count = 150000;
     }
 
     namespace Indicators
@@ -32,13 +32,17 @@ namespace BitBot
 
         constexpr auto max_degree = degrees.back();
         constexpr auto max_length = lengths.back();
-        constexpr auto max_polyfit_n = degrees.back() + 1;
+        constexpr auto max_degree_p1 = max_degree + 1;
+        constexpr auto max_degree_p2 = max_degree + 2;
+        constexpr auto max_degree_t2p1 = max_degree * 2 + 1;
     }
 
     namespace TrainingData
     {
-        constexpr auto take_profit = 1.03;
-        constexpr auto stop_loss = 0.97;
+        constexpr auto take_profit = std::array<double, 8>{1.0050, 1.0100, 1.0150, 1.0200, 1.0250, 1.0300, 1.0350, 1.0400};
+        constexpr auto stop_loss   = std::array<double, 8>{0.9950, 0.9900, 0.9850, 0.9800, 0.9750, 0.9700, 0.9650, 0.9600};
+        //constexpr auto take_profit = std::array<double, 1>{1.020};
+        //constexpr auto stop_loss = std::array<double, 1>{0.980};
     }
 }
 
