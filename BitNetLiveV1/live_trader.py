@@ -1,5 +1,6 @@
 import os
 import sys
+import pathlib
 
 import requests
 import zmq
@@ -92,9 +93,23 @@ def check_positions(portfolio, binance_account):
 
 class ProfitModel:
     def __init__(self):
-        self.model = load_learner('model_all_2021-07-02.pickle')
+        self.model = None
+        self.model_creation_timestamp = None
+        self.model_path = 'c:/BitBot/models/model.pickle'
+        self.load_model()
+
+    def get_model_creation_timestamp(self):
+        return datetime.fromtimestamp(pathlib.Path(self.model_path).stat().st_mtime)
+
+    def load_model(self):
+        self.model = load_learner(self.model_path)
+        self.model_creation_timestamp = self.get_model_creation_timestamp()
 
     def predict(self, data_input):
+        new_timestamp = self.get_model_creation_timestamp()
+        if new_timestamp > self.model_creation_timestamp:
+            self.load_model()
+
         test_dl = self.model.dls.test_dl(data_input)
         predictions = self.model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
         return predictions
@@ -109,6 +124,11 @@ def main():
 
     profit_model = ProfitModel()
 
+    deltas_df = pd.read_csv('c:/BitBot/deltas.csv')
+    deltas = {}
+    for idx, row in deltas_df.iterrows():
+        deltas[row['symbol']] = row['delta']
+
     with open('binance_account.json') as f:
         account_info = json.load(f)
 
@@ -118,9 +138,8 @@ def main():
     socket.connect("tcp://192.168.1.90:31007")
 
     nominal_order_size = 12.0  # usdt, slightly larger than min notional
-    delta = 0.01
     direction_degrees = [1, 2, 3]
-    lengths = pd.read_csv('cache/regime_data_lengths.csv')['length'].to_list()
+    lengths = [5, 7, 11, 15, 22, 33, 47, 68, 100, 150]
     step_count = lengths[-1]
 
     # indicators = None
@@ -129,13 +148,7 @@ def main():
     steps = {}
     runners = {}
 
-    random_symbol_order = None
-
     portfolio = Portfolio()
-    #portfolios = Portfolios()
-    #for idx in range(20):
-    #    portfolios.append(Portfolio())
-
     logger = Logger()
 
     directions = None
