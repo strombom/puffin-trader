@@ -26,9 +26,8 @@ void make_section_thread(
     std::shared_ptr < std::vector<std::array<time_point_ms, BitBot::TrainingData::take_profit.size()>>> ground_truth_timestamps
 ) {
 
-    auto file_path = std::string{ BitBot::path } + "\\" + path;
-    std::filesystem::create_directories(file_path);
-    file_path += "\\" + date::format("%F", timestamp_start) + "_" + symbol + "_" + suffix + ".csv";
+    std::filesystem::create_directories(path);
+    auto file_path = path + "\\" + date::format("%F", timestamp_start) + "_" + symbol + "_" + suffix + ".csv";
 
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
 
@@ -114,7 +113,7 @@ void TrainingData::join(void)
     threads.clear();
 }
 
-void TrainingData::make_section(const std::string& symbol, const std::string& suffix, const sptrBinanceKlines klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
+void TrainingData::make_section(const std::string& path, const std::string& symbol, const std::string& suffix, const sptrBinanceKlines klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
 {
     if (ground_truth_symbol != symbol) {
         for (auto& thread : threads) {
@@ -124,7 +123,6 @@ void TrainingData::make_section(const std::string& symbol, const std::string& su
         make_ground_truth(symbol, klines, intrinsic_events);
     }
 
-    const auto path = "training_data_sections";
     auto thread = std::thread{ make_section_thread, symbol, suffix, path, klines, intrinsic_events, indicators, timestamp_start, timestamp_end, ground_truth, ground_truth_timestamps };
     threads.push_back(std::move(thread));
 
@@ -134,11 +132,9 @@ void TrainingData::make_section(const std::string& symbol, const std::string& su
     }
 }
 
-void TrainingData::make(const std::string& symbol, const sptrBinanceKlines klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
+void TrainingData::make(const std::string& path, const std::string& symbol, const sptrBinanceKlines klines, const sptrIntrinsicEvents intrinsic_events, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
 {
     make_ground_truth(symbol, klines, intrinsic_events);
-
-    const auto path = "simulation_data";
     make_section_thread(symbol, "sim", path, klines, intrinsic_events, indicators, timestamp_start, timestamp_end, ground_truth, ground_truth_timestamps);
 }
  

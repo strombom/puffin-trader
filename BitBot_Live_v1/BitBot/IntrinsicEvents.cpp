@@ -36,7 +36,7 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvents& intrinsic_events
 void IntrinsicEvents::load(std::string symbol)
 {
     events.clear();
-    const auto file_path = std::string{ BitBot::path } + "\\intrinsic_events\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBotLiveV1::path } + "\\intrinsic_events\\" + symbol + ".dat";
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
         auto intrinsic_event = IntrinsicEvent{};
@@ -203,7 +203,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
         }
     }
 
-    auto file_path = std::string{ BitBot::path } + "\\intrinsic_events";
+    auto file_path = std::string{ BitBotLiveV1::path } + "\\intrinsic_events";
     std::filesystem::create_directories(file_path);
     file_path += "\\" + symbol + ".dat";
 

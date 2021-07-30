@@ -46,7 +46,7 @@ std::istream& operator>>(std::istream& stream, Indicators& indicators)
 
 void Indicators::load(std::string symbol)
 {
-    const auto file_path = std::string{ BitBot::path } + "\\indicators\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBotLiveV1::path } + "\\indicators\\" + symbol + ".dat";
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
         data_file >> *this;
@@ -117,7 +117,7 @@ void calculate_thread(const std::string symbol, const sptrIntrinsicEvents intrin
         std::rotate(price_steps.begin(), price_steps.begin() + 1, price_steps.end());
     }
 
-    auto file_path = std::string{ BitBot::path } + "\\indicators";
+    auto file_path = std::string{ BitBotLiveV1::path } + "\\indicators";
     std::filesystem::create_directories(file_path);
     file_path += "\\" + symbol + ".dat";
 

@@ -5,6 +5,12 @@
 #include <array>
 
 
+namespace BitBotLiveV1
+{
+
+    constexpr auto path = "C:\\BitBot";
+}
+
 namespace BitBot
 {
     constexpr auto start_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
