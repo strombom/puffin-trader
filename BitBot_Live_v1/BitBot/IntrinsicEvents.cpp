@@ -47,6 +47,11 @@ void IntrinsicEvents::load(std::string symbol)
     }
 }
 
+double IntrinsicEvents::get_delta(void)
+{
+    return events[0].delta;
+}
+
 std::vector<double> IntrinsicEventRunner::step(double price)
 {
     if (!initialized) {

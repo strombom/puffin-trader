@@ -49,6 +49,7 @@ public:
     void join(void);
 
     void load(std::string symbol);
+    double get_delta(void);
 
     std::vector<IntrinsicEvent> events;
     double delta;
