@@ -260,12 +260,15 @@ def main():
         if len(symbols_with_new_steps) > 0:
             data_input = pd.DataFrame(data=np.vstack(list(directions.values())), columns=directions_column_names)
             data_input[price_diffs_column_names] = np.vstack(list(price_diffs.values()))
+
+            deltas_array = []
             input_symbols = np.array(list(symbols_with_new_steps))
-            deltas_array = np.empty(len(symbols_with_new_steps))
-            for symbol_idx, symbol in enumerate(symbols_with_new_steps):
+            for symbol_idx, symbol in enumerate(symbols):
                 data_input[symbol] = np.where(input_symbols == symbol, True, False)
-                deltas_array[symbol_idx] = deltas[symbol]
+                if symbol in symbols_with_new_steps:
+                    deltas_array.append(deltas[symbol])
             data_input['delta'] = deltas_array
+
             predictions_array = profit_model.predict(data_input)
             predictions = {}
             for symbol_idx, symbol in enumerate(symbols_with_new_steps):
