@@ -102,8 +102,11 @@ class ProfitModel:
         return datetime.fromtimestamp(pathlib.Path(self.model_path).stat().st_mtime)
 
     def load_model(self):
-        self.model = load_learner(self.model_path)
-        self.model_creation_timestamp = self.get_model_creation_timestamp()
+        try:
+            self.model = load_learner(self.model_path)
+            self.model_creation_timestamp = self.get_model_creation_timestamp()
+        except:
+            logging.info("Failed to load new model")
 
     def predict(self, data_input):
         new_timestamp = self.get_model_creation_timestamp()
@@ -152,12 +155,15 @@ def main():
     logger = Logger()
 
     directions = None
+    price_diffs = None
     binance_account = None
 
     directions_column_names = []
+    price_diffs_column_names = []
     for _, direction_degree in enumerate(direction_degrees):
         for _, length in enumerate(lengths):
-            directions_column_names.append(f"{direction_degree}-{length}")
+            directions_column_names.append(f"{direction_degree}-{length}-d")
+            price_diffs_column_names.append(f"{direction_degree}-{length}-p")
 
     def print_hodlings():
         timestamp = datetime.now(tz=timezone.utc)
@@ -187,7 +193,8 @@ def main():
         if len(symbols) == 0:
             symbols = sorted(prices[0].keys())
             random_symbol_order = list(range(len(symbols)))
-            directions = np.empty((len(symbols), len(direction_degrees) * len(lengths)))
+            directions = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols}
+            price_diffs = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols}
             binance_account = BinanceAccount(
                 api_key=account_info['api_key'],
                 api_secret=account_info['api_secret'],
@@ -199,17 +206,19 @@ def main():
         # check_positions(portfolio, binance_account)
 
         # Runners
+        symbols_with_new_steps = set()
         for price in prices:
             for symbol in symbols:
                 if symbol not in runners:
-                    runners[symbol] = Runner(delta=delta)
+                    runners[symbol] = Runner(delta=deltas[symbol])
                     steps[symbol] = collections.deque(maxlen=step_count)
                 runner_steps = runners[symbol].step(price[symbol])
                 for step in runner_steps:
                     steps[symbol].append(step)
+                    symbols_with_new_steps.add(symbol)
 
         # Make directions
-        for symbol_idx, symbol in enumerate(symbols):
+        for symbol in symbols_with_new_steps:
             for direction_degree_idx, direction_degree in enumerate(direction_degrees):
                 for length_idx, length in enumerate(lengths):
                     idx = lengths[-1]
@@ -219,7 +228,9 @@ def main():
                     yp = np.poly1d(np.polyfit(xp, direction_steps, direction_degree))
                     curve = yp(xp)
                     direction = curve[-1] / curve[-2] - 1.0
-                    directions[symbol_idx, direction_degree_idx * len(lengths) + length_idx] = direction
+                    price_diff = curve[-1] / direction_steps[-1] - 1.0
+                    directions[symbol][direction_degree_idx * len(lengths) + length_idx] = direction
+                    price_diffs[symbol][direction_degree_idx * len(lengths) + length_idx] = price_diff
 
         # Sell
         #for portfolio in portfolios.portfolios:
@@ -247,14 +258,17 @@ def main():
 
         # Buy
         # Predict values
-        data_input = pd.DataFrame(data=directions, columns=directions_column_names)
-        input_symbols = np.array(symbols)
-        for symbol in symbols:
+        data_input = pd.DataFrame(data=np.vstack(list(directions.values())), columns=directions_column_names)
+        data_input[price_diffs_column_names] = np.vstack(list(price_diffs.values()))
+        input_symbols = np.array(list(symbols_with_new_steps))
+        deltas_array = np.empty(len(symbols_with_new_steps))
+        for symbol_idx, symbol in enumerate(symbols_with_new_steps):
             data_input[symbol] = np.where(input_symbols == symbol, True, False)
-
+            deltas_array[symbol_idx] = deltas[symbol]
+        data_input['delta'] = deltas_array
         predictions = profit_model.predict(data_input)
 
-        position_max_count = min(100, int(binance_account.get_total_equity_usdt() / nominal_order_size))
+        position_max_count = min(3, int(binance_account.get_total_equity_usdt() / nominal_order_size))
         for _ in range(int(position_max_count)):
             # Todo: make chunks if the same symbol is bought multiple times
 
