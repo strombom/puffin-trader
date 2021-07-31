@@ -106,6 +106,7 @@ class ProfitModel:
         try:
             self.model = load_learner(self.model_path)
             self.model_creation_timestamp = self.get_model_creation_timestamp()
+            logging.info(f"Loaded new model {self.model_creation_timestamp}")
         except:
             logging.info("Failed to load new model")
 
