@@ -1,9 +1,9 @@
-
-from fastai.tabular.all import *
-import pandas as pd
-import numpy as np
-import pickle
 import os
+import pickle
+import subprocess
+import numpy as np
+import pandas as pd
+from fastai.tabular.all import *
 
 
 def train():
@@ -40,6 +40,7 @@ def train():
     learn = tabular_learner(dataloader, metrics=rmse)
     learn.fit_one_cycle(4, lr_max=2e-4)
 
+    """
     print("Make predictions")
     dl_train = DataLoader(dataset=df.iloc[splits[0]])
     df_val = DataLoader(dataset=df.iloc[splits[1]])
@@ -56,10 +57,29 @@ def train():
             'pred_val': pred_val.squeeze(),
             'gt_val': gt_val.squeeze()
         }, f)
+    """
 
     print("Save model")
     learn.export(models_path + f"/model.pickle")
 
 
 if __name__ == '__main__':
-    train()
+    while True:
+        print("Remove old training data")
+        with os.scandir("C:/BitBot/training_data") as entries:
+            for entry in entries:
+                if not entry.is_dir() and not entry.is_symlink():
+                    os.remove(entry.path)
+
+        os.chdir("C:/development/github/puffin-trader/BitBot_Live_v1/x64/Release/")
+        make_data_executable = "BitBot_Live_v1.exe"
+        print("Run", make_data_executable)
+        result = subprocess.run(args=[make_data_executable], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(result)
+        print(result.stdout)
+        print(result.stderr)
+
+        if result.returncode == 0:
+            train()
+
+        time.sleep(60 * 60)
