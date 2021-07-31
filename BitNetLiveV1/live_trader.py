@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 import pathlib
@@ -154,8 +155,6 @@ def main():
     portfolio = Portfolio()
     logger = Logger()
 
-    directions = None
-    price_diffs = None
     binance_account = None
 
     directions_column_names = []
@@ -187,14 +186,12 @@ def main():
             continue
         last_data_idx = message['last_idx']
         prices = message['prices']
-        logging.info("New prices")
+        logging.info("New prices", prices[-1])
 
         # Initialise variables
         if len(symbols) == 0:
             symbols = sorted(prices[0].keys())
             random_symbol_order = list(range(len(symbols)))
-            directions = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols}
-            price_diffs = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols}
             binance_account = BinanceAccount(
                 api_key=account_info['api_key'],
                 api_secret=account_info['api_secret'],
@@ -218,6 +215,8 @@ def main():
                     symbols_with_new_steps.add(symbol)
 
         # Make directions
+        directions = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols_with_new_steps}
+        price_diffs = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols_with_new_steps}
         for symbol in symbols_with_new_steps:
             for direction_degree_idx, direction_degree in enumerate(direction_degrees):
                 for length_idx, length in enumerate(lengths):
@@ -258,46 +257,59 @@ def main():
 
         # Buy
         # Predict values
-        data_input = pd.DataFrame(data=np.vstack(list(directions.values())), columns=directions_column_names)
-        data_input[price_diffs_column_names] = np.vstack(list(price_diffs.values()))
-        input_symbols = np.array(list(symbols_with_new_steps))
-        deltas_array = np.empty(len(symbols_with_new_steps))
-        for symbol_idx, symbol in enumerate(symbols_with_new_steps):
-            data_input[symbol] = np.where(input_symbols == symbol, True, False)
-            deltas_array[symbol_idx] = deltas[symbol]
-        data_input['delta'] = deltas_array
-        predictions = profit_model.predict(data_input)
+        if len(symbols_with_new_steps) > 0:
+            data_input = pd.DataFrame(data=np.vstack(list(directions.values())), columns=directions_column_names)
+            data_input[price_diffs_column_names] = np.vstack(list(price_diffs.values()))
+            input_symbols = np.array(list(symbols_with_new_steps))
+            deltas_array = np.empty(len(symbols_with_new_steps))
+            for symbol_idx, symbol in enumerate(symbols_with_new_steps):
+                data_input[symbol] = np.where(input_symbols == symbol, True, False)
+                deltas_array[symbol_idx] = deltas[symbol]
+            data_input['delta'] = deltas_array
+            predictions_array = profit_model.predict(data_input)
+            predictions = {}
+            for symbol_idx, symbol in enumerate(symbols_with_new_steps):
+                predictions[symbol] = predictions_array[symbol_idx]
 
-        position_max_count = min(3, int(binance_account.get_total_equity_usdt() / nominal_order_size))
-        for _ in range(int(position_max_count)):
-            # Todo: make chunks if the same symbol is bought multiple times
+            position_max_count = min(3, int(binance_account.get_total_equity_usdt() / nominal_order_size))
 
-            cash, equity = binance_account.get_balance('USDT'), binance_account.get_total_equity_usdt(),
-            if cash < equity / position_max_count * 0.9:
-                break
+            prediction_symbols = list(symbols_with_new_steps)
+            random.shuffle(prediction_symbols)
 
-            symbol_idx = random.randint(0, len(symbols) - 1)
-            #random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
-            #for symbol_idx in random_symbol_order:
-            prediction = predictions[symbol_idx]
-            if prediction > 0 and 0.00020 * 5 * 25 ** prediction > random.random():
-                symbol = symbols[symbol_idx]
-                mark_price = binance_account.get_mark_price(symbol)
+            for symbol in prediction_symbols:
+                if len(portfolio.positions) >= position_max_count:
+                    break
 
-                order_value = min(equity / position_max_count, cash * 0.95)
-                order_size = order_value / mark_price * 0.99
+                #for _ in range(int(position_max_count)):
+                # Todo: make chunks if the same symbol is bought multiple times
 
-                #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
-                order_result = binance_account.market_buy(symbol=symbol, volume=order_size)
-                if order_result['quantity'] > 0:
-                    position = portfolio.add_position(symbol=symbol, position_size=order_result['quantity'], mark_price=order_result['price'])
-                    logging.info(f"Bought {symbol} {order_result['quantity']} @ {order_result['price']} ({order_result['quantity'] * order_result['price']} USDT), {position}")
-                    if order_result['quantity'] != order_size:
-                        logging.info(f"Executed quantity ({order_result['quantity']}) doesn't match quoted quantity ({order_size})")
-                else:
-                    logging.info(f"Bought {symbol} FAILED {order_size} @ {order_result['price']}")
-                print_hodlings()
-                #break
+                cash, equity = binance_account.get_balance('USDT'), binance_account.get_total_equity_usdt(),
+                if cash < equity / position_max_count * 0.9:
+                    break
+
+                #symbol_idx = random.randint(0, len(symbols) - 1)
+                #random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
+                #for symbol_idx in random_symbol_order:
+                prediction = predictions[symbol]
+                #if prediction > 0 and 0.00020 * 5 * 25 ** prediction > random.random():
+                if 0.3 <= prediction <= 1.0:
+                    #symbol = symbols[symbol_idx]
+                    mark_price = binance_account.get_mark_price(symbol)
+
+                    order_value = min(equity / position_max_count, cash * 0.95)
+                    order_size = order_value / mark_price * 0.99
+
+                    #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
+                    order_result = binance_account.market_buy(symbol=symbol, volume=order_size)
+                    if order_result['quantity'] > 0:
+                        position = portfolio.add_position(symbol=symbol, position_size=order_result['quantity'], mark_price=order_result['price'])
+                        logging.info(f"Bought {symbol} {order_result['quantity']} @ {order_result['price']} ({order_result['quantity'] * order_result['price']} USDT), {position}")
+                        if order_result['quantity'] != order_size:
+                            logging.info(f"Executed quantity ({order_result['quantity']}) doesn't match quoted quantity ({order_size})")
+                    else:
+                        logging.info(f"Bought {symbol} FAILED {order_size} @ {order_result['price']}")
+                    print_hodlings()
+                    #break
 
         binance_account.update_balance()
 
