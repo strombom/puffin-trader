@@ -94,18 +94,25 @@ def check_positions(portfolio, binance_account):
 
 class ProfitModel:
     def __init__(self):
+        self.base_path = "C:/BitBot/"
         self.model = None
         self.model_creation_timestamp = None
-        self.model_path = 'c:/BitBot/models/model.pickle'
+        self.deltas = {}
         self.load_model()
 
     def get_model_creation_timestamp(self):
-        return datetime.fromtimestamp(pathlib.Path(self.model_path).stat().st_mtime)
+        return datetime.fromtimestamp(pathlib.Path(os.path.join(self.base_path, 'models/model.pickle')).stat().st_mtime)
+
+    def load_deltas(self):
+        deltas_df = pd.read_csv(os.path.join(self.base_path, 'deltas.csv'))
+        for idx, row in deltas_df.iterrows():
+            self.deltas[row['symbol']] = row['delta']
 
     def load_model(self):
         try:
-            self.model = load_learner(self.model_path)
+            self.model = load_learner(os.path.join(self.base_path, 'models/model.pickle'))
             self.model_creation_timestamp = self.get_model_creation_timestamp()
+            self.load_deltas()
             logging.info(f"Loaded new model {self.model_creation_timestamp}")
         except:
             logging.info("Failed to load new model")
@@ -128,11 +135,6 @@ def main():
     # Todo: long and short
 
     profit_model = ProfitModel()
-
-    deltas_df = pd.read_csv('c:/BitBot/deltas.csv')
-    deltas = {}
-    for idx, row in deltas_df.iterrows():
-        deltas[row['symbol']] = row['delta']
 
     with open('binance_account.json') as f:
         account_info = json.load(f)
@@ -208,7 +210,7 @@ def main():
         for price in prices:
             for symbol in symbols:
                 if symbol not in runners:
-                    runners[symbol] = Runner(delta=deltas[symbol])
+                    runners[symbol] = Runner(delta=profit_model.deltas[symbol])
                     steps[symbol] = collections.deque(maxlen=step_count)
                 runner_steps = runners[symbol].step(price[symbol])
                 for step in runner_steps:
@@ -267,7 +269,7 @@ def main():
             for symbol_idx, symbol in enumerate(symbols):
                 data_input[symbol] = np.where(input_symbols == symbol, True, False)
                 if symbol in symbols_with_new_steps:
-                    deltas_array.append(deltas[symbol])
+                    deltas_array.append(profit_model.deltas[symbol])
             data_input['delta'] = deltas_array
 
             predictions_array = profit_model.predict(data_input)
@@ -300,7 +302,7 @@ def main():
                     #symbol = symbols[symbol_idx]
                     mark_price = binance_account.get_mark_price(symbol)
 
-                    order_value = min(equity / position_max_count, cash * 0.95)
+                    order_value = min(equity / (position_max_count - 1), cash * 0.975)
                     order_size = order_value / mark_price * 0.99
 
                     #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
