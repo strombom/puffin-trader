@@ -92,13 +92,64 @@ def check_positions(portfolio, binance_account):
     portfolio.positions = new_positions
 
 
-class ProfitModel:
+class IntrinsicEvents:
+    def __init__(self, lengths):
+        self.step_count = lengths[-1]
+        self.runners = {}
+        self.steps = {}
+
+    def run(self, prices, symbols, deltas):
+        symbols_with_new_steps = set()
+        for price in prices:
+            for symbol in symbols:
+                if symbol not in self.runners:
+                    self.runners[symbol] = Runner(delta=deltas[symbol])
+                    self.steps[symbol] = collections.deque(maxlen=self.step_count)
+                runner_steps = self.runners[symbol].step(price[symbol])
+                for step in runner_steps:
+                    self.steps[symbol].append(step)
+                    symbols_with_new_steps.add(symbol)
+        return symbols_with_new_steps, self.steps
+
+
+class Indicators:
     def __init__(self):
+        self.direction_degrees = [1, 2, 3]
+        self.lengths = [5, 7, 11, 15, 22, 33, 47, 68, 100, 150]
+
+    def make(self, symbols, steps):
+        directions = {symbol: np.empty((len(self.direction_degrees) * len(self.lengths))) for symbol in symbols}
+        price_diffs = {symbol: np.empty((len(self.direction_degrees) * len(self.lengths))) for symbol in symbols}
+        for symbol in symbols:
+            for direction_degree_idx, direction_degree in enumerate(self.direction_degrees):
+                for length_idx, length in enumerate(self.lengths):
+                    idx = self.lengths[-1]
+                    start, end = idx - length, idx
+                    xp = np.arange(start, end)
+                    direction_steps = list(itertools.islice(steps[symbol], start, end))
+                    yp = np.poly1d(np.polyfit(xp, direction_steps, direction_degree))
+                    curve = yp(xp)
+                    direction = curve[-1] / curve[-2] - 1.0
+                    price_diff = curve[-1] / direction_steps[-1] - 1.0
+                    directions[symbol][direction_degree_idx * len(self.lengths) + length_idx] = direction
+                    price_diffs[symbol][direction_degree_idx * len(self.lengths) + length_idx] = price_diff
+        return directions, price_diffs
+
+
+class ProfitModel:
+    def __init__(self, direction_degrees, lengths):
         self.base_path = "C:/BitBot/"
         self.model = None
         self.model_creation_timestamp = None
         self.deltas = {}
         self.load_model()
+
+        self.directions_column_names = []
+        self.price_diffs_column_names = []
+        for _, direction_degree in enumerate(direction_degrees):
+            for _, length in enumerate(lengths):
+                self.directions_column_names.append(f"{direction_degree}-{length}-d")
+                self.price_diffs_column_names.append(f"{direction_degree}-{length}-p")
 
     def get_model_creation_timestamp(self):
         return datetime.fromtimestamp(pathlib.Path(os.path.join(self.base_path, 'models/model.pickle')).stat().st_mtime)
@@ -117,14 +168,52 @@ class ProfitModel:
         except:
             logging.info("Failed to load new model")
 
-    def predict(self, data_input):
+    def predict(self, all_symbols, symbols_with_new_steps, directions, price_diffs):
+        data_input = pd.DataFrame(data=np.vstack(list(directions.values())), columns=self.directions_column_names)
+        data_input[self.price_diffs_column_names] = np.vstack(list(price_diffs.values()))
+
+        deltas_array = []
+        input_symbols = np.array(list(symbols_with_new_steps))
+        for symbol_idx, symbol in enumerate(all_symbols):
+            data_input[symbol] = np.where(input_symbols == symbol, True, False)
+            if symbol in symbols_with_new_steps:
+                deltas_array.append(self.deltas[symbol])
+        data_input['delta'] = deltas_array
+
         new_timestamp = self.get_model_creation_timestamp()
         if new_timestamp > self.model_creation_timestamp:
             self.load_model()
 
         test_dl = self.model.dls.test_dl(data_input)
-        predictions = self.model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+        predictions_array = self.model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+
+        predictions = {}
+        for symbol_idx, symbol in enumerate(symbols_with_new_steps):
+            predictions[symbol] = predictions_array[symbol_idx]
+
         return predictions
+
+
+class PriceClient:
+    def __init__(self):
+        logging.info("Connect to Binance delta server")
+        context = zmq.Context()
+        self.socket = context.socket(zmq.REQ)
+        self.socket.connect("tcp://192.168.1.90:31007")
+        self.last_data_idx = 0
+
+    def get_new_prices(self):
+        while True:
+            command, payload = 'get_since', self.last_data_idx
+            self.socket.send_pyobj((command, payload))
+            message = self.socket.recv_pyobj()
+            if message['last_idx'] != self.last_data_idx:
+                self.last_data_idx = message['last_idx']
+                break
+            time.sleep(1)
+        prices = message['prices']
+        logging.info("New prices", prices[-1])
+        return prices
 
 
 def main():
@@ -134,105 +223,54 @@ def main():
     # Todo: binance_account handle websocket errors https://github.com/sammchardy/python-binance/issues/834
     # Todo: long and short
 
-    profit_model = ProfitModel()
-
-    with open('binance_account.json') as f:
-        account_info = json.load(f)
-
-    logging.info("Connect to Binance delta server")
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.connect("tcp://192.168.1.90:31007")
-
     nominal_order_size = 12.0  # usdt, slightly larger than min notional
-    direction_degrees = [1, 2, 3]
-    lengths = [5, 7, 11, 15, 22, 33, 47, 68, 100, 150]
-    step_count = lengths[-1]
 
-    # indicators = None
-    last_data_idx = 0
-    symbols = []
-    steps = {}
-    runners = {}
-
+    price_client = PriceClient()
+    indicators = Indicators()
+    intrinsic_events = IntrinsicEvents(lengths=indicators.lengths)
+    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths)
     portfolio = Portfolio()
     logger = Logger()
 
     binance_account = None
 
-    directions_column_names = []
-    price_diffs_column_names = []
-    for _, direction_degree in enumerate(direction_degrees):
-        for _, length in enumerate(lengths):
-            directions_column_names.append(f"{direction_degree}-{length}-d")
-            price_diffs_column_names.append(f"{direction_degree}-{length}-p")
-
     def print_hodlings():
         timestamp = datetime.now(tz=timezone.utc)
         total_equity_ = binance_account.get_total_equity_usdt()
-        stri = f"Hodlings {total_equity_:.1f} USDT :"
+        logstr = f"Hodlings {total_equity_:.1f} USDT :"
         for h_symbol in symbols:
             balance = binance_account.get_balance(asset=h_symbol.replace('USDT', ''))
             if balance > 0:
                 s_value = balance * binance_account.get_mark_price(symbol=h_symbol)
-                stri += f" {s_value:.1f} {h_symbol}"
-        logging.info(stri)
+                logstr += f" {s_value:.1f} {h_symbol}"
+        logging.info(logstr)
         logger.append(timestamp, total_equity_)
 
+    all_symbols = []
     while True:
         # Get latest price data
-        command, payload = 'get_since', last_data_idx
-        socket.send_pyobj((command, payload))
-        message = socket.recv_pyobj()
-        if message['last_idx'] == last_data_idx:
-            time.sleep(1)
-            continue
-        last_data_idx = message['last_idx']
-        prices = message['prices']
-        logging.info("New prices", prices[-1])
+        prices = price_client.get_new_prices()
 
         # Initialise variables
-        if len(symbols) == 0:
-            symbols = sorted(prices[0].keys())
-            random_symbol_order = list(range(len(symbols)))
+        if len(all_symbols) == 0:
+            all_symbols = sorted(prices[0].keys())
+            with open('binance_account.json') as f:
+                account_info = json.load(f)
             binance_account = BinanceAccount(
                 api_key=account_info['api_key'],
                 api_secret=account_info['api_secret'],
-                symbols=symbols
+                symbols=all_symbols
             )
             #binance_account.sell_all()
             #quit()
 
         # check_positions(portfolio, binance_account)
 
-        # Runners
-        symbols_with_new_steps = set()
-        for price in prices:
-            for symbol in symbols:
-                if symbol not in runners:
-                    runners[symbol] = Runner(delta=profit_model.deltas[symbol])
-                    steps[symbol] = collections.deque(maxlen=step_count)
-                runner_steps = runners[symbol].step(price[symbol])
-                for step in runner_steps:
-                    steps[symbol].append(step)
-                    symbols_with_new_steps.add(symbol)
+        # Intrinsic events
+        symbols_with_new_steps, steps = intrinsic_events.run(prices=prices, symbols=all_symbols, deltas=profit_model.deltas)
 
-        # Make directions
-        directions = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols_with_new_steps}
-        price_diffs = {symbol: np.empty((len(direction_degrees) * len(lengths))) for symbol in symbols_with_new_steps}
-        for symbol in symbols_with_new_steps:
-            for direction_degree_idx, direction_degree in enumerate(direction_degrees):
-                for length_idx, length in enumerate(lengths):
-                    idx = lengths[-1]
-                    start, end = idx - length, idx
-                    xp = np.arange(start, end)
-                    direction_steps = list(itertools.islice(steps[symbol], start, end))
-                    yp = np.poly1d(np.polyfit(xp, direction_steps, direction_degree))
-                    curve = yp(xp)
-                    direction = curve[-1] / curve[-2] - 1.0
-                    price_diff = curve[-1] / direction_steps[-1] - 1.0
-                    directions[symbol][direction_degree_idx * len(lengths) + length_idx] = direction
-                    price_diffs[symbol][direction_degree_idx * len(lengths) + length_idx] = price_diff
+        # Make indicators
+        directions, price_diffs = indicators.make(symbols=symbols_with_new_steps, steps=steps)
 
         # Sell
         #for portfolio in portfolios.portfolios:
@@ -261,21 +299,14 @@ def main():
         # Buy
         # Predict values
         if len(symbols_with_new_steps) > 0:
-            data_input = pd.DataFrame(data=np.vstack(list(directions.values())), columns=directions_column_names)
-            data_input[price_diffs_column_names] = np.vstack(list(price_diffs.values()))
+            predictions = profit_model.predict(
+                all_symbols=all_symbols,
+                symbols_with_new_steps=symbols_with_new_steps,
+                directions=directions,
+                price_diffs=price_diffs
+            )
 
-            deltas_array = []
-            input_symbols = np.array(list(symbols_with_new_steps))
-            for symbol_idx, symbol in enumerate(symbols):
-                data_input[symbol] = np.where(input_symbols == symbol, True, False)
-                if symbol in symbols_with_new_steps:
-                    deltas_array.append(profit_model.deltas[symbol])
-            data_input['delta'] = deltas_array
-
-            predictions_array = profit_model.predict(data_input)
-            predictions = {}
-            for symbol_idx, symbol in enumerate(symbols_with_new_steps):
-                predictions[symbol] = predictions_array[symbol_idx]
+            logging.info(f"Predictions: {predictions}")
 
             position_max_count = min(3, int(binance_account.get_total_equity_usdt() / nominal_order_size))
 
@@ -293,13 +324,8 @@ def main():
                 if cash < equity / position_max_count * 0.9:
                     break
 
-                #symbol_idx = random.randint(0, len(symbols) - 1)
-                #random_symbol_order = random.sample(population=random_symbol_order, k=len(random_symbol_order))
-                #for symbol_idx in random_symbol_order:
                 prediction = predictions[symbol]
-                #if prediction > 0 and 0.00020 * 5 * 25 ** prediction > random.random():
                 if 0.3 <= prediction <= 1.0:
-                    #symbol = symbols[symbol_idx]
                     mark_price = binance_account.get_mark_price(symbol)
 
                     order_value = min(equity / (position_max_count - 1), cash * 0.975)
