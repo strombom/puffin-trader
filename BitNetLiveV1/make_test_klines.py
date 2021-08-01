@@ -1,3 +1,4 @@
+import pandas as pd
 import zmq
 
 
@@ -9,6 +10,9 @@ def make_test_klines():
     command, payload = 'get_since', 0
     socket.send_pyobj((command, payload))
     message = socket.recv_pyobj()
+
+    df = pd.DataFrame(data=message['prices']).iloc[-3000:]
+    df.to_csv(path_or_buf='tmp/test_klines.csv')
 
     print(message)
 
