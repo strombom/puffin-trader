@@ -191,6 +191,8 @@ class ProfitModel:
         for symbol_idx, symbol in enumerate(symbols_with_new_steps):
             predictions[symbol] = predictions_array[symbol_idx]
 
+        logging.info(f"Predictions: {predictions}")
+
         return predictions
 
 
@@ -231,14 +233,14 @@ def main():
     profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths)
     portfolio = Portfolio()
     logger = Logger()
-
+    all_symbols = []
     binance_account = None
 
     def print_hodlings():
         timestamp = datetime.now(tz=timezone.utc)
         total_equity_ = binance_account.get_total_equity_usdt()
         logstr = f"Hodlings {total_equity_:.1f} USDT :"
-        for h_symbol in symbols:
+        for h_symbol in all_symbols:
             balance = binance_account.get_balance(asset=h_symbol.replace('USDT', ''))
             if balance > 0:
                 s_value = balance * binance_account.get_mark_price(symbol=h_symbol)
@@ -246,7 +248,6 @@ def main():
         logging.info(logstr)
         logger.append(timestamp, total_equity_)
 
-    all_symbols = []
     while True:
         # Get latest price data
         prices = price_client.get_new_prices()
@@ -273,7 +274,6 @@ def main():
         directions, price_diffs = indicators.make(symbols=symbols_with_new_steps, steps=steps)
 
         # Sell
-        #for portfolio in portfolios.portfolios:
         for position in portfolio.positions.copy():
             mark_price = binance_account.get_mark_price(position['symbol'])
             if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
@@ -297,7 +297,6 @@ def main():
                 print_hodlings()
 
         # Buy
-        # Predict values
         if len(symbols_with_new_steps) > 0:
             predictions = profit_model.predict(
                 all_symbols=all_symbols,
@@ -305,8 +304,6 @@ def main():
                 directions=directions,
                 price_diffs=price_diffs
             )
-
-            logging.info(f"Predictions: {predictions}")
 
             position_max_count = min(3, int(binance_account.get_total_equity_usdt() / nominal_order_size))
 
@@ -317,7 +314,6 @@ def main():
                 if len(portfolio.positions) >= position_max_count:
                     break
 
-                #for _ in range(int(position_max_count)):
                 # Todo: make chunks if the same symbol is bought multiple times
 
                 cash, equity = binance_account.get_balance('USDT'), binance_account.get_total_equity_usdt(),
