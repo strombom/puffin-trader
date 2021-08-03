@@ -46,7 +46,55 @@ std::istream& operator>>(std::istream& stream, BinanceKlines& binance_klines_dat
 
 BinanceKlines::BinanceKlines(const std::string& symbol) : symbol(symbol)
 {
-    load();
+    //load();
+    load_test_klines();
+}
+
+void BinanceKlines::load_test_klines(void)
+{
+    const auto file_path = std::string{ "C:/development/github/puffin-trader/BitNetLiveV1/tmp/test_klines.csv" };
+
+    auto file = std::ifstream{ file_path };
+
+    auto symbol_col_idx = 0;
+    auto found_symbol = false;
+
+    if (file.good()) {
+        auto line = std::string{};
+        std::getline(file, line);
+        auto ss = std::stringstream{ line };
+
+        auto colname = std::string{};
+        while (std::getline(ss, colname, ',')) {
+            if (colname == symbol) {
+                found_symbol = true;
+                break;
+            }
+            symbol_col_idx++;
+        }
+    }
+
+    if (!found_symbol) {
+        throw std::exception();
+    }
+
+    auto timestamp = time_point_ms{ date::sys_days(date::year{2021} / 1 / 1) + std::chrono::hours{ 0 } };
+    auto line = std::string{};
+    while (std::getline(file, line)) {
+        auto col_idx = 0;
+
+        auto ss = std::stringstream{ line };
+        auto price_string = std::string{};
+        while (std::getline(ss, price_string, ',')) {
+            if (col_idx == symbol_col_idx) {
+                auto price = std::stof(price_string);
+                rows.push_back({ timestamp, price, 0 });
+                timestamp += std::chrono::minutes{ 1 };
+                break;
+            }
+            col_idx++;
+        }
+    }
 }
 
 void BinanceKlines::load(void)

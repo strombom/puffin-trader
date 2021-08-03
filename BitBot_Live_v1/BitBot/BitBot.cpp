@@ -15,14 +15,13 @@ int main()
     logger.info("BitBot Live started");
 
     // Download klines
-    auto binance_download_klines = BinanceDownloadKlines{};
-    binance_download_klines.download();
+    //auto binance_download_klines = BinanceDownloadKlines{};
+    //binance_download_klines.download();
 
     // Make intrinsic events
     auto intrinsic_events = IntrinsicEvents{};
     for (const auto symbol : BitBot::symbols) {
         const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
-
         intrinsic_events.calculate_and_save(symbol, binance_klines);
     }
     intrinsic_events.join();
@@ -31,7 +30,6 @@ int main()
     auto indicators = Indicators{};
     for (const auto symbol : BitBot::symbols) {
         const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
-
         indicators.calculate_and_save(symbol, intrinsic_events);
     }
     indicators.join();

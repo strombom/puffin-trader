@@ -222,7 +222,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
 
     data_file.close();
 
-    logger.info("Inserted %d events from %s, delta: %f", events.size(), symbol, delta);
+    logger.info("Inserted %d events from %s, delta: %f", events.size(), symbol.c_str(), delta);
 
     /*
     //delta = 0.00268467;

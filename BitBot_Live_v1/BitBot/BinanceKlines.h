@@ -28,6 +28,7 @@ public:
     BinanceKlines(const BinanceKlines& binance_klines) : rows(binance_klines.rows) {}
 
     void load(void);
+    void load_test_klines(void);
     void save(void) const;
 
     time_point_ms get_timestamp_begin(void) const;
