@@ -87,6 +87,11 @@ class MinutePriceGetter:
         self.check_symbols()
 
         def process_tick_message(data):
+            if data['e'] == 'error':
+                print("Process tick message error!")
+                print(data)
+                return
+                
             symbol = data['data']['s']
             last_price = float(data['data']['p'])
             self.current_prices[symbol] = last_price
