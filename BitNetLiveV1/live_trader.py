@@ -18,8 +18,9 @@ from datetime import datetime, timezone
 from fastai.learner import load_learner
 
 from IntrinsicTime.runner import Runner
-from binance_account import BinanceAccount
+#from binance_account import BinanceAccount
 from live_trader_logging import live_trader_setup_logging
+from phemex_account import PhemexAccount
 
 
 class Portfolio:
@@ -137,8 +138,10 @@ class Indicators:
 
 
 class ProfitModel:
-    def __init__(self, direction_degrees, lengths):
-        self.base_path = "C:/BitBot/"
+    def __init__(self, direction_degrees, lengths, base_path):
+        self.file_path = os.path.join(base_path, '../models/model_2020-01-01_2020-12-31.pickle')
+
+        self.base_path = base_path
         self.model = None
         self.model_creation_timestamp = None
         self.deltas = {}
@@ -152,7 +155,7 @@ class ProfitModel:
                 self.price_diffs_column_names.append(f"{direction_degree}-{length}-p")
 
     def get_model_creation_timestamp(self):
-        return datetime.fromtimestamp(pathlib.Path(os.path.join(self.base_path, 'models/model.pickle')).stat().st_mtime)
+        return datetime.fromtimestamp(pathlib.Path(self.file_path).stat().st_mtime)
 
     def load_deltas(self):
         deltas_df = pd.read_csv(os.path.join(self.base_path, 'deltas.csv'))
@@ -161,7 +164,7 @@ class ProfitModel:
 
     def load_model(self):
         try:
-            self.model = load_learner(os.path.join(self.base_path, 'models/model.pickle'))
+            self.model = load_learner(self.file_path)
             self.model_creation_timestamp = self.get_model_creation_timestamp()
             self.load_deltas()
             logging.info(f"Loaded new model {self.model_creation_timestamp}")
@@ -185,7 +188,7 @@ class ProfitModel:
             self.load_model()
 
         test_dl = self.model.dls.test_dl(data_input)
-        predictions_array = self.model.get_preds(dl=test_dl)[0][:, 2].numpy() - 0.5
+        predictions_array = self.model.get_preds(dl=test_dl)[0][:, 2].numpy()
 
         predictions = {}
         for symbol_idx, symbol in enumerate(symbols_with_new_steps):
@@ -218,6 +221,37 @@ class PriceClient:
         return prices
 
 
+def test_bench():
+    #pc = PriceClient()
+    #prices = pc.get_new_prices()
+
+    indicators = Indicators()
+    intrinsic_events = IntrinsicEvents(lengths=indicators.lengths)
+
+    prices = pd.read_csv("C:/BitBotLiveV1/test_klines.csv")
+    all_symbols = list(prices.columns)[1:]
+    prices = prices.to_dict('records')
+
+    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths, base_path="C:/BitBotLiveV1/cpp")
+    profit_model.load_deltas()
+
+    # Intrinsic events
+    symbols_with_new_steps, steps = intrinsic_events.run(prices=prices, symbols=all_symbols, deltas=profit_model.deltas)
+
+    # Make indicators
+    directions, price_diffs = indicators.make(symbols=symbols_with_new_steps, steps=steps)
+
+    # Make predictions
+    predictions = profit_model.predict(
+        all_symbols=all_symbols,
+        symbols_with_new_steps=symbols_with_new_steps,
+        directions=directions,
+        price_diffs=price_diffs
+    )
+
+    print(predictions)
+
+
 def main():
     # Todo: spread out trades over each minute
     # Todo: circuit breaker
@@ -225,25 +259,25 @@ def main():
     # Todo: binance_account handle websocket errors https://github.com/sammchardy/python-binance/issues/834
     # Todo: long and short
 
-    nominal_order_size = 12.0  # usdt, slightly larger than min notional
+    nominal_order_size = 10.0 + 2.0  # usdt, slightly larger than min notional
 
     price_client = PriceClient()
     indicators = Indicators()
     intrinsic_events = IntrinsicEvents(lengths=indicators.lengths)
-    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths)
+    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths, base_path="C:/BitBotLiveV1/cpp")
     portfolio = Portfolio()
     logger = Logger()
     all_symbols = []
-    binance_account = None
+    phemex_account = None
 
     def print_hodlings():
         timestamp = datetime.now(tz=timezone.utc)
-        total_equity_ = binance_account.get_total_equity_usdt()
+        total_equity_ = phemex_account.get_total_equity_usdt()
         logstr = f"Hodlings {total_equity_:.1f} USDT :"
         for h_symbol in all_symbols:
-            balance = binance_account.get_balance(asset=h_symbol.replace('USDT', ''))
+            balance = phemex_account.get_balance(asset=h_symbol.replace('USDT', ''))
             if balance > 0:
-                s_value = balance * binance_account.get_mark_price(symbol=h_symbol)
+                s_value = balance * phemex_account.get_mark_price(symbol=h_symbol)
                 logstr += f" {s_value:.1f} {h_symbol}"
         logging.info(logstr)
         logger.append(timestamp, total_equity_)
@@ -255,11 +289,11 @@ def main():
         # Initialise variables
         if len(all_symbols) == 0:
             all_symbols = sorted(prices[0].keys())
-            with open('binance_account.json') as f:
-                account_info = json.load(f)
-            binance_account = BinanceAccount(
-                api_key=account_info['api_key'],
-                api_secret=account_info['api_secret'],
+            with open('credentials.json') as f:
+                credentials = json.load(f)
+            phemex_account = PhemexAccount(
+                api_key=credentials['phemex']['api_key'],
+                api_secret=credentials['phemex']['api_secret'],
                 symbols=all_symbols
             )
             #binance_account.sell_all()
@@ -275,14 +309,14 @@ def main():
 
         # Sell
         for position in portfolio.positions.copy():
-            mark_price = binance_account.get_mark_price(position['symbol'])
+            mark_price = phemex_account.get_mark_price(position['symbol'])
             if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
                 order_size = position['size']
                 asset = position['symbol'].replace('USDT', '')
-                account_balance = binance_account.get_balance(asset=asset)
+                account_balance = phemex_account.get_balance(asset=asset)
                 if order_size > account_balance or abs(order_size - account_balance) / account_balance < 0.1:
                     order_size = account_balance
-                order_result = binance_account.market_sell(symbol=position['symbol'], volume=order_size)
+                order_result = phemex_account.market_sell(symbol=position['symbol'], volume=order_size)
                 if order_result['quantity'] > 0:
                     logging.info(f"Sold {position['symbol']}: {order_size} @ {order_result['price']}, expected price: {mark_price}, {position}")
                     if position['size'] != order_result['quantity']:
@@ -356,4 +390,6 @@ if __name__ == '__main__':
     #    level=logging.INFO,
     #    datefmt='%Y-%m-%d %H:%M:%S')
     #logging.Formatter.converter = time.gmtime
+
     main()
+    #test_bench()

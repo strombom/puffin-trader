@@ -41,8 +41,8 @@ class Runner:
     def step(self, price: float) -> List[float]:
         if not self.initialised:
             self.current_price = price
-            self.previous_price = self.current_price
-            self.ie_start_price = self.current_price
+            self.previous_price = price
+            self.ie_start_price = price
             self.ie_max_price = price
             self.ie_min_price = price
             self.initialised = True

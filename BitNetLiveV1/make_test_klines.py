@@ -11,8 +11,8 @@ def make_test_klines():
     socket.send_pyobj((command, payload))
     message = socket.recv_pyobj()
 
-    df = pd.DataFrame(data=message['prices']).iloc[-3000:]
-    df.to_csv(path_or_buf='tmp/test_klines.csv')
+    df = pd.DataFrame(data=message['prices']).iloc[-10000:]
+    df.to_csv(path_or_buf='C:/BitBotLiveV1/test_klines.csv')
 
     print(message)
 
