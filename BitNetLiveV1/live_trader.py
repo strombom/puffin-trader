@@ -20,7 +20,7 @@ from fastai.learner import load_learner
 from IntrinsicTime.runner import Runner
 #from binance_account import BinanceAccount
 from live_trader_logging import live_trader_setup_logging
-from phemex_account import PhemexAccount
+from bybit_account import BybitAccount
 
 
 class Portfolio:
@@ -139,7 +139,7 @@ class Indicators:
 
 class ProfitModel:
     def __init__(self, direction_degrees, lengths, base_path):
-        self.file_path = os.path.join(base_path, '../models/model_2020-01-01_2020-12-31.pickle')
+        self.file_path = os.path.join(base_path, 'models/model_2020-01-01_2020-12-31.pickle')
 
         self.base_path = base_path
         self.model = None
@@ -166,10 +166,13 @@ class ProfitModel:
         try:
             self.model = load_learner(self.file_path)
             self.model_creation_timestamp = self.get_model_creation_timestamp()
-            self.load_deltas()
             logging.info(f"Loaded new model {self.model_creation_timestamp}")
         except:
             logging.info("Failed to load new model")
+        try:
+            self.load_deltas()
+        except:
+            logging.info("Failed to load deltas")
 
     def predict(self, all_symbols, symbols_with_new_steps, directions, price_diffs):
         data_input = pd.DataFrame(data=np.vstack(list(directions.values())), columns=self.directions_column_names)
@@ -204,7 +207,7 @@ class PriceClient:
         logging.info("Connect to Binance delta server")
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
-        self.socket.connect("tcp://192.168.1.90:31007")
+        self.socket.connect("tcp://localhost:31007")
         self.last_data_idx = 0
 
     def get_new_prices(self):
@@ -264,20 +267,20 @@ def main():
     price_client = PriceClient()
     indicators = Indicators()
     intrinsic_events = IntrinsicEvents(lengths=indicators.lengths)
-    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths, base_path="C:/BitBotLiveV1/cpp")
+    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths, base_path="C:/BitBotLiveV1/")
     portfolio = Portfolio()
     logger = Logger()
     all_symbols = []
-    phemex_account = None
+    bybit_account = None
 
     def print_hodlings():
         timestamp = datetime.now(tz=timezone.utc)
-        total_equity_ = phemex_account.get_total_equity_usdt()
+        total_equity_ = bybit_account.get_total_equity_usdt()
         logstr = f"Hodlings {total_equity_:.1f} USDT :"
         for h_symbol in all_symbols:
-            balance = phemex_account.get_balance(asset=h_symbol.replace('USDT', ''))
+            balance = bybit_account.get_balance(asset=h_symbol.replace('USDT', ''))
             if balance > 0:
-                s_value = balance * phemex_account.get_mark_price(symbol=h_symbol)
+                s_value = balance * bybit_account.get_mark_price(symbol=h_symbol)
                 logstr += f" {s_value:.1f} {h_symbol}"
         logging.info(logstr)
         logger.append(timestamp, total_equity_)
@@ -291,9 +294,9 @@ def main():
             all_symbols = sorted(prices[0].keys())
             with open('credentials.json') as f:
                 credentials = json.load(f)
-            phemex_account = PhemexAccount(
-                api_key=credentials['phemex']['api_key'],
-                api_secret=credentials['phemex']['api_secret'],
+            bybit_account = BybitAccount(
+                api_key=credentials['bybit']['api_key'],
+                api_secret=credentials['bybit']['api_secret'],
                 symbols=all_symbols
             )
             #binance_account.sell_all()
@@ -309,14 +312,14 @@ def main():
 
         # Sell
         for position in portfolio.positions.copy():
-            mark_price = phemex_account.get_mark_price(position['symbol'])
+            mark_price = bybit_account.get_mark_price(position['symbol'])
             if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
                 order_size = position['size']
                 asset = position['symbol'].replace('USDT', '')
-                account_balance = phemex_account.get_balance(asset=asset)
+                account_balance = bybit_account.get_balance(asset=asset)
                 if order_size > account_balance or abs(order_size - account_balance) / account_balance < 0.1:
                     order_size = account_balance
-                order_result = phemex_account.market_sell(symbol=position['symbol'], volume=order_size)
+                order_result = bybit_account.market_sell(symbol=position['symbol'], volume=order_size)
                 if order_result['quantity'] > 0:
                     logging.info(f"Sold {position['symbol']}: {order_size} @ {order_result['price']}, expected price: {mark_price}, {position}")
                     if position['size'] != order_result['quantity']:
@@ -339,7 +342,7 @@ def main():
                 price_diffs=price_diffs
             )
 
-            position_max_count = min(3, int(binance_account.get_total_equity_usdt() / nominal_order_size))
+            position_max_count = min(3, int(bybit_account.get_total_equity_usdt() / nominal_order_size))
 
             prediction_symbols = list(symbols_with_new_steps)
             random.shuffle(prediction_symbols)
@@ -350,19 +353,19 @@ def main():
 
                 # Todo: make chunks if the same symbol is bought multiple times
 
-                cash, equity = binance_account.get_balance('USDT'), binance_account.get_total_equity_usdt(),
+                cash, equity = bybit_account.get_balance('USDT'), bybit_account.get_total_equity_usdt(),
                 if cash < equity / position_max_count * 0.9:
                     break
 
                 prediction = predictions[symbol]
                 if 0.3 <= prediction <= 1.0:
-                    mark_price = binance_account.get_mark_price(symbol)
+                    mark_price = bybit_account.get_mark_price(symbol)
 
                     order_value = min(equity / (position_max_count - 1), cash * 0.975)
                     order_size = order_value / mark_price * 0.99
 
                     #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
-                    order_result = binance_account.market_buy(symbol=symbol, volume=order_size)
+                    order_result = bybit_account.market_buy(symbol=symbol, volume=order_size)
                     if order_result['quantity'] > 0:
                         position = portfolio.add_position(symbol=symbol, position_size=order_result['quantity'], mark_price=order_result['price'])
                         logging.info(f"Bought {symbol} {order_result['quantity']} @ {order_result['price']} ({order_result['quantity'] * order_result['price']} USDT), {position}")
@@ -373,7 +376,7 @@ def main():
                     print_hodlings()
                     #break
 
-        binance_account.update_balance()
+        bybit_account.update_balance()
 
         # Reset watchdog
         try:
