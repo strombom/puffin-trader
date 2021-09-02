@@ -87,7 +87,7 @@ class MinutePriceGetter:
         self.check_symbols()
 
         def process_tick_message(data):
-            if data['e'] == 'error':
+            if 'e' in data and data['e'] == 'error':
                 print("Process tick message error!")
                 print(data)
                 return
