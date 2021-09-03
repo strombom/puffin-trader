@@ -207,7 +207,7 @@ class PriceClient:
         logging.info("Connect to Binance delta server")
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
-        self.socket.connect("tcp://localhost:31007")
+        self.socket.connect("tcp://superdator.se:31007")
         self.last_data_idx = 0
 
     def get_new_prices(self):
@@ -291,7 +291,11 @@ def main():
 
         # Initialise variables
         if len(all_symbols) == 0:
-            all_symbols = sorted(prices[0].keys())
+            # Symbols must exist in profit model
+            all_symbols = sorted([symbol for symbol in prices[0].keys() if symbol in profit_model.deltas])
+            if len(all_symbols) != len(profit_model.deltas):
+                logging.error("Bitnet kline server does not have all profit model prices!")
+                return
             with open('credentials.json') as f:
                 credentials = json.load(f)
             bybit_account = BybitAccount(
@@ -348,6 +352,8 @@ def main():
             random.shuffle(prediction_symbols)
 
             for symbol in prediction_symbols:
+                if not bybit_account.has_symbol(symbol):
+                    break
                 if len(portfolio.positions) >= position_max_count:
                     break
 
