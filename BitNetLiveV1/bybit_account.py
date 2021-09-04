@@ -51,16 +51,16 @@ class BybitAccount:
         if symbol == 'USDT':
             total_equity_usdt = self.get_total_equity_usdt()
 
-            positions_value = 0
+            positions_value_usdt = 0
             for symbol in self._positions:
-                positions_value += abs(self._positions[symbol]) * self._mark_price[symbol]
+                positions_value_usdt += abs(self._positions[symbol]) * self._mark_price[symbol]
 
-            return total_equity_usdt - positions_value
+            return total_equity_usdt - positions_value_usdt
 
         self._equity[symbol] * self._mark_price[symbol]
 
-    def get_mark_price(self):
-        print(1)
+    def get_mark_price(self, symbol):
+        return self._mark_price[symbol]
 
     def market_buy(symbol, volume):
         print(1)
@@ -105,12 +105,6 @@ class BybitAccount:
         last_trade = trades['data'][-1]
         symbol = last_trade['symbol']
         self._mark_price[symbol] = float(last_trade['price'])
-
-    #def _update_wallet_balance(self):
-    #    self._bybit_rest.get_wallet_balance()
-
-    #def _update_positions(self):
-    #    self._bybit_rest.get_positions()
 
     def _filter_symbols(self):
         self._symbols = ['ADAUSDT', 'BCHUSDT', 'BNBUSDT', 'BTCUSDT', 'DOGEUSDT', 'EOSUSDT', 'ETCUSDT', 'ETHUSDT',
@@ -214,7 +208,6 @@ class BybitRest:
         return hmac.new(bytearray(self._api_secret.encode()), sign.encode("utf-8"), hashlib.sha256).hexdigest()
 
     def _get(self, endpoint: str, params: dict, authenticate=False):
-
         if authenticate:
             params['api_key'] = self._api_key
             params['timestamp'] = str(int(datetime.now().timestamp() * 1000))
