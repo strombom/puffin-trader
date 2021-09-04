@@ -87,7 +87,7 @@ def check_positions(portfolio, binance_account):
             used[symbol] = 0
         used[symbol] += position['size']
 
-        if binance_account.get_balance(asset=symbol.replace('USDT', '')) > used[symbol] * 0.9:
+        if binance_account.get_balance(symbol=symbol) > used[symbol] * 0.9:
             new_positions.append(position)
 
     portfolio.positions = new_positions
@@ -278,7 +278,7 @@ def main():
         total_equity_ = bybit_account.get_total_equity_usdt()
         logstr = f"Hodlings {total_equity_:.1f} USDT :"
         for h_symbol in all_symbols:
-            balance = bybit_account.get_balance(asset=h_symbol.replace('USDT', ''))
+            balance = bybit_account.get_balance(symbol=h_symbol)
             if balance > 0:
                 s_value = balance * bybit_account.get_mark_price(symbol=h_symbol)
                 logstr += f" {s_value:.1f} {h_symbol}"
@@ -319,10 +319,9 @@ def main():
             mark_price = bybit_account.get_mark_price(position['symbol'])
             if mark_price < position['stop_loss'] or mark_price > position['take_profit']:
                 order_size = position['size']
-                asset = position['symbol'].replace('USDT', '')
-                account_balance = bybit_account.get_balance(asset=asset)
-                if order_size > account_balance or abs(order_size - account_balance) / account_balance < 0.1:
-                    order_size = account_balance
+                position_balance = bybit_account.get_balance(symbol=position['symbol'])
+                if order_size > position_balance or abs(order_size - position_balance) / position_balance < 0.1:
+                    order_size = position_balance
                 order_result = bybit_account.market_sell(symbol=position['symbol'], volume=order_size)
                 if order_result['quantity'] > 0:
                     logging.info(f"Sold {position['symbol']}: {order_size} @ {order_result['price']}, expected price: {mark_price}, {position}")

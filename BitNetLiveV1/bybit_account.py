@@ -49,15 +49,12 @@ class BybitAccount:
 
     def get_balance(self, symbol):
         if symbol == 'USDT':
-            total_equity_usdt = self.get_total_equity_usdt()
-
             positions_value_usdt = 0
-            for symbol in self._positions:
-                positions_value_usdt += abs(self._positions[symbol]) * self._mark_price[symbol]
+            for position_symbol in self._positions:
+                positions_value_usdt += abs(self._positions[position_symbol]) * self._mark_price[position_symbol]
+            return self.get_total_equity_usdt() - positions_value_usdt
 
-            return total_equity_usdt - positions_value_usdt
-
-        self._equity[symbol] * self._mark_price[symbol]
+        self._positions[symbol] * self._mark_price[symbol]
 
     def get_mark_price(self, symbol):
         return self._mark_price[symbol]
@@ -95,9 +92,24 @@ class BybitAccount:
         #    mark_price_kline = self._bybit_rest.get_mark_price_kline(symbol=symbol)
         #    self._mark_price[symbol] = mark_price_kline['close']
 
-    def _position_callback(self, position):
+    def _position_callback(self, positions):
+        if not ('topic' in positions and positions['topic'] == 'position'):
+            return
+
         with self._balance_lock:
-            print("position callback", position)
+            new_positions = {}
+            for position in positions['data']:
+                symbol = position['symbol']
+                if symbol in self._symbols:
+                    if symbol not in new_positions:
+                        new_positions[symbol] = 0
+                    position_size = position['size']
+                    if position['side'] == 'Buy':
+                        new_positions[symbol] += position_size
+                    else:
+                        new_positions[symbol] -= position_size
+
+            self._positions.update(new_positions)
 
     def _trades_callback(self, trades):
         if 'data' not in trades:
@@ -241,3 +253,6 @@ if __name__ == '__main__':
         api_secret=credentials['bybit']['api_secret'],
         symbols=all_symbols
     )
+    while True:
+        time.sleep(1)
+
