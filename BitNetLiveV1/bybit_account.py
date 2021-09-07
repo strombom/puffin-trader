@@ -59,8 +59,12 @@ class BybitAccount:
     def get_mark_price(self, symbol):
         return self._mark_price[symbol]
 
-    def market_buy(symbol, volume):
-        print(1)
+    def market_buy(self, symbol, volume):
+        response = self._bybit_rest.place_active_order(symbol=symbol, volume=volume)
+        if response['ret_msg'] == 'OK':
+            return True
+        else:
+            return False
 
     def update_balance(self):
         with self._balance_lock:
@@ -205,6 +209,19 @@ class BybitRest:
         positions = self._get(endpoint='/private/linear/position/list', params={}, authenticate=True)
         return positions
 
+    def place_active_order(self, symbol, volume):
+        params = {
+            'side': 'Buy' if volume > 0 else 'Sell',
+            'symbol': symbol,
+            'order_type': 'Market',
+            'qty': str(volume),
+            'time_in_force': 'FillOrKill',
+            'close_on_trigger': False,
+            'reduce_only': False
+        }
+        order = self._post(endpoint='/private/linear/order/create', params=params, authenticate=True)
+        return order
+
     def _auth_signature(self, params: dict):
         sign = ''
         for key in sorted(params.keys()):
@@ -218,6 +235,22 @@ class BybitRest:
             sign += key + '=' + v + '&'
         sign = sign[:-1]
         return hmac.new(bytearray(self._api_secret.encode()), sign.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def _post(self, endpoint: str, params: dict, authenticate=False):
+        if authenticate:
+            params['api_key'] = self._api_key
+            params['timestamp'] = str(int(datetime.now().timestamp() * 1000))
+            params['sign'] = self._auth_signature(params)
+
+        url = f'https://api.bybit.com{endpoint}'
+
+        headers = {"Content-Type": "application/json"}
+        urllib3.disable_warnings()
+        s = requests.session()
+        s.keep_alive = False
+        response = requests.post(url, json=params, headers=headers, verify=False)
+
+        return json.loads(response.text)
 
     def _get(self, endpoint: str, params: dict, authenticate=False):
         if authenticate:
@@ -253,6 +286,8 @@ if __name__ == '__main__':
         api_secret=credentials['bybit']['api_secret'],
         symbols=all_symbols
     )
+    time.sleep(2)
+    bybit_account.market_buy(symbol='THETAUSDT', volume=0.2)
     while True:
         time.sleep(1)
 
