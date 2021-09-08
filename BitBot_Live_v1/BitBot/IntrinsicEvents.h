@@ -49,6 +49,7 @@ public:
     void join(void);
 
     void load(std::string symbol);
+    void save_csv(std::string file_path);
     double get_delta(void);
 
     std::vector<IntrinsicEvent> events;

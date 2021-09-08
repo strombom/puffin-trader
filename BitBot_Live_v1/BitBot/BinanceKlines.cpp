@@ -46,13 +46,13 @@ std::istream& operator>>(std::istream& stream, BinanceKlines& binance_klines_dat
 
 BinanceKlines::BinanceKlines(const std::string& symbol) : symbol(symbol)
 {
-    //load();
-    load_test_klines();
+    load();
+    //load_test_klines();
 }
 
 void BinanceKlines::load_test_klines(void)
 {
-    const auto file_path = std::string{ "C:/development/github/puffin-trader/BitNetLiveV1/tmp/test_klines.csv" };
+    const auto file_path = std::string{ BitBotLiveV1::path } + std::string{ "/test_klines.csv" };
 
     auto file = std::ifstream{ file_path };
 
@@ -99,7 +99,7 @@ void BinanceKlines::load_test_klines(void)
 
 void BinanceKlines::load(void)
 {
-    const auto file_path = std::string{ BitBotLiveV1::path } + "\\klines\\" + symbol + ".dat";
+    const auto file_path = std::string{ BitBotLiveV1::path } + "/klines/" + symbol + ".dat";
 
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
@@ -113,7 +113,9 @@ void BinanceKlines::load(void)
 
 void BinanceKlines::save(void) const
 {
-    const auto file_path = std::string{ BitBotLiveV1::path } + "\\klines\\" + symbol + ".dat";
+    const auto directory = std::string{ BitBotLiveV1::path } + "/klines/";
+    std::filesystem::create_directory(directory);
+    const auto file_path = directory + symbol + ".dat";
     auto data_file = std::ofstream{ file_path, std::ios::binary };
     data_file << *this;
     data_file.close();

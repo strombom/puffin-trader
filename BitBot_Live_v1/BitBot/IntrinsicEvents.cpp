@@ -47,6 +47,17 @@ void IntrinsicEvents::load(std::string symbol)
     }
 }
 
+void IntrinsicEvents::save_csv(std::string file_path)
+{
+    auto file = std::ofstream{};
+    file.open(file_path);
+    file << "price\n";
+    for (auto row : events) {
+        file << row.price << "\n";
+    }
+    file.close();
+}
+
 double IntrinsicEvents::get_delta(void)
 {
     return events[0].delta;
@@ -101,7 +112,6 @@ std::vector<double> IntrinsicEventRunner::step(double price)
         else {
             remaining_delta = ie_delta_top + delta_down;
             ie_price = ie_max_price * (1.0 - (delta - ie_delta_top));
-
         }
 
         while (remaining_delta >= 2 * delta) {
