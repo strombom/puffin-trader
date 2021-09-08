@@ -27,7 +27,8 @@ void make_section_thread(
 ) {
 
     std::filesystem::create_directories(path);
-    auto file_path = path + "\\" + date::format("%F", timestamp_start) + "_" + symbol + "_" + suffix + ".csv";
+    //auto file_path = path + "\\" + date::format("%F", timestamp_start) + "_" + symbol + "_" + suffix + ".csv";
+    auto file_path = path + "/" + symbol + "_" + suffix + ".csv";
 
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
 
