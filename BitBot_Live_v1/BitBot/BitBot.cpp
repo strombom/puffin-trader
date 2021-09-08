@@ -21,7 +21,7 @@ int main()
     // Make intrinsic events
     auto intrinsic_events = IntrinsicEvents{};
     for (const auto symbol : BitBot::symbols) {
-        const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
+        const auto binance_klines = std::make_shared<BinanceKlines>(symbol, DateTime::now() - BitBotLiveV1::history_length);
         intrinsic_events.calculate_and_save(symbol, binance_klines);
     }
     intrinsic_events.join();

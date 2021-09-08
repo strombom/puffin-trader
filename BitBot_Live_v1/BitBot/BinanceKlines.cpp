@@ -50,6 +50,12 @@ BinanceKlines::BinanceKlines(const std::string& symbol) : symbol(symbol)
     //load_test_klines();
 }
 
+BinanceKlines::BinanceKlines(const std::string& symbol, time_point_ms begin) : symbol(symbol)
+{
+    load(begin);
+    //load_test_klines();
+}
+
 void BinanceKlines::load_test_klines(void)
 {
     const auto file_path = std::string{ BitBotLiveV1::path } + std::string{ "/test_klines.csv" };
@@ -99,13 +105,24 @@ void BinanceKlines::load_test_klines(void)
 
 void BinanceKlines::load(void)
 {
+    load(date::sys_days(date::year{ 2020 } / 1 / 1) + 0h + 0min + 0s);
+}
+
+void BinanceKlines::load(time_point_ms begin)
+{
     const auto file_path = std::string{ BitBotLiveV1::path } + "/klines/" + symbol + ".dat";
 
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
         auto database_binance_kline = BinanceKline{};
+        auto started = false;
         while (data_file >> database_binance_kline) {
-            rows.push_back(database_binance_kline);
+            if (!started && database_binance_kline.timestamp >= begin) {
+                started = true;
+            }
+            if (started) {
+                rows.push_back(database_binance_kline);
+            }            
         }
         data_file.close();
     }
