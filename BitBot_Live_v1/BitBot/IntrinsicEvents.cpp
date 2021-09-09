@@ -190,7 +190,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
                 events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, 0 });
             }
         }
-        counts.push_back(events.size());
+        counts.push_back((int) events.size());
     }
 
     lsq::LevenbergMarquardt<double, StepSizeError> optimizer;
