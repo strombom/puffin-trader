@@ -7,27 +7,37 @@ from fastai.tabular.all import *
 
 
 def train():
-    training_path = 'C:/BitBotLiveV1/cpp/training_data/'
+    training_path = 'C:/BitBotLiveV1/training_data/'
     models_path = 'C:/BitBotLiveV1/models/'
     # training_path = 'C:/BitBot/training_data/'
     # models_path = 'C:/BitBot/models/'
     if not os.path.exists(models_path):
         os.makedirs(models_path)
 
+    train_on_all_data = True
+
     print("Load data")
-    dfs = []
+
     #timestamps_train, timestamps_valid = set(), set()
     symbols = set()
+
+    dfs = []
+    #if not random_split:
     splits = [[], []]
+
     start_idx = 0
     for filename in os.listdir(training_path):
-        symbols.add(filename.split('_')[1])
+        symbols.add(filename.split('_')[0])
         df = pd.read_csv(training_path + filename)
         dfs.append(df)
 
+        #if not random_split:
         split_idx = start_idx + int(df.shape[0] * 0.95)
         end_idx = start_idx + df.shape[0]
-        splits[0].extend(list(range(start_idx, end_idx)))
+        if train_on_all_data:
+            splits[0].extend(list(range(start_idx, end_idx)))
+        else:
+            splits[0].extend(list(range(start_idx, split_idx)))
         splits[1].extend(list(range(split_idx, end_idx)))
         start_idx += df.shape[0]
 
@@ -57,8 +67,8 @@ def train():
         return df, splits
     """
 
-    print("Split data")
-    #splits = RandomSplitter(valid_pct=0.2)(range_of(df))
+    #if random_split:
+    #    splits = RandomSplitter(valid_pct=0.2)(range_of(df))
 
     print("Make column names")
     y_count = 8
@@ -100,12 +110,12 @@ def train():
 
 
 if __name__ == '__main__':
-    train()
-    quit()
+    #train()
+    #quit()
 
     while True:
         print("Remove old training data")
-        with os.scandir("C:/BitBot/training_data") as entries:
+        with os.scandir("C:/BitBotLiveV1/training_data") as entries:
             for entry in entries:
                 if not entry.is_dir() and not entry.is_symlink():
                     os.remove(entry.path)
@@ -115,10 +125,9 @@ if __name__ == '__main__':
         print("Run", make_data_executable)
         result = subprocess.run(args=[make_data_executable], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print(result)
-        print(result.stdout)
-        print(result.stderr)
 
         if result.returncode == 0:
             train()
-
-        time.sleep(60 * 60)
+            time.sleep(60 * 60)
+        else:
+            time.sleep(1 * 60)
