@@ -1,8 +1,10 @@
-import asyncio
-import hashlib
 import hmac
 import json
 import time
+import math
+import asyncio
+import hashlib
+import logging
 import threading
 from datetime import datetime
 
@@ -18,14 +20,14 @@ class BybitAccount:
         self._symbols = symbols
         self._positions = {}
         self._mark_price = {}
-        #self._tick_size = {}
+        self._tick_size = {}
         #self._min_lot_size = {}
         #self._min_notional = {}
         self._balance_lock = threading.Lock()
         self._equity = {}
 
         self._bybit_rest = BybitRest(api_key=api_key, api_secret=api_secret)
-        self._filter_symbols()
+        self._update_symbols()
         self._update_mark_prices()
 
         self._bybit_websocket = BybitWebsocket(api_key=api_key, api_secret=api_secret)
@@ -54,17 +56,40 @@ class BybitAccount:
                 positions_value_usdt += abs(self._positions[position_symbol]) * self._mark_price[position_symbol]
             return self.get_total_equity_usdt() - positions_value_usdt
 
-        self._positions[symbol] * self._mark_price[symbol]
+        if symbol not in self._positions:
+            return 0
+
+        return self._positions[symbol]
 
     def get_mark_price(self, symbol):
+        if symbol not in self._mark_price:
+            return 0
+
         return self._mark_price[symbol]
 
-    def market_buy(self, symbol, volume):
-        response = self._bybit_rest.place_active_order(symbol=symbol, volume=volume)
+    def market_order(self, symbol, volume):
+        factor = 1 / self._tick_size[symbol]
+        quantity = math.floor(abs(volume) * factor) / factor
+        if volume < 0:
+            quantity = -quantity
+
+        if quantity == 0:
+            logging.info(f"Market order {volume} {symbol} FAILED! Volume too low.")
+            return {'quantity': 0, 'price': 0, 'error': 'low volume'}
+
+        response = self._bybit_rest.place_active_order(symbol=symbol, volume=quantity)
+        order_result = {
+            'quantity': 0,
+            'price': 0,
+            'error': 'fail'
+        }
         if response['ret_msg'] == 'OK':
-            return True
-        else:
-            return False
+            order_result['quantity'] = response['result']['qty']
+            order_result['side'] = response['result']['side'].lower()
+            #order_result['price'] = response['result']['price']
+            order_result['price'] = self._mark_price[symbol]
+            order_result['error'] = 'ok'
+        return order_result
 
     def update_balance(self):
         with self._balance_lock:
@@ -87,14 +112,14 @@ class BybitAccount:
                         self._positions[symbol] -= position_size
 
     def _update_mark_prices(self):
-        self._mark_price = {
-            'ADAUSDT': 2.9802, 'BCHUSDT': 717.28, 'BNBUSDT': 490.08, 'BTCUSDT': 50351.81, 'DOGEUSDT': 0.2979,
-            'EOSUSDT': 5.673, 'ETCUSDT': 71.093, 'ETHUSDT': 3957.37, 'LINKUSDT': 31.065, 'LTCUSDT': 214.21,
-            'MATICUSDT': 1.4774, 'THETAUSDT': 7.296, 'TRXUSDT': 0.10269, 'XLMUSDT': 0.37416, 'XRPUSDT': 1.3048
-        }
-        #for symbol in self._symbols:
-        #    mark_price_kline = self._bybit_rest.get_mark_price_kline(symbol=symbol)
-        #    self._mark_price[symbol] = mark_price_kline['close']
+        #self._mark_price = {
+        #    'ADAUSDT': 2.9802, 'BCHUSDT': 717.28, 'BNBUSDT': 490.08, 'BTCUSDT': 50351.81, 'DOGEUSDT': 0.2979,
+        #    'EOSUSDT': 5.673, 'ETCUSDT': 71.093, 'ETHUSDT': 3957.37, 'LINKUSDT': 31.065, 'LTCUSDT': 214.21,
+        #    'MATICUSDT': 1.4774, 'THETAUSDT': 7.296, 'TRXUSDT': 0.10269, 'XLMUSDT': 0.37416, 'XRPUSDT': 1.3048
+        #}
+        for symbol in self._symbols:
+            mark_price_kline = self._bybit_rest.get_mark_price_kline(symbol=symbol)
+            self._mark_price[symbol] = mark_price_kline['close']
 
     def _position_callback(self, positions):
         if not ('topic' in positions and positions['topic'] == 'position'):
@@ -122,18 +147,20 @@ class BybitAccount:
         symbol = last_trade['symbol']
         self._mark_price[symbol] = float(last_trade['price'])
 
-    def _filter_symbols(self):
-        self._symbols = ['ADAUSDT', 'BCHUSDT', 'BNBUSDT', 'BTCUSDT', 'DOGEUSDT', 'EOSUSDT', 'ETCUSDT', 'ETHUSDT',
-                         'LINKUSDT', 'LTCUSDT', 'MATICUSDT', 'THETAUSDT', 'TRXUSDT', 'XLMUSDT', 'XRPUSDT']
-        """
+    def _update_symbols(self):
+        #self._symbols = ['ADAUSDT', 'BCHUSDT', 'BNBUSDT', 'BTCUSDT', 'DOGEUSDT', 'EOSUSDT', 'ETCUSDT', 'ETHUSDT',
+        #                 'LINKUSDT', 'LTCUSDT', 'MATICUSDT', 'THETAUSDT', 'TRXUSDT', 'XLMUSDT', 'XRPUSDT']
+
         bybit_symbols = self._bybit_rest.get_symbols()
         new_symbols = []
         for symbol in bybit_symbols['result']:
             if symbol['quote_currency'] == 'USDT':
                 if symbol['name'] in self._symbols:
                     new_symbols.append(symbol['name'])
+                    self._tick_size[symbol['name']] = float(symbol['price_filter']['tick_size'])
+
         self._symbols = sorted(new_symbols)
-        """
+
 
 
 class BybitWebsocket:
@@ -214,10 +241,10 @@ class BybitRest:
             'side': 'Buy' if volume > 0 else 'Sell',
             'symbol': symbol,
             'order_type': 'Market',
-            'qty': str(volume),
+            'qty': str(abs(volume)),
             'time_in_force': 'FillOrKill',
             'close_on_trigger': False,
-            'reduce_only': False
+            'reduce_only': True if volume < 0 else False
         }
         order = self._post(endpoint='/private/linear/order/create', params=params, authenticate=True)
         return order
@@ -255,7 +282,7 @@ class BybitRest:
     def _get(self, endpoint: str, params: dict, authenticate=False):
         if authenticate:
             params['api_key'] = self._api_key
-            params['timestamp'] = str(int(datetime.now().timestamp() * 1000))
+            params['timestamp'] = str(int((datetime.now().timestamp() - 1) * 1000))
             signature = self._auth_signature(params)
 
         url = f'https://api.bybit.com{endpoint}?'
@@ -286,8 +313,8 @@ if __name__ == '__main__':
         api_secret=credentials['bybit']['api_secret'],
         symbols=all_symbols
     )
-    time.sleep(2)
-    bybit_account.market_buy(symbol='THETAUSDT', volume=0.2)
+    time.sleep(1)
+    bybit_account.market_order(symbol='DOGEUSDT', volume=1272.8064192116508)
+    #bybit_account.market_order(symbol='THETAUSDT', volume=0.1)
     while True:
         time.sleep(1)
-

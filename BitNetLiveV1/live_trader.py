@@ -139,7 +139,7 @@ class Indicators:
 
 class ProfitModel:
     def __init__(self, direction_degrees, lengths, base_path):
-        self.file_path = os.path.join(base_path, 'models/model_2020-01-01_2020-12-31.pickle')
+        self.file_path = os.path.join(base_path, 'models/model.pickle')
 
         self.base_path = base_path
         self.model = None
@@ -215,7 +215,7 @@ class PriceClient:
             command, payload = 'get_since', self.last_data_idx
             self.socket.send_pyobj((command, payload))
             message = self.socket.recv_pyobj()
-            if message['last_idx'] != self.last_data_idx:
+            if message['last_idx'] != self.last_data_idx and 'prices' in message and len(message['prices']) > 0:
                 self.last_data_idx = message['last_idx']
                 break
             time.sleep(1)
@@ -228,14 +228,16 @@ def test_bench():
     #pc = PriceClient()
     #prices = pc.get_new_prices()
 
+    base_path = 'C:/BitBotLiveV1'
+
     indicators = Indicators()
     intrinsic_events = IntrinsicEvents(lengths=indicators.lengths)
 
-    prices = pd.read_csv("C:/BitBotLiveV1/test_klines.csv")
+    prices = pd.read_csv(f"{base_path}/test_klines.csv")
     all_symbols = list(prices.columns)[1:]
     prices = prices.to_dict('records')
 
-    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths, base_path="C:/BitBotLiveV1/cpp")
+    profit_model = ProfitModel(direction_degrees=indicators.direction_degrees, lengths=indicators.lengths, base_path=base_path)
     profit_model.load_deltas()
 
     # Intrinsic events
@@ -322,7 +324,7 @@ def main():
                 position_balance = bybit_account.get_balance(symbol=position['symbol'])
                 if order_size > position_balance or abs(order_size - position_balance) / position_balance < 0.1:
                     order_size = position_balance
-                order_result = bybit_account.market_sell(symbol=position['symbol'], volume=order_size)
+                order_result = bybit_account.market_order(symbol=position['symbol'], volume=-order_size)
                 if order_result['quantity'] > 0:
                     logging.info(f"Sold {position['symbol']}: {order_size} @ {order_result['price']}, expected price: {mark_price}, {position}")
                     if position['size'] != order_result['quantity']:
@@ -366,11 +368,11 @@ def main():
                 if 0.3 <= prediction <= 1.0:
                     mark_price = bybit_account.get_mark_price(symbol)
 
-                    order_value = min(equity / (position_max_count - 1), cash * 0.975)
+                    order_value = min(equity / position_max_count, cash * 0.975)
                     order_size = order_value / mark_price * 0.99
 
                     #print(f"buy {kline_idx} {position_value} USDT {position_size:.2f} {symbols[symbol_idx]} @ {mark_price}")
-                    order_result = bybit_account.market_buy(symbol=symbol, volume=order_size)
+                    order_result = bybit_account.market_order(symbol=symbol, volume=order_size)
                     if order_result['quantity'] > 0:
                         position = portfolio.add_position(symbol=symbol, position_size=order_result['quantity'], mark_price=order_result['price'])
                         logging.info(f"Bought {symbol} {order_result['quantity']} @ {order_result['price']} ({order_result['quantity'] * order_result['price']} USDT), {position}")
