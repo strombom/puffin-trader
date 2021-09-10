@@ -307,6 +307,7 @@ def main():
             )
             #binance_account.sell_all()
             #quit()
+            print_hodlings()
 
         # check_positions(portfolio, binance_account)
 
