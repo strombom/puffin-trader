@@ -1,15 +1,15 @@
-import copy
+
 import os
 import sys
-import pathlib
-
-import requests
 import zmq
 import time
 import json
 import random
 import pickle
 import logging
+import pathlib
+import requests
+import threading
 import itertools
 import collections
 import numpy as np
@@ -205,20 +205,41 @@ class ProfitModel:
 class PriceClient:
     def __init__(self):
         logging.info("Connect to Binance delta server")
-        context = zmq.Context()
-        self.socket = context.socket(zmq.REQ)
+        self._last_prices_idx = 0
+        self.context = None
+        self.socket = None
+        self.connect()
+
+    def connect(self):
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REQ)
+        self.socket.setsockopt(zmq.LINGER, 0)
+        self.socket.setsockopt(zmq.AFFINITY, 1)
+        self.socket.setsockopt(zmq.RCVTIMEO, 1000)
         self.socket.connect("tcp://superdator.se:31007")
-        self.last_data_idx = 0
+
+    def disconnect(self):
+        self.socket.close()
+        self.context.term()
 
     def get_new_prices(self):
-        while True:
-            command, payload = 'get_since', self.last_data_idx
-            self.socket.send_pyobj((command, payload))
-            message = self.socket.recv_pyobj()
-            if message['last_idx'] != self.last_data_idx and 'prices' in message and len(message['prices']) > 0:
-                self.last_data_idx = message['last_idx']
+        requesting = True
+        while requesting:
+            try:
+                command, payload = 'get_since', self._last_prices_idx
+                self.socket.send_pyobj((command, payload))
+                message = self.socket.recv_pyobj()
+                if message['last_idx'] != self._last_prices_idx:
+                    self._last_prices_idx = message['last_idx']
+                    if 'prices' in message and len(message['prices']) > 0:
+                        requesting = False
+            except zmq.error.Again:
+                self.disconnect()
+                self.connect()
+            if not requesting:
                 break
             time.sleep(1)
+
         prices = message['prices']
         logging.info("New prices", prices[-1])
         return prices
