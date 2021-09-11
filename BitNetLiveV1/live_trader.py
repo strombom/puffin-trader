@@ -191,7 +191,8 @@ class ProfitModel:
             self.load_model()
 
         test_dl = self.model.dls.test_dl(data_input)
-        predictions_array = self.model.get_preds(dl=test_dl)[0][:, 2].numpy()
+        predictions_array = self.model.get_preds(dl=test_dl)[0]
+        predictions_array = predictions_array[:, 5].numpy()
 
         predictions = {}
         for symbol_idx, symbol in enumerate(symbols_with_new_steps):
@@ -376,7 +377,7 @@ def main():
 
             for symbol in prediction_symbols:
                 if not bybit_account.has_symbol(symbol):
-                    break
+                    continue
                 if len(portfolio.positions) >= position_max_count:
                     break
 
