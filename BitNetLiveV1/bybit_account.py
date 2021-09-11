@@ -266,7 +266,7 @@ class BybitRest:
     def _post(self, endpoint: str, params: dict, authenticate=False):
         if authenticate:
             params['api_key'] = self._api_key
-            params['timestamp'] = str(int(datetime.now().timestamp() * 1000))
+            params['timestamp'] = str(int((datetime.now().timestamp() - 1) * 1000))
             params['sign'] = self._auth_signature(params)
 
         url = f'https://api.bybit.com{endpoint}'
