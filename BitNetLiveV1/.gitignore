@@ -3,3 +3,6 @@ venv
 .idea
 credentials.json
 cryptofeed_config.yaml
+live_trader.log
+log.txt
+*.pickle
