@@ -1,12 +1,17 @@
+import asyncio
+
 import zmq
+import hmac
+import time
 import json
 import itertools
 import threading
 import traceback
+import websockets
 import collections
 import pyrate_limiter
 from datetime import datetime, timedelta, timezone
-from binance import Client, ThreadedWebsocketManager
+from binance import Client
 
 
 class MinutePriceBuffer:
@@ -67,70 +72,119 @@ class MinutePriceBuffer:
                 self.last_idx += 1
 
 
+class BinanceWebsocket:
+    def __init__(self, api_key: str, api_secret: str):
+        self._api_key = api_key
+        self._api_secret = api_secret
+        self._uri = "wss://stream.binance.com:9443/ws"
+        self._websockets = []
+
+    def position(self, callback):
+        connect_promise = self._websocket_connect(
+            uri=self._uri,
+            topics=["position"],
+            callback=callback,
+            authenticate=True
+        )
+        position_websocket = threading.Thread(target=asyncio.run, args=(connect_promise,))
+        position_websocket.start()
+        self._websockets.append(position_websocket)
+
+    def trades(self, symbols, callback):
+        connect_promise = self._websocket_connect(
+            uri=self._uri,
+            topics=[f'{symbol.lower()}@aggTrade' for symbol in symbols],
+            callback=callback
+        )
+        position_websocket = threading.Thread(target=asyncio.run, args=(connect_promise,))
+        position_websocket.start()
+        self._websockets.append(position_websocket)
+
+    def _authentication_string(self):
+        expires = int((time.time() + 60)) * 1000
+        signature = str(
+            hmac.new(bytes(self._api_secret, 'utf-8'), bytes(f'GET/realtime{expires}', 'utf-8'),
+                     digestmod='sha256').hexdigest())
+        return json.dumps({'op': 'auth', 'args': [self._api_key, expires, signature]})
+
+    async def _websocket_connect(self, uri, topics, callback, authenticate=False):
+        while True:
+            async with websockets.connect(uri) as ws:
+                try:
+                    if authenticate:
+                        await ws.send(self._authentication_string())
+                    topics_string = ','.join(f'"{topic}"' for topic in topics)
+                    msg = '{"method": "SUBSCRIBE", "params": [' + topics_string + '], "id": 1}'
+                    await ws.send(msg)
+                    rcv = await ws.recv()
+
+                    while True:
+                        rcv = await ws.recv()
+                        callback(json.loads(rcv))
+                except websockets.ConnectionClosed:
+                    time.sleep(1)
+
+
 class MinutePriceGetter:
     def __init__(self, minute_price_buffer: MinutePriceBuffer, start_time: datetime, symbols: list):
-        self.minute_price_buffer = minute_price_buffer
-        self.symbols = symbols
-        self.current_prices = {}
+        self._minute_price_buffer = minute_price_buffer
+        self._symbols = symbols
+        #self.current_prices = {}
+        self._mark_prices = {}
 
         history_end_time = datetime.now(timezone.utc)
-        self.next_timestamp = history_end_time + timedelta(minutes=1)
+        self._next_timestamp = history_end_time + timedelta(minutes=1)
 
-        with open('binance_account.json') as f:
-            account_info = json.load(f)
+        with open('credentials.json') as f:
+            credentials = json.load(f)
 
         self._client = Client(
-            api_key=account_info['api_key'],
-            api_secret=account_info['api_secret']
+            api_key=credentials['binance']['api_key'],
+            api_secret=credentials['binance']['api_secret']
         )
 
-        self.check_symbols()
+        self._check_symbols()
 
-        def process_tick_message(data):
-            if 'e' in data and data['e'] == 'error':
-                print("Process tick message error!")
-                print(data)
-                return
-                
-            symbol = data['data']['s']
-            last_price = float(data['data']['p'])
-            self.current_prices[symbol] = last_price
-
-            current_timestamp = datetime.now(timezone.utc)
-            if current_timestamp > self.next_timestamp and len(self.current_prices) == len(self.symbols):
-                print("Appending", self.next_timestamp, self.current_prices)
-                self.next_timestamp = self.next_timestamp + timedelta(minutes=1)
-                self.minute_price_buffer.append(self.current_prices.copy())
-
-        self.twm = ThreadedWebsocketManager(
-            api_key=account_info['api_key'],
-            api_secret=account_info['api_secret']
+        self._binance_websocket = BinanceWebsocket(
+            api_key=credentials['binance']['api_key'],
+            api_secret=credentials['binance']['api_key']
         )
-        self.twm.start()
+        self._binance_websocket.trades(symbols=self._symbols, callback=self._trades_callback)
 
-        streams = [f"{symbol.lower()}@trade" for symbol in self.symbols]
-        self.twm.start_multiplex_socket(callback=process_tick_message, streams=streams)
+        self._download_history(start_time=start_time, end_time=history_end_time)
 
-        self.download_history(start_time=start_time, end_time=history_end_time)
+    def _trades_callback(self, trade):
+        #print("Trade callback", trade)
+        symbol = trade['s']
+        if symbol not in self._symbols:
+            return
 
-    def check_symbols(self):
+        self._mark_prices[symbol] = float(trade['p'])
+
+        current_timestamp = datetime.now(timezone.utc)
+        if current_timestamp > self._next_timestamp and len(self._mark_prices) == len(self._symbols):
+            print("Appending", self._next_timestamp, self._mark_prices)
+            self._next_timestamp = self._next_timestamp + timedelta(minutes=1)
+            self._minute_price_buffer.append(self._mark_prices.copy())
+
+    def _check_symbols(self):
         all_symbols = set()
         exchange_info = self._client.get_exchange_info()
         for symbol in exchange_info['symbols']:
             all_symbols.add(symbol['symbol'])
 
-        for symbol in self.symbols:
+        for symbol in self._symbols:
             if symbol not in all_symbols:
                 print(f"MinutePriceGetter, Error {symbol} is not available!")
                 quit()
 
-    def download_history(self, start_time: datetime, end_time: datetime):
+    def _download_history(self, start_time: datetime, end_time: datetime):
         #limiter = pyrate_limiter.Limiter(pyrate_limiter.RequestRate(1, pyrate_limiter.Duration.SECOND))
         #@limiter.ratelimit("download_print_status", delay=False)
         #def print_status(timestamp):
         #    print(f"{datetime.now()} {timestamp}")
 
-        for symbol in self.symbols:
+        for symbol in self._symbols:
             start_timestamp = int(datetime.timestamp(start_time) * 1000)
             end_timestamp = int(datetime.timestamp(end_time) * 1000)
 
@@ -141,10 +195,10 @@ class MinutePriceGetter:
                     end_str=end_timestamp
             ):
                 close_price = float(kline[4])
-                self.minute_price_buffer.history_append(symbol, close_price)
+                self._minute_price_buffer.history_append(symbol, close_price)
             print("Downloaded", symbol)
 
-        self.minute_price_buffer.history_finish()
+        self._minute_price_buffer.history_finish()
 
 
 def server():
@@ -152,7 +206,6 @@ def server():
         'ADAUSDT', 'BCHUSDT', 'BNBUSDT', 'BTCUSDT', 'BTTUSDT', 'CHZUSDT', 'DOGEUSDT', 'EOSUSDT', 'ETCUSDT', 'ETHUSDT',
         'LINKUSDT', 'LTCUSDT', 'MATICUSDT', 'NEOUSDT', 'THETAUSDT', 'TRXUSDT', 'VETUSDT', 'XLMUSDT', 'XRPUSDT'
     ]
-    # symbols = ['BTCUSDT', 'BNBUSDT']
 
     minute_price_buffer = MinutePriceBuffer(symbol_count=len(symbols))
 
