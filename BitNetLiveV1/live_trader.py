@@ -279,6 +279,32 @@ def test_bench():
     print(predictions)
 
 
+class HodlingsPrinter:
+    def __init__(self, bybit_account, all_symbols, logger):
+        self._logger = logger
+        self._all_symbols = all_symbols
+        self._bybit_account = bybit_account
+        self._old_balance = {key: 0 for key in all_symbols}
+
+    def print_hodlings(self):
+        changed = False
+        timestamp = datetime.now(tz=timezone.utc)
+        total_equity = self._bybit_account.get_total_equity_usdt()
+        logstr = f"Hodlings {total_equity:.1f} USDT :"
+        for symbol in self._all_symbols:
+            balance = self._bybit_account.get_balance(symbol=symbol)
+            if balance != self._old_balance[symbol]:
+                changed = True
+                self._old_balance[symbol] = balance
+            if balance > 0:
+                s_value = balance * self._bybit_account.get_mark_price(symbol=symbol)
+                logstr += f" {s_value:.1f} {symbol}"
+
+        if changed:
+            logging.info(logstr)
+            self._logger.append(timestamp, total_equity)
+
+
 def main():
     # Todo: spread out trades over each minute
     # Todo: circuit breaker
@@ -296,18 +322,7 @@ def main():
     logger = Logger()
     all_symbols = []
     bybit_account = None
-
-    def print_hodlings():
-        timestamp = datetime.now(tz=timezone.utc)
-        total_equity_ = bybit_account.get_total_equity_usdt()
-        logstr = f"Hodlings {total_equity_:.1f} USDT :"
-        for h_symbol in all_symbols:
-            balance = bybit_account.get_balance(symbol=h_symbol)
-            if balance > 0:
-                s_value = balance * bybit_account.get_mark_price(symbol=h_symbol)
-                logstr += f" {s_value:.1f} {h_symbol}"
-        logging.info(logstr)
-        logger.append(timestamp, total_equity_)
+    hodlings_printer = None
 
     while True:
         # Get latest price data
@@ -327,9 +342,9 @@ def main():
                 api_secret=credentials['bybit']['api_secret'],
                 symbols=all_symbols
             )
+            hodlings_printer = HodlingsPrinter(bybit_account=bybit_account, all_symbols=all_symbols, logger=logger)
             #binance_account.sell_all()
             #quit()
-            print_hodlings()
 
         # check_positions(portfolio, binance_account)
 
@@ -359,7 +374,6 @@ def main():
                         portfolio.remove_position(position)
                     else:
                         logging.info(f"Sold {position['symbol']} FAILED: {order_size} @ {mark_price}, {position}")
-                print_hodlings()
 
         # Buy
         if len(symbols_with_new_steps) > 0:
@@ -403,10 +417,11 @@ def main():
                             logging.info(f"Executed quantity ({order_result['quantity']}) doesn't match quoted quantity ({order_size})")
                     else:
                         logging.info(f"Bought {symbol} FAILED {order_size} @ {order_result['price']}")
-                    print_hodlings()
                     #break
 
         bybit_account.update_balance()
+        if hodlings_printer:
+            hodlings_printer.print_hodlings()
 
         # Reset watchdog
         try:
