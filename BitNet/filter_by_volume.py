@@ -4,11 +4,11 @@ import pickle
 import operator
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def calculate_volume():
-    start_timestamp = datetime.strptime("2020-01-01 01:00:00", "%Y-%m-%d %H:%M:%S")
+    start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     min_volatility = 0.1
     min_volume = 20_000_000_000
 
