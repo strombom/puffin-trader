@@ -162,7 +162,6 @@ class BybitAccount:
         self._symbols = sorted(new_symbols)
 
 
-
 class BybitWebsocket:
     def __init__(self, api_key: str, api_secret: str):
         self._api_key = api_key
@@ -200,14 +199,19 @@ class BybitWebsocket:
         return json.dumps({'op': 'auth', 'args': [self._api_key, expires, signature]})
 
     async def _websocket_connect(self, uri, topics, callback, authenticate=False):
-        async with websockets.connect(uri) as ws:
-            if authenticate:
-                await ws.send(self._authentication_string())
-            topics_string = ', '.join(f'"{topic}"' for topic in topics)
-            await ws.send('{"op": "subscribe", "args": [' + topics_string + ']}')
-            while True:
-                rcv = await ws.recv()
-                callback(json.loads(rcv))
+        #async for ws in websockets.connect(uri):
+        while True:
+            try:
+                async with websockets.connect(uri) as ws:
+                    if authenticate:
+                        await ws.send(self._authentication_string())
+                    topics_string = ', '.join(f'"{topic}"' for topic in topics)
+                    await ws.send('{"op": "subscribe", "args": [' + topics_string + ']}')
+                    while True:
+                        rcv = await ws.recv()
+                        callback(json.loads(rcv))
+            except websockets.exceptions.ConnectionClosedError:
+                logging.warning(f"_websocket_connect websockets.exceptions.ConnectionClosedError")
 
 
 class BybitRest:
