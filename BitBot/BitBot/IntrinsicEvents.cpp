@@ -47,6 +47,22 @@ void IntrinsicEvents::load(std::string symbol)
     }
 }
 
+void IntrinsicEvents::save_csv(std::string file_path)
+{
+    auto file = std::ofstream{};
+    file.open(file_path);
+    file << "price\n";
+    for (auto row : events) {
+        file << row.price << "\n";
+    }
+    file.close();
+}
+
+double IntrinsicEvents::get_delta(void)
+{
+    return events[0].delta;
+}
+
 std::vector<double> IntrinsicEventRunner::step(double price)
 {
     if (!initialized) {
@@ -96,7 +112,6 @@ std::vector<double> IntrinsicEventRunner::step(double price)
         else {
             remaining_delta = ie_delta_top + delta_down;
             ie_price = ie_max_price * (1.0 - (delta - ie_delta_top));
-
         }
 
         while (remaining_delta >= 2 * delta) {
@@ -175,7 +190,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
                 events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, 0 });
             }
         }
-        counts.push_back(events.size());
+        counts.push_back((int) events.size());
     }
 
     lsq::LevenbergMarquardt<double, StepSizeError> optimizer;
@@ -217,7 +232,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
 
     data_file.close();
 
-    logger.info("Inserted %d events from %s, delta: %f", events.size(), symbol, delta);
+    logger.info("Inserted %d events from %s, delta: %f", events.size(), symbol.c_str(), delta);
 
     /*
     //delta = 0.00268467;

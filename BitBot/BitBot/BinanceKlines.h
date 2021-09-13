@@ -23,11 +23,13 @@ class BinanceKlines
 {
 public:
     BinanceKlines(const std::string& symbol);
+    BinanceKlines(const std::string& symbol, time_point_ms begin);
     
     // Copy constructor
     BinanceKlines(const BinanceKlines& binance_klines) : rows(binance_klines.rows) {}
 
     void load(void);
+    void load(time_point_ms begin);
     void save(void) const;
 
     time_point_ms get_timestamp_begin(void) const;
