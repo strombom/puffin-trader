@@ -49,15 +49,31 @@ BinanceKlines::BinanceKlines(const std::string& symbol) : symbol(symbol)
     load();
 }
 
+BinanceKlines::BinanceKlines(const std::string& symbol, time_point_ms begin) : symbol(symbol)
+{
+    load(begin);
+}
+
 void BinanceKlines::load(void)
 {
-    const auto file_path = std::string{ BitBot::path } + "\\klines\\" + symbol + ".dat";
+    load(date::sys_days(date::year{ 2020 } / 1 / 1) + 0h + 0min + 0s);
+}
+
+void BinanceKlines::load(time_point_ms begin)
+{
+    const auto file_path = std::string{ BitBot::path } + "/klines/" + symbol + ".dat";
 
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
         auto database_binance_kline = BinanceKline{};
+        auto started = false;
         while (data_file >> database_binance_kline) {
-            rows.push_back(database_binance_kline);
+            if (!started && database_binance_kline.timestamp >= begin) {
+                started = true;
+            }
+            if (started) {
+                rows.push_back(database_binance_kline);
+            }            
         }
         data_file.close();
     }
@@ -65,7 +81,9 @@ void BinanceKlines::load(void)
 
 void BinanceKlines::save(void) const
 {
-    const auto file_path = std::string{ BitBot::path } + "\\klines\\" + symbol + ".dat";
+    const auto directory = std::string{ BitBot::path } + "/klines/";
+    std::filesystem::create_directory(directory);
+    const auto file_path = directory + symbol + ".dat";
     auto data_file = std::ofstream{ file_path, std::ios::binary };
     data_file << *this;
     data_file.close();
