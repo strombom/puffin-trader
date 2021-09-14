@@ -275,11 +275,14 @@ class BybitRest:
 
         url = f'https://api.bybit.com{endpoint}'
 
-        headers = {"Content-Type": "application/json"}
-        urllib3.disable_warnings()
-        s = requests.session()
-        s.keep_alive = False
-        response = requests.post(url, json=params, headers=headers, verify=False)
+        for retry in range(3):
+            headers = {"Content-Type": "application/json"}
+            urllib3.disable_warnings()
+            s = requests.session()
+            s.keep_alive = False
+            response = requests.post(url, json=params, headers=headers, verify=False)
+            if response.text is not None:
+                break
 
         return json.loads(response.text)
 
@@ -297,11 +300,14 @@ class BybitRest:
         if authenticate:
             url += f'sign={signature}'
 
-        headers = {"Content-Type": "application/json"}
-        urllib3.disable_warnings()
-        s = requests.session()
-        s.keep_alive = False
-        response = requests.get(url, headers=headers, verify=False)
+        for retry in range(3):
+            headers = {"Content-Type": "application/json"}
+            urllib3.disable_warnings()
+            s = requests.session()
+            s.keep_alive = False
+            response = requests.get(url, headers=headers, verify=False)
+            if response.text is not None:
+                break
 
         return json.loads(response.text)
 
