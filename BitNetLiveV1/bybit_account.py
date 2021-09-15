@@ -1,5 +1,6 @@
 import hmac
 import json
+import sys
 import time
 import math
 import asyncio
@@ -212,6 +213,9 @@ class BybitWebsocket:
                         callback(json.loads(rcv))
             except websockets.exceptions.ConnectionClosedError:
                 logging.warning(f"_websocket_connect websockets.exceptions.ConnectionClosedError")
+            except:
+                logging.error(f"_websocket_connect {sys.exc_info()[0]}")
+
 
 
 class BybitRest:
