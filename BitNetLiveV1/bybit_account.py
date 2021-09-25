@@ -97,6 +97,10 @@ class BybitAccount:
             wallet_balance = self._bybit_rest.get_wallet_balance()
             positions = self._bybit_rest.get_positions()
 
+            if 'result' not in wallet_balance:
+                logging.warning("ByBit update_balance, error reading wallet balance!")
+                return
+
             for symbol in wallet_balance['result']:
                 self._equity[symbol] = wallet_balance['result'][symbol]['equity']
 
