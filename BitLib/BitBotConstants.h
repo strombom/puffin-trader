@@ -7,8 +7,7 @@
 
 namespace BitBotLiveV1
 {
-
-    constexpr auto path = "C:/BitBotLiveV1/cpp";
+    constexpr auto path = "C:\\BitBotLiveV1";
     constexpr auto history_length = std::chrono::hours{ 182 * 24 };
 }
 
@@ -29,7 +28,6 @@ namespace BitBot
     namespace IntrinsicEvents
     {
         constexpr auto target_event_count = 100000;
-    }
 
     namespace Indicators
     {

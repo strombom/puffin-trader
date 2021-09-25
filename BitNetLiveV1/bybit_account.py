@@ -1,5 +1,6 @@
 import hmac
 import json
+import sys
 import time
 import math
 import asyncio
@@ -95,6 +96,10 @@ class BybitAccount:
         with self._balance_lock:
             wallet_balance = self._bybit_rest.get_wallet_balance()
             positions = self._bybit_rest.get_positions()
+
+            if 'result' not in wallet_balance:
+                logging.warning("ByBit update_balance, error reading wallet balance!")
+                return
 
             for symbol in wallet_balance['result']:
                 self._equity[symbol] = wallet_balance['result'][symbol]['equity']
@@ -212,6 +217,9 @@ class BybitWebsocket:
                         callback(json.loads(rcv))
             except websockets.exceptions.ConnectionClosedError:
                 logging.warning(f"_websocket_connect websockets.exceptions.ConnectionClosedError")
+            except:
+                logging.error(f"_websocket_connect {sys.exc_info()[0]}")
+
 
 
 class BybitRest:

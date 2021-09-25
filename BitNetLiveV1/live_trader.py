@@ -24,8 +24,8 @@ from bybit_account import BybitAccount
 
 
 class Portfolio:
-    take_profit = 1.03
-    stop_loss = 0.97
+    take_profit = 1.02
+    stop_loss = 0.98
 
     def __init__(self):
         self.positions = []
@@ -192,7 +192,7 @@ class ProfitModel:
 
         test_dl = self.model.dls.test_dl(data_input)
         predictions_array = self.model.get_preds(dl=test_dl)[0]
-        predictions_array = predictions_array[:, 5].numpy()
+        predictions_array = predictions_array[:, 3].numpy()
 
         predictions = {}
         for symbol_idx, symbol in enumerate(symbols_with_new_steps):
@@ -384,7 +384,7 @@ def main():
                 price_diffs=price_diffs
             )
 
-            position_max_count = min(3, int(bybit_account.get_total_equity_usdt() / nominal_order_size))
+            position_max_count = min(1, int(bybit_account.get_total_equity_usdt() / nominal_order_size))
 
             prediction_symbols = list(symbols_with_new_steps)
             random.shuffle(prediction_symbols)
@@ -402,7 +402,7 @@ def main():
                     break
 
                 prediction = predictions[symbol]
-                if 0.3 <= prediction <= 1.0:
+                if prediction >= 0.6:
                     mark_price = bybit_account.get_mark_price(symbol)
 
                     order_value = min(equity / position_max_count, cash * 0.975)
