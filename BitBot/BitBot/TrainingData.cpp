@@ -47,10 +47,10 @@ void make_section_thread(
     for (auto&& a_symbol : BitBot::symbols) {
         csv_file << ",\"" << std::string{ a_symbol } + "\"";
         if (a_symbol == symbol) {
-            symbols_string += ",True";
+symbols_string += ",True";
         }
         else {
-            symbols_string += ",False";
+        symbols_string += ",False";
         }
     }
 
@@ -67,7 +67,8 @@ void make_section_thread(
     for (auto gt_idx = 0; gt_idx < ground_truth->size(); gt_idx++) {
         if (indicators->timestamps[gt_idx] < timestamp_start) {
             continue;
-        } else if (indicators->timestamps[gt_idx] > timestamp_end) {
+        }
+        else if (indicators->timestamps[gt_idx] > timestamp_end) {
             break;
         }
 
@@ -103,7 +104,7 @@ void make_section_thread(
 
 end_of_loop:
     csv_file.close();
-    
+
 }
 
 void TrainingData::join(void)
@@ -117,12 +118,6 @@ void TrainingData::join(void)
 
 void TrainingData::make_sections(const std::string& path, const std::string& symbol, const sptrBinanceKlines klines, const sptrIndicators indicators)
 {
-    const auto bbs = BitBot::symbols.size();
-    auto vec_symbols = std::vector<bool>{};
-    auto vec_indicators = std::vector<float>{};
-    auto vec_predictions = std::vector<int>{};
-    auto vec_timestamps = std::vector<int>{};
-
     if (false) {
         if (ground_truth_symbol != symbol) {
             for (auto& thread : threads) {
@@ -136,11 +131,40 @@ void TrainingData::make_sections(const std::string& path, const std::string& sym
     else {
         load_ground_truth(symbol);
     }
-    
+
     auto timestamp_train_start = date::floor<date::days>(indicators->timestamps.at(0));
     auto train_start_idx = 0;
 
+    const auto profit_idx = BitBot::TrainingData::take_profit.size() - 1;
     const auto data_length = indicators->indicators.size();
+
+    for (auto idx = 0; idx < ground_truth_timestamps->size(); idx++) {
+        const auto& timestamps = (*ground_truth_timestamps)[idx];
+        auto prev_timestamp = (*ground_truth_timestamps)[idx][0];
+        for (auto profit_idx = 1; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
+            auto timestamp = (*ground_truth_timestamps)[idx][profit_idx];
+            if (timestamp.time_since_epoch().count() == 0) {
+                break;
+            }
+            if (timestamp < prev_timestamp) {
+                printf("err");
+            }
+            prev_timestamp = timestamp;
+        }
+    }
+
+    auto current_symbol_idx = 0;
+    for (auto symbol_idx = 0; symbol_idx < BitBot::symbols.size(); symbol_idx++) {
+        if (BitBot::symbols[symbol_idx] == symbol) {
+            current_symbol_idx = symbol_idx;
+            break;
+        }
+    }
+
+    auto train_symbols = std::vector<bool>{};
+    auto train_indicators = std::vector<float>{};
+    auto train_predictions = std::vector<int>{};
+    auto train_timestamps = std::vector<int>{};
 
     while (true) {
         const auto timestamp_train_end = timestamp_train_start + BitBot::history_length;
@@ -159,6 +183,47 @@ void TrainingData::make_sections(const std::string& path, const std::string& sym
 
         auto train_idx = train_start_idx;
         while (indicators->timestamps[train_idx] < timestamp_train_end) {
+
+            //ground_truth_timestamps->at(train_idx)[profit_idx] < timestamp_train_end
+
+            const auto gt_max_timestamp = (*ground_truth_timestamps)[train_idx][profit_idx];
+            if (gt_max_timestamp < timestamp_train_end && gt_max_timestamp.time_since_epoch().count() > 0) {
+
+                for (auto symbol_idx = 0; symbol_idx < BitBot::symbols.size(); symbol_idx++) {
+                    if (symbol_idx == current_symbol_idx) {
+                        train_symbols.push_back(true);
+                    }
+                    else {
+                        train_symbols.push_back(false);
+                    }
+                }
+            }
+
+            const auto& indicator = indicators->indicators[train_idx];
+            train_indicators.insert(train_indicators.end(), indicator.begin(), indicator.end());
+
+            //for (auto i = 0; i < indicator.size(); i++) {
+            //    train_indicators.push_back(indicator[i]);
+            //}
+
+
+            /*
+            const int indicator_idx = gt_idx - (BitBot::Indicators::max_length - 1);
+
+            csv_file << "\"" << DateTime::to_string_iso_8601(indicators->timestamps.at(indicator_idx)) << "\"";
+            //csv_file << "," << intrinsic_events->events[gt_idx].delta;
+
+            const auto& indicator = indicators->indicators.at(indicator_idx);
+            for (auto i = 0; i < indicator.size(); i++) {
+                csv_file << "," << indicator.at(i);
+            }
+            csv_file << symbols_string;
+            for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
+                csv_file << "," << ground_truth->at(gt_idx).at(profit_idx);
+            }
+            */
+
+            //train_indicators
 
             //const auto profit_idx = BitBot::TrainingData::take_profit.size() - 1;
             //ground_truth_timestamps->at(train_idx)[profit_idx] < timestamp_train_end
@@ -279,6 +344,7 @@ end_of_indicators:
 
 
 
+    const auto bbs = BitBot::symbols.size();
     auto symbols = xt::xtensor_fixed<bool, xt::xshape<2, 1>>{};
 
     symbols.at(0, 0) = true;
