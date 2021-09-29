@@ -6,6 +6,10 @@
 
 #include <filesystem>
 
+#pragma warning(push)
+#pragma warning( disable : 4005 4068 )
+#include <xtensor-io/xnpz.hpp>
+#pragma warning(pop)
 
 TrainingData::TrainingData()
 {
@@ -110,7 +114,6 @@ void TrainingData::join(void)
     threads.clear();
 }
 
-#include <xtensor-io/xnpz.hpp>
 
 void TrainingData::make_sections(const std::string& path, const std::string& symbol, const sptrBinanceKlines klines, const sptrIndicators indicators)
 {
@@ -138,7 +141,6 @@ void TrainingData::make_sections(const std::string& path, const std::string& sym
     auto train_start_idx = 0;
 
     const auto data_length = indicators->indicators.size();
-    const auto profit_idx = BitBot::TrainingData::take_profit.size() - 1;
 
     while (true) {
         const auto timestamp_train_end = timestamp_train_start + BitBot::history_length;
@@ -156,8 +158,9 @@ void TrainingData::make_sections(const std::string& path, const std::string& sym
         }
 
         auto train_idx = train_start_idx;
-        while (ground_truth_timestamps->at(train_idx)[profit_idx] < timestamp_train_end) {
+        while (indicators->timestamps[train_idx] < timestamp_train_end) {
 
+            //const auto profit_idx = BitBot::TrainingData::take_profit.size() - 1;
             //ground_truth_timestamps->at(train_idx)[profit_idx] < timestamp_train_end
 
             train_idx++;
