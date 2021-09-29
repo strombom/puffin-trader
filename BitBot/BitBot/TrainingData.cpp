@@ -164,7 +164,7 @@ void TrainingData::make_sections(const std::string& path, const std::string& sym
     auto train_symbols = std::vector<bool>{};
     auto train_indicators = std::vector<float>{};
     auto train_predictions = std::vector<int>{};
-    auto train_timestamps = std::vector<int>{};
+    auto train_timestamps = std::vector<long long>{};
 
     while (true) {
         const auto timestamp_train_end = timestamp_train_start + BitBot::history_length;
@@ -184,10 +184,9 @@ void TrainingData::make_sections(const std::string& path, const std::string& sym
         auto train_idx = train_start_idx;
         while (indicators->timestamps[train_idx] < timestamp_train_end) {
 
-            //ground_truth_timestamps->at(train_idx)[profit_idx] < timestamp_train_end
-
             const auto gt_max_timestamp = (*ground_truth_timestamps)[train_idx][profit_idx];
             if (gt_max_timestamp < timestamp_train_end && gt_max_timestamp.time_since_epoch().count() > 0) {
+                train_timestamps.push_back(indicators->timestamps[train_idx].time_since_epoch().count());
 
                 for (auto symbol_idx = 0; symbol_idx < BitBot::symbols.size(); symbol_idx++) {
                     if (symbol_idx == current_symbol_idx) {
@@ -197,15 +196,14 @@ void TrainingData::make_sections(const std::string& path, const std::string& sym
                         train_symbols.push_back(false);
                     }
                 }
-            }
 
-            const auto& indicator = indicators->indicators[train_idx];
-            train_indicators.insert(train_indicators.end(), indicator.begin(), indicator.end());
+                const auto& indicator = indicators->indicators[train_idx];
+                train_indicators.insert(train_indicators.end(), indicator.begin(), indicator.end());
+            }
 
             //for (auto i = 0; i < indicator.size(); i++) {
             //    train_indicators.push_back(indicator[i]);
             //}
-
 
             /*
             const int indicator_idx = gt_idx - (BitBot::Indicators::max_length - 1);
