@@ -142,7 +142,6 @@ void TrainingData::make_sections(std::string_view path, std::string_view symbol,
         load_ground_truth(symbol);
     }
 
-    //date::floor<date::days>(indicators->timestamps.at(0))
     const auto profit_idx = BitBot::TrainingData::take_profit.size() - 1;
     const auto data_length = indicators->indicators.size();
     auto timestamp_train_start = timestamp_start + date::days{ 2 };
