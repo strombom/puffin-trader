@@ -13,7 +13,7 @@ public:
 
     void make(std::string_view path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end);
     //void make_section(const std::string& path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end);
-    void make_sections(std::string_view path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators);
+    void make_sections(std::string_view path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators, time_point_ms timestamp_start);
 
     void join(void);
 

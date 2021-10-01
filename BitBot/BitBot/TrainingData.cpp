@@ -124,7 +124,7 @@ void save_indices(std::string_view path, std::string_view filename, const std::v
     csv_file.close();
 }
 
-void TrainingData::make_sections(std::string_view path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators)
+void TrainingData::make_sections(std::string_view path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators, time_point_ms timestamp_start)
 {
     std::filesystem::create_directories(path);
 
@@ -142,11 +142,12 @@ void TrainingData::make_sections(std::string_view path, std::string_view symbol,
         load_ground_truth(symbol);
     }
 
+    //date::floor<date::days>(indicators->timestamps.at(0))
     const auto profit_idx = BitBot::TrainingData::take_profit.size() - 1;
     const auto data_length = indicators->indicators.size();
-    auto timestamp_train_start = date::floor<date::days>(indicators->timestamps.at(0));
+    auto timestamp_train_start = timestamp_start + date::days{ 2 };
     auto train_start_idx = 0;
-
+     
     while (true) {
         const auto timestamp_train_end = timestamp_train_start + BitBot::history_length;
         const auto timestamp_val_start = timestamp_train_end;
@@ -200,13 +201,13 @@ void TrainingData::make_sections(std::string_view path, std::string_view symbol,
         }
 
         save_indices(path, "/" + date::format("%F", timestamp_train_start) + "_train_" + std::string{ symbol } + ".csv", training_indices);
-        save_indices(path, "/" + date::format("%F", timestamp_train_start) + "_val_" + std::string{ symbol } + ".csv", validation_indices);
+        save_indices(path, "/" + date::format("%F", timestamp_val_start) + "_val_" + std::string{ symbol } + ".csv", validation_indices);
 
         timestamp_train_start += date::days{ 1 };
     }
 
 end_of_indicators:
-    printf("end_of_indicators\n");
+    ;
 }
 
 void TrainingData::make(std::string_view path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)

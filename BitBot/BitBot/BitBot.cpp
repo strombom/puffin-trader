@@ -14,7 +14,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_simulator_data" };
+    const auto command = std::string{ "make_training_data_sections" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
@@ -71,7 +71,7 @@ int main()
             const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 9 / 25) };
             const auto path = std::string{ BitBot::path } + "/training_data_sections";
             training_data.make(path, symbol, binance_klines, indicators, timestamp_start, timestamp_end);
-            training_data.make_sections(path, symbol, binance_klines, indicators);
+            training_data.make_sections(path, symbol, binance_klines, indicators, timestamp_start);
         }
     }
 }
