@@ -14,7 +14,7 @@ int main()
 {
     logger.info("BitSim started");
 
-    const auto command = std::string{ "make_training_data_sections" };
+    const auto command = std::string{ "make_simulator_data" };
 
     if (command == "download_klines") {
         auto binance_download_klines = BinanceDownloadKlines{};
@@ -24,7 +24,6 @@ int main()
         auto intrinsic_events = IntrinsicEvents{};
         for (const auto symbol : BitBot::symbols) {
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
-
             intrinsic_events.calculate_and_save(symbol, binance_klines);
         }
         intrinsic_events.join();
@@ -47,7 +46,6 @@ int main()
         auto indicators = Indicators{};
         for (const auto symbol : BitBot::symbols) {
             const auto intrinsic_events = std::make_shared<IntrinsicEvents>(symbol);
-
             indicators.calculate_and_save(symbol, intrinsic_events);
         }
         indicators.join();
@@ -57,8 +55,7 @@ int main()
         for (const auto symbol : BitBot::symbols) {
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
             const auto indicators = std::make_shared<Indicators>(symbol);
-
-            const auto timestamp_start = time_point_ms{ date::sys_days(date::year{2020} / 07 / 01) };
+            const auto timestamp_start = time_point_ms{ date::sys_days(date::year{2020} / 7 / 1) };
             const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 9 / 25) };
             const auto path = std::string{ BitBot::path } + "/simulation_data";
             training_data.make(path, symbol, binance_klines, indicators, timestamp_start, timestamp_end);
@@ -66,42 +63,15 @@ int main()
     }
     else if (command == "make_training_data_sections") {
         auto training_data = TrainingData{ };
-
         for (const auto symbol : BitBot::symbols) {
+            printf("Make training data sections: %s\n", symbol);
             const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
             const auto indicators = std::make_shared<Indicators>(symbol);
+            const auto timestamp_start = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) };
+            const auto timestamp_end = time_point_ms{ date::sys_days(date::year{2021} / 9 / 25) };
             const auto path = std::string{ BitBot::path } + "/training_data_sections";
+            training_data.make(path, symbol, binance_klines, indicators, timestamp_start, timestamp_end);
             training_data.make_sections(path, symbol, binance_klines, indicators);
         }
-
-        /*
-        //auto i = 0;
-
-        for (const auto symbol : BitBot::symbols) {
-            //i += 1;
-            //if (i < 16) {
-            //    continue;
-            //}
-            const auto binance_klines = std::make_shared<BinanceKlines>(symbol);
-            const auto indicators = std::make_shared<Indicators>(symbol);
-
-            auto year = 2020;
-            auto day = 0;
-            while (day < 269 + 182) {
-                const auto timestamp_start = time_point_ms{ date::sys_days(date::year{year} / 01 / 01) + date::days{day}};
-                const auto timestamp_end = timestamp_start + date::months{ 6 };
-                printf("%s %s, %d\n", symbol, DateTime::to_string_iso_8601(timestamp_start).c_str(), day);
-
-                const auto path = std::string{ BitBot::path } + "/training_data_sections";
-                //training_data.make_section(path, symbol, "train", binance_klines, indicators, timestamp_start, timestamp_end);
-                //training_data.make_section(path, symbol, "valid", binance_klines, indicators, timestamp_end, timestamp_end + date::days{ 1 });
-
-                day += 1;
-            }
-            break;
-        }
-
-        training_data.join();
-        */
     }
 }
