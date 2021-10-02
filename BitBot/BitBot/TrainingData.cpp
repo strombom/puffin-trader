@@ -31,7 +31,6 @@ void make_section_thread(
 
     csv_file << "\"ind_idx\"";
     csv_file << ",\"timestamp\"";
-    //csv_file << ",\"delta\"";
 
     for (auto&& degree : BitBot::Indicators::degrees) {
         for (auto&& length : BitBot::Indicators::lengths) {
@@ -58,9 +57,6 @@ void make_section_thread(
     csv_file << "\n";
     csv_file << std::defaultfloat;
 
-    // indicators:    259803 = ground_truth - (max_length - 1)
-    // ground_truth : 259952
-
     for (auto gt_idx = 0; gt_idx < ground_truth->size(); gt_idx++) {
         if (indicators->timestamps[gt_idx] < timestamp_start) {
             continue;
@@ -83,11 +79,10 @@ void make_section_thread(
             //}
         }
 
-        const int indicator_idx = gt_idx; // gt_idx - (BitBot::Indicators::max_length - 1);
+        const int indicator_idx = gt_idx;
 
         csv_file << indicator_idx;
         csv_file << ",\"" << DateTime::to_string_iso_8601(indicators->timestamps.at(indicator_idx)) << "\"";
-        //csv_file << "," << intrinsic_events->events[gt_idx].delta;
 
         const auto& indicator = indicators->indicators.at(indicator_idx);
         for (auto i = 0; i < indicator.size(); i++) {
@@ -102,7 +97,6 @@ void make_section_thread(
 
 end_of_loop:
     csv_file.close();
-
 }
 
 void TrainingData::join(void)
@@ -128,7 +122,7 @@ void TrainingData::make_sections(std::string_view path, std::string_view symbol,
 {
     std::filesystem::create_directories(path);
 
-    if (true) {
+    //if (true) {
         if (ground_truth_symbol != symbol) {
             for (auto& thread : threads) {
                 thread.join();
@@ -136,11 +130,11 @@ void TrainingData::make_sections(std::string_view path, std::string_view symbol,
             threads.clear();
             make_ground_truth(symbol, klines, indicators);
         }
-        //save_ground_truth(symbol);
-    }
-    else {
-        load_ground_truth(symbol);
-    }
+    //    save_ground_truth(symbol);
+    //}
+    //else {
+    //    load_ground_truth(symbol);
+    //}
 
     const auto profit_idx = BitBot::TrainingData::take_profit.size() - 1;
     const auto data_length = indicators->indicators.size();
@@ -281,8 +275,6 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
                 DateTime::to_string_iso_8601(intrinsic_events->events[ie_idx].timestamp).c_str()
             );
             */
-
-            //const auto mark_price = intrinsic_events->events.at(ie_idx).price;
 
             for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
                 const auto take_profit = (float)(mark_price * BitBot::TrainingData::take_profit[profit_idx]);
