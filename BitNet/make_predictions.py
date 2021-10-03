@@ -9,14 +9,16 @@ from fastai.learner import load_learner
 
 class ProfitModel:
     def __init__(self):
-        self.model_idx = 0
+        training_time = timedelta(hours=1)
         self.model_files = []
         for filename in glob.glob('E:/BitBot/models/model_*_*.pickle'):
-            timestamp = datetime.strptime(filename[-17:-7], "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(hours=6)
+            timestamp = datetime.strptime(filename[-17:-7], "%Y-%m-%d").replace(tzinfo=timezone.utc) + training_time
             self.model_files.append({'timestamp': timestamp, 'filename': filename})
         self.model_files = sorted(self.model_files, key=lambda x: x['timestamp'])
 
-        self.model = load_learner(self.model_files[self.model_idx]['filename'])
+        self.model_idx = -1
+        self.load_next_model()
+        #self.model = load_learner(self.model_files[self.model_idx]['filename'])
 
     def has_new_model(self, timestamp):
         if self.model_idx + 1 < len(self.model_files) and timestamp >= self.model_files[self.model_idx + 1]['timestamp']:
@@ -26,11 +28,13 @@ class ProfitModel:
 
     def predict(self, indicators):
         test_dl = self.model.dls.test_dl(indicators)
-        return self.model.get_preds(dl=test_dl)[0].numpy()
+        pred = self.model.get_preds(dl=test_dl)[0].numpy()
+        return pred
 
     def load_next_model(self):
-        self.model = load_learner(self.model_files[self.model_idx]['filename'])
         self.model_idx += 1
+        print("Loading learner", self.model_files[self.model_idx]['filename'])
+        self.model = load_learner(self.model_files[self.model_idx]['filename'])
 
     def last_predictable_timestamp(self):
         timespan = self.model_files[1]['timestamp'] - self.model_files[0]['timestamp']
@@ -49,7 +53,7 @@ class Indicators:
                     file_path = os.path.join(path, filename)
 
             with open(file_path, 'rb') as f:
-                self.indicators[symbol] = pd.read_csv(f, parse_dates=[0])
+                self.indicators[symbol] = pd.read_csv(f, parse_dates=[1], index_col='ind_idx')
             self.idx[symbol] = 0
             self.next_timestamp[symbol] = self.indicators[symbol].iloc[0]['timestamp']
 
@@ -66,6 +70,11 @@ class Indicators:
             end_date = max(end_date, last_date)
         return start_date, end_date
 
+    def set_start_date(self, start_date):
+        for symbol in self.indicators:
+            while self.indicators[symbol]['timestamp'].iloc[self.idx[symbol]] < start_date:
+                self.idx[symbol] += 1
+
     def get_next_section(self, symbol, timestamp):
         start_idx = self.idx[symbol]
         end_idx = start_idx
@@ -81,8 +90,9 @@ def make_predictions():
     training_path = 'E:/BitBot/simulation_data/'
     symbols = set()
     for filename in os.listdir(training_path):
-        symbols.add(filename.split('_')[1])
-    symbols = list(symbols)
+        symbols.add(filename.split('_')[1].replace('.csv', ''))
+    symbols = sorted(list(symbols))
+    #symbols = [symbols[0]]
 
     profit_model = ProfitModel()
     indicators = Indicators(training_path, symbols)
@@ -90,19 +100,25 @@ def make_predictions():
 
     timestamp_start, timestamp_end = indicators.get_start_end_date()
     timestamp_end = min(timestamp_end, profit_model.last_predictable_timestamp())
-    #timestamp_end = datetime(year=2021, month=1, day=5, tzinfo=timezone.utc)
+    timestamp_end = datetime(year=2020, month=7, day=11, tzinfo=timezone.utc)
+
+    timestamp_start = profit_model.model_files[0]['timestamp']
+    indicators.set_start_date(timestamp_start)
 
     timestamp = timestamp_start
+    previous_timestamp = timestamp
     while timestamp < timestamp_end:
         if profit_model.has_new_model(timestamp):
+            print(f"Predict {previous_timestamp} - {timestamp}")
             for symbol in symbols:
-                print(f"Predict {symbol} {timestamp}")
+                # A section is all indicators that are covered by a single prediction model
                 section = indicators.get_next_section(symbol, timestamp)
                 if section.shape[0] == 0:
                     print(f"No data! {symbol} {timestamp}")
                     continue
                 raw_predictions[symbol].append(profit_model.predict(section))
             profit_model.load_next_model()
+            previous_timestamp = timestamp
         timestamp += timedelta(minutes=1)
 
     for symbol in symbols:
