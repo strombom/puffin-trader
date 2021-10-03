@@ -208,7 +208,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
     //std::cout << "Final fval: " << result.fval.transpose() << std::endl;
     //std::cout << "Final xval: " << result.xval.transpose() << std::endl;
 
-    auto delta = result.xval(0) + result.xval(1) * std::pow(BitBot::IntrinsicEvents::target_event_count, result.xval(2));
+    const auto delta = round((result.xval(0) + result.xval(1) * std::pow(BitBot::IntrinsicEvents::target_event_count, result.xval(2))) * 10000) / 10000;
 
     events.clear();
     auto runner = IntrinsicEventRunner{ delta };

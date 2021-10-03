@@ -4,8 +4,7 @@
 #include "BitLib/json11/json11.hpp"
 
 #pragma warning(push)
-#pragma warning(disable: 4244)
-#pragma warning(disable: 4018)
+#pragma warning(disable: 4018 4244)
 #include "BitLib/csv/csv.h"
 #pragma warning(pop)
 
