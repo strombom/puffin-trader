@@ -1,4 +1,14 @@
 
+1. Kör BitBot c++ för att ladda ner och skapa både simulator- och träningsdata.
+2. Träna med learn_sections.ipynb i jupyter lab.
+3. Kör **make_predictions.py**
+  - in: *training_data.pickle*
+  - out: *predictions.pickle*
+4. Kör download.py för att hämta senaste prisdatan.
+5. Kör simulator.py
+
+Old:
+
 1. **download.py**
    - out: *klines/{symbol}.hdf*
    
