@@ -95,11 +95,12 @@ class BybitAccount:
     def update_balance(self):
         with self._balance_lock:
             wallet_balance = self._bybit_rest.get_wallet_balance()
-            positions = self._bybit_rest.get_positions()
 
             if 'result' not in wallet_balance or wallet_balance['result'] is None:
                 logging.warning("ByBit update_balance, error reading wallet balance!")
                 return
+
+            positions = self._bybit_rest.get_positions()
 
             if 'result' not in positions or positions['result'] is None:
                 logging.warning("ByBit update_balance, error reading positions!")
