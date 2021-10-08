@@ -93,7 +93,7 @@ def make_predictions():
     for filename in os.listdir(training_path):
         symbols.add(filename.split('_')[1].replace('.csv', ''))
     symbols = sorted(list(symbols))
-    symbols = symbols[:2]
+    #symbols = symbols[:2]
 
     profit_model = ProfitModel()
     indicators = Indicators(training_path, symbols)
@@ -102,7 +102,7 @@ def make_predictions():
 
     timestamp_start, timestamp_end = indicators.get_start_end_date()
     timestamp_end = min(timestamp_end, profit_model.last_predictable_timestamp())
-    timestamp_end = datetime(year=2020, month=7, day=15, tzinfo=timezone.utc)
+    #timestamp_end = datetime(year=2020, month=7, day=15, tzinfo=timezone.utc)
 
     timestamp_start = profit_model.model_files[0]['timestamp']
     indicators.set_start_date(timestamp_start)
@@ -182,7 +182,7 @@ def make_predictions():
             'predictions': predictions,
             'ground_truths': ground_truths,
             'prediction_indices': prediction_indices
-        }, f)
+        }, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == '__main__':
