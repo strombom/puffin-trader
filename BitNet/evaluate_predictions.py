@@ -51,31 +51,69 @@ def main():
 
     bin_count = 40
 
-    timestamp_start = timestamps[0].replace(hour=0, minute=0, second=0)
-    timestamp_end = timestamps[-1].replace(hour=0, minute=0, second=0)
-    daily_bins = []
-    for day_idx in range((timestamp_end - timestamp_start).days):
-        daily_bins.append({
-            'up': [0 for n in range(bin_count)],
-            'down': [0 for n in range(bin_count)]
-        })
+    if False:
+        timestamp_start = timestamps[0].replace(hour=0, minute=0, second=0)
+        timestamp_end = timestamps[-1].replace(hour=0, minute=0, second=0)
+        daily_bins = []
+        for day_idx in range((timestamp_end - timestamp_start).days):
+            daily_bins.append({
+                'up': [0 for n in range(bin_count)],
+                'down': [0 for n in range(bin_count)]
+            })
 
-    for symbol in symbols:
-        for idx in prediction_indices[symbol]:
-            day_idx = (timestamps[idx] - timestamp_start).days
-            bin_idx = int((predictions[symbol][idx][y_idx] + 2) * 10)
-            if 0 <= bin_idx < bin_count:
-                if ground_truths[symbol][idx][y_idx] == 1:
-                    daily_bins[day_idx]['up'][bin_idx] += 1
-                else:
-                    daily_bins[day_idx]['down'][bin_idx] += 1
+        for symbol in symbols:
+            for idx in prediction_indices[symbol]:
+                day_idx = (timestamps[idx] - timestamp_start).days
+                bin_idx = int((predictions[symbol][idx][y_idx] + 2) * 10)
+                if 0 <= bin_idx < bin_count:
+                    if ground_truths[symbol][idx][y_idx] == 1:
+                        daily_bins[day_idx]['up'][bin_idx] += 1
+                    else:
+                        daily_bins[day_idx]['down'][bin_idx] += 1
 
-    #print(up_bins)
-    #print(down_bins)
+        file_path = f"cache/bins.pickle"
+        with open(file_path, 'wb') as f:
+            pickle.dump(daily_bins, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    else:
+        file_path = f"cache/bins.pickle"
+        with open(file_path, 'rb') as f:
+            daily_bins = pickle.load(f)
+
+    up_bins, down_bins = np.zeros(bin_count), np.zeros(bin_count)
+    for day_idx in range(0, len(daily_bins)):
+        for bin_idx in range(bin_count):
+            up_bins[bin_idx] += daily_bins[day_idx]['up'][bin_idx]
+            down_bins[bin_idx] += daily_bins[day_idx]['down'][bin_idx]
+
     for bin_idx in range(bin_count - 1, -1, -1):
         print(f"Bin {bin_idx / 10 - 2:2.3f}: ", end='')
         print_up_down(up_count=up_bins[bin_idx], down_count=down_bins[bin_idx])
         print()
+
+    x = list(range(len(daily_bins)))
+    y = 2 - np.array(list(range(bin_count))) / bin_count * 4
+    z_val = np.empty((len(y), len(x)))
+
+    for day_idx, day_bins in enumerate(daily_bins):
+        for bin_idx in range(bin_count):
+            weight = day_bins['up'][bin_idx] + day_bins['down'][bin_idx]
+            if weight == 0:
+                val = 0
+            else:
+                val = (day_bins['up'][bin_idx] - day_bins['down'][bin_idx]) / (day_bins['up'][bin_idx] + day_bins['down'][bin_idx])
+            z_val[bin_idx, day_idx] = val
+
+    os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+    fig = plt.figure()
+    ax = fig.add_subplot(111)  # , projection='3d')
+    ax.pcolormesh(z_val, cmap=cm.coolwarm)
+    #ax.plot_surface(X, Y, z_weight, cmap=cm.coolwarm)
+    plt.show()
+
+
+    #print(up_bins)
+    #print(down_bins)
 
     quit()
 
