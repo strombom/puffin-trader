@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 def calculate_volume():
     start_timestamp = datetime.strptime("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     min_volatility = 0.1
-    min_volume = 20_000_000_000
+    min_volume = 22_000_000_000
 
     volatilities = {}
     volumes = {}
@@ -56,4 +56,9 @@ def filter_by_volume():
 
 
 if __name__ == '__main__':
+    with open(f"cache/filtered_symbols.pickle", 'rb') as f:
+        symbols = pickle.load(f)
+        print(symbols)
+        quit()
+
     filter_by_volume()

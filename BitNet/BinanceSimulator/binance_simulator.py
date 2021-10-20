@@ -12,6 +12,13 @@ class BinanceSimulator:
             self.debt[symbol] = 0.0
             self.mark_price[symbol] = 0.0
 
+    def get_positions_symbols(self):
+        symbols = set()
+        for symbol in self.wallet:
+            if symbol != 'usdt' and self.wallet[symbol] > 0:
+                symbols.add(symbol)
+        return symbols
+
     def is_liquidated(self):
         return False
         # if self.wallet_btc == 0 and self.wallet_usdt == 0:
@@ -115,6 +122,7 @@ class BinanceSimulator:
 
         # Borrow
         if self.wallet['usdt'] < 0:
+            print("BORROW!", self.wallet)
             self.debt['usdt'] = -self.wallet['usdt']
             self.wallet['usdt'] = 0
         if self.wallet[symbol] < 0:
@@ -130,7 +138,7 @@ class BinanceSimulator:
         self.order(order_size, symbol, 0.00075)
 
     def market_order(self, order_size, symbol):
-        self.order(order_size, symbol, 0.00075 * 2)
+        self.order(order_size, symbol, 0.00075 * 1.25)
         return True
 
     def sell_pair(self, symbol):

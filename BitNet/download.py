@@ -72,10 +72,14 @@ def download_klines():
 
     exchange_info = client.get_exchange_info()
 
-    for base_symbol in ['USDT', 'BUSD', 'USDC']:
-        for symbol in exchange_info['symbols']:
-            if symbol['symbol'].endswith(base_symbol) and symbol['isMarginTradingAllowed'] and 'MARGIN' in symbol['permissions']:
-                download_klines_symbol(client=client, symbol=symbol['symbol'], start_time=start_time)
+    for symbol in ["ADAUSDT", "ATOMUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "FTMUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT"]:
+        download_klines_symbol(client=client, symbol=symbol, start_time=start_time)
+
+    #for base_symbol in ['USDT', 'BUSD', 'USDC']:
+    #base_symbol = 'USDT'
+    #for symbol in exchange_info['symbols']:
+    #    if symbol['symbol'].endswith(base_symbol) and symbol['isMarginTradingAllowed'] and 'MARGIN' in symbol['permissions']:
+    #        download_klines_symbol(client=client, symbol=symbol['symbol'], start_time=start_time)
 
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ from fastai.learner import load_learner
 
 class ProfitModel:
     def __init__(self):
-        training_time = timedelta(hours=1)
+        training_time = timedelta(minutes=10)
         self.model_files = []
         for filename in glob.glob('E:/BitBot/models/model_*_*.pickle'):
             timestamp = datetime.strptime(filename[-17:-7], "%Y-%m-%d").replace(tzinfo=timezone.utc) + training_time
@@ -33,7 +33,7 @@ class ProfitModel:
 
     def load_next_model(self):
         self.model_idx += 1
-        print("Loading learner", self.model_files[self.model_idx]['filename'])
+        #print("Loading learner", self.model_files[self.model_idx]['filename'])
         self.model = load_learner(self.model_files[self.model_idx]['filename'])
 
     def last_predictable_timestamp(self):
@@ -49,11 +49,15 @@ class Indicators:
 
         for symbol in symbols:
             for filename in os.listdir(path):
-                if symbol in filename:
+                if symbol in filename and filename[-4:] == '.csv':
                     file_path = os.path.join(path, filename)
+                    break
 
             with open(file_path, 'rb') as f:
-                self.indicators[symbol] = pd.read_csv(f, parse_dates=[1], index_col='ind_idx')
+                self.indicators[symbol] = pd.read_csv(
+                    filepath_or_buffer=f,
+                    parse_dates=["timestamp", "ground_truth_timestamp"],
+                    index_col='ind_idx')
             self.idx[symbol] = 0
             self.next_timestamp[symbol] = self.indicators[symbol].iloc[0]['timestamp']
 
@@ -90,15 +94,16 @@ def make_predictions():
     step_count = 13
     training_path = 'E:/BitBot/simulation_data/'
     symbols = set()
-    for filename in os.listdir(training_path):
-        symbols.add(filename.split('_')[1].replace('.csv', ''))
+    for filename in glob.glob(os.path.join(training_path, '*.csv')):
+        symbols.add(filename.split('_')[-1].replace('.csv', ''))
     symbols = sorted(list(symbols))
-    #symbols = symbols[:2]
+    #symbols = symbols[0:1]
 
     profit_model = ProfitModel()
     indicators = Indicators(training_path, symbols)
     raw_predictions = {symbol: [] for symbol in symbols}
     raw_ground_truths = {symbol: [] for symbol in symbols}
+    raw_timestamps = {symbol: [] for symbol in symbols}
 
     timestamp_start, timestamp_end = indicators.get_start_end_date()
     timestamp_end = min(timestamp_end, profit_model.last_predictable_timestamp())
@@ -119,7 +124,8 @@ def make_predictions():
                     print(f"No data! {symbol} {timestamp}")
                     continue
                 raw_predictions[symbol].append(profit_model.predict(section))
-                raw_ground_truths[symbol].append(section.iloc[:, -step_count:].to_numpy())
+                raw_ground_truths[symbol].append(section.iloc[:, -step_count-1:-1].to_numpy())
+                raw_timestamps[symbol].append(section.iloc[:, 0].to_numpy())
             profit_model.load_next_model()
             previous_timestamp = timestamp
         timestamp += timedelta(minutes=1)
@@ -131,15 +137,22 @@ def make_predictions():
             print(f"No data! {symbol} {timestamp}")
             continue
         raw_predictions[symbol].append(profit_model.predict(section))
-        raw_ground_truths[symbol].append(section.iloc[:, -step_count:].to_numpy())
+        raw_ground_truths[symbol].append(section.iloc[:, -step_count-1:-1].to_numpy())
+        raw_timestamps[symbol].append(section.iloc[:, 0].to_numpy())
 
     for symbol in symbols:
         raw_predictions[symbol] = np.concatenate(raw_predictions[symbol])
         raw_ground_truths[symbol] = np.concatenate(raw_ground_truths[symbol])
+        raw_timestamps[symbol] = np.concatenate(raw_timestamps[symbol])
 
+    predictions = raw_predictions
+    ground_truths = raw_ground_truths
+    timestamps = raw_timestamps
+
+    """
     timestamps = []
     predictions = {symbol: [] for symbol in symbols}
-    prediction_indices = {symbol: [] for symbol in symbols}
+    #prediction_indices = {symbol: [] for symbol in symbols}
     ground_truths = {symbol: [] for symbol in symbols}
     prediction_idx = {symbol: 0 for symbol in symbols}
     timestamp = timestamp_start
@@ -157,7 +170,7 @@ def make_predictions():
             #else:
 
             if prediction_idx[symbol] < raw_predictions[symbol].shape[0] and timestamp >= indicators.indicators[symbol].iloc[prediction_idx[symbol]]['timestamp']:
-                prediction_indices[symbol].append(len(predictions[symbol]))
+                #prediction_indices[symbol].append(len(predictions[symbol]))
                 predictions[symbol].append(raw_predictions[symbol][prediction_idx[symbol]])
                 ground_truths[symbol].append(raw_ground_truths[symbol][prediction_idx[symbol]])
                 prediction_idx[symbol] += 1
@@ -173,6 +186,7 @@ def make_predictions():
         if timestamp >= timestamp_print:
             print(f"Compiling predictions {timestamp}")
             timestamp_print = timestamp + timedelta(days=1)
+    """
 
     file_path = f"cache/predictions.pickle"
     with open(file_path, 'wb') as f:
@@ -181,7 +195,7 @@ def make_predictions():
             'timestamps': timestamps,
             'predictions': predictions,
             'ground_truths': ground_truths,
-            'prediction_indices': prediction_indices
+            #'prediction_indices': prediction_indices
         }, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 

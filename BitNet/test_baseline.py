@@ -41,34 +41,24 @@ def main():
 
     symbols = [
         'ADAUSDT',
-        'ALGOUSDT',
-        'ANKRUSDT',
-        'ARPAUSDT',
-        'ATOMUSDT',
-        'BANDUSDT',
-        'BATUSDT',
         'BCHUSDT',
         'BNBUSDT',
         'BTCUSDT',
         'BTTUSDT',
-        'CELRUSDT',
         'CHZUSDT',
-        'COSUSDT',
-        'DASHUSDT',
-        'DOCKUSDT',
         'DOGEUSDT',
-        'ENJUSDT',
         'EOSUSDT',
         'ETCUSDT',
         'ETHUSDT',
-        'FETUSDT',
-        'FTMUSDT',
-        'FUNUSDT',
-        'GTOUSDT',
-        'HBARUSDT',
-        'IOSTUSDT',
-        'IOTAUSDT',
-        'LINKUSDT'
+        'LINKUSDT',
+        'LTCUSDT',
+        'MATICUSDT',
+        'NEOUSDT',
+        'THETAUSDT',
+        'TRXUSDT',
+        'VETUSDT',
+        'XLMUSDT',
+        'XRPUSDT'
     ]
     symbol = 'ETHUSDT'
 
@@ -88,7 +78,7 @@ def main():
             indices_end -= 1
         indices = indices[:indices_end]
 
-        indicator_data = indicators['indicators']
+        indicator_data = indicators['indicators'].transpose((1, 0, 2))
         indicator_data = indicator_data.reshape((indicator_data.shape[0] * indicator_data.shape[1], indicator_data.shape[2]))
         indicator_data = indicator_data.transpose()[indices, :]  # (29261, 27)
 
@@ -125,7 +115,9 @@ def main():
         k = 0.01
 
         rounds = 20
-        avv = 0
+        avg_val = 0
+        avg_good = 0
+        avg_bad = 0
 
         for a in range(rounds):
             eqt = 1000
@@ -150,13 +142,18 @@ def main():
                             eqt *= 0.9
                             bad += 1
                         # print("value", eqt)
-                values.append(eqt)
+            values.append(eqt)
 
-            avv += good / (good + bad)
+            avg_val += good / (good + bad)
+            avg_good += good
+            avg_bad += bad
             #print(f"k: {k} value: {eqt} good: {good} bad: {bad} rat: {good / (good + bad)} avv {avv / (a+1)}")
 
-        avv /= rounds
-        print(symbol, avv, eqt)
+        avg_val /= rounds
+        avg_good /= rounds
+        avg_bad /= rounds
+
+        print(symbol, avg_val, eqt, avg_good, avg_bad)
 
     quit()
 

@@ -11,6 +11,22 @@ from matplotlib import pyplot as plt
 from IntrinsicTime.runner import Runner
 
 
+def calculate_delta(klines):
+    deltas = [0.001, 0.0012, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01]
+
+    for delta in deltas:
+        count = 0
+        runner = Runner(delta=delta)
+        for kline_idx, kline in klines.iterrows():
+            mark_price = kline['open']
+            for _ in runner.step(mark_price):
+                count += 1
+
+
+
+    return 0.005
+
+
 def make_ie_process(task_queue_lock, task_queue, results_queue_lock, results_queue, process_id):
     while True:
         try:
@@ -20,12 +36,13 @@ def make_ie_process(task_queue_lock, task_queue, results_queue_lock, results_que
             break
 
         symbol = parameters['symbol']
-        delta = parameters['delta']
         print(process_id, "Processing", symbol)
 
-        runner = Runner(delta=delta)
         timestamps, prices = [], []
         klines = pd.read_hdf(f"cache/klines/{symbol}.hdf")
+        delta = calculate_delta(klines)
+
+        runner = Runner(delta=delta)
         for kline_idx, kline in klines.iterrows():
             mark_price = kline['open']
             for ie_price in runner.step(mark_price):
@@ -36,11 +53,14 @@ def make_ie_process(task_queue_lock, task_queue, results_queue_lock, results_que
             results_queue.put({
                 'symbol': parameters['symbol'],
                 'timestamps': timestamps,
-                'prices': prices
+                'prices': prices,
+                'delta': delta
             })
 
 
-def make_intrinsic_events(delta: float):
+def make_intrinsic_events():
+    deltas = {}
+
     with open(f"cache/filtered_symbols.pickle", 'rb') as f:
         symbols = pickle.load(f)
 
@@ -54,8 +74,7 @@ def make_intrinsic_events(delta: float):
 
     for symbol in symbols:
         task_queue.put({
-            'symbol': symbol,
-            'delta': delta
+            'symbol': symbol
         })
 
     ps = []
@@ -66,6 +85,7 @@ def make_intrinsic_events(delta: float):
         )
         ps.append(p)
         p.start()
+        break
 
     intrinsic_events = {}
     while True:
@@ -94,4 +114,4 @@ def make_intrinsic_events(delta: float):
 
 
 if __name__ == '__main__':
-    make_intrinsic_events(delta=0.0025)
+    make_intrinsic_events()

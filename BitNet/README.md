@@ -7,6 +7,9 @@
 4. Kör download.py för att hämta senaste prisdatan.
 5. Kör simulator.py
 
+Todo:
+* Verification data, utgå från ground truth
+
 Old:
 
 1. **download.py**

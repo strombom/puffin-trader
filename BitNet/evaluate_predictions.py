@@ -32,26 +32,29 @@ def main():
     bins = 20
     stats, dates, all_stats = [], [], {}
     ptm, pvm, gttm, gtvm, cnt = 0, 0, 0, 0, 0
-    y_idx = 6
+    y_idx = 12
 
     training_path = 'E:/BitBot/simulation_data/'
 
-    file_path = f"cache/predictions.pickle"
-    try:
-        with open(file_path, 'rb') as f:
-            prediction_data = pickle.load(f)
-            symbols = prediction_data['symbols']
-            timestamps = prediction_data['timestamps']
-            predictions = prediction_data['predictions']
-            prediction_indices = prediction_data['prediction_indices']
-            ground_truths = prediction_data['ground_truths']
-    except FileNotFoundError:
-        print("Load predictions fail ", file_path)
-        quit()
+    bin_count = 200
 
-    bin_count = 40
+    if True:
+        file_path = f"cache/predictions.pickle"
+        try:
+            with open(file_path, 'rb') as f:
+                prediction_data = pickle.load(f)
+                symbols = prediction_data['symbols']
+                timestamps = prediction_data['timestamps']
+                predictions = prediction_data['predictions']
+                prediction_indices = prediction_data['prediction_indices']
+                ground_truths = prediction_data['ground_truths']
+                thresholds = prediction_data['thresholds']
+        except FileNotFoundError:
+            print("Load predictions fail ", file_path)
+            quit()
 
-    if False:
+        #symbols.remove('FTMUSDT')
+
         timestamp_start = timestamps[0].replace(hour=0, minute=0, second=0)
         timestamp_end = timestamps[-1].replace(hour=0, minute=0, second=0)
         daily_bins = []
@@ -64,7 +67,7 @@ def main():
         for symbol in symbols:
             for idx in prediction_indices[symbol]:
                 day_idx = (timestamps[idx] - timestamp_start).days
-                bin_idx = int((predictions[symbol][idx][y_idx] + 2) * 10)
+                bin_idx = int((predictions[symbol][idx][y_idx] + 2) * 50)
                 if 0 <= bin_idx < bin_count:
                     if ground_truths[symbol][idx][y_idx] == 1:
                         daily_bins[day_idx]['up'][bin_idx] += 1
@@ -80,16 +83,48 @@ def main():
         with open(file_path, 'rb') as f:
             daily_bins = pickle.load(f)
 
+    thresholds_buffer = []
+    thresholds = []
+    for daily_bin in daily_bins:
+        threshold = (sum(daily_bin['up']) + sum(daily_bin['down'])) * 0.0005
+        threshold_idx = 125
+        binsum = 0
+        for idx in range(bin_count - 1, -1, -1):
+            binsum += daily_bin['up'][idx] + daily_bin['down'][idx]
+            if binsum >= threshold:
+                threshold_idx = min(idx, threshold_idx)
+                break
+                #if len(thresholds) > 2:
+                #    threshold_idx = min(idx, )
+                #else:
+                #    threshold_idx = min(idx, threshold_idx)
+                #break
+        thresholds_buffer.append(threshold_idx)
+        thresholds.append(thresholds_buffer[max(0, len(thresholds_buffer) - 3)])
+
     up_bins, down_bins = np.zeros(bin_count), np.zeros(bin_count)
     for day_idx in range(0, len(daily_bins)):
-        for bin_idx in range(bin_count):
+        for bin_idx in range(thresholds[day_idx], int(bin_count * 0.85)):
             up_bins[bin_idx] += daily_bins[day_idx]['up'][bin_idx]
             down_bins[bin_idx] += daily_bins[day_idx]['down'][bin_idx]
+    tot_bins = up_bins + down_bins
 
     for bin_idx in range(bin_count - 1, -1, -1):
-        print(f"Bin {bin_idx / 10 - 2:2.3f}: ", end='')
+        print(f"Bin {bin_idx / 50 - 2:2.3f}: ", end='')
         print_up_down(up_count=up_bins[bin_idx], down_count=down_bins[bin_idx])
         print()
+
+    """
+    import matplotlib.pyplot as plt
+    os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+    plt.plot(up_bins)
+    plt.plot(down_bins)
+    plt.plot(thresholds)
+    plt.show()
+    """
+
+    print(sum(tot_bins[130:]))
+    print(sum(tot_bins))
 
     x = list(range(len(daily_bins)))
     y = 2 - np.array(list(range(bin_count))) / bin_count * 4
@@ -109,6 +144,7 @@ def main():
     ax = fig.add_subplot(111)  # , projection='3d')
     ax.pcolormesh(z_val, cmap=cm.coolwarm)
     #ax.plot_surface(X, Y, z_weight, cmap=cm.coolwarm)
+    ax.plot(np.arange(len(daily_bins)) + 0.5, thresholds)
     plt.show()
 
 

@@ -14,6 +14,56 @@ from datetime import datetime, timedelta, timezone
 from binance import Client
 
 
+
+"""
+class BybitWebsocket:
+    def __init__(self, api_key: str, api_secret: str):
+        self._api_key = api_key
+        self._api_secret = api_secret
+        self._uri_private = "wss://stream.bybit.com/realtime_private"
+        self._uri_public = "wss://stream.bybit.com/realtime_public"
+        self._websockets = []
+
+    def position(self, callback):
+        connect_promise = self._websocket_connect(
+            uri=self._uri_private,
+            topics=["position"],
+            callback=callback,
+            authenticate=True
+        )
+        position_websocket = threading.Thread(target=asyncio.run, args=(connect_promise,))
+        position_websocket.start()
+        self._websockets.append(position_websocket)
+
+    def trades(self, symbols, callback):
+        connect_promise = self._websocket_connect(
+            uri=self._uri_public,
+            topics=[f'trade.{symbol}' for symbol in symbols],
+            callback=callback
+        )
+        position_websocket = threading.Thread(target=asyncio.run, args=(connect_promise,))
+        position_websocket.start()
+        self._websockets.append(position_websocket)
+
+    def _authentication_string(self):
+        expires = int((time.time() + 60)) * 1000
+        signature = str(
+            hmac.new(bytes(self._api_secret, 'utf-8'), bytes(f'GET/realtime{expires}', 'utf-8'),
+                     digestmod='sha256').hexdigest())
+        return json.dumps({'op': 'auth', 'args': [self._api_key, expires, signature]})
+
+    async def _websocket_connect(self, uri, topics, callback, authenticate=False):
+        async with websockets.connect(uri) as ws:
+            if authenticate:
+                await ws.send(self._authentication_string())
+            topics_string = ', '.join(f'"{topic}"' for topic in topics)
+            await ws.send('{"op": "subscribe", "args": [' + topics_string + ']}')
+            while True:
+                rcv = await ws.recv()
+                callback(json.loads(rcv))
+"""
+
+
 class MinutePriceBuffer:
     def __init__(self, symbol_count: int):
         self.symbol_count = symbol_count
