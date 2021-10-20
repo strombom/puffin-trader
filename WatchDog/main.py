@@ -3,7 +3,6 @@ import time
 import pickle
 import smtplib
 import threading
-import urllib.parse
 from flask import Flask
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
