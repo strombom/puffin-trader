@@ -6,3 +6,4 @@ cache
 binance_account.json
 *.pickle
 log*.txt
+credentials.json
