@@ -23,6 +23,15 @@ void make_section_thread(
     std::shared_ptr < std::vector<std::array<int, BitBot::TrainingData::take_profit.size()>>> ground_truth,
     std::shared_ptr < std::vector<std::array<time_point_ms, BitBot::TrainingData::take_profit.size()>>> ground_truth_timestamps
 ) {
+
+    auto prev_ts = indicators->timestamps[0];
+    for (auto i = 1; i < indicators->timestamps.size(); i++) {
+        const auto new_ts = indicators->timestamps[i];
+        if (new_ts == prev_ts) {
+            printf("hm %d\n", i);
+        }
+        prev_ts = new_ts;
+    }
     
     std::filesystem::create_directories(path);
     auto file_path = std::string{ path } + "/" + date::format("%F", timestamp_start) + "_" + std::string{ symbol } + ".csv";
@@ -54,8 +63,11 @@ void make_section_thread(
     for (auto idx = 0; idx < BitBot::TrainingData::take_profit.size(); idx++) {
         csv_file << std::fixed << ",\"(" << BitBot::TrainingData::take_profit.at(idx) << "," << BitBot::TrainingData::stop_loss.at(idx) << ")\"";
     }
+
+    csv_file << ",\"ground_truth_timestamp\"";
     csv_file << "\n";
     csv_file << std::defaultfloat;
+
 
     for (auto gt_idx = 0; gt_idx < ground_truth->size(); gt_idx++) {
         if (indicators->timestamps[gt_idx] < timestamp_start) {
@@ -92,6 +104,9 @@ void make_section_thread(
         for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
             csv_file << "," << ground_truth->at(gt_idx).at(profit_idx);
         }
+
+        csv_file << ",\"" << DateTime::to_string_iso_8601(ground_truth_timestamps->at(gt_idx).at(BitBot::TrainingData::take_profit.size() - 1)) << "\"";
+
         csv_file << "\n";
     }
 
@@ -206,6 +221,8 @@ end_of_indicators:
 void TrainingData::make(std::string_view path, std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators, time_point_ms timestamp_start, time_point_ms timestamp_end)
 {
     make_ground_truth(symbol, klines, indicators);
+    //save_ground_truth(symbol);
+    //load_ground_truth(symbol);
     make_section_thread(symbol, path, klines, indicators, timestamp_start, timestamp_end, ground_truth, ground_truth_timestamps);
 }
  
@@ -228,10 +245,10 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
     for (auto kline_idx = 0; kline_idx < klines->rows.size(); kline_idx++) {
         const auto mark_price = klines->rows[kline_idx].open;
 
-        auto remove = false;
-
         for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
             maxcount[profit_idx] = std::max(maxcount[profit_idx], (int)positions[profit_idx].size());
+
+            auto remove = false;
 
             auto position = positions[profit_idx].begin();
             while (position != positions[profit_idx].end()) {
@@ -239,10 +256,9 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
                     break;
                 }
                 (*ground_truth)[position->ind_idx][profit_idx] = 1;
-                (*ground_truth_timestamps)[position->ind_idx][profit_idx] = indicators->timestamps[ind_idx];
+                (*ground_truth_timestamps)[position->ind_idx][profit_idx] = klines->rows[kline_idx].timestamp; // indicators->timestamps[ind_idx];
                 position->remove = true;
                 remove = true;
-
                 position = std::next(position);
             }
 
@@ -254,7 +270,7 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
                         break;
                     }
                     (*ground_truth)[position->ind_idx][profit_idx] = -1;
-                    (*ground_truth_timestamps)[position->ind_idx][profit_idx] = indicators->timestamps[ind_idx];
+                    (*ground_truth_timestamps)[position->ind_idx][profit_idx] = klines->rows[kline_idx].timestamp; //indicators->timestamps[ind_idx];
                     position->remove = true;
                     remove = true;
                 }
@@ -265,7 +281,7 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
             }
         }
 
-        while (klines->rows[kline_idx].timestamp >= indicators->timestamps[ind_idx] && indicators->timestamps.size() > ind_idx + 1) {
+        while (ind_idx < indicators->timestamps.size() && indicators->timestamps[ind_idx] <= klines->rows[kline_idx].timestamp) {
             /*
             printf(
                 "while kline (%d) %s   event (%d) %s\n", 
@@ -275,6 +291,9 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
                 DateTime::to_string_iso_8601(intrinsic_events->events[ie_idx].timestamp).c_str()
             );
             */
+            //if (ind_idx == indicators->timestamps.size() - 1) {
+            //    printf("");
+            //}
 
             for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
                 const auto take_profit = (float)(mark_price * BitBot::TrainingData::take_profit[profit_idx]);
