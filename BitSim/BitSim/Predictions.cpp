@@ -12,11 +12,12 @@ Predictions::Predictions() {
         if (file.is_regular_file()) {
             const auto&& symbol = file.path().stem().string();
             printf("Load predictions %s\n", symbol.c_str());
-            if (!load_predictions(symbol)) {
+            if (!load(symbol)) {
                 printf("Read %s\n", symbol.c_str());
                 read_csv(symbol, file.path());
-                save_predictions(symbol);
+                save(symbol);
             }
+            break;
         }
     }
 }
@@ -60,7 +61,7 @@ void Predictions::read_csv(const std::string symbol, const std::filesystem::path
     }
 }
 
-void Predictions::save_predictions(const std::string symbol)
+void Predictions::save(const std::string symbol)
 {
     auto file_path = std::string{ "E:/BitBot/predictions/cache" };
     std::filesystem::create_directories(file_path);
@@ -86,7 +87,7 @@ void Predictions::save_predictions(const std::string symbol)
     data_file.close();
 }
 
-bool Predictions::load_predictions(const std::string symbol)
+bool Predictions::load(const std::string symbol)
 {
     const auto file_path = std::string{ "E:/BitBot/predictions/cache/" } + symbol + ".dat";
 

@@ -1,9 +1,9 @@
 #pragma once
 #include "BitLib/DateTime.h"
 
+#include <array>
 #include <filesystem>
 #include <unordered_map>
-#include <array>
 
 
 constexpr int delta_count = 13;
@@ -26,6 +26,6 @@ private:
 
     std::unordered_map<std::string, std::vector<Prediction>> data;
 
-    void save_predictions(const std::string symbol);
-    bool load_predictions(const std::string symbol);
+    void save(const std::string symbol);
+    bool load(const std::string symbol);
 };

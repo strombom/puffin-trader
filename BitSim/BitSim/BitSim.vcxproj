@@ -171,6 +171,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\BitLib\DateTime.cpp" />
     <ClCompile Include="BitSim.cpp" />
+    <ClCompile Include="Klines.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -180,8 +181,10 @@
     <ClCompile Include="Predictions.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
     <ClInclude Include="..\..\BitLib\DateTime.h" />
     <ClInclude Include="..\..\BitLib\date\date.h" />
+    <ClInclude Include="Klines.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Predictions.h" />
   </ItemGroup>
