@@ -200,4 +200,17 @@ def make_predictions():
 
 
 if __name__ == '__main__':
-    make_predictions()
+
+    file_path = f"cache/predictions.pickle"
+    with open(file_path, 'rb') as f:
+        data = pickle.load(f)
+
+    for symbol in data['symbols']:
+        df = pd.DataFrame(data=data['timestamps'][symbol], columns=["timestamp"])
+        for i in range(data['predictions'][symbol].shape[1]):
+            df[f'prediction {i}'] = pd.Series(data['predictions'][symbol][:, i])
+        for i in range(data['ground_truths'][symbol].shape[1]):
+            df[f'ground_truth {i}'] = pd.Series(data['ground_truths'][symbol][:, i])
+        df.to_csv(f'E:/BitBot/predictions/{symbol}.csv')
+
+    #make_predictions()
