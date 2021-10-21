@@ -1,0 +1,7 @@
+.vs
+BitSim/Debug
+BitSim/Release
+*.exe
+BitSim/x64
+x64
+BitSim/BitLib
