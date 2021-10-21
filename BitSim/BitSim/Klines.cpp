@@ -45,3 +45,21 @@ bool Klines::load(const std::string symbol)
 
     return true;
 }
+
+time_point_ms Klines::get_timestamp_start(void) const
+{
+    auto timestamp = time_point_ms{};
+    for (const auto [symbol, entry] : data) {
+        timestamp = std::max(timestamp, entry[0].open_time);
+    }
+    return timestamp;
+}
+
+time_point_ms Klines::get_timestamp_end(void) const
+{
+    auto timestamp = data.begin()->second.back().open_time;
+    for (const auto [symbol, entry] : data) {
+        timestamp = std::min(timestamp, entry.back().open_time);
+    }
+    return timestamp;
+}

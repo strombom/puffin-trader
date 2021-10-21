@@ -17,9 +17,12 @@ class Klines
 public:
     Klines();
 
-private:
+    time_point_ms get_timestamp_start(void) const;
+    time_point_ms get_timestamp_end(void) const;
+
     std::unordered_map<std::string, std::vector<Kline>> data;
 
+private:
     void save(const std::string symbol);
     bool load(const std::string symbol);
 };
