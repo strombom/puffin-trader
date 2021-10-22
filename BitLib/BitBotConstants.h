@@ -4,6 +4,8 @@
 
 #include <array>
 
+using namespace std::string_literals;
+
 
 namespace BitBotLiveV1
 {
@@ -11,15 +13,40 @@ namespace BitBotLiveV1
     //constexpr auto history_length = std::chrono::hours{ 182 * 24 };
 }
 
+namespace BitSim
+{
+    namespace Klines
+    {
+        constexpr auto path = "E:/BitBot/klines/";
+    }
+
+    namespace Predictions
+    {
+        constexpr auto path = "E:/BitBot/predictions/";
+    }
+}
+
 namespace BitBot
 {
     constexpr auto start_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
     //constexpr auto end_timestamp = time_point_ms{ date::sys_days(date::year{2021} / 7 / 5) + std::chrono::hours{ 0 } };
     //constexpr auto n_timestamps = std::chrono::duration_cast<std::chrono::minutes>(end_timestamp - start_timestamp).count();
-    constexpr auto history_length = std::chrono::hours{ 182 * 24 };
+    constexpr auto history_length = std::chrono::hours{ 60 * 24 }; //std::chrono::hours{ 182 * 24 };
 
     //constexpr auto symbols = std::array<const char*, 21>{ "ADAUSDT", "ATOMUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "FTMUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT" };
-    constexpr auto symbols = std::array<const char*, 12>{ "ADAUSDT", "BCHUSDT", "BNBUSDT", "BTTUSDT", "CHZUSDT", "EOSUSDT", "ETCUSDT", "LINKUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT" };
+    //constexpr auto symbols = std::array<const char*, 16>{ "ADAUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETHUSDT", "ETCUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT" };
+    //constexpr auto symbols = std::array<const char*, 12>{ "ADAUSDT", "BCHUSDT", "BNBUSDT", "BTTUSDT", "CHZUSDT", "EOSUSDT", "ETCUSDT", "LINKUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT" };
+
+    struct Symbol {
+        constexpr Symbol(const int idx, const std::string_view name) : idx(idx), name(name) {}
+        const int idx;
+        const std::string_view name;
+    };
+
+    constexpr const auto symbols = std::array{
+        Symbol{ 0, "ADAUSDT" },
+        //Symbol{ 1, "BCHUSDT" }
+    };
 
     constexpr auto path = "E:/BitBot";
 
@@ -29,7 +56,7 @@ namespace BitBot
 
     namespace IntrinsicEvents
     {
-        constexpr auto target_event_count = 250000;
+        constexpr auto target_event_count = 300000;
     }
 
     namespace Indicators
@@ -49,8 +76,8 @@ namespace BitBot
     {
         //constexpr auto take_profit = std::array<double, 7>{1.008, 1.010, 1.012, 1.015, 1.018, 1.022, 1.027};
         //constexpr auto stop_loss   = std::array<double, 7>{0.992, 0.990, 0.988, 0.985, 0.982, 0.978, 0.973};
-        constexpr auto take_profit = std::array<double, 13>{1.009, 1.010, 1.011, 1.012, 1.013, 1.014, 1.015, 1.017, 1.018, 1.020, 1.021, 1.023, 1.025};
-        constexpr auto stop_loss   = std::array<double, 13>{0.991, 0.990, 0.989, 0.988, 0.987, 0.986, 0.985, 0.983, 0.982, 0.980, 0.979, 0.977, 0.975};
+        constexpr auto take_profit = std::array<double, 13>{1.006, 1.007, 1.008, 1.009, 1.010, 1.011, 1.012, 1.013, 1.014, 1.015, 1.017, 1.018, 1.020};
+        constexpr auto stop_loss   = std::array<double, 13>{0.994, 0.993, 0.992, 0.991, 0.990, 0.989, 0.988, 0.987, 0.986, 0.985, 0.983, 0.982, 0.980};
     }
 }
 
@@ -167,6 +194,7 @@ namespace BitBase
     }
 }
 
+/*
 namespace BitSim
 {
     constexpr auto interval = 1000ms;
@@ -323,3 +351,4 @@ namespace BitSim
         constexpr auto episode_log_path = "C:\\development\\github\\puffin-trader\\tmp\\rl\\episode_log";
     }
 }
+*/

@@ -5,9 +5,19 @@
 #include <fstream>
 
 
-Predictions::Predictions() {
-    
-    for (auto& file : std::filesystem::directory_iterator{ "E:/BitBot/predictions" })  //loop through the current folder
+Predictions::Predictions(void)
+{
+    for (const auto& symbol : BitBot::symbols) {
+        printf("Load predictions %s\n", symbol.name.data());
+        if (!load(symbol)) {
+            printf("Read csv %s\n", symbol.name.data());
+            load_csv(symbol);
+            save(symbol);
+        }
+    }
+
+    /*
+    for (auto& file : std::filesystem::directory_iterator{ BitSim::Predictions::path })  //loop through the current folder
     {
         if (file.is_regular_file()) {
             const auto&& symbol = file.path().stem().string();
@@ -17,17 +27,20 @@ Predictions::Predictions() {
                 read_csv(symbol, file.path());
                 save(symbol);
             }
-            break;
         }
     }
+    */
 }
 
-void Predictions::read_csv(const std::string symbol, const std::filesystem::path& path)
+void Predictions::load_csv(const BitBot::Symbol& symbol)
 {
-    data.try_emplace(symbol);
-    auto&& entry = data[symbol];
+    data[symbol.idx].clear();
+    data_idx[symbol.idx] = 0;
 
-    auto file = std::ifstream{ path.string()};
+    auto&& entry = data[symbol.idx];
+
+    const auto file_path = std::string{ BitSim::Predictions::path } + symbol.name.data() + ".csv";
+    auto file = std::ifstream{ file_path };
     auto line = std::string{};
     auto row_idx = int{};
     auto datestring = std::array<char, 26>{};
@@ -61,14 +74,14 @@ void Predictions::read_csv(const std::string symbol, const std::filesystem::path
     }
 }
 
-void Predictions::save(const std::string symbol)
+void Predictions::save(const BitBot::Symbol& symbol)
 {
-    auto file_path = std::string{ "E:/BitBot/predictions/cache" };
+    auto file_path = std::string{ BitSim::Predictions::path } + "cache/";
     std::filesystem::create_directories(file_path);
-    file_path += "\\" + symbol + ".dat";
+    file_path += std::string{ symbol.name.data() } + ".dat";
 
     auto data_file = std::ofstream{ file_path, std::ios::binary };
-    auto&& entry = data[symbol];
+    auto&& entry = data[symbol.idx];
 
     for (auto row_idx = 0; row_idx < entry.size(); row_idx++) {
         const auto timestamp = entry[row_idx].timestamp.time_since_epoch().count();
@@ -87,9 +100,9 @@ void Predictions::save(const std::string symbol)
     data_file.close();
 }
 
-bool Predictions::load(const std::string symbol)
+bool Predictions::load(const BitBot::Symbol& symbol)
 {
-    const auto file_path = std::string{ "E:/BitBot/predictions/cache/" } + symbol + ".dat";
+    const auto file_path = std::string{ BitSim::Predictions::path } + "cache/" + symbol.name.data() + ".dat";
 
     if (!std::filesystem::exists(file_path)) {
         return false;
@@ -100,8 +113,10 @@ bool Predictions::load(const std::string symbol)
 
     auto data_file = std::ifstream{ file_path, std::ios::binary };
 
-    data.try_emplace(symbol);
-    auto&& entry = data[symbol];
+    data[symbol.idx].clear();
+    data_idx[symbol.idx] = 0;
+
+    auto&& entry = data[symbol.idx];
     entry.resize(row_count);
 
     for (auto row_idx = 0; row_idx < row_count; row_idx++) {
@@ -116,4 +131,18 @@ bool Predictions::load(const std::string symbol)
     data_file.close();
 
     return true;
+}
+
+void Predictions::step_idx(time_point_ms timestamp)
+{
+    //bool end_of_data = false;
+    for (const auto& symbol : BitBot::symbols) {
+        while (data[symbol.idx][data_idx[symbol.idx]].timestamp < timestamp && data_idx[symbol.idx] + 1 < data[symbol.idx].size()) {
+            data_idx[symbol.idx]++;
+        }
+        //if (data_idx[symbol] == entry.size() - 1 && timestamp > entry[data_idx[symbol]].timestamp) {
+        //    end_of_data = true;
+        //}
+    }
+    //return end_of_data;
 }

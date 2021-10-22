@@ -1,39 +1,38 @@
 #include "pch.h"
 #include "Klines.h"
-#include "BitLib/BitBotConstants.h"
 
 #include <fstream>
 
 
-Klines::Klines()
+Klines::Klines(void)
 {
     for (const auto& symbol : BitBot::symbols) {
-        printf("Load klines %s\n", symbol);
+        printf("Load klines %s\n", symbol.name.data());
         load(symbol);
-        break;
     }
 }
 
-void Klines::save(const std::string symbol)
+void Klines::save(const BitBot::Symbol symbol)
 {
 
 }
 
-bool Klines::load(const std::string symbol)
+bool Klines::load(const BitBot::Symbol symbol)
 {
-    const auto file_path = BitSim::Klines::path + symbol + ".dat";
+    const auto file_path = std::string{ BitSim::Klines::path } + symbol.name.data() + ".dat";
 
     if (!std::filesystem::exists(file_path)) {
         return false;
     }
 
-    const auto row_size = sizeof(time_point_ms) + sizeof(Kline::open_time) + sizeof(float);
-    const auto row_count = std::filesystem::file_size(file_path) / row_size;
+    const auto row_count = std::filesystem::file_size(file_path) / sizeof(Kline);
 
     auto data_file = std::ifstream{ file_path, std::ios::binary };
 
-    data.try_emplace(symbol);
-    auto&& entry = data[symbol];
+    data[symbol.idx].clear();
+    data_idx[symbol.idx] = 0;
+
+    auto&& entry = data[symbol.idx];
     entry.resize(row_count);
 
     for (auto row_idx = 0; row_idx < row_count; row_idx++) {
@@ -48,18 +47,27 @@ bool Klines::load(const std::string symbol)
 
 time_point_ms Klines::get_timestamp_start(void) const
 {
-    auto timestamp = time_point_ms{};
-    for (const auto [symbol, entry] : data) {
-        timestamp = std::max(timestamp, entry[0].open_time);
+    auto timestamp = data.begin()->front().open_time;
+    for (const auto& symbol : BitBot::symbols) {
+        timestamp = std::max(timestamp, data[symbol.idx].front().open_time);
     }
     return timestamp;
 }
 
 time_point_ms Klines::get_timestamp_end(void) const
 {
-    auto timestamp = data.begin()->second.back().open_time;
-    for (const auto [symbol, entry] : data) {
-        timestamp = std::min(timestamp, entry.back().open_time);
+    auto timestamp = data.begin()->back().open_time;
+    for (const auto& symbol : BitBot::symbols) {
+        timestamp = std::min(timestamp, data[symbol.idx].back().open_time);
     }
     return timestamp;
+}
+
+void Klines::step_idx(time_point_ms timestamp)
+{
+    for (const auto& symbol : BitBot::symbols) {
+        while (data[symbol.idx][data_idx[symbol.idx]].open_time < timestamp && data_idx[symbol.idx] + 1 < data[symbol.idx].size()) {
+            data_idx[symbol.idx]++;
+        }
+    }
 }

@@ -27,13 +27,13 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Predictions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\BitLib\DateTime.cpp">
       <Filter>Source Files\BitLib</Filter>
     </ClCompile>
     <ClCompile Include="Klines.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Predictions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,8 +1,8 @@
 #pragma once
 #include "BitLib/DateTime.h"
+#include "BitLib/BitBotConstants.h"
 
 #include <filesystem>
-#include <unordered_map>
 
 
 struct Kline
@@ -15,14 +15,18 @@ struct Kline
 class Klines
 {
 public:
-    Klines();
+    Klines(void);
 
     time_point_ms get_timestamp_start(void) const;
     time_point_ms get_timestamp_end(void) const;
 
-    std::unordered_map<std::string, std::vector<Kline>> data;
+    void step_idx(time_point_ms timestamp);
+
+    std::array<std::vector<Kline>, BitBot::symbols.size()> data;
 
 private:
-    void save(const std::string symbol);
-    bool load(const std::string symbol);
+    void save(const BitBot::Symbol symbol);
+    bool load(const BitBot::Symbol symbol);
+
+    std::array<int, BitBot::symbols.size()> data_idx;
 };

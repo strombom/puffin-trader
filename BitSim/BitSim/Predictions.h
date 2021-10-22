@@ -1,5 +1,6 @@
 #pragma once
 #include "BitLib/DateTime.h"
+#include "BitLib/BitBotConstants.h"
 
 #include <array>
 #include <filesystem>
@@ -19,13 +20,16 @@ struct Prediction
 class Predictions
 {
 public:
-    Predictions();
+    Predictions(void);
+
+    void step_idx(time_point_ms timestamp);
 
 private:
-    void read_csv(const std::string symbol, const std::filesystem::path& path);
 
-    std::unordered_map<std::string, std::vector<Prediction>> data;
+    std::array<std::vector<Prediction>, BitBot::symbols.size()> data;
+    std::array<int, BitBot::symbols.size()> data_idx;
 
-    void save(const std::string symbol);
-    bool load(const std::string symbol);
+    void save(const BitBot::Symbol& symbol);
+    bool load(const BitBot::Symbol& symbol);
+    void load_csv(const BitBot::Symbol& symbol);
 };
