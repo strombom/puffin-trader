@@ -23,11 +23,14 @@ public:
     Predictions(void);
 
     void step_idx(time_point_ms timestamp);
+    bool has_prediction(const BitBot::Symbol& symbol);
+    float get_prediction_score(const BitBot::Symbol& symbol, int delta_idx);
 
 private:
 
     std::array<std::vector<Prediction>, BitBot::symbols.size()> data;
     std::array<int, BitBot::symbols.size()> data_idx;
+    std::array<bool, BitBot::symbols.size()> active;
 
     void save(const BitBot::Symbol& symbol);
     bool load(const BitBot::Symbol& symbol);

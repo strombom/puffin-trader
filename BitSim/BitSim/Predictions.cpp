@@ -135,14 +135,25 @@ bool Predictions::load(const BitBot::Symbol& symbol)
 
 void Predictions::step_idx(time_point_ms timestamp)
 {
-    //bool end_of_data = false;
     for (const auto& symbol : BitBot::symbols) {
         while (data[symbol.idx][data_idx[symbol.idx]].timestamp < timestamp && data_idx[symbol.idx] + 1 < data[symbol.idx].size()) {
             data_idx[symbol.idx]++;
         }
-        //if (data_idx[symbol] == entry.size() - 1 && timestamp > entry[data_idx[symbol]].timestamp) {
-        //    end_of_data = true;
-        //}
+        if (data[symbol.idx][data_idx[symbol.idx]].timestamp == timestamp) {
+            active[symbol.idx] = true;
+        }
+        else {
+            active[symbol.idx] = false;
+        }
     }
-    //return end_of_data;
+}
+
+bool Predictions::has_prediction(const BitBot::Symbol& symbol)
+{
+    return active[symbol.idx];
+}
+
+float Predictions::get_prediction_score(const BitBot::Symbol& symbol, int delta_idx)
+{
+    return data[symbol.idx][data_idx[symbol.idx]].prediction[delta_idx];
 }

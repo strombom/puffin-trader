@@ -9,6 +9,9 @@
 
 int main()
 {
+    constexpr auto delta_idx = 5;
+    constexpr auto threshold = 0.5;
+
     auto klines = Klines{};
     auto predictions = Predictions{};
 
@@ -19,9 +22,20 @@ int main()
 
     while (timestamp < timestamp_end) {
         klines.step_idx(timestamp);
+        simulator.set_mark_price(klines);
+
         predictions.step_idx(timestamp);
 
-        simulator.set_mark_price(klines);
+        for (const auto& symbol : BitBot::symbols) {
+            if (!predictions.has_prediction(symbol)) {
+                continue;
+            }
+
+            const auto score = predictions.get_prediction_score(symbol, delta_idx);
+            if (score > threshold) {
+
+            }
+        }
 
         timestamp += std::chrono::minutes{ 1 };
     }
