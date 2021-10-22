@@ -17,3 +17,17 @@ void Simulator::set_mark_price(const Klines& klines)
         mark_price[symbol.idx] = klines.get_open_price(symbol);
     }
 }
+
+double Simulator::get_equity(void) const
+{
+    double equity = 0.0;
+    for (const auto& symbol : BitBot::symbols) {
+        equity += wallet[symbol.idx] * mark_price[symbol.idx];
+    }
+    return equity;
+}
+
+double Simulator::get_cash(void) const
+{
+    return wallet_usdt;
+}

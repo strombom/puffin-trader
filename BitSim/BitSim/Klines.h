@@ -21,7 +21,7 @@ public:
     time_point_ms get_timestamp_end(void) const;
 
     void step_idx(time_point_ms timestamp);
-    float get_open_price(const BitBot::Symbol& symbol) const;
+    double get_open_price(const BitBot::Symbol& symbol) const;
 
 private:
     bool load(const BitBot::Symbol& symbol);

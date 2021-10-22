@@ -153,7 +153,7 @@ bool Predictions::has_prediction(const BitBot::Symbol& symbol)
     return active[symbol.idx];
 }
 
-float Predictions::get_prediction_score(const BitBot::Symbol& symbol, int delta_idx)
+double Predictions::get_prediction_score(const BitBot::Symbol& symbol, int delta_idx)
 {
     return data[symbol.idx][data_idx[symbol.idx]].prediction[delta_idx];
 }

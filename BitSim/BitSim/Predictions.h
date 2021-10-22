@@ -24,7 +24,7 @@ public:
 
     void step_idx(time_point_ms timestamp);
     bool has_prediction(const BitBot::Symbol& symbol);
-    float get_prediction_score(const BitBot::Symbol& symbol, int delta_idx);
+    double get_prediction_score(const BitBot::Symbol& symbol, int delta_idx);
 
 private:
 

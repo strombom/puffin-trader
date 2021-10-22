@@ -33,7 +33,8 @@ int main()
 
             const auto score = predictions.get_prediction_score(symbol, delta_idx);
             if (score > threshold) {
-
+                const auto equity = simulator.get_equity();
+                const auto cash = simulator.get_cash();
             }
         }
 

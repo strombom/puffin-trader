@@ -10,8 +10,11 @@ public:
 
     void set_mark_price(const Klines& klines);
 
+    double get_equity(void) const;
+    double get_cash(void) const;
+
 private:
     float wallet_usdt;
-    std::array<float, BitBot::symbols.size()> wallet;
-    std::array<float, BitBot::symbols.size()> mark_price;
+    std::array<double, BitBot::symbols.size()> wallet;
+    std::array<double, BitBot::symbols.size()> mark_price;
 };

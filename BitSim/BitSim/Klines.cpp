@@ -67,7 +67,7 @@ void Klines::step_idx(time_point_ms timestamp)
     }
 }
 
-float Klines::get_open_price(const BitBot::Symbol& symbol) const
+double Klines::get_open_price(const BitBot::Symbol& symbol) const
 {
     return data[symbol.idx][data_idx[symbol.idx]].open_price;
 }
