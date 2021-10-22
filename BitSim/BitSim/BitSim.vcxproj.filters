@@ -36,6 +36,9 @@
     <ClCompile Include="Predictions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Simulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -55,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="..\..\BitLib\BitBotConstants.h">
       <Filter>Header Files\BitLib</Filter>
+    </ClInclude>
+    <ClInclude Include="Simulator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

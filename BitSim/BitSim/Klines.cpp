@@ -12,12 +12,7 @@ Klines::Klines(void)
     }
 }
 
-void Klines::save(const BitBot::Symbol symbol)
-{
-
-}
-
-bool Klines::load(const BitBot::Symbol symbol)
+bool Klines::load(const BitBot::Symbol& symbol)
 {
     const auto file_path = std::string{ BitSim::Klines::path } + symbol.name.data() + ".dat";
 
@@ -70,4 +65,9 @@ void Klines::step_idx(time_point_ms timestamp)
             data_idx[symbol.idx]++;
         }
     }
+}
+
+float Klines::get_open_price(const BitBot::Symbol& symbol) const
+{
+    return data[symbol.idx][data_idx[symbol.idx]].open_price;
 }

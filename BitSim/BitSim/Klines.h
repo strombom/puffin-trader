@@ -21,12 +21,11 @@ public:
     time_point_ms get_timestamp_end(void) const;
 
     void step_idx(time_point_ms timestamp);
-
-    std::array<std::vector<Kline>, BitBot::symbols.size()> data;
+    float get_open_price(const BitBot::Symbol& symbol) const;
 
 private:
-    void save(const BitBot::Symbol symbol);
-    bool load(const BitBot::Symbol symbol);
+    bool load(const BitBot::Symbol& symbol);
 
+    std::array<std::vector<Kline>, BitBot::symbols.size()> data;
     std::array<int, BitBot::symbols.size()> data_idx;
 };
