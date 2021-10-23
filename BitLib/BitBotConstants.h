@@ -15,6 +15,22 @@ namespace BitBotLiveV1
 
 namespace BitSim
 {
+    struct Symbol {
+        constexpr Symbol(const int idx, const std::string_view name) : idx(idx), name(name) {}
+        const int idx;
+        const std::string_view name;
+    };
+
+    constexpr const auto symbols = std::array{
+        Symbol{ 0, "ADAUSDT" },
+        //Symbol{ 1, "BCHUSDT" }
+    };
+
+    namespace Portfolio
+    {
+        constexpr auto capacity = 10;
+    }
+
     namespace Klines
     {
         constexpr auto path = "E:/BitBot/klines/";
@@ -33,20 +49,9 @@ namespace BitBot
     //constexpr auto n_timestamps = std::chrono::duration_cast<std::chrono::minutes>(end_timestamp - start_timestamp).count();
     constexpr auto history_length = std::chrono::hours{ 60 * 24 }; //std::chrono::hours{ 182 * 24 };
 
-    //constexpr auto symbols = std::array<const char*, 21>{ "ADAUSDT", "ATOMUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "FTMUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT" };
+    constexpr auto symbols = std::array<const char*, 21>{ "ADAUSDT", "ATOMUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "FTMUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT" };
     //constexpr auto symbols = std::array<const char*, 16>{ "ADAUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETHUSDT", "ETCUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT" };
     //constexpr auto symbols = std::array<const char*, 12>{ "ADAUSDT", "BCHUSDT", "BNBUSDT", "BTTUSDT", "CHZUSDT", "EOSUSDT", "ETCUSDT", "LINKUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT" };
-
-    struct Symbol {
-        constexpr Symbol(const int idx, const std::string_view name) : idx(idx), name(name) {}
-        const int idx;
-        const std::string_view name;
-    };
-
-    constexpr const auto symbols = std::array{
-        Symbol{ 0, "ADAUSDT" },
-        //Symbol{ 1, "BCHUSDT" }
-    };
 
     constexpr auto path = "E:/BitBot";
 

@@ -6,13 +6,13 @@
 
 Klines::Klines(void)
 {
-    for (const auto& symbol : BitBot::symbols) {
+    for (const auto& symbol : BitSim::symbols) {
         printf("Load klines %s\n", symbol.name.data());
         load(symbol);
     }
 }
 
-bool Klines::load(const BitBot::Symbol& symbol)
+bool Klines::load(const BitSim::Symbol& symbol)
 {
     const auto file_path = std::string{ BitSim::Klines::path } + symbol.name.data() + ".dat";
 
@@ -43,7 +43,7 @@ bool Klines::load(const BitBot::Symbol& symbol)
 time_point_ms Klines::get_timestamp_start(void) const
 {
     auto timestamp = data.begin()->front().open_time;
-    for (const auto& symbol : BitBot::symbols) {
+    for (const auto& symbol : BitSim::symbols) {
         timestamp = std::max(timestamp, data[symbol.idx].front().open_time);
     }
     return timestamp;
@@ -52,7 +52,7 @@ time_point_ms Klines::get_timestamp_start(void) const
 time_point_ms Klines::get_timestamp_end(void) const
 {
     auto timestamp = data.begin()->back().open_time;
-    for (const auto& symbol : BitBot::symbols) {
+    for (const auto& symbol : BitSim::symbols) {
         timestamp = std::min(timestamp, data[symbol.idx].back().open_time);
     }
     return timestamp;
@@ -60,14 +60,14 @@ time_point_ms Klines::get_timestamp_end(void) const
 
 void Klines::step_idx(time_point_ms timestamp)
 {
-    for (const auto& symbol : BitBot::symbols) {
+    for (const auto& symbol : BitSim::symbols) {
         while (data[symbol.idx][data_idx[symbol.idx]].open_time < timestamp && data_idx[symbol.idx] + 1 < data[symbol.idx].size()) {
             data_idx[symbol.idx]++;
         }
     }
 }
 
-double Klines::get_open_price(const BitBot::Symbol& symbol) const
+double Klines::get_open_price(const BitSim::Symbol& symbol) const
 {
     return data[symbol.idx][data_idx[symbol.idx]].open_price;
 }

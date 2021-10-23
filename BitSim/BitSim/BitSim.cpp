@@ -26,7 +26,7 @@ int main()
 
         predictions.step_idx(timestamp);
 
-        for (const auto& symbol : BitBot::symbols) {
+        for (const auto& symbol : BitSim::symbols) {
             if (!predictions.has_prediction(symbol)) {
                 continue;
             }
@@ -35,6 +35,12 @@ int main()
             if (score > threshold) {
                 const auto equity = simulator.get_equity();
                 const auto cash = simulator.get_cash();
+                const auto position_value = std::min(equity / BitSim::Portfolio::capacity, cash * 0.99);
+                const auto mark_price = klines.get_open_price(symbol);
+                const auto position_size = position_value / mark_price * 0.99;
+
+                simulator.limit_order(position_size, symbol);
+
             }
         }
 

@@ -7,7 +7,7 @@
 
 Predictions::Predictions(void)
 {
-    for (const auto& symbol : BitBot::symbols) {
+    for (const auto& symbol : BitSim::symbols) {
         printf("Load predictions %s\n", symbol.name.data());
         if (!load(symbol)) {
             printf("Read csv %s\n", symbol.name.data());
@@ -32,7 +32,7 @@ Predictions::Predictions(void)
     */
 }
 
-void Predictions::load_csv(const BitBot::Symbol& symbol)
+void Predictions::load_csv(const BitSim::Symbol& symbol)
 {
     data[symbol.idx].clear();
     data_idx[symbol.idx] = 0;
@@ -74,7 +74,7 @@ void Predictions::load_csv(const BitBot::Symbol& symbol)
     }
 }
 
-void Predictions::save(const BitBot::Symbol& symbol)
+void Predictions::save(const BitSim::Symbol& symbol)
 {
     auto file_path = std::string{ BitSim::Predictions::path } + "cache/";
     std::filesystem::create_directories(file_path);
@@ -100,7 +100,7 @@ void Predictions::save(const BitBot::Symbol& symbol)
     data_file.close();
 }
 
-bool Predictions::load(const BitBot::Symbol& symbol)
+bool Predictions::load(const BitSim::Symbol& symbol)
 {
     const auto file_path = std::string{ BitSim::Predictions::path } + "cache/" + symbol.name.data() + ".dat";
 
@@ -135,7 +135,7 @@ bool Predictions::load(const BitBot::Symbol& symbol)
 
 void Predictions::step_idx(time_point_ms timestamp)
 {
-    for (const auto& symbol : BitBot::symbols) {
+    for (const auto& symbol : BitSim::symbols) {
         while (data[symbol.idx][data_idx[symbol.idx]].timestamp < timestamp && data_idx[symbol.idx] + 1 < data[symbol.idx].size()) {
             data_idx[symbol.idx]++;
         }
@@ -148,12 +148,12 @@ void Predictions::step_idx(time_point_ms timestamp)
     }
 }
 
-bool Predictions::has_prediction(const BitBot::Symbol& symbol)
+bool Predictions::has_prediction(const BitSim::Symbol& symbol)
 {
     return active[symbol.idx];
 }
 
-double Predictions::get_prediction_score(const BitBot::Symbol& symbol, int delta_idx)
+double Predictions::get_prediction_score(const BitSim::Symbol& symbol, int delta_idx)
 {
     return data[symbol.idx][data_idx[symbol.idx]].prediction[delta_idx];
 }
