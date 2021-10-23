@@ -1,0 +1,34 @@
+#pragma once
+
+#include <array>
+
+
+struct Symbol {
+    constexpr Symbol(
+        int idx, 
+        const std::string_view name, 
+        double tick_size, 
+        double taker_fee, 
+        double maker_fee, 
+        double lot_size, 
+        double min_qty, 
+        double max_qty) 
+    : 
+        idx(idx), 
+        name(name), 
+        tick_size(tick_size), 
+        taker_fee(taker_fee), 
+        maker_fee(maker_fee), 
+        lot_size(lot_size), 
+        min_qty(min_qty), 
+        max_qty(max_qty) {}
+
+    const int idx;
+    const std::string_view name;
+    const double tick_size;
+    const double taker_fee;
+    const double maker_fee;
+    const double lot_size; 
+    const double min_qty; 
+    const double max_qty;
+};

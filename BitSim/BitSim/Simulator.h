@@ -1,16 +1,16 @@
 #pragma once
 #include "Klines.h"
+#include "Position.h"
+#include "Symbols.h"
 #include "BitLib/BitBotConstants.h"
 
 
-class LimitOrder
+struct LimitOrder
 {
-public:
-    LimitOrder(const BitSim::Symbol& symbol, double price, double amount) :
+    LimitOrder(const Symbol& symbol, double price, double amount) :
         symbol(symbol), price(price), amount(amount) {}
 
-private:
-    const BitSim::Symbol& symbol;
+    const Symbol& symbol;
     double price;
     double amount;
 };
@@ -24,12 +24,13 @@ public:
 
     double get_equity(void) const;
     double get_cash(void) const;
-    void limit_order(double position_size, const BitSim::Symbol& symbol);
+    void limit_order(double position_size, const Symbol& symbol);
+    uptrPositions evaluate_limit_orders(const Klines& klines, time_point_ms timestamp);
 
 private:
     float wallet_usdt;
-    std::array<double, BitSim::symbols.size()> wallet;
-    std::array<double, BitSim::symbols.size()> mark_price;
+    std::array<double, symbols.size()> wallet;
+    std::array<double, symbols.size()> mark_price;
 
     std::vector<LimitOrder> limit_orders;
 };

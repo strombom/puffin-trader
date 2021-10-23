@@ -1,4 +1,5 @@
 #pragma once
+#include "Symbols.h"
 #include "BitLib/DateTime.h"
 #include "BitLib/BitBotConstants.h"
 
@@ -23,11 +24,14 @@ public:
     time_point_ms get_timestamp_end(void) const;
 
     void step_idx(time_point_ms timestamp);
-    double get_open_price(const BitSim::Symbol& symbol) const;
+    double get_open_price(const Symbol& symbol) const;
+    double get_high_price(const Symbol& symbol) const;
+    double get_low_price(const Symbol& symbol) const;
+    double get_volume(const Symbol& symbol) const;
 
 private:
-    bool load(const BitSim::Symbol& symbol);
+    bool load(const Symbol& symbol);
 
-    std::array<std::vector<Kline>, BitSim::symbols.size()> data;
-    std::array<int, BitSim::symbols.size()> data_idx;
+    std::array<std::vector<Kline>, symbols.size()> data;
+    std::array<int, symbols.size()> data_idx;
 };

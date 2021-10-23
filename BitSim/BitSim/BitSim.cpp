@@ -2,6 +2,7 @@
 #include "Klines.h"
 #include "Predictions.h"
 #include "Simulator.h"
+#include "Symbols.h"
 #include "BitLib/BitBotConstants.h"
 
 #include <iostream>
@@ -26,7 +27,7 @@ int main()
 
         predictions.step_idx(timestamp);
 
-        for (const auto& symbol : BitSim::symbols) {
+        for (const auto& symbol : symbols) {
             if (!predictions.has_prediction(symbol)) {
                 continue;
             }
@@ -39,10 +40,12 @@ int main()
                 const auto mark_price = klines.get_open_price(symbol);
                 const auto position_size = position_value / mark_price * 0.99;
 
+                printf("%s Add limit order\n", date::format("%F %T", timestamp).c_str());
                 simulator.limit_order(position_size, symbol);
-
             }
         }
+
+        simulator.evaluate_limit_orders(klines, timestamp);
 
         timestamp += std::chrono::minutes{ 1 };
     }

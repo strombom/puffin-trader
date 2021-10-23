@@ -15,17 +15,23 @@ namespace BitBotLiveV1
 
 namespace BitSim
 {
+    /*
     struct Symbol {
-        constexpr Symbol(const int idx, const std::string_view name) : idx(idx), name(name) {}
+        constexpr Symbol(int idx, const std::string_view name, float tick_size, float taker_fee, float maker_fee) : 
+            idx(idx), name(name), tick_size(tick_size), taker_fee(taker_fee), maker_fee(maker_fee) {}
+
         const int idx;
         const std::string_view name;
+        const float tick_size;
+        const float taker_fee;
+        const float maker_fee;
     };
 
     constexpr const auto symbols = std::array{
-        Symbol{ 0, "ADAUSDT" },
+        Symbol{ 0, "ADAUSDT", 0.0001, 0.00075, -0.00025 },
         //Symbol{ 1, "BCHUSDT" }
     };
-
+    */
     namespace Portfolio
     {
         constexpr auto capacity = 10;
@@ -47,7 +53,7 @@ namespace BitBot
     constexpr auto start_timestamp = time_point_ms{ date::sys_days(date::year{2020} / 1 / 1) + std::chrono::hours{ 0 } };
     //constexpr auto end_timestamp = time_point_ms{ date::sys_days(date::year{2021} / 7 / 5) + std::chrono::hours{ 0 } };
     //constexpr auto n_timestamps = std::chrono::duration_cast<std::chrono::minutes>(end_timestamp - start_timestamp).count();
-    constexpr auto history_length = std::chrono::hours{ 60 * 24 }; //std::chrono::hours{ 182 * 24 };
+    constexpr auto history_length = std::chrono::hours{ 30 * 24 }; //std::chrono::hours{ 182 * 24 };
 
     constexpr auto symbols = std::array<const char*, 21>{ "ADAUSDT", "ATOMUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETCUSDT", "ETHUSDT", "FTMUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "NEOUSDT", "THETAUSDT", "TRXUSDT", "VETUSDT", "XLMUSDT", "XRPUSDT" };
     //constexpr auto symbols = std::array<const char*, 16>{ "ADAUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETHUSDT", "ETCUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT" };
@@ -61,7 +67,7 @@ namespace BitBot
 
     namespace IntrinsicEvents
     {
-        constexpr auto target_event_count = 300000;
+        constexpr auto target_event_count = 500000;
     }
 
     namespace Indicators
@@ -81,8 +87,8 @@ namespace BitBot
     {
         //constexpr auto take_profit = std::array<double, 7>{1.008, 1.010, 1.012, 1.015, 1.018, 1.022, 1.027};
         //constexpr auto stop_loss   = std::array<double, 7>{0.992, 0.990, 0.988, 0.985, 0.982, 0.978, 0.973};
-        constexpr auto take_profit = std::array<double, 13>{1.006, 1.007, 1.008, 1.009, 1.010, 1.011, 1.012, 1.013, 1.014, 1.015, 1.017, 1.018, 1.020};
-        constexpr auto stop_loss   = std::array<double, 13>{0.994, 0.993, 0.992, 0.991, 0.990, 0.989, 0.988, 0.987, 0.986, 0.985, 0.983, 0.982, 0.980};
+        constexpr auto take_profit = std::array<double, 13>{1.005, 1.006, 1.007, 1.008, 1.009, 1.010, 1.011, 1.012, 1.013, 1.014, 1.015, 1.016, 1.017};
+        constexpr auto stop_loss   = std::array<double, 13>{0.995, 0.994, 0.993, 0.992, 0.991, 0.990, 0.989, 0.988, 0.987, 0.986, 0.985, 0.984, 0.983};
     }
 }
 

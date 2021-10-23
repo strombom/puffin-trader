@@ -1,4 +1,5 @@
 #pragma once
+#include "Symbols.h"
 #include "BitLib/DateTime.h"
 #include "BitLib/BitBotConstants.h"
 
@@ -23,16 +24,16 @@ public:
     Predictions(void);
 
     void step_idx(time_point_ms timestamp);
-    bool has_prediction(const BitSim::Symbol& symbol);
-    double get_prediction_score(const BitSim::Symbol& symbol, int delta_idx);
+    bool has_prediction(const Symbol& symbol);
+    double get_prediction_score(const Symbol& symbol, int delta_idx);
 
 private:
 
-    std::array<std::vector<Prediction>, BitSim::symbols.size()> data;
-    std::array<int, BitSim::symbols.size()> data_idx;
-    std::array<bool, BitSim::symbols.size()> active;
+    std::array<std::vector<Prediction>, symbols.size()> data;
+    std::array<int, symbols.size()> data_idx;
+    std::array<bool, symbols.size()> active;
 
-    void save(const BitSim::Symbol& symbol);
-    bool load(const BitSim::Symbol& symbol);
-    void load_csv(const BitSim::Symbol& symbol);
+    void save(const Symbol& symbol);
+    bool load(const Symbol& symbol);
+    void load_csv(const Symbol& symbol);
 };

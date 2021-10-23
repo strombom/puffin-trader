@@ -7,7 +7,7 @@
 
 Predictions::Predictions(void)
 {
-    for (const auto& symbol : BitSim::symbols) {
+    for (const auto& symbol : symbols) {
         printf("Load predictions %s\n", symbol.name.data());
         if (!load(symbol)) {
             printf("Read csv %s\n", symbol.name.data());
@@ -15,24 +15,9 @@ Predictions::Predictions(void)
             save(symbol);
         }
     }
-
-    /*
-    for (auto& file : std::filesystem::directory_iterator{ BitSim::Predictions::path })  //loop through the current folder
-    {
-        if (file.is_regular_file()) {
-            const auto&& symbol = file.path().stem().string();
-            printf("Load predictions %s\n", symbol.c_str());
-            if (!load(symbol)) {
-                printf("Read %s\n", symbol.c_str());
-                read_csv(symbol, file.path());
-                save(symbol);
-            }
-        }
-    }
-    */
 }
 
-void Predictions::load_csv(const BitSim::Symbol& symbol)
+void Predictions::load_csv(const Symbol& symbol)
 {
     data[symbol.idx].clear();
     data_idx[symbol.idx] = 0;
@@ -74,7 +59,7 @@ void Predictions::load_csv(const BitSim::Symbol& symbol)
     }
 }
 
-void Predictions::save(const BitSim::Symbol& symbol)
+void Predictions::save(const Symbol& symbol)
 {
     auto file_path = std::string{ BitSim::Predictions::path } + "cache/";
     std::filesystem::create_directories(file_path);
@@ -100,7 +85,7 @@ void Predictions::save(const BitSim::Symbol& symbol)
     data_file.close();
 }
 
-bool Predictions::load(const BitSim::Symbol& symbol)
+bool Predictions::load(const Symbol& symbol)
 {
     const auto file_path = std::string{ BitSim::Predictions::path } + "cache/" + symbol.name.data() + ".dat";
 
@@ -135,7 +120,7 @@ bool Predictions::load(const BitSim::Symbol& symbol)
 
 void Predictions::step_idx(time_point_ms timestamp)
 {
-    for (const auto& symbol : BitSim::symbols) {
+    for (const auto& symbol : symbols) {
         while (data[symbol.idx][data_idx[symbol.idx]].timestamp < timestamp && data_idx[symbol.idx] + 1 < data[symbol.idx].size()) {
             data_idx[symbol.idx]++;
         }
@@ -148,12 +133,12 @@ void Predictions::step_idx(time_point_ms timestamp)
     }
 }
 
-bool Predictions::has_prediction(const BitSim::Symbol& symbol)
+bool Predictions::has_prediction(const Symbol& symbol)
 {
     return active[symbol.idx];
 }
 
-double Predictions::get_prediction_score(const BitSim::Symbol& symbol, int delta_idx)
+double Predictions::get_prediction_score(const Symbol& symbol, int delta_idx)
 {
     return data[symbol.idx][data_idx[symbol.idx]].prediction[delta_idx];
 }
