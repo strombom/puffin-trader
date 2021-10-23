@@ -32,7 +32,9 @@ bool Klines::load(const BitSim::Symbol& symbol)
 
     for (auto row_idx = 0; row_idx < row_count; row_idx++) {
         data_file.read(reinterpret_cast <char*> (&(entry[row_idx].open_time)), sizeof(Kline::open_time));
-        data_file.read(reinterpret_cast <char*> (&(entry[row_idx].open_price)), sizeof(Kline::open_price));
+        data_file.read(reinterpret_cast <char*> (&(entry[row_idx].open)), sizeof(Kline::open));
+        data_file.read(reinterpret_cast <char*> (&(entry[row_idx].high)), sizeof(Kline::high));
+        data_file.read(reinterpret_cast <char*> (&(entry[row_idx].low)), sizeof(Kline::low));
         data_file.read(reinterpret_cast <char*> (&(entry[row_idx].volume)), sizeof(Kline::volume));
     }
     data_file.close();
@@ -69,5 +71,5 @@ void Klines::step_idx(time_point_ms timestamp)
 
 double Klines::get_open_price(const BitSim::Symbol& symbol) const
 {
-    return data[symbol.idx][data_idx[symbol.idx]].open_price;
+    return data[symbol.idx][data_idx[symbol.idx]].open;
 }

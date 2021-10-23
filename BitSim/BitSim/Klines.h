@@ -8,7 +8,9 @@
 struct Kline
 {
     time_point_ms open_time;
-    float open_price;
+    float open;
+    float high;
+    float low;
     float volume;
 };
 
