@@ -11,6 +11,8 @@ std::ostream& operator<<(std::ostream& stream, const BinanceKline& row)
 {
     stream.write(reinterpret_cast<const char*>(&row.timestamp), sizeof(row.timestamp));
     stream.write(reinterpret_cast<const char*>(&row.open), sizeof(row.open));
+    stream.write(reinterpret_cast<const char*>(&row.high), sizeof(row.high));
+    stream.write(reinterpret_cast<const char*>(&row.low), sizeof(row.low));
     stream.write(reinterpret_cast<const char*>(&row.volume), sizeof(row.volume));
 
     return stream;
@@ -20,6 +22,8 @@ std::istream& operator>>(std::istream& stream, BinanceKline& row)
 {
     stream.read(reinterpret_cast <char*> (&row.timestamp), sizeof(row.timestamp));
     stream.read(reinterpret_cast <char*> (&row.open), sizeof(row.open));
+    stream.read(reinterpret_cast <char*> (&row.high), sizeof(row.high));
+    stream.read(reinterpret_cast <char*> (&row.low), sizeof(row.low));
     stream.read(reinterpret_cast <char*> (&row.volume), sizeof(row.volume));
 
     return stream;

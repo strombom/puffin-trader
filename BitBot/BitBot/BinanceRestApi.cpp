@@ -68,8 +68,10 @@ int BinanceRestApi::get_klines(const std::string& symbol, time_point_ms start_ti
         const auto kline_items = kline.array_items();
         const auto timestamp = time_point_ms{ std::chrono::milliseconds{(long long)kline_items[0].number_value()} };
         const auto open = std::stof(kline_items[1].string_value());
+        const auto high = std::stof(kline_items[2].string_value());
+        const auto low = std::stof(kline_items[3].string_value());
         const auto volume = std::stof(kline_items[5].string_value());
-        binance_klines->rows.push_back(BinanceKline{ timestamp, open, volume });
+        binance_klines->rows.push_back(BinanceKline{ timestamp, open, high, low, volume });
         count++;
     }
 
@@ -222,7 +224,12 @@ const std::string BinanceRestApi::http_request(const boost::beast::http::request
         boost::beast::http::response<boost::beast::http::dynamic_body> res;
 
         // Receive the HTTP response
-        boost::beast::http::read(stream, buffer, res);
+        try {
+            boost::beast::http::read(stream, buffer, res);
+        }
+        catch (boost::system::system_error e) {
+            return "";
+        }
 
         const auto body = boost::beast::buffers_to_string(res.body().data());
 
