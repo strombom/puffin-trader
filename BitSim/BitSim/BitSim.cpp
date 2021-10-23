@@ -45,7 +45,7 @@ int main()
             }
         }
 
-        simulator.evaluate_limit_orders(klines, timestamp);
+        const auto new_positions = simulator.evaluate_limit_orders(klines, timestamp);
 
         timestamp += std::chrono::minutes{ 1 };
     }

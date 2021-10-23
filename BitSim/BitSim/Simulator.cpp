@@ -34,16 +34,42 @@ double Simulator::get_cash(void) const
 
 void Simulator::limit_order(double position_size, const Symbol& symbol)
 {
-    limit_orders.emplace_back(symbol, mark_price[symbol.idx], position_size);
+    const auto price = mark_price[symbol.idx] - symbol.tick_size;
+    position_size = int(position_size / symbol.min_qty) * symbol.min_qty;
+    limit_orders.emplace_back(symbol, price, position_size);
 }
 
-uptrPositions Simulator::evaluate_limit_orders(const Klines& klines, time_point_ms timestamp)
+uptrLimitOrders Simulator::evaluate_limit_orders(const Klines& klines, time_point_ms timestamp)
 {
-    auto positions = std::make_unique<std::vector<Position>>();
-    for (const auto& limit_order : limit_orders) {
+    auto executed_orders = std::make_unique<std::vector<LimitOrder>>();
+    for (auto& limit_order : limit_orders) {
         if (klines.get_low_price(limit_order.symbol) < limit_order.price) {
-            printf("%s Execute limit order\n", date::format("%F %T", timestamp).c_str());
+            printf(
+                "%s Execute limit order %s %.5f %.5f\n", 
+                date::format("%F %T", timestamp).c_str(),
+                limit_order.symbol.name.data(),
+                limit_order.price,
+                limit_order.amount
+            );
+            executed_orders->emplace_back(limit_order);
+            limit_order.executed = true;
         }
     }
-    return positions;
+
+    if (executed_orders->size() > 0) {
+        // Remove executed limit orders
+        limit_orders.erase(
+            std::remove_if(
+                limit_orders.begin(), 
+                limit_orders.end(), 
+                [&](const LimitOrder& limit_order) 
+                { 
+                    return limit_order.executed; 
+                }
+            ), 
+            limit_orders.end()
+        );
+    }
+    
+    return executed_orders;
 }
