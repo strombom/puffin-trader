@@ -39,9 +39,9 @@ void Simulator::limit_order(double position_size, const Symbol& symbol)
     limit_orders.emplace_back(symbol, price, position_size);
 }
 
-uptrLimitOrders Simulator::evaluate_limit_orders(const Klines& klines, time_point_ms timestamp)
+uptrOrders Simulator::evaluate_orders(const Klines& klines, time_point_ms timestamp)
 {
-    auto executed_orders = std::make_unique<std::vector<LimitOrder>>();
+    auto executed_orders = std::make_unique<std::vector<Order>>();
     for (auto& limit_order : limit_orders) {
         if (klines.get_low_price(limit_order.symbol) < limit_order.price) {
             printf(
@@ -51,7 +51,7 @@ uptrLimitOrders Simulator::evaluate_limit_orders(const Klines& klines, time_poin
                 limit_order.price,
                 limit_order.amount
             );
-            executed_orders->emplace_back(limit_order);
+            executed_orders->emplace_back(limit_order.to_order());
             limit_order.executed = true;
         }
     }

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Klines.h"
+#include "Portfolio.h"
 #include "Predictions.h"
 #include "Simulator.h"
 #include "Symbols.h"
@@ -20,6 +21,7 @@ int main()
     const auto timestamp_end = klines.get_timestamp_end();
 
     auto simulator = Simulator{};
+    auto portfolio = Portfolio{};
 
     while (timestamp < timestamp_end) {
         klines.step_idx(timestamp);
@@ -45,7 +47,10 @@ int main()
             }
         }
 
-        const auto new_positions = simulator.evaluate_limit_orders(klines, timestamp);
+        auto executed_orders = simulator.evaluate_orders(klines, timestamp);
+        if (executed_orders->size() > 0) {
+            portfolio.add_positions(std::move(executed_orders));
+        }
 
         timestamp += std::chrono::minutes{ 1 };
     }
