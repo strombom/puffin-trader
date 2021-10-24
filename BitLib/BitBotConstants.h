@@ -67,7 +67,7 @@ namespace BitBot
 
     namespace IntrinsicEvents
     {
-        constexpr auto target_event_count = 500000;
+        constexpr auto target_event_count = 250000;
     }
 
     namespace Indicators

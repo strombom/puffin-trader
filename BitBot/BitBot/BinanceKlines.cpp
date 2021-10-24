@@ -9,7 +9,7 @@
 
 std::ostream& operator<<(std::ostream& stream, const BinanceKline& row)
 {
-    stream.write(reinterpret_cast<const char*>(&row.timestamp), sizeof(row.timestamp));
+    stream.write(reinterpret_cast<const char*>(&row.open_time), sizeof(row.open_time));
     stream.write(reinterpret_cast<const char*>(&row.open), sizeof(row.open));
     stream.write(reinterpret_cast<const char*>(&row.high), sizeof(row.high));
     stream.write(reinterpret_cast<const char*>(&row.low), sizeof(row.low));
@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& stream, const BinanceKline& row)
 
 std::istream& operator>>(std::istream& stream, BinanceKline& row)
 {
-    stream.read(reinterpret_cast <char*> (&row.timestamp), sizeof(row.timestamp));
+    stream.read(reinterpret_cast <char*> (&row.open_time), sizeof(row.open_time));
     stream.read(reinterpret_cast <char*> (&row.open), sizeof(row.open));
     stream.read(reinterpret_cast <char*> (&row.high), sizeof(row.high));
     stream.read(reinterpret_cast <char*> (&row.low), sizeof(row.low));
@@ -72,7 +72,7 @@ void BinanceKlines::load(time_point_ms begin)
         auto database_binance_kline = BinanceKline{};
         auto started = false;
         while (data_file >> database_binance_kline) {
-            if (!started && database_binance_kline.timestamp >= begin) {
+            if (!started && database_binance_kline.open_time >= begin) {
                 started = true;
             }
             if (started) {
@@ -95,10 +95,10 @@ void BinanceKlines::save(void) const
 
 time_point_ms BinanceKlines::get_timestamp_begin(void) const
 {
-    return rows.front().timestamp;
+    return rows.front().open_time;
 }
 
 time_point_ms BinanceKlines::get_timestamp_end(void) const
 {
-    return rows.back().timestamp;
+    return rows.back().open_time;
 }

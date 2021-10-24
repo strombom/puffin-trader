@@ -66,12 +66,12 @@ int BinanceRestApi::get_klines(const std::string& symbol, time_point_ms start_ti
     auto count = 0;
     for (const auto &kline : response.array_items()) {
         const auto kline_items = kline.array_items();
-        const auto timestamp = time_point_ms{ std::chrono::milliseconds{(long long)kline_items[0].number_value()} };
+        const auto open_time = time_point_ms{ std::chrono::milliseconds{(long long)kline_items[0].number_value()} };
         const auto open = std::stof(kline_items[1].string_value());
         const auto high = std::stof(kline_items[2].string_value());
         const auto low = std::stof(kline_items[3].string_value());
         const auto volume = std::stof(kline_items[5].string_value());
-        binance_klines->rows.push_back(BinanceKline{ timestamp, open, high, low, volume });
+        binance_klines->rows.push_back(BinanceKline{ open_time, open, high, low, volume });
         count++;
     }
 

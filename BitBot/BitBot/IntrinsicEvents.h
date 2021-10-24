@@ -8,15 +8,14 @@
 class IntrinsicEvent
 {
 public:
-    IntrinsicEvent(void) : timestamp(), price(0), delta(0) {}
-    IntrinsicEvent(time_point_ms timestamp, float price, float delta) : timestamp(timestamp), price(price), delta(delta) {}
+    IntrinsicEvent(void) : timestamp(), price(0) {}
+    IntrinsicEvent(time_point_ms timestamp, float price, float delta) : timestamp(timestamp), price(price) {}
 
-    friend std::ostream& operator<<(std::ostream& stream, const IntrinsicEvent& row);
+    //friend std::ostream& operator<<(std::ostream& stream, const IntrinsicEvent& row);
     friend std::istream& operator>>(std::istream& stream, IntrinsicEvent& row);
 
     time_point_ms timestamp;
     float price;
-    float delta;
 };
 
 

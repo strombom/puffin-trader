@@ -7,14 +7,14 @@
 class BinanceKline
 {
 public:
-    BinanceKline(void) : timestamp(), open(0), volume(0) {}
-    BinanceKline(time_point_ms timestamp, float open, float high, float low, float volume) :
-        timestamp(timestamp), open(open), high(high), low(low), volume(volume) {}
+    BinanceKline(void) : open_time(), open(0), volume(0) {}
+    BinanceKline(time_point_ms open_time, float open, float high, float low, float volume) :
+        open_time(open_time), open(open), high(high), low(low), volume(volume) {}
 
     friend std::ostream& operator<<(std::ostream& stream, const BinanceKline& row);
     friend std::istream& operator>>(std::istream& stream, BinanceKline& row);
 
-    time_point_ms timestamp;
+    time_point_ms open_time;
     float open;
     float high;
     float low;

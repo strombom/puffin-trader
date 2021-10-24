@@ -18,8 +18,6 @@ std::istream& operator>>(std::istream& stream, IntrinsicEvent& row)
 {
     stream.read(reinterpret_cast <char*> (&row.timestamp), sizeof(row.timestamp));
     stream.read(reinterpret_cast <char*> (&row.price), sizeof(row.price));
-    stream.read(reinterpret_cast <char*> (&row.delta), sizeof(row.delta));
-
     return stream;
 }
 
@@ -40,6 +38,7 @@ void IntrinsicEvents::load(std::string symbol)
     if (std::filesystem::exists(file_path)) {
         auto data_file = std::ifstream{ file_path, std::ios::binary };
         auto intrinsic_event = IntrinsicEvent{};
+        data_file.read(reinterpret_cast <char*> (&delta), sizeof(delta));
         while (data_file >> intrinsic_event) {
             events.push_back(intrinsic_event);
         }
@@ -60,7 +59,7 @@ void IntrinsicEvents::save_csv(std::string file_path)
 
 double IntrinsicEvents::get_delta(void)
 {
-    return events[0].delta;
+    return delta;
 }
 
 std::vector<double> IntrinsicEventRunner::step(double price)
@@ -177,7 +176,7 @@ private:
 
 void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_klines)
 {
-    const auto deltas = std::vector<double>{ 0.001, 0.0012, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01 };
+    const auto deltas = std::vector<double>{ 0.0005, 0.0007, 0.001, 0.0012, 0.0015, 0.002, 0.003, 0.005, 0.007 };
     auto counts = std::vector<double>{};
 
     std::vector<IntrinsicEvent> events;
@@ -187,7 +186,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
         events.clear();
         for (const auto& binance_kline : binance_klines->rows) {
             for (const auto price : runner.step(binance_kline.open)) {
-                events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, 0 });
+                events.push_back(IntrinsicEvent{ binance_kline.open_time, (float)price, 0 });
             }
         }
         counts.push_back((int) events.size());
@@ -214,7 +213,7 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
     auto runner = IntrinsicEventRunner{ delta };
     for (const auto& binance_kline : binance_klines->rows) {
         for (const auto price : runner.step(binance_kline.open)) {
-            events.push_back(IntrinsicEvent{ binance_kline.timestamp, (float)price, (float)delta });
+            events.push_back(IntrinsicEvent{ binance_kline.open_time, (float)price, (float)delta });
         }
     }
 
@@ -224,10 +223,11 @@ void calculate_thread(const std::string symbol, const sptrBinanceKlines binance_
 
     auto data_file = std::ofstream{ file_path, std::ios::binary };
 
+    data_file.write(reinterpret_cast<const char*>(&delta), sizeof(delta));
     for (auto&& row : events) {
         data_file.write(reinterpret_cast<const char*>(&row.timestamp), sizeof(row.timestamp));
         data_file.write(reinterpret_cast<const char*>(&row.price), sizeof(row.price));
-        data_file.write(reinterpret_cast<const char*>(&row.delta), sizeof(row.delta));
+        //data_file.write(reinterpret_cast<const char*>(&row.delta), sizeof(row.delta));
     }
 
     data_file.close();

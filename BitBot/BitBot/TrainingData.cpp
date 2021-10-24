@@ -256,7 +256,7 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
                     break;
                 }
                 (*ground_truth)[position->ind_idx][profit_idx] = 1;
-                (*ground_truth_timestamps)[position->ind_idx][profit_idx] = klines->rows[kline_idx].timestamp; // indicators->timestamps[ind_idx];
+                (*ground_truth_timestamps)[position->ind_idx][profit_idx] = klines->rows[kline_idx].open_time; // indicators->timestamps[ind_idx];
                 position->remove = true;
                 remove = true;
                 position = std::next(position);
@@ -270,7 +270,7 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
                         break;
                     }
                     (*ground_truth)[position->ind_idx][profit_idx] = -1;
-                    (*ground_truth_timestamps)[position->ind_idx][profit_idx] = klines->rows[kline_idx].timestamp; //indicators->timestamps[ind_idx];
+                    (*ground_truth_timestamps)[position->ind_idx][profit_idx] = klines->rows[kline_idx].open_time; //indicators->timestamps[ind_idx];
                     position->remove = true;
                     remove = true;
                 }
@@ -281,7 +281,7 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
             }
         }
 
-        while (ind_idx < indicators->timestamps.size() && indicators->timestamps[ind_idx] <= klines->rows[kline_idx].timestamp) {
+        while (ind_idx < indicators->timestamps.size() && indicators->timestamps[ind_idx] <= klines->rows[kline_idx].open_time) {
             /*
             printf(
                 "while kline (%d) %s   event (%d) %s\n", 

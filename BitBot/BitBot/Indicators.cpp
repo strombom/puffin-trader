@@ -90,12 +90,13 @@ void calculate_thread(const std::string symbol, const sptrIntrinsicEvents intrin
     }
 
     auto poly_fit = PolyFit{ };
-    auto tmp_indicator = std::array<float, BitBot::Indicators::indicator_width>{};
 
     auto ind_idx = 0;
     for (auto ie_idx = max_length - 1; ie_idx < intrinsic_events->events.size(); ie_idx++, ind_idx++) {
         const auto current_timestamp = intrinsic_events->events[ie_idx].timestamp;
         while (ie_idx + 1 < intrinsic_events->events.size() && current_timestamp == intrinsic_events->events[ie_idx + 1].timestamp) {
+            price_steps[max_length - 1] = intrinsic_events->events[ie_idx].price;
+            std::rotate(price_steps.begin(), price_steps.begin() + 1, price_steps.end());
             ie_idx++;
         }
 
@@ -112,14 +113,13 @@ void calculate_thread(const std::string symbol, const sptrIntrinsicEvents intrin
                 const auto price_diff = p1 / intrinsic_events->events[ie_idx].price - 1.0;
                 const auto direction = p1 / p0 - 1.0;
 
-                tmp_indicator[indicator_idx + 0] = (float)price_diff;
-                tmp_indicator[indicator_idx + 1] = (float)direction;
+                indicators[ind_idx][indicator_idx + 0] = (float)price_diff;
+                indicators[ind_idx][indicator_idx + 1] = (float)direction;
                 indicator_idx += 2;
             }
         }
 
-        indicators.at(ind_idx) = tmp_indicator;
-        timestamps.at(ind_idx) = intrinsic_events->events[ie_idx].timestamp;
+        timestamps[ind_idx] = intrinsic_events->events[ie_idx].timestamp;
         std::rotate(price_steps.begin(), price_steps.begin() + 1, price_steps.end());
     }
 
