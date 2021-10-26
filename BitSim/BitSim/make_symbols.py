@@ -6,7 +6,7 @@ if True:
 import requests
 
 symbols = ["ADAUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETHUSDT", "ETCUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT"]
-symbols = ["ADAUSDT"]
+symbols = ["ADAUSDT", "BCHUSDT"]
 
 request = requests.get('https://api.bybit.com/v2/public/symbols')
 

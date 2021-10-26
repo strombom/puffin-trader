@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <string_view>
 
 
 struct Symbol {
@@ -31,4 +32,8 @@ struct Symbol {
     double lot_size; 
     double min_qty; 
     double max_qty;
+
+    bool operator==(const Symbol& other) const {
+        return idx == other.idx;
+    }
 };

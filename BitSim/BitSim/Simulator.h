@@ -4,24 +4,22 @@
 #include "Position.h"
 #include "Symbols.h"
 #include "BitLib/BitBotConstants.h"
+#include "BitLib/Utils.h"
 
+#include <memory>
 
+/*
 struct LimitOrder
 {
-    LimitOrder(const Symbol& symbol, double price, double amount) :
-        symbol(symbol), price(price), amount(amount), executed(false) {}
-
-    Order to_order(void)
+    LimitOrder(const Symbol& symbol, double price, double amount) : 
+        order(std::make_shared<Order>(symbol, price, amount))
     {
-        return { symbol, price, amount };
+        //order = std::make_shared<Order>(symbol, price, amount);
     }
 
-    Symbol symbol;
-    double price;
-    double amount;
-    bool executed;
+    sptrOrder order;
 };
-
+*/
 
 class Simulator
 {
@@ -32,13 +30,16 @@ public:
 
     double get_equity(void) const;
     double get_cash(void) const;
-    void limit_order(double position_size, const Symbol& symbol);
-    uptrOrders evaluate_orders(const Klines& klines, time_point_ms timestamp);
+    sptrOrder limit_order(time_point_ms timestamp, const Symbol& symbol, double position_size);
+    //void evaluate_order
+    void evaluate_orders(time_point_ms timestamp, const Klines& klines);
+    void cancel_orders(void);
 
 private:
     float wallet_usdt;
     std::array<double, symbols.size()> wallet;
     std::array<double, symbols.size()> mark_price;
 
-    std::vector<LimitOrder> limit_orders;
+    std::vector<sptrOrder> limit_orders;
+    //UuidGenerator uuid_generator;
 };

@@ -8,14 +8,12 @@
 #include <unordered_map>
 
 
-constexpr int delta_count = 13;
-
 
 struct Prediction
 {
     time_point_ms timestamp;
-    std::array<float, delta_count> prediction;
-    std::array<int, delta_count> ground_truth;
+    std::array<float, BitBot::TrainingData::delta_count> prediction;
+    std::array<int, BitBot::TrainingData::delta_count> ground_truth;
 };
 
 class Predictions

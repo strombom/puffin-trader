@@ -182,6 +182,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\BitLib\DateTime.cpp" />
+    <ClCompile Include="..\..\BitLib\Utils.cpp" />
     <ClCompile Include="BitSim.cpp" />
     <ClCompile Include="Klines.cpp" />
     <ClCompile Include="Order.cpp" />
@@ -200,6 +201,8 @@
     <ClInclude Include="..\..\BitLib\BitBotConstants.h" />
     <ClInclude Include="..\..\BitLib\DateTime.h" />
     <ClInclude Include="..\..\BitLib\date\date.h" />
+    <ClInclude Include="..\..\BitLib\stduuid\uuid.h" />
+    <ClInclude Include="..\..\BitLib\Utils.h" />
     <ClInclude Include="Klines.h" />
     <ClInclude Include="Order.h" />
     <ClInclude Include="pch.h" />

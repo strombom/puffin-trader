@@ -1,7 +1,8 @@
 #pragma once
 #include "pch.h"
 
-#include "DateTime.h"
+#include "BitLib/DateTime.h"
+#include "stduuid/uuid.h"
 
 #include <random>
 #include <string>
@@ -11,8 +12,8 @@ class Utils
 {
 public:
 
-    static void save_tensor(const torch::Tensor& tensor, const std::string& path, const std::string& filename);
-    static torch::Tensor load_tensor(const std::string &path, const std::string &filename);
+    //static void save_tensor(const torch::Tensor& tensor, const std::string& path, const std::string& filename);
+    //static torch::Tensor load_tensor(const std::string &path, const std::string &filename);
 
     static double random(double min, double max);
     static int random(int min, int max);
@@ -22,6 +23,28 @@ public:
 
 private:
 
+};
+
+class Uuid
+{
+public:
+    Uuid(uuids::uuid uuid) : uuid(uuid) {}
+
+    std::string to_string(void) const;
+
+private:
+    uuids::uuid uuid;
+};
+
+class UuidGenerator
+{
+public:
+    UuidGenerator(void);
+
+    Uuid generate(void);
+
+private:
+    std::unique_ptr<uuids::uuid_random_generator> gen;
 };
 
 class RandomRange

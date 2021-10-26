@@ -1,11 +1,12 @@
 #include "pch.h"
 
-#include "Utils.h"
+#include "BitLib/Utils.h"
 
-#include "torch/serialize.h"
+//#include "torch/serialize.h"
 #include <iterator>
+#include <array>
 
-
+/*
 void Utils::save_tensor(const torch::Tensor& tensor, const std::string& path, const std::string& filename)
 {
     torch::save(tensor.cpu(), path + "\\" + filename);
@@ -16,6 +17,28 @@ torch::Tensor Utils::load_tensor(const std::string &path, const std::string &fil
     auto tensor = std::vector<torch::Tensor>{};
     torch::load(tensor, path + "\\" + filename);
     return tensor[0];
+}
+*/
+
+UuidGenerator::UuidGenerator(void)
+{
+    auto rd = std::random_device{};
+    auto seed_data = std::array<int, std::mt19937::state_size> {};
+    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
+    auto seq = std::seed_seq(std::begin(seed_data), std::end(seed_data));
+    auto generator = std::mt19937{ seq };
+    gen = std::make_unique<uuids::uuid_random_generator>(generator);
+}
+
+Uuid UuidGenerator::generate(void)
+{
+
+    return Uuid{ (*gen)() };
+}
+
+std::string Uuid::to_string(void) const
+{
+    return uuids::to_string(uuid);
 }
 
 double Utils::random(double min, double max)

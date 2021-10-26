@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <string_view>
 
 
 struct Symbol {
@@ -31,8 +32,13 @@ struct Symbol {
     double lot_size; 
     double min_qty; 
     double max_qty;
+
+    bool operator==(const Symbol& other) const {
+        return idx == other.idx;
+    }
 };
 
 constexpr const auto symbols = std::array{
-    Symbol{ 0, "ADAUSDT", 0.0001, 0.00075, -0.00025, 1, 1, 240000 },
+    Symbol{ 0, "BCHUSDT", 0.05, 0.00075, -0.00025, 0.01, 0.01, 600 },
+    Symbol{ 1, "ADAUSDT", 0.0001, 0.00075, -0.00025, 1, 1, 240000 },
 };

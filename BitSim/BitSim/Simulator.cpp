@@ -32,16 +32,50 @@ double Simulator::get_cash(void) const
     return wallet_usdt;
 }
 
-void Simulator::limit_order(double position_size, const Symbol& symbol)
+sptrOrder Simulator::limit_order(time_point_ms timestamp, const Symbol& symbol, double position_size)
 {
     const auto price = mark_price[symbol.idx] - symbol.tick_size;
-    position_size = int(position_size / symbol.min_qty) * symbol.min_qty;
-    limit_orders.emplace_back(symbol, price, position_size);
+    const auto quantity = int(position_size / symbol.min_qty) * symbol.min_qty;
+
+    auto order = std::make_shared<Order>(timestamp, symbol, Order::Side::Buy, price, quantity);
+
+    limit_orders.emplace_back(order);
+
+    //const auto order_id = uuid_generator.generate();
+
+    //printf("%s\n", order_id.to_string().c_str());
+
+    return order;
 }
 
-uptrOrders Simulator::evaluate_orders(const Klines& klines, time_point_ms timestamp)
+void Simulator::cancel_orders(void)
 {
-    auto executed_orders = std::make_unique<std::vector<Order>>();
+    for (auto& limit_order : limit_orders) {
+        if (limit_order->cancel) {
+            limit_order->state = Order::State::Canceled;
+        }
+    }
+
+    limit_orders.erase(
+        std::remove_if(
+            limit_orders.begin(),
+            limit_orders.end(),
+            [](const sptrOrder& limit_order) { return limit_order->state == Order::State::Canceled; }
+        ),
+        limit_orders.end()
+    );
+}
+
+void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
+{
+    for (auto& limit_order : limit_orders) {
+        if (limit_order->side == Order::Side::Buy && klines.get_low_price(limit_order->symbol) < limit_order->price) {
+            limit_order->state = Order::State::Filled;
+        }
+    }
+
+    //auto executed_orders = std::make_unique<std::vector<uptrOrder>>();
+    /*
     for (auto& limit_order : limit_orders) {
         if (klines.get_low_price(limit_order.symbol) < limit_order.price) {
             printf(
@@ -55,7 +89,6 @@ uptrOrders Simulator::evaluate_orders(const Klines& klines, time_point_ms timest
             limit_order.executed = true;
         }
     }
-
     if (executed_orders->size() > 0) {
         // Remove executed limit orders
         limit_orders.erase(
@@ -72,4 +105,5 @@ uptrOrders Simulator::evaluate_orders(const Klines& klines, time_point_ms timest
     }
     
     return executed_orders;
+    */
 }
