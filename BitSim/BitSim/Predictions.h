@@ -12,8 +12,8 @@
 struct Prediction
 {
     time_point_ms timestamp;
-    std::array<float, BitBot::TrainingData::delta_count> prediction;
-    std::array<int, BitBot::TrainingData::delta_count> ground_truth;
+    std::array<float, BitBot::Trading::delta_count> prediction;
+    std::array<int, BitBot::Trading::delta_count> ground_truth;
 };
 
 class Predictions

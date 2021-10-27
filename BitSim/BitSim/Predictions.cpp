@@ -43,12 +43,12 @@ void Predictions::load_csv(const Symbol& symbol)
 
         file.ignore(); // Skip comma
 
-        for (auto prediction_idx = 0; prediction_idx < BitBot::TrainingData::delta_count; prediction_idx++) {
+        for (auto prediction_idx = 0; prediction_idx < BitBot::Trading::delta_count; prediction_idx++) {
             file >> row.prediction[prediction_idx];
             file.ignore(); // Skip comma
         }
 
-        for (auto ground_truth_idx = 0; ground_truth_idx < BitBot::TrainingData::delta_count; ground_truth_idx++) {
+        for (auto ground_truth_idx = 0; ground_truth_idx < BitBot::Trading::delta_count; ground_truth_idx++) {
             file >> row.ground_truth[ground_truth_idx];
             file.ignore(); // Skip comma
         }
@@ -72,11 +72,11 @@ void Predictions::save(const Symbol& symbol)
         const auto timestamp = entry[row_idx].timestamp.time_since_epoch().count();
         data_file.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
 
-        for (auto prediction_idx = 0; prediction_idx < BitBot::TrainingData::delta_count; prediction_idx++) {
+        for (auto prediction_idx = 0; prediction_idx < BitBot::Trading::delta_count; prediction_idx++) {
             const auto prediction = entry[row_idx].prediction[prediction_idx];
             data_file.write(reinterpret_cast<const char*>(&prediction), sizeof(prediction));
         }
-        for (auto ground_truth_idx = 0; ground_truth_idx < BitBot::TrainingData::delta_count; ground_truth_idx++) {
+        for (auto ground_truth_idx = 0; ground_truth_idx < BitBot::Trading::delta_count; ground_truth_idx++) {
             const auto ground_truth = entry[row_idx].ground_truth[ground_truth_idx];
             data_file.write(reinterpret_cast<const char*>(&ground_truth), sizeof(ground_truth));
         }
@@ -93,7 +93,7 @@ bool Predictions::load(const Symbol& symbol)
         return false;
     }
 
-    const auto row_size = (sizeof(time_point_ms) + BitBot::TrainingData::delta_count * (sizeof(int) + sizeof(float)));
+    const auto row_size = (sizeof(time_point_ms) + BitBot::Trading::delta_count * (sizeof(int) + sizeof(float)));
     const auto row_count = std::filesystem::file_size(file_path) / row_size;
 
     auto data_file = std::ifstream{ file_path, std::ios::binary };
@@ -106,10 +106,10 @@ bool Predictions::load(const Symbol& symbol)
 
     for (auto row_idx = 0; row_idx < row_count; row_idx++) {
         data_file.read(reinterpret_cast <char*> (&entry[row_idx].timestamp), sizeof(time_point_ms));
-        for (auto prediction_idx = 0; prediction_idx < BitBot::TrainingData::delta_count; prediction_idx++) {
+        for (auto prediction_idx = 0; prediction_idx < BitBot::Trading::delta_count; prediction_idx++) {
             data_file.read(reinterpret_cast <char*> (&entry[row_idx].prediction[prediction_idx]), sizeof(float));
         }
-        for (auto ground_truth_idx = 0; ground_truth_idx < BitBot::TrainingData::delta_count; ground_truth_idx++) {
+        for (auto ground_truth_idx = 0; ground_truth_idx < BitBot::Trading::delta_count; ground_truth_idx++) {
             data_file.read(reinterpret_cast <char*> (&entry[row_idx].ground_truth[ground_truth_idx]), sizeof(int));
         }
     }

@@ -27,7 +27,7 @@ int main()
         portfolio.set_mark_prices(klines);
 
         // Sell
-        portfolio.evaluate_positions();
+        portfolio.evaluate_positions(timestamp);
 
         // Buy
         predictions.step_idx(timestamp);
@@ -52,8 +52,8 @@ int main()
                 const auto mark_price = klines.get_open_price(symbol);
                 const auto position_size = position_value / mark_price * 0.99;
 
-                printf("%s Add limit order\n", date::format("%F %T", timestamp).c_str());
-                portfolio.place_limit_order(timestamp, symbol, position_size);
+                printf("%s Place limit order, %s %f %f\n", date::format("%F %T", timestamp).c_str(), symbol.name.data(), mark_price, position_size);
+                portfolio.place_limit_order(timestamp, symbol, delta_idx, position_size);
             }
         }
 

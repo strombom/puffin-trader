@@ -7,24 +7,39 @@ void Portfolio::set_mark_prices(const Klines& klines)
     simulator.set_mark_prices(klines);
 }
 
-void Portfolio::evaluate_positions(void)
+void Portfolio::evaluate_positions(time_point_ms timestamp)
 {
-    for (const auto& position : positions) {
-        const auto mark_price = simulator.mark_price[position.symbol.idx];
-        if (mark_price < position.stop_loss || mark_price > position.take_profit) {
-            printf("sell\n");
+    for (auto& position : positions) {
+        if (position.state == Position::State::Opening) {
+            // Adjust limit order price
+            // TODO: Cancel if price/time is too far off
+            if (position.order->side == Order::Side::Buy) {
+                position.order->price = simulator.get_mark_price(position.symbol) - position.symbol.tick_size;
+            }
+            else {
+                position.order->price = simulator.get_mark_price(position.symbol) + position.symbol.tick_size;
+            }
+        }
+        else if (position.state == Position::State::Active) {
+            const auto mark_price = simulator.get_mark_price(position.symbol);
+            if (mark_price < position.stop_loss || mark_price > position.take_profit) {
+                // Close position by placing a sell order
+                const auto price = simulator.get_mark_price(position.symbol) + position.symbol.tick_size;
+                position.state = Position::State::Closing;
+                position.order = simulator.limit_order(timestamp, position.symbol, price, -position.amount);
+            }
         }
     }
 }
 
 bool Portfolio::has_available_position(const Symbol& symbol)
 {
-    return positions.size() < BitSim::Portfolio::total_capacity && get_position_count(symbol) < BitSim::Portfolio::symbol_capacity;
+    return get_position_count() < BitSim::Portfolio::total_capacity && get_position_count(symbol) < BitSim::Portfolio::symbol_capacity;
 }
 
 bool Portfolio::has_available_order(const Symbol& symbol)
 {
-    return positions.size() + orders.size() < BitSim::Portfolio::total_capacity && get_position_count(symbol) + get_order_count(symbol) < BitSim::Portfolio::symbol_capacity;
+    return positions.size() < BitSim::Portfolio::total_capacity && get_position_count(symbol) + get_order_count(symbol) < BitSim::Portfolio::symbol_capacity;
 }
 
 void Portfolio::cancel_oldest_order(const Symbol& symbol)
@@ -32,61 +47,70 @@ void Portfolio::cancel_oldest_order(const Symbol& symbol)
     const auto symbol_position_count = get_position_count(symbol);
     const auto symbol_order_count = get_order_count(symbol);
 
-    auto oldest_order = sptrOrder{ nullptr };
-    for (const auto& order : orders) {
-        if ((order->symbol == symbol || symbol_position_count + symbol_order_count < BitSim::Portfolio::symbol_capacity) && (oldest_order == nullptr || order->created > oldest_order->created)) {
-            oldest_order = order;
+    auto oldest_position = (Position*)(nullptr);
+    for (auto& position : positions) {
+        if (position.state == Position::State::Opening && (position.symbol == symbol || symbol_position_count + symbol_order_count < BitSim::Portfolio::symbol_capacity) && (oldest_position == nullptr|| position.created > oldest_position->created)) {
+            oldest_position = &position;
         }
     }
-    oldest_order->cancel = true;
+    oldest_position->order->cancel = true;
 
     simulator.cancel_orders();
 
-    orders.erase(
+    positions.erase(
         std::remove_if(
-            orders.begin(),
-            orders.end(),
-            [](const sptrOrder& order) {
-                return order->state == Order::State::Canceled;
+            positions.begin(),
+            positions.end(),
+            [](const Position& position) {
+                return position.state == Position::State::Opening && position.order->state == Order::State::Canceled;
             }
         ),
-        orders.end()
+        positions.end()
     );
 }
 
-void Portfolio::place_limit_order(time_point_ms timestamp, const Symbol& symbol, double position_size)
+void Portfolio::place_limit_order(time_point_ms timestamp, const Symbol& symbol, int delta_idx, double position_size)
 {
-    const auto price = simulator.mark_price[symbol.idx] - symbol.tick_size;
+    // TODO: set significant digits for price
+    const auto price = simulator.get_mark_price(symbol) - symbol.tick_size;
     const auto quantity = int(position_size / symbol.min_qty) * symbol.min_qty;
 
     auto order = simulator.limit_order(timestamp, symbol, price, quantity);
-    orders.emplace_back(order);
+
+    // time_point_ms timestamp, const Symbol& symbol, double amount, double price, int delta_idx)
+    positions.push_back({ timestamp, delta_idx, order });
+    //orders.emplace_back(order);
 }
 
 void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
 {
-    for (const auto& order : orders) {
-        if (order->state == Order::State::Active) {
-            //const auto order_price =
-            printf("Active\n");
+    simulator.evaluate_orders(timestamp, klines);
+
+    for (auto& position : positions) {
+        if (position.state == Position::State::Opening && position.order->state == Order::State::Filled) {
+            printf("%s Order filled, %s %f %f\n", date::format("%F %T", timestamp).c_str(), position.order->symbol.name.data(), position.order->price, position.order->amount);
+
+            position.state = Position::State::Active;
+            position.filled_price = position.order->price;
+            position.take_profit = position.filled_price * BitBot::Trading::take_profit[position.delta_idx];
+            position.stop_loss = position.filled_price * BitBot::Trading::stop_loss[position.delta_idx];
+
+            position.order = nullptr;
+        }
+        else if (position.state == Position::State::Closing && position.order->state == Order::State::Filled) {
+            printf("a\n");
         }
     }
 
-    for (const auto& order : orders) {
-        if (order->state == Order::State::Filled) {
-            printf("Filled\n");
-        }
-    }
-
-    orders.erase(
+    positions.erase(
         std::remove_if(
-            orders.begin(),
-            orders.end(),
-            [](const sptrOrder& order) {
-                return order->state == Order::State::Canceled || order->state == Order::State::Filled;
+            positions.begin(),
+            positions.end(),
+            [](const Position& position) {
+                return position.order->state == Order::State::Canceled || position.order->state == Order::State::Filled;
             }
         ),
-        orders.end()
+        positions.end()
     );
 }
 
@@ -94,7 +118,7 @@ double Portfolio::get_equity(void) const
 {
     double equity = simulator.wallet_usdt;
     for (const auto& symbol : symbols) {
-        equity += simulator.wallet[symbol.idx] * simulator.mark_price[symbol.idx];
+        equity += simulator.wallet[symbol.idx] * simulator.get_mark_price(symbol);
     }
     return equity;
 }
@@ -104,12 +128,17 @@ double Portfolio::get_cash(void) const
     return simulator.wallet_usdt;
 }
 
+inline int Portfolio::get_position_count(void)
+{
+    return (int)std::count_if(positions.begin(), positions.end(), [](const auto& position) {return position.state != Position::State::Opening; });
+}
+
 inline int Portfolio::get_position_count(const Symbol& symbol)
 {
-    return (int)std::count_if(positions.begin(), positions.end(), [symbol](const auto& position) {return position.symbol == symbol; });
+    return (int)std::count_if(positions.begin(), positions.end(), [symbol](const auto& position) {return position.symbol == symbol && position.state != Position::State::Opening; });
 }
 
 inline int Portfolio::get_order_count(const Symbol& symbol)
 {
-    return (int)std::count_if(orders.begin(), orders.end(), [symbol](const auto& order) {return order->symbol == symbol; });
+    return (int)std::count_if(positions.begin(), positions.end(), [symbol](const auto& position) {return position.symbol == symbol && position.state == Position::State::Opening; });
 }

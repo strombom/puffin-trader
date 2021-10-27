@@ -6,15 +6,21 @@
 
 struct Position
 {
-    Position(time_point_ms timestamp, const Symbol& symbol, double price, double amount) : 
-        timestamp(timestamp), symbol(symbol) {}
+    enum class State { Opening, Active, Closing};
 
-    const time_point_ms timestamp;
+    Position(time_point_ms created, int delta_idx, sptrOrder order) :
+        created(created), state(State::Opening), symbol(order->symbol), delta_idx(delta_idx), created_price(order->price), filled_price(0), take_profit(0), stop_loss(0), amount(order->amount), order(order) {}
 
-    const Symbol& symbol;
-    double amount;
+    time_point_ms created;
+    State state;
+    Symbol symbol;
 
-    double mark_price;
+    int delta_idx;
+    double created_price;
+    double filled_price;
     double take_profit;
     double stop_loss;
+    double amount;
+
+    sptrOrder order;
 };
