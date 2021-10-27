@@ -85,7 +85,7 @@ namespace BitBot
         constexpr auto max_degree_t2p1 = max_degree * 2 + 1;
     }
 
-    namespace TrainingData
+    namespace Trading
     {
         //constexpr auto take_profit = std::array<double, 7>{1.008, 1.010, 1.012, 1.015, 1.018, 1.022, 1.027};
         //constexpr auto stop_loss   = std::array<double, 7>{0.992, 0.990, 0.988, 0.985, 0.982, 0.978, 0.973};

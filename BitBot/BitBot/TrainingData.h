@@ -21,8 +21,8 @@ private:
     void make_ground_truth(std::string_view symbol, const sptrBinanceKlines klines, const sptrIndicators indicators);
 
     struct Position;
-    std::shared_ptr<std::vector<std::array<int, BitBot::TrainingData::take_profit.size()>>> ground_truth;
-    std::shared_ptr<std::vector<std::array<time_point_ms, BitBot::TrainingData::take_profit.size()>>> ground_truth_timestamps;
+    std::shared_ptr<std::vector<std::array<int, BitBot::Trading::take_profit.size()>>> ground_truth;
+    std::shared_ptr<std::vector<std::array<time_point_ms, BitBot::Trading::take_profit.size()>>> ground_truth_timestamps;
     std::string ground_truth_symbol;
 
     void save_ground_truth(std::string_view symbol);

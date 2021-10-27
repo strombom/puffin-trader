@@ -9,8 +9,8 @@
 
 TrainingData::TrainingData()
 {
-    ground_truth = std::make_shared<std::vector<std::array<int, BitBot::TrainingData::take_profit.size()>>>();
-    ground_truth_timestamps = std::make_shared<std::vector<std::array<time_point_ms, BitBot::TrainingData::take_profit.size()>>>();
+    ground_truth = std::make_shared<std::vector<std::array<int, BitBot::Trading::take_profit.size()>>>();
+    ground_truth_timestamps = std::make_shared<std::vector<std::array<time_point_ms, BitBot::Trading::take_profit.size()>>>();
 }
 
 void make_section_thread(
@@ -20,8 +20,8 @@ void make_section_thread(
     const sptrIndicators indicators,
     time_point_ms timestamp_start,
     time_point_ms timestamp_end,
-    std::shared_ptr < std::vector<std::array<int, BitBot::TrainingData::take_profit.size()>>> ground_truth,
-    std::shared_ptr < std::vector<std::array<time_point_ms, BitBot::TrainingData::take_profit.size()>>> ground_truth_timestamps
+    std::shared_ptr < std::vector<std::array<int, BitBot::Trading::take_profit.size()>>> ground_truth,
+    std::shared_ptr < std::vector<std::array<time_point_ms, BitBot::Trading::take_profit.size()>>> ground_truth_timestamps
 ) {
 
     auto prev_ts = indicators->timestamps[0];
@@ -60,8 +60,8 @@ void make_section_thread(
     }
 
     csv_file.precision(3);
-    for (auto idx = 0; idx < BitBot::TrainingData::take_profit.size(); idx++) {
-        csv_file << std::fixed << ",\"(" << BitBot::TrainingData::take_profit[idx] << "," << BitBot::TrainingData::stop_loss[idx] << ")\"";
+    for (auto idx = 0; idx < BitBot::Trading::take_profit.size(); idx++) {
+        csv_file << std::fixed << ",\"(" << BitBot::Trading::take_profit[idx] << "," << BitBot::Trading::stop_loss[idx] << ")\"";
     }
 
     csv_file << ",\"ground_truth_timestamp\"";
@@ -77,7 +77,7 @@ void make_section_thread(
         }
 
         bool skip = false;
-        for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
+        for (auto profit_idx = 0; profit_idx < BitBot::Trading::take_profit.size(); profit_idx++) {
             if ((*ground_truth)[gt_idx][profit_idx] == 0) {
                 skip = true;
                 break;
@@ -95,7 +95,7 @@ void make_section_thread(
                 csv_file << "," << indicator[i];
             }
             csv_file << symbols_string;
-            for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
+            for (auto profit_idx = 0; profit_idx < BitBot::Trading::take_profit.size(); profit_idx++) {
                 csv_file << "," << (*ground_truth)[gt_idx][profit_idx];
             }
 
@@ -230,16 +230,16 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
     ground_truth->resize(indicators->timestamps.size());
     ground_truth_timestamps->resize(indicators->timestamps.size());
 
-    auto positions = std::array<std::list<Position>, BitBot::TrainingData::take_profit.size()>{};
+    auto positions = std::array<std::list<Position>, BitBot::Trading::take_profit.size()>{};
     auto ind_idx = 0;
 
-    std::array<int, BitBot::TrainingData::take_profit.size()> maxcount = { 0 };
+    std::array<int, BitBot::Trading::take_profit.size()> maxcount = { 0 };
 
     for (auto kline_idx = 0; kline_idx < klines->rows.size(); kline_idx++) {
         const auto mark_price = klines->rows[kline_idx].open;
 
         // Remove expired positions
-        for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
+        for (auto profit_idx = 0; profit_idx < BitBot::Trading::take_profit.size(); profit_idx++) {
             maxcount[profit_idx] = std::max(maxcount[profit_idx], (int)positions[profit_idx].size());
 
             auto remove = false;
@@ -290,9 +290,9 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
             //    printf("");
             //}
 
-            for (auto profit_idx = 0; profit_idx < BitBot::TrainingData::take_profit.size(); profit_idx++) {
-                const auto take_profit = (float)(mark_price * BitBot::TrainingData::take_profit[profit_idx]);
-                const auto stop_loss = (float)(mark_price * BitBot::TrainingData::stop_loss[profit_idx]);
+            for (auto profit_idx = 0; profit_idx < BitBot::Trading::take_profit.size(); profit_idx++) {
+                const auto take_profit = (float)(mark_price * BitBot::Trading::take_profit[profit_idx]);
+                const auto stop_loss = (float)(mark_price * BitBot::Trading::stop_loss[profit_idx]);
 
                 //auto pos_idx = 0;
                 auto position = positions[profit_idx].begin();
@@ -309,7 +309,7 @@ void TrainingData::make_ground_truth(std::string_view symbol, const sptrBinanceK
     }
 
     printf("Maxcount %s:", std::string{ symbol }.c_str());
-    for (auto idx = 0; idx < BitBot::TrainingData::take_profit.size(); idx++) {
+    for (auto idx = 0; idx < BitBot::Trading::take_profit.size(); idx++) {
         printf("   (%d) %d", idx, maxcount[idx]);
     }
     printf("\n");
@@ -324,7 +324,7 @@ void TrainingData::save_ground_truth(std::string_view symbol)
     auto data_file = std::ofstream{ file_path, std::ios::binary };
 
     for (auto row_idx = 0; row_idx < ground_truth->size(); row_idx++) {
-        for (auto col_idx = 0; col_idx < BitBot::TrainingData::take_profit.size(); col_idx++) {
+        for (auto col_idx = 0; col_idx < BitBot::Trading::take_profit.size(); col_idx++) {
             const auto gt_value = (*ground_truth)[row_idx][col_idx];
             const auto gt_timestamp = (*ground_truth_timestamps)[row_idx][col_idx];
             data_file.write(reinterpret_cast<const char*>(&gt_value), sizeof(gt_value));
@@ -339,7 +339,7 @@ void TrainingData::load_ground_truth(std::string_view symbol)
 {
     const auto file_path = std::string{ BitBot::path } + "\\ground_truth\\" + std::string{ symbol } + ".dat";
 
-    const auto row_size = (sizeof(int) + sizeof(time_point_ms)) * BitBot::TrainingData::take_profit.size();
+    const auto row_size = (sizeof(int) + sizeof(time_point_ms)) * BitBot::Trading::take_profit.size();
     const auto gt_length = std::filesystem::file_size(file_path) / row_size;
 
     auto data_file = std::ifstream{ file_path, std::ios::binary };
@@ -349,7 +349,7 @@ void TrainingData::load_ground_truth(std::string_view symbol)
     ground_truth_timestamps->resize(gt_length);
 
     for (auto row_idx = 0; row_idx < gt_length; row_idx++) {
-        for (auto col_idx = 0; col_idx < BitBot::TrainingData::take_profit.size(); col_idx++) {
+        for (auto col_idx = 0; col_idx < BitBot::Trading::take_profit.size(); col_idx++) {
             int gt_value;
             time_point_ms timestamp;
             data_file.read(reinterpret_cast <char*> (&gt_value), sizeof(gt_value));
