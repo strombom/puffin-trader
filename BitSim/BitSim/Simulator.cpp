@@ -27,7 +27,12 @@ sptrOrder Simulator::limit_order(time_point_ms timestamp, const Symbol& symbol, 
 {
     //const auto order_id = uuid_generator.generate();
 
-    auto order = std::make_shared<Order>(timestamp, symbol, Order::Side::Buy, price, quantity);
+    auto side = Order::Side::Buy;
+    if (quantity < 0) {
+        side = Order::Side::Sell;
+    }
+
+    auto order = std::make_shared<Order>(timestamp, symbol, side, price, quantity);
     limit_orders.emplace_back(order);
     return order;
 }

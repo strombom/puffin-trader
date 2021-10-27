@@ -98,7 +98,8 @@ void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
             position.order = nullptr;
         }
         else if (position.state == Position::State::Closing && position.order->state == Order::State::Filled) {
-            printf("a\n");
+            printf("Position closed\n");
+            position.state = Position::State::Closed;
         }
     }
 
@@ -107,7 +108,7 @@ void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
             positions.begin(),
             positions.end(),
             [](const Position& position) {
-                return position.order->state == Order::State::Canceled || position.order->state == Order::State::Filled;
+                return position.state == Position::State::Closed;
             }
         ),
         positions.end()
