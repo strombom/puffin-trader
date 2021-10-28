@@ -2,16 +2,17 @@
 #include "Order.h"
 #include "Symbols.h"
 #include "BitLib/DateTime.h"
+#include "BitLib/Utils.h"
 
 
 struct Position
 {
     enum class State { Opening, Active, Closing, Closed };
 
-    Position(time_point_ms created, int delta_idx, sptrOrder order) :
-        created(created), state(State::Opening), symbol(order->symbol), delta_idx(delta_idx), created_price(order->price), filled_price(0), take_profit(0), stop_loss(0), amount(order->amount), order(order) {}
+    Position(time_point_ms created, int delta_idx, sptrOrder order);
 
     time_point_ms created;
+    Uuid uuid;
     State state;
     Symbol symbol;
 

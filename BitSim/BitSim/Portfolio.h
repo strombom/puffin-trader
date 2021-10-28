@@ -15,7 +15,7 @@ public:
     void evaluate_positions(time_point_ms timestamp);
     bool has_available_position(const Symbol& symbol);
     bool has_available_order(const Symbol& symbol);
-    void cancel_oldest_order(const Symbol& symbol);
+    void cancel_oldest_order(time_point_ms timestamp, const Symbol& symbol);
     void place_limit_order(time_point_ms timestamp, const Symbol& symbol, int delta_idx, double position_size);
     void evaluate_orders(time_point_ms timestamp, const Klines& klines);
 

@@ -46,7 +46,7 @@ time_point_ms Klines::get_timestamp_start(void) const
 {
     auto timestamp = data.begin()->front().open_time;
     for (const auto& symbol : symbols) {
-        timestamp = std::max(timestamp, data[symbol.idx].front().open_time);
+        timestamp = max(timestamp, data[symbol.idx].front().open_time);
     }
     return timestamp;
 }
@@ -55,7 +55,7 @@ time_point_ms Klines::get_timestamp_end(void) const
 {
     auto timestamp = data.begin()->back().open_time;
     for (const auto& symbol : symbols) {
-        timestamp = std::min(timestamp, data[symbol.idx].back().open_time);
+        timestamp = min(timestamp, data[symbol.idx].back().open_time);
     }
     return timestamp;
 }

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Portfolio.h"
+#include "BitLib/Logger.h"
 
 
 void Portfolio::set_mark_prices(const Klines& klines)
@@ -27,6 +28,7 @@ void Portfolio::evaluate_positions(time_point_ms timestamp)
                 const auto price = simulator.get_mark_price(position.symbol) + position.symbol.tick_size;
                 position.state = Position::State::Closing;
                 position.order = simulator.limit_order(timestamp, position.symbol, price, -position.amount);
+                logger.info("%s Position(%s) Close %s @%.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), price);
             }
         }
     }
@@ -42,7 +44,7 @@ bool Portfolio::has_available_order(const Symbol& symbol)
     return positions.size() < BitSim::Portfolio::total_capacity && get_position_count(symbol) + get_order_count(symbol) < BitSim::Portfolio::symbol_capacity;
 }
 
-void Portfolio::cancel_oldest_order(const Symbol& symbol)
+void Portfolio::cancel_oldest_order(time_point_ms timestamp, const Symbol& symbol)
 {
     const auto symbol_position_count = get_position_count(symbol);
     const auto symbol_order_count = get_order_count(symbol);
@@ -54,6 +56,7 @@ void Portfolio::cancel_oldest_order(const Symbol& symbol)
         }
     }
     oldest_position->order->cancel = true;
+    logger.info("%s Position(%s) Cancel %s", DateTime::to_string(timestamp).c_str(), oldest_position->uuid.to_string().c_str(), oldest_position->symbol.name.data());
 
     simulator.cancel_orders();
 
@@ -75,10 +78,15 @@ void Portfolio::place_limit_order(time_point_ms timestamp, const Symbol& symbol,
     const auto price = simulator.get_mark_price(symbol) - symbol.tick_size;
     const auto quantity = int(position_size / symbol.min_qty) * symbol.min_qty;
 
+
     auto order = simulator.limit_order(timestamp, symbol, price, quantity);
 
     // time_point_ms timestamp, const Symbol& symbol, double amount, double price, int delta_idx)
     positions.push_back({ timestamp, delta_idx, order });
+    const auto& position = positions.back();
+
+    logger.info("%s Position(%s) Place limit order %s %.4f %.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), symbol.name.data(), price, quantity);
+
     //orders.emplace_back(order);
 }
 
@@ -88,17 +96,22 @@ void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
 
     for (auto& position : positions) {
         if (position.state == Position::State::Opening && position.order->state == Order::State::Filled) {
-            printf("%s Order filled, %s %f %f\n", date::format("%F %T", timestamp).c_str(), position.order->symbol.name.data(), position.order->price, position.order->amount);
+            //printf("%s Order filled, %s %f %f\n", date::format("%F %T", timestamp).c_str(), position.order->symbol.name.data(), position.order->price, position.order->amount);
+
 
             position.state = Position::State::Active;
             position.filled_price = position.order->price;
             position.take_profit = position.filled_price * BitBot::Trading::take_profit[position.delta_idx];
             position.stop_loss = position.filled_price * BitBot::Trading::stop_loss[position.delta_idx];
+            
+            logger.info("%s Position(%s) Order filled %s @%.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), position.order->price);
 
             position.order = nullptr;
         }
         else if (position.state == Position::State::Closing && position.order->state == Order::State::Filled) {
-            printf("Position closed\n");
+
+            logger.info("%s Position(%s) Closed %s @%.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), position.order->price);
+
             position.state = Position::State::Closed;
         }
     }

@@ -25,8 +25,6 @@ double Simulator::get_mark_price(const Symbol& symbol) const
 
 sptrOrder Simulator::limit_order(time_point_ms timestamp, const Symbol& symbol, double price, double quantity)
 {
-    //const auto order_id = uuid_generator.generate();
-
     auto side = Order::Side::Buy;
     if (quantity < 0) {
         side = Order::Side::Sell;

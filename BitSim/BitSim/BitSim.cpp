@@ -6,6 +6,7 @@
 #include "Symbols.h"
 #include "BitLib/BitBotConstants.h"
 
+#include <algorithm>
 #include <iostream>
 
 
@@ -43,16 +44,16 @@ int main()
                 }
 
                 if (!portfolio.has_available_order(symbol)) {
-                    portfolio.cancel_oldest_order(symbol);
+                    portfolio.cancel_oldest_order(timestamp, symbol);
                 }
 
                 const auto equity = portfolio.get_equity();
                 const auto cash = portfolio.get_cash();
-                const auto position_value = std::min(equity / BitSim::Portfolio::total_capacity, cash * 0.99);
+                const auto position_value = min(equity / BitSim::Portfolio::total_capacity, cash * 0.99);
                 const auto mark_price = klines.get_open_price(symbol);
                 const auto position_size = position_value / mark_price * 0.99;
 
-                printf("%s Place limit order, %s %f %f\n", date::format("%F %T", timestamp).c_str(), symbol.name.data(), mark_price, position_size);
+                //printf("%s Place limit order, %s %f %f\n", date::format("%F %T", timestamp).c_str(), symbol.name.data(), mark_price, position_size);
                 portfolio.place_limit_order(timestamp, symbol, delta_idx, position_size);
             }
         }
