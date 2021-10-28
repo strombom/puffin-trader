@@ -23,6 +23,25 @@ double Simulator::get_mark_price(const Symbol& symbol) const
     return mark_price[symbol.idx];
 }
 
+double Simulator::get_wallet_usdt(void) const
+{
+    return wallet_usdt;
+}
+
+double Simulator::get_wallet(const Symbol& symbol) const
+{
+    return wallet[symbol.idx];
+}
+
+double Simulator::get_total_equity(void) const
+{
+    auto equity = wallet_usdt;
+    for (const auto& symbol : symbols) {
+        equity += wallet[symbol.idx] * mark_price[symbol.idx];
+    }
+    return equity;
+}
+
 sptrOrder Simulator::limit_order(time_point_ms timestamp, const Symbol& symbol, double price, double quantity)
 {
     auto side = Order::Side::Buy;
@@ -30,9 +49,28 @@ sptrOrder Simulator::limit_order(time_point_ms timestamp, const Symbol& symbol, 
         side = Order::Side::Sell;
     }
 
+    if (side == Order::Side::Sell && wallet[symbol.idx] + 0.0000001 < -quantity) {
+        // Insufficient balance
+        return nullptr;
+    }
+
     auto order = std::make_shared<Order>(timestamp, symbol, side, price, quantity);
     limit_orders.emplace_back(order);
     return order;
+}
+
+void Simulator::adjust_order_volumes(void)
+{
+    auto total_order_size = 0;
+    for (const auto& limit_order : limit_orders) {
+        total_order_size += limit_order->amount * mark_price[limit_order->symbol.idx];
+    }
+    if (total_order_size > wallet_usdt * 0.95) {
+        const auto order_value = total_order_size / limit_orders.size();
+        for (auto& limit_order : limit_orders) {
+            limit_order->amount = order_value / mark_price[limit_order->symbol.idx];
+        }
+    }
 }
 
 void Simulator::cancel_orders(void)
@@ -50,8 +88,23 @@ void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
         if (limit_order->side == Order::Side::Buy && klines.get_low_price(limit_order->symbol) < limit_order->price) {
             limit_order->state = Order::State::Filled;
         }
-        else if (limit_order->side == Order::Side::Sell && klines.get_low_price(limit_order->symbol) > limit_order->price) {
+        else if (limit_order->side == Order::Side::Sell && klines.get_high_price(limit_order->symbol) > limit_order->price) {
             limit_order->state = Order::State::Filled;
+        }
+
+        if (limit_order->state == Order::State::Filled) {
+            wallet[limit_order->symbol.idx] += limit_order->amount;
+            wallet_usdt -= limit_order->amount * limit_order->price;
+            wallet_usdt -= abs(limit_order->amount) * limit_order->price * BitSim::fee;
+
+            if (wallet[limit_order->symbol.idx] < -0.001) {
+                auto a = 0;
+            }
+            if (wallet[limit_order->symbol.idx] < 0.000001) {
+                wallet[limit_order->symbol.idx] = 0.0;
+            }
+            wallet[limit_order->symbol.idx] = max(0.0, wallet[limit_order->symbol.idx]);
+
         }
     }
 

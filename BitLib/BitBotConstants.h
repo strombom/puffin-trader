@@ -32,6 +32,9 @@ namespace BitSim
         //Symbol{ 1, "BCHUSDT" }
     };
     */
+
+    constexpr auto fee = -0.00025;
+
     namespace Portfolio
     {
         constexpr auto total_capacity = 4;

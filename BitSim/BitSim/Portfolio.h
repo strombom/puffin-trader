@@ -29,4 +29,6 @@ private:
     inline int get_position_count(void);
     inline int get_position_count(const Symbol& symbol);
     inline int get_order_count(const Symbol& symbol);
+
+    void print_portfolio(time_point_ms timestamp);
 };

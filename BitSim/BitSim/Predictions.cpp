@@ -130,7 +130,7 @@ void Predictions::step_idx(time_point_ms timestamp)
         else {
             active[symbol.idx] = false;
         }
-    }
+     }
 }
 
 bool Predictions::has_prediction(const Symbol& symbol)
