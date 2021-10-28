@@ -28,7 +28,7 @@ void Portfolio::evaluate_positions(time_point_ms timestamp)
                 const auto price = simulator.get_mark_price(position.symbol) + position.symbol.tick_size;
                 position.state = Position::State::Closing;
                 position.order = simulator.limit_order(timestamp, position.symbol, price, -position.amount);
-                logger.info("%s Position(%s) Close %s @%.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), price);
+                logger.info("%s Position(%s) Close %s @%.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), price);
             }
         }
     }
@@ -55,6 +55,9 @@ void Portfolio::cancel_oldest_order(time_point_ms timestamp, const Symbol& symbo
             oldest_position = &position;
         }
     }
+    if (oldest_position == nullptr) {
+        return;
+    }
     oldest_position->order->cancel = true;
     logger.info("%s Position(%s) Cancel %s", DateTime::to_string(timestamp).c_str(), oldest_position->uuid.to_string().c_str(), oldest_position->symbol.name.data());
 
@@ -78,16 +81,11 @@ void Portfolio::place_limit_order(time_point_ms timestamp, const Symbol& symbol,
     const auto price = simulator.get_mark_price(symbol) - symbol.tick_size;
     const auto quantity = int(position_size / symbol.min_qty) * symbol.min_qty;
 
-
     auto order = simulator.limit_order(timestamp, symbol, price, quantity);
-
-    // time_point_ms timestamp, const Symbol& symbol, double amount, double price, int delta_idx)
     positions.push_back({ timestamp, delta_idx, order });
     const auto& position = positions.back();
 
-    logger.info("%s Position(%s) Place limit order %s %.4f %.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), symbol.name.data(), price, quantity);
-
-    //orders.emplace_back(order);
+    logger.info("%s Position(%s) Limit order %s %.5f %.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), symbol.name.data(), price, quantity);
 }
 
 void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
@@ -96,21 +94,18 @@ void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
 
     for (auto& position : positions) {
         if (position.state == Position::State::Opening && position.order->state == Order::State::Filled) {
-            //printf("%s Order filled, %s %f %f\n", date::format("%F %T", timestamp).c_str(), position.order->symbol.name.data(), position.order->price, position.order->amount);
-
-
             position.state = Position::State::Active;
             position.filled_price = position.order->price;
             position.take_profit = position.filled_price * BitBot::Trading::take_profit[position.delta_idx];
             position.stop_loss = position.filled_price * BitBot::Trading::stop_loss[position.delta_idx];
             
-            logger.info("%s Position(%s) Order filled %s @%.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), position.order->price);
+            logger.info("%s Position(%s) Filled %s @%.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), position.order->price);
 
             position.order = nullptr;
         }
         else if (position.state == Position::State::Closing && position.order->state == Order::State::Filled) {
 
-            logger.info("%s Position(%s) Closed %s @%.4f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), position.order->price);
+            logger.info("%s Position(%s) Closed %s @%.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), position.order->price);
 
             position.state = Position::State::Closed;
         }
