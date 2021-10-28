@@ -20,23 +20,15 @@ torch::Tensor Utils::load_tensor(const std::string &path, const std::string &fil
 }
 */
 
-UuidGenerator::UuidGenerator(void)
-{
-    auto rd = std::random_device{};
-    auto seed_data = std::array<int, std::mt19937::state_size> {};
-    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
-    auto seq = std::seed_seq(std::begin(seed_data), std::end(seed_data));
-    auto generator = std::mt19937{ seq };
-    gen = std::make_unique<uuids::uuid_random_generator>(generator);
-}
+UuidGenerator uuid_generator;
 
 Uuid UuidGenerator::generate(void)
 {
 
-    return Uuid{ (*gen)() };
+    return Uuid{ gen() };
 }
 
-std::string Uuid::to_string(void) const
+const std::string Uuid::to_string(void) const
 {
     return uuids::to_string(uuid);
 }

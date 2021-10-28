@@ -2,6 +2,8 @@
 #include "pch.h"
 
 #include "BitLib/DateTime.h"
+
+#define UUID_SYSTEM_GENERATOR
 #include "stduuid/uuid.h"
 
 #include <random>
@@ -30,7 +32,7 @@ class Uuid
 public:
     Uuid(uuids::uuid uuid) : uuid(uuid) {}
 
-    std::string to_string(void) const;
+    const std::string to_string(void) const;
 
 private:
     uuids::uuid uuid;
@@ -39,13 +41,15 @@ private:
 class UuidGenerator
 {
 public:
-    UuidGenerator(void);
+    UuidGenerator(void) {}
 
     Uuid generate(void);
 
 private:
-    std::unique_ptr<uuids::uuid_random_generator> gen;
+    uuids::uuid_system_generator gen;
 };
+
+extern UuidGenerator uuid_generator;
 
 class RandomRange
 {
