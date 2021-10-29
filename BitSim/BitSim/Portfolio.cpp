@@ -94,7 +94,7 @@ void Portfolio::place_limit_order(time_point_ms timestamp, const Symbol& symbol,
     positions.push_back({ timestamp, delta_idx, order });
     const auto& position = positions.back();
 
-     logger.info("%s Position(%s) Limit order %s %.5f %.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), symbol.name.data(), price, quantity);
+     //logger.info("%s Position(%s) Limit order %s %.5f %.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), symbol.name.data(), price, quantity);
 }
 
 void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
@@ -107,9 +107,8 @@ void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
                 // Close position by placing a sell order
                 const auto price = simulator.get_mark_price(position.symbol);
                 position.state = Position::State::Closing;
-                position.order = simulator.limit_order(timestamp, position.symbol, price, -position.amount);
+                position.order = simulator.limit_order(timestamp, position.symbol, price, -position.filled_amount);
                 //logger.info("%s Position(%s) Close %s @%.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), price);
-
             }
         }
 
@@ -122,16 +121,16 @@ void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
             else {
                 position.order->price = simulator.get_mark_price(position.symbol) + position.symbol.tick_size;
             }
-            simulator.adjust_order_volumes();
         }
     }
 
+    //simulator.adjust_order_volumes();
     simulator.evaluate_orders(timestamp, klines);
 
     for (auto& position : positions) {
         if (position.state == Position::State::Opening && position.order->state == Order::State::Filled) {
             position.state = Position::State::Active;
-            //position.amount = position.order->amount;
+            position.filled_amount = position.order->amount;
             position.filled_price = position.order->price;
             position.take_profit = position.filled_price * BitBot::Trading::take_profit[position.delta_idx];
             position.stop_loss = position.filled_price * BitBot::Trading::stop_loss[position.delta_idx];
@@ -144,7 +143,7 @@ void Portfolio::evaluate_orders(time_point_ms timestamp, const Klines& klines)
 
             //logger.info("%s Position(%s) Closed %s @%.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), position.order->price);
 
-            if (position.amount != -position.order->amount) {
+            if (position.created_amount != -position.order->amount) {
                 auto a = 0;
             }
 

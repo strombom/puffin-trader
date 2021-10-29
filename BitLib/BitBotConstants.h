@@ -34,6 +34,7 @@ namespace BitSim
     */
 
     constexpr auto fee = -0.00025;
+    constexpr auto min_position_value = 50;
 
     namespace Portfolio
     {

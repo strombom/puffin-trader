@@ -61,16 +61,6 @@ sptrOrder Simulator::limit_order(time_point_ms timestamp, const Symbol& symbol, 
 
 void Simulator::adjust_order_volumes(void)
 {
-    auto total_order_size = 0;
-    for (const auto& limit_order : limit_orders) {
-        total_order_size += limit_order->amount * mark_price[limit_order->symbol.idx];
-    }
-    if (total_order_size > wallet_usdt * 0.95) {
-        const auto order_value = total_order_size / limit_orders.size();
-        for (auto& limit_order : limit_orders) {
-            limit_order->amount = order_value / mark_price[limit_order->symbol.idx];
-        }
-    }
 }
 
 void Simulator::cancel_orders(void)
@@ -84,6 +74,23 @@ void Simulator::cancel_orders(void)
 
 void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
 {
+    auto active_buy_order_count = 0;
+    auto total_buy_order_value = 0;
+    for (const auto& limit_order : limit_orders) {
+        if (limit_order->state == Order::State::Active && limit_order->side == Order::Side::Buy) {
+            total_buy_order_value += limit_order->amount * mark_price[limit_order->symbol.idx];
+            active_buy_order_count++;
+        }
+    }
+    if (total_buy_order_value > wallet_usdt * 0.95) {
+        const auto order_value = 0.95 * wallet_usdt / active_buy_order_count; //  total_buy_order_value / active_buy_order_count;
+        for (auto& limit_order : limit_orders) {
+            if (limit_order->state == Order::State::Active && limit_order->side == Order::Side::Buy) {
+                limit_order->amount = order_value / mark_price[limit_order->symbol.idx];
+            }
+        }
+    }
+
     for (auto& limit_order : limit_orders) {
         if (limit_order->side == Order::Side::Buy && klines.get_low_price(limit_order->symbol) < limit_order->price) {
             limit_order->state = Order::State::Filled;
@@ -96,6 +103,10 @@ void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
             wallet[limit_order->symbol.idx] += limit_order->amount;
             wallet_usdt -= limit_order->amount * limit_order->price;
             wallet_usdt -= abs(limit_order->amount) * limit_order->price * BitSim::fee;
+
+            if (wallet_usdt < 0) {
+                auto a = 0;
+            }
 
             if (wallet[limit_order->symbol.idx] < -0.001) {
                 auto a = 0;

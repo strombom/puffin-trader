@@ -21,7 +21,8 @@ struct Position
     double filled_price;
     double take_profit;
     double stop_loss;
-    double amount;
+    double created_amount;
+    double filled_amount;
 
     sptrOrder order;
 };
