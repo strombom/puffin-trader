@@ -22,15 +22,21 @@ torch::Tensor Utils::load_tensor(const std::string &path, const std::string &fil
 
 UuidGenerator uuid_generator;
 
+UuidGenerator::UuidGenerator(void)
+{
+    uuid = 0;
+}
+
 Uuid UuidGenerator::generate(void)
 {
-
-    return Uuid{ gen() };
+    return uuid++;
+    //return Uuid{ gen() };
 }
 
 const std::string Uuid::to_string(void) const
 {
-    return uuids::to_string(uuid);
+    return std::to_string(uuid);
+    //return uuids::to_string(uuid);
 }
 
 double Utils::random(double min, double max)

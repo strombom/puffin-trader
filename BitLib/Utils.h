@@ -30,23 +30,26 @@ private:
 class Uuid
 {
 public:
-    Uuid(uuids::uuid uuid) : uuid(uuid) {}
+    //Uuid(uuids::uuid uuid) : uuid(uuid) {}
+    Uuid(int uuid) : uuid(uuid) {}
 
     const std::string to_string(void) const;
 
 private:
-    uuids::uuid uuid;
+    //uuids::uuid uuid;
+    int uuid;
 };
 
 class UuidGenerator
 {
 public:
-    UuidGenerator(void) {}
+    UuidGenerator(void);
 
     Uuid generate(void);
 
 private:
-    uuids::uuid_system_generator gen;
+    int uuid;
+    //uuids::uuid_system_generator gen;
 };
 
 extern UuidGenerator uuid_generator;
