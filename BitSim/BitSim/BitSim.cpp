@@ -30,39 +30,44 @@ int main()
         }
 
         klines.step_idx(timestamp);
-        portfolio.set_mark_prices(klines);
+        if (predictions.step_idx(timestamp)) {
 
-        // Sell
-        //portfolio.evaluate_positions(timestamp);
+            portfolio.set_mark_prices(klines);
 
-        // Buy
-        predictions.step_idx(timestamp);
-        for (const auto& symbol : symbols) {
-            if (!predictions.has_prediction(symbol)) {
-                continue;
-            }
-            
-            const auto score = predictions.get_prediction_score(symbol, delta_idx);
-            if (score > threshold) {
-                if (!portfolio.has_available_position(symbol)) {
+            for (const auto& symbol : symbols) {
+                if (!predictions.has_prediction(symbol)) {
                     continue;
                 }
 
-                if (!portfolio.has_available_order(symbol)) {
-                    portfolio.cancel_oldest_order(timestamp, symbol);
-                }
+                const auto score = predictions.get_prediction_score(symbol, delta_idx);
+                if (score > threshold) {
+                    if (!portfolio.has_available_position(symbol)) {
+                        continue;
+                    }
 
-                const auto equity = portfolio.get_equity();
-                const auto cash = portfolio.get_cash();
-                const auto position_value = min(equity / BitSim::Portfolio::total_capacity, cash * 0.99);
-                const auto mark_price = klines.get_open_price(symbol);
-                const auto position_size = position_value / mark_price * 0.99;
+                    if (!portfolio.has_available_order(symbol)) {
+                        portfolio.cancel_oldest_opening_position(timestamp, symbol);
+                    }
 
-                if (position_size * mark_price > BitSim::min_position_value) {
-                    //printf("%s Place limit order, %s %f %f\n", date::format("%F %T", timestamp).c_str(), symbol.name.data(), mark_price, position_size);
-                    portfolio.place_limit_order(timestamp, symbol, delta_idx, position_size);
+                    const auto equity = portfolio.get_equity();
+                    const auto cash = portfolio.get_cash();
+                    const auto position_value = min(equity / BitSim::Portfolio::total_capacity, cash);
+                    const auto mark_price = klines.get_open_price(symbol);
+                    const auto position_size = position_value / mark_price;
+
+                    if (position_value < equity / BitSim::Portfolio::total_capacity * 0.5) {
+                        continue;
+                    }
+
+                    if (position_value > BitSim::min_position_value) {
+                        //printf("%s Place limit order, %s %f %f\n", date::format("%F %T", timestamp).c_str(), symbol.name.data(), mark_price, position_size);
+                        printf("%s Place limit order, %s %f\n", date::format("%F %T", timestamp).c_str(), symbol.name.data(), mark_price * position_size);
+                        portfolio.place_limit_order(timestamp, symbol, delta_idx, position_size);
+                    }
                 }
             }
+
+            portfolio.evaluate_positions(timestamp);
         }
 
         portfolio.evaluate_orders(timestamp, klines);

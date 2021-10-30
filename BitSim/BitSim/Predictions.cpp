@@ -118,19 +118,22 @@ bool Predictions::load(const Symbol& symbol)
     return true;
 }
 
-void Predictions::step_idx(time_point_ms timestamp)
+bool Predictions::step_idx(time_point_ms timestamp)
 {
+    bool has_predictions = false;
     for (const auto& symbol : symbols) {
         while (data[symbol.idx][data_idx[symbol.idx]].timestamp < timestamp && data_idx[symbol.idx] + 1 < data[symbol.idx].size()) {
             data_idx[symbol.idx]++;
         }
         if (data[symbol.idx][data_idx[symbol.idx]].timestamp == timestamp) {
             active[symbol.idx] = true;
+            has_predictions = true;
         }
         else {
             active[symbol.idx] = false;
         }
-     }
+    }
+    return has_predictions;
 }
 
 bool Predictions::has_prediction(const Symbol& symbol)

@@ -15,14 +15,16 @@ struct Position
     Uuid uuid;
     State state;
     Symbol symbol;
-
+     
     int delta_idx;
+
     double created_price;
     double filled_price;
-    double take_profit;
-    double stop_loss;
     double created_amount;
     double filled_amount;
+
+    double take_profit;
+    double stop_loss;
 
     sptrOrder order;
 };

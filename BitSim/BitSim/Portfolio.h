@@ -15,7 +15,7 @@ public:
     void evaluate_positions(time_point_ms timestamp);
     bool has_available_position(const Symbol& symbol);
     bool has_available_order(const Symbol& symbol);
-    void cancel_oldest_order(time_point_ms timestamp, const Symbol& symbol);
+    void cancel_oldest_opening_position(time_point_ms timestamp, const Symbol& symbol);
     void place_limit_order(time_point_ms timestamp, const Symbol& symbol, int delta_idx, double position_size);
     void evaluate_orders(time_point_ms timestamp, const Klines& klines);
 
@@ -26,9 +26,9 @@ private:
     Simulator simulator;
     std::vector<Position> positions;
 
-    inline int get_position_count(void);
-    inline int get_position_count(const Symbol& symbol);
-    inline int get_order_count(const Symbol& symbol);
+    inline int get_filled_position_count(void);
+    inline int get_filled_position_count(const Symbol& symbol);
+    inline int get_opening_position_count(const Symbol& symbol);
 
     void print_portfolio(time_point_ms timestamp);
 };

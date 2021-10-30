@@ -21,7 +21,7 @@ class Predictions
 public:
     Predictions(void);
 
-    void step_idx(time_point_ms timestamp);
+    bool step_idx(time_point_ms timestamp);
     bool has_prediction(const Symbol& symbol);
     double get_prediction_score(const Symbol& symbol, int delta_idx);
 

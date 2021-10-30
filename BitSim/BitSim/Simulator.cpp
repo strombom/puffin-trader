@@ -44,10 +44,7 @@ double Simulator::get_total_equity(void) const
 
 sptrOrder Simulator::limit_order(time_point_ms timestamp, const Symbol& symbol, double price, double quantity)
 {
-    auto side = Order::Side::Buy;
-    if (quantity < 0) {
-        side = Order::Side::Sell;
-    }
+    auto side = quantity >= 0 ? Order::Side::Buy : Order::Side::Sell;
 
     if (side == Order::Side::Sell && wallet[symbol.idx] + 0.0000001 < -quantity) {
         // Insufficient balance
@@ -74,11 +71,44 @@ void Simulator::cancel_orders(void)
 
 void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
 {
+    limit_orders.erase(
+        std::remove_if(
+            limit_orders.begin(),
+            limit_orders.end(),
+            [](const sptrOrder& order) {
+                return order->state == Order::State::Canceled;
+            }
+        ),
+        limit_orders.end()
+    );
+
+    auto active_order_count = 0;
+    auto total_order_value = 0.0;
+    for (const auto& limit_order : limit_orders) {
+        if (limit_order->state == Order::State::Active) {
+            total_order_value += abs(limit_order->quantity * mark_price[limit_order->symbol.idx]);
+            active_order_count++;
+        }
+    }
+    if (active_order_count > 1) {
+        const auto avg_order_value = total_order_value / active_order_count;
+        for (const auto& limit_order : limit_orders) {
+            if (limit_order->state == Order::State::Active) {
+                const auto order_value = abs(limit_order->quantity * mark_price[limit_order->symbol.idx]);
+                const auto diff = order_value / avg_order_value;
+                if (diff > 1.10 || diff < 0.90) {
+                    auto a = 0;
+                }
+            }
+        }
+    }
+
+    // Adjust order quantity
     auto active_buy_order_count = 0;
-    auto total_buy_order_value = 0;
+    auto total_buy_order_value = 0.0;
     for (const auto& limit_order : limit_orders) {
         if (limit_order->state == Order::State::Active && limit_order->side == Order::Side::Buy) {
-            total_buy_order_value += limit_order->amount * mark_price[limit_order->symbol.idx];
+            total_buy_order_value += limit_order->quantity * mark_price[limit_order->symbol.idx];
             active_buy_order_count++;
         }
     }
@@ -86,7 +116,7 @@ void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
         const auto order_value = 0.95 * wallet_usdt / active_buy_order_count; //  total_buy_order_value / active_buy_order_count;
         for (auto& limit_order : limit_orders) {
             if (limit_order->state == Order::State::Active && limit_order->side == Order::Side::Buy) {
-                limit_order->amount = order_value / mark_price[limit_order->symbol.idx];
+                limit_order->quantity = order_value / mark_price[limit_order->symbol.idx];
             }
         }
     }
@@ -100,9 +130,9 @@ void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
         }
 
         if (limit_order->state == Order::State::Filled) {
-            wallet[limit_order->symbol.idx] += limit_order->amount;
-            wallet_usdt -= limit_order->amount * limit_order->price;
-            wallet_usdt -= abs(limit_order->amount) * limit_order->price * BitSim::fee;
+            wallet[limit_order->symbol.idx] += limit_order->quantity;
+            wallet_usdt -= limit_order->quantity * limit_order->price;
+            wallet_usdt -= abs(limit_order->quantity) * limit_order->price * BitSim::fee;
 
             if (wallet_usdt < 0) {
                 auto a = 0;

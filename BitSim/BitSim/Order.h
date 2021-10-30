@@ -10,7 +10,7 @@ public:
     enum class State { Active, Filled, Canceled };
     enum class Side { Buy, Sell };
 
-    Order(time_point_ms created, const Symbol& symbol, Order::Side side, double price, double amount);
+    Order(time_point_ms created, const Symbol& symbol, Order::Side side, double price, double quantity);
 
     time_point_ms created;
     Uuid uuid;
@@ -18,7 +18,7 @@ public:
     State state;
     Side side;
     double price;
-    double amount;
+    double quantity;
     bool cancel;
 };
 
