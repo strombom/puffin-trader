@@ -3,6 +3,12 @@
 #
 cmake_minimum_required (VERSION 3.19)
 
+#set(ENV{CMAKE_BUILD_PARALLEL_LEVEL} [7])
+add_definitions(/bigobj)
+add_definitions(-D_WIN32_WINNT=0x0601)
+add_definitions(-DCMAKE_BUILD_PARALLEL_LEVEL=10)
+#add_definitions(-D_WIN32_WINNT 0x0601)
+
 set(CMAKE_TOOLCHAIN_FILE "/home/strombom/vcpkg/scripts/buildsystems/vcpkg.cmake")
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_STANDARD 20)

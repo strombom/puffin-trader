@@ -4,6 +4,7 @@
 #include "BitLib/json11/json11.hpp"
 #include "BitLib/DateTime.h"
 
+#include <openssl/ssl.h>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/websocket/ssl.hpp>
 #include <boost/asio/strand.hpp>
@@ -14,7 +15,7 @@
 ByBitWebSocket::ByBitWebSocket(void) :
     connected(false), websocket_thread_running(true)
 {
-
+    ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
 
 void ByBitWebSocket::start(void)
@@ -24,12 +25,21 @@ void ByBitWebSocket::start(void)
 
 void ByBitWebSocket::shutdown(void)
 {
+    logger.warn("ByBitWebSocket Shutting down");
 
+    // Close the WebSocket connection
+    websocket_thread_running = false;
+    websocket->async_close(boost::beast::websocket::close_code::normal, boost::beast::bind_front_handler(&ByBitWebSocket::on_close, shared_from_this()));
+
+    try {
+        websocket_thread->join();
+    }
+    catch (...) {}
 }
 
 void ByBitWebSocket::fail(boost::beast::error_code ec, const std::string& reason)
 {
-    logger.warn("BitmexWebSocket error: %s \"%s\"", reason.c_str(), ec.message().c_str());
+    logger.warn("ByBitWebSocket error: %s \"%s\"", reason.c_str(), ec.message().c_str());
 }
 
 void ByBitWebSocket::connect(void)
@@ -55,7 +65,7 @@ void ByBitWebSocket::connect(void)
 
 void ByBitWebSocket::send(const std::string& message)
 {
-    logger.info("BitmexWebSocket::send: %s", message.c_str());
+    logger.info("ByBitWebSocket::send: %s", message.c_str());
 
     websocket->async_write(boost::asio::buffer(message), boost::beast::bind_front_handler(&ByBitWebSocket::on_write, shared_from_this()));
 }
@@ -141,7 +151,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
                 //bitmex_account->delete_order(order_id);
             }
             else {
-                logger.info("BitmexWebSocket::parse_message: order unknown (%s)", message.c_str());
+                logger.info("ByBitWebSocket::parse_message: order unknown (%s)", message.c_str());
             }
         }
     }
@@ -200,13 +210,13 @@ void ByBitWebSocket::parse_message(const std::string& message)
 
     }
     else {
-        logger.info("BitmexWebSocket::parse_message: unknown command (%s)", message.c_str());
+        logger.info("ByBitWebSocket::parse_message: unknown command (%s)", message.c_str());
     }
 }
 
 void ByBitWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
 {
-    logger.info("BitmexWebSocket::on_resolve");
+    logger.info("ByBitWebSocket::on_resolve");
 
     if (ec) {
         fail(ec, "on_resolve");
@@ -219,7 +229,7 @@ void ByBitWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::tc
 
 void ByBitWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type ep)
 {
-    logger.info("BitmexWebSocket::on_connect");
+    logger.info("ByBitWebSocket::on_connect");
 
     if (ec)
     {
@@ -234,13 +244,23 @@ void ByBitWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tc
     // Set a timeout on the operation
     boost::beast::get_lowest_layer(*websocket).expires_after(std::chrono::seconds(30));
 
+    // Set SNI Hostname (many hosts need this to handshake successfully)
+    if (!SSL_set_tlsext_host_name(
+        websocket->next_layer().native_handle(),
+        ByBit::websocket::host))
+    {
+        ec = boost::beast::error_code(static_cast<int>(::ERR_get_error()),
+            boost::beast::net::error::get_ssl_category());
+        return fail(ec, "connect");
+    }
+
     // Perform the SSL handshake
     websocket->next_layer().async_handshake(boost::asio::ssl::stream_base::client, boost::beast::bind_front_handler(&ByBitWebSocket::on_ssl_handshake, shared_from_this()));
 }
 
 void ByBitWebSocket::on_ssl_handshake(boost::beast::error_code ec)
 {
-    logger.info("BitmexWebSocket::on_ssl_handshake");
+    logger.info("ByBitWebSocket::on_ssl_handshake");
 
     if (ec) {
         fail(ec, "on_ssl_handshake");
@@ -273,7 +293,7 @@ void ByBitWebSocket::on_ssl_handshake(boost::beast::error_code ec)
 
 void ByBitWebSocket::on_handshake(boost::beast::error_code ec)
 {
-    logger.info("BitmexWebSocket::on_handshake");
+    logger.info("ByBitWebSocket::on_handshake");
 
     if (ec) {
         fail(ec, "on_handshake");
@@ -288,7 +308,7 @@ void ByBitWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_tra
 {
     boost::ignore_unused(bytes_transferred);
 
-    logger.info("BitmexWebSocket::on_write");
+    logger.info("ByBitWebSocket::on_write");
 
     if (ec) {
         return fail(ec, "write");
@@ -331,10 +351,10 @@ void ByBitWebSocket::on_close(boost::beast::error_code ec)
 void ByBitWebSocket::websocket_worker(void)
 {
     while (websocket_thread_running) {
-        logger.info("BitmexWebSocket:websocket_worker: connect");
+        logger.info("ByBitWebSocket:websocket_worker: connect");
         connect();
-        logger.info("BitmexWebSocket:websocket_worker: start");
+        logger.info("ByBitWebSocket:websocket_worker: start");
         ioc.run();
-        logger.info("BitmexWebSocket:websocket_worker: end");
+        logger.info("ByBitWebSocket:websocket_worker: end");
     }
 }
