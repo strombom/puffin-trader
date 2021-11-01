@@ -1,12 +1,12 @@
 
-if True:
+if False:
     print("NOT RUNNING make_symbols.py")
     quit()
 
 import requests
 
 symbols = ["ADAUSDT", "BCHUSDT", "BNBUSDT", "BTCUSDT", "BTTUSDT", "CHZUSDT", "DOGEUSDT", "EOSUSDT", "ETHUSDT", "ETCUSDT", "LINKUSDT", "LTCUSDT", "MATICUSDT", "THETAUSDT", "XLMUSDT", "XRPUSDT"]
-symbols = ["ADAUSDT", "BCHUSDT"]
+symbols = ["THETAUSDT"]
 
 request = requests.get('https://api.bybit.com/v2/public/symbols')
 

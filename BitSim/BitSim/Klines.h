@@ -24,6 +24,8 @@ public:
     time_point_ms get_timestamp_end(void) const;
 
     void step_idx(time_point_ms timestamp);
+    void reset_idx(void);
+
     double get_open_price(const Symbol& symbol) const;
     double get_high_price(const Symbol& symbol) const;
     double get_low_price(const Symbol& symbol) const;

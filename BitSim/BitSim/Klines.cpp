@@ -69,6 +69,13 @@ void Klines::step_idx(time_point_ms timestamp)
     }
 }
 
+void Klines::reset_idx(void)
+{
+    for (const auto& symbol : symbols) {
+        data_idx[symbol.idx] = 0;
+    }
+}
+
 double Klines::get_open_price(const Symbol& symbol) const
 {
     return data[symbol.idx][data_idx[symbol.idx]].open;

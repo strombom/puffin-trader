@@ -118,6 +118,14 @@ bool Predictions::load(const Symbol& symbol)
     return true;
 }
 
+void Predictions::reset_idx(void)
+{
+    for (const auto& symbol : symbols) {
+        data_idx[symbol.idx] = 0;
+        active[symbol.idx] = false;
+    }
+}
+
 bool Predictions::step_idx(time_point_ms timestamp)
 {
     bool has_predictions = false;

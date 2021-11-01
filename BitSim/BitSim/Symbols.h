@@ -39,6 +39,5 @@ struct Symbol {
 };
 
 constexpr const auto symbols = std::array{
-    Symbol{ 0, "BCHUSDT", 0.05, 0.00075, -0.00025, 0.01, 0.01, 600 },
-    Symbol{ 1, "ADAUSDT", 0.0001, 0.00075, -0.00025, 1, 1, 240000 },
+    Symbol{ 0, "THETAUSDT", 0.001, 0.00075, -0.00025, 0.1, 0.1, 15000 },
 };

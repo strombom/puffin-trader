@@ -122,12 +122,15 @@ void Simulator::evaluate_orders(time_point_ms timestamp, const Klines& klines)
     }
 
     for (auto& limit_order : limit_orders) {
-        if (limit_order->side == Order::Side::Buy && klines.get_low_price(limit_order->symbol) < limit_order->price) {
+        /*if (limit_order->side == Order::Side::Buy && klines.get_low_price(limit_order->symbol) + limit_order->symbol.lot_size * 1 < limit_order->price) {
             limit_order->state = Order::State::Filled;
         }
-        else if (limit_order->side == Order::Side::Sell && klines.get_high_price(limit_order->symbol) > limit_order->price) {
+        else if (limit_order->side == Order::Side::Sell && klines.get_high_price(limit_order->symbol) - limit_order->symbol.lot_size * 1 > limit_order->price) {
             limit_order->state = Order::State::Filled;
         }
+        */
+
+        limit_order->state = Order::State::Filled;
 
         if (limit_order->state == Order::State::Filled) {
             wallet[limit_order->symbol.idx] += limit_order->quantity;

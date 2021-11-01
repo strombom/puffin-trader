@@ -7,6 +7,8 @@
 
 void Portfolio::print_portfolio(time_point_ms timestamp)
 {
+    return;
+
     auto ss = std::ostringstream{};
     ss << std::fixed;
     ss << std::setprecision(0);
@@ -99,6 +101,15 @@ void Portfolio::place_limit_order(time_point_ms timestamp, const Symbol& symbol,
 
     positions.push_back({ timestamp, delta_idx, order });
 
+    /*
+    if (positions.back().order->side == Order::Side::Buy) {
+        positions.back().order->price = simulator.get_mark_price(positions.back().symbol) - positions.back().symbol.tick_size;
+    }
+    else {
+        positions.back().order->price = simulator.get_mark_price(positions.back().symbol) + positions.back().symbol.tick_size;
+    }
+    */
+
     //const auto& position = positions.back();
     //logger.info("%s Position(%s) Limit order %s %.5f %.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), symbol.name.data(), price, quantity);
 }
@@ -120,6 +131,29 @@ void Portfolio::evaluate_positions(time_point_ms timestamp)
     }
     */
 
+    /*
+    for (auto& position : positions) {
+        if (position.state == Position::State::Opening) {
+            if ((timestamp - position.order->created).count() / 1000.0 / 60.0 > 1) {
+                position.order->cancel = true;
+            }
+        }
+    }
+
+    simulator.cancel_orders();
+
+    positions.erase(
+        std::remove_if(
+            positions.begin(),
+            positions.end(),
+            [](const Position& position) {
+                return position.state == Position::State::Opening && position.order->state == Order::State::Canceled;
+            }
+        ),
+        positions.end()
+    );
+    */
+
     // Update limit orders
     for (auto& position : positions) {
         if (position.state == Position::State::Active) {
@@ -130,6 +164,15 @@ void Portfolio::evaluate_positions(time_point_ms timestamp)
                 position.state = Position::State::Closing;
                 position.order = simulator.limit_order(timestamp, position.symbol, mark_price, -position.filled_amount);
                 //logger.info("%s Position(%s) Close %s @%.5f", DateTime::to_string(timestamp).c_str(), position.uuid.to_string().c_str(), position.symbol.name.data(), price);
+                
+                /*if (position.order->side == Order::Side::Buy) {
+                    position.order->price = simulator.get_mark_price(position.symbol) - position.symbol.tick_size;
+                }
+                else {
+                    position.order->price = simulator.get_mark_price(position.symbol) + position.symbol.tick_size;
+                }
+                */
+
             }
         }
 
@@ -137,12 +180,14 @@ void Portfolio::evaluate_positions(time_point_ms timestamp)
             // Adjust limit order price
             // TODO: Cancel if price/time is too far off
 
+            /*
             if (position.order->side == Order::Side::Buy) {
                 position.order->price = simulator.get_mark_price(position.symbol) - position.symbol.tick_size;
             }
             else {
                 position.order->price = simulator.get_mark_price(position.symbol) + position.symbol.tick_size;
             }
+            */
         }
     }
 
