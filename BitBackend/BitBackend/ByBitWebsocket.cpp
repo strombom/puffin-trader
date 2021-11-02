@@ -72,13 +72,13 @@ void ByBitWebSocket::send(const std::string& message)
 
 void ByBitWebSocket::request_authentication(void)
 {
-    const auto expires = authenticator.generate_expiration(ByBit::websocket::auth_timeout);
-    const auto sign_message = std::string{ "GET" } + ByBit::websocket::url + std::to_string(expires);
+    const auto expires = std::to_string(authenticator.generate_expiration(ByBit::websocket::auth_timeout));
+    const auto sign_message = std::string{ "GET/realtime" } + expires;
     const auto signature = authenticator.authenticate(sign_message);
 
     json11::Json auth_command = json11::Json::object{
-        { "op", "authKeyExpires" },
-        { "args", json11::Json::array{ByBit::api_key, (int)expires, signature} }
+        { "op", "auth" },
+        { "args", json11::Json::array{ByBit::api_key, expires, signature} }
     };
 
     send(auth_command.dump());
@@ -302,6 +302,8 @@ void ByBitWebSocket::on_handshake(boost::beast::error_code ec)
 
     websocket_buffer.clear();
     websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&ByBitWebSocket::on_read, shared_from_this()));
+
+    request_authentication();
 }
 
 void ByBitWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_transferred)
@@ -317,6 +319,7 @@ void ByBitWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_tra
 
 void ByBitWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_transferred)
 {
+    logger.info("ByBitWebSocket::on_read");
     boost::ignore_unused(bytes_transferred);
 
     if (ec) {
