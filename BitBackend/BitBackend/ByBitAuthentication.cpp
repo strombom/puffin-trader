@@ -2,10 +2,6 @@
 #include "ByBitAuthentication.h"
 #include "ByBitConfig.h"
 
-#include <ios>
-#include <iomanip>
-#include <cstring>
-
 
 ByBitAuthentication::ByBitAuthentication(void)
 {

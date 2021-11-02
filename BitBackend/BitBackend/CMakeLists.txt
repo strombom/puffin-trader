@@ -3,7 +3,16 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-# Add source to this project's executable.
-add_executable (BitBackend "BitBackend.cpp"  "ByBitWebsocket.h" "ByBitWebsocket.cpp" "ByBitAuthentication.cpp" "ByBitAuthentication.h" "BitLib/Logger.cpp" "BitLib/date/date.h" "ByBitConfig.h" "BitLib/json11/json11.cpp" "BitLib/DateTime.cpp")
+add_executable (BitBackend "BitBackend.cpp" "ByBitAuthentication.cpp" "ByBitWebsocket.cpp" "BitLib/json11/json11.cpp" "BitLib/DateTime.cpp" "BitLib/Logger.cpp")
 
-# TODO: Add tests and install targets if needed.
+target_precompile_headers(BitBackend PUBLIC precompiled_headers.h)
+
+set(CMAKE_TOOLCHAIN_FILE "/home/strombom/vcpkg/scripts/buildsystems/vcpkg.cmake")
+include("/home/strombom/vcpkg/scripts/buildsystems/vcpkg.cmake")
+find_package(cppzmq CONFIG REQUIRED)
+find_package(Boost)
+find_package(OpenSSL REQUIRED)
+target_link_libraries(BitBackend PRIVATE cppzmq cppzmq-static)
+target_link_libraries(BitBackend PRIVATE OpenSSL::SSL)
+target_link_libraries(BitBackend PRIVATE ${Boost_LIBRARIES})
+target_include_directories(BitBackend PRIVATE ${Boost_INCLUDE_DIRS})

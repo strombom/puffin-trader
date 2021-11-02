@@ -1,8 +1,5 @@
 #pragma once
-
-#include <openssl/hmac.h>
-#include <chrono>
-#include <string>
+#include "precompiled_headers.h"
 
 
 class ByBitAuthentication

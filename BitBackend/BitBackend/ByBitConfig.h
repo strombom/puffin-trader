@@ -5,11 +5,14 @@
 using namespace std::chrono_literals;
 
 namespace ByBit {
+
+
     namespace websocket {
         constexpr auto host = "stream.bybit.com";
         constexpr auto port = "443";
         constexpr auto auth_timeout = 60s;
-        constexpr auto url = "/realtime_private";
+        constexpr auto url_private = "/realtime_private";
+        constexpr auto url_public = "/realtime_public";
         constexpr auto reconnect_delay = 2s;
     }
 

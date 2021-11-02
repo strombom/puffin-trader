@@ -1,18 +1,14 @@
-﻿// BitBackend.cpp : Defines the entry point for the application.
-//
+﻿#include "precompiled_headers.h"
 
 #include "ByBitWebsocket.h"
+#include "ByBitConfig.h"
 
-#include <boost/beast/websocket.hpp>
-#include <iostream>
-#include <thread>
-#include <chrono>
 using namespace std::chrono_literals;
 
 int main()
 {
-	auto bybit_websocket = std::make_shared<ByBitWebSocket>();
-	bybit_websocket->start();
+	auto bybit_public_websocket = std::make_shared<ByBitWebSocket>(ByBit::websocket::url_public, false);
+	bybit_public_websocket->start();
 
 	while (true) {
 		std::cout << "Hello CMake." << std::endl;

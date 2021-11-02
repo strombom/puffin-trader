@@ -1,6 +1,0 @@
-
-Installation
-------------
-* vcpkg på wsl
-  * installera openssl, boost-asio
-* sudo apt install libssl-dev

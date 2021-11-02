@@ -1,25 +1,21 @@
 #pragma once
+#include "precompiled_headers.h"
 
 #include "ByBitAuthentication.h"
-
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ssl.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/beast/websocket.hpp>
-#include <boost/beast/ssl.hpp>
-#include <boost/beast/core/tcp_stream.hpp>
-#include <thread>
 
 
 class ByBitWebSocket : public std::enable_shared_from_this<ByBitWebSocket>
 {
 public:
-    ByBitWebSocket(void);
+    ByBitWebSocket(const std::string& url, bool authenticate);
 
     void start(void);
     void shutdown(void);
 
 private:
+    std::string url;
+    bool authenticate;
+
     ByBitAuthentication authenticator;
     bool connected;
 
@@ -38,6 +34,7 @@ private:
     void request_authentication(void);
     void send(const std::string& message);
     void parse_message(const std::string& message);
+    void subscribe(void);
 
     void fail(boost::beast::error_code ec, const std::string& reason);
     void on_resolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results);

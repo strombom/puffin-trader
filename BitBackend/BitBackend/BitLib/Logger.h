@@ -1,10 +1,5 @@
 #pragma once
-
-#include <string>
-#include <mutex>
-#include <fstream>
-#include <vector>
-#include <iomanip>
+#include "../precompiled_headers.h"
 
 
 class Logger

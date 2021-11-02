@@ -1,19 +1,12 @@
 #include "ByBitConfig.h"
 #include "ByBitWebsocket.h"
 #include "BitLib/Logger.h"
-#include "BitLib/json11/json11.hpp"
 #include "BitLib/DateTime.h"
-
-#include <openssl/ssl.h>
-#include <boost/beast/websocket.hpp>
-#include <boost/beast/websocket/ssl.hpp>
-#include <boost/asio/strand.hpp>
-#include <memory>
-#include <chrono>
+#include "Symbols.h"
 
 
-ByBitWebSocket::ByBitWebSocket(void) :
-    connected(false), websocket_thread_running(true)
+ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate) :
+    url(url), authenticate(authenticate), connected(false), websocket_thread_running(true)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
@@ -84,12 +77,34 @@ void ByBitWebSocket::request_authentication(void)
     send(auth_command.dump());
 }
 
+void ByBitWebSocket::subscribe(void)
+{
+    auto topics = std::vector<std::string>{};
+    topics.push_back("orderBookL2_25.BTCUSDT");
+
+    json11::Json subscribe_command = json11::Json::object{
+        { "op", "subscribe" },
+        { "args", topics }
+    };
+    send(subscribe_command.dump());
+
+}
+
 void ByBitWebSocket::parse_message(const std::string& message)
 {
     auto error_message = std::string{ "{\"command\":\"error\"}" };
     const auto command = json11::Json::parse(message.c_str(), error_message);
 
-    if (command["info"].string_value() == "Welcome to the BitMEX Realtime API.") {
+    if (command["request"]["op"] == "auth") {
+        if (command["success"].bool_value()) {
+            logger.info("Authenticated");
+            subscribe();
+        }
+        else {
+            request_authentication();
+        }
+    }
+    else if (command["info"].string_value() == "Welcome to the BitMEX Realtime API.") {
         request_authentication();
     }
     else if (command["request"]["op"].string_value() == "authKeyExpires") {
@@ -288,7 +303,7 @@ void ByBitWebSocket::on_ssl_handshake(boost::beast::error_code ec)
         }));
 
     // Perform the websocket handshake
-    websocket->async_handshake(host_address, ByBit::websocket::url, boost::beast::bind_front_handler(&ByBitWebSocket::on_handshake, shared_from_this()));
+    websocket->async_handshake(host_address, url, boost::beast::bind_front_handler(&ByBitWebSocket::on_handshake, shared_from_this()));
 }
 
 void ByBitWebSocket::on_handshake(boost::beast::error_code ec)
@@ -303,7 +318,12 @@ void ByBitWebSocket::on_handshake(boost::beast::error_code ec)
     websocket_buffer.clear();
     websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&ByBitWebSocket::on_read, shared_from_this()));
 
-    request_authentication();
+    if (authenticate) {
+        request_authentication();
+    }
+    else {
+        subscribe();
+    }
 }
 
 void ByBitWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_transferred)

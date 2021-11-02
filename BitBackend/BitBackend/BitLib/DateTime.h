@@ -1,7 +1,6 @@
 #pragma once
+#include "../precompiled_headers.h"
 
-#include <chrono>
-#include <string>
 
 using namespace std::chrono_literals;
 
