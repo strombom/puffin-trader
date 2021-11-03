@@ -2,6 +2,7 @@
 
 #include "BitLib/date/date.h"
 #include "BitLib/json11/json11.hpp"
+#include "BitLib/stduuid/uuid.h"
 
 #include <openssl/hmac.h>
 #include <openssl/ssl.h>

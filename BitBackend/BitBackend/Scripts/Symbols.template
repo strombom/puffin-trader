@@ -37,3 +37,7 @@ struct Symbol {
         return idx == other.idx;
     }
 };
+
+<<symbols>>
+
+const Symbol& find_symbol(std::string name);

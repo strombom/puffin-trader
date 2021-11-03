@@ -5,8 +5,8 @@
 #include "Symbols.h"
 
 
-ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate) :
-    url(url), authenticate(authenticate), connected(false), websocket_thread_running(true)
+ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio) :
+    url(url), authenticate(authenticate), topics(topics), portfolio(portfolio), connected(false), websocket_thread_running(true)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
@@ -58,7 +58,7 @@ void ByBitWebSocket::connect(void)
 
 void ByBitWebSocket::send(const std::string& message)
 {
-    logger.info("ByBitWebSocket::send: %s", message.c_str());
+    //logger.info("ByBitWebSocket::send: %s", message.c_str());
 
     websocket->async_write(boost::asio::buffer(message), boost::beast::bind_front_handler(&ByBitWebSocket::on_write, shared_from_this()));
 }
@@ -79,9 +79,6 @@ void ByBitWebSocket::request_authentication(void)
 
 void ByBitWebSocket::subscribe(void)
 {
-    auto topics = std::vector<std::string>{};
-    topics.push_back("orderBookL2_25.BTCUSDT");
-
     json11::Json subscribe_command = json11::Json::object{
         { "op", "subscribe" },
         { "args", topics }
@@ -95,7 +92,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
     auto error_message = std::string{ "{\"command\":\"error\"}" };
     const auto command = json11::Json::parse(message.c_str(), error_message);
 
-    if (command["request"]["op"] == "auth") {
+    if (authenticate && command["request"]["op"] == "auth") {
         if (command["success"].bool_value()) {
             logger.info("Authenticated");
             subscribe();
@@ -104,6 +101,38 @@ void ByBitWebSocket::parse_message(const std::string& message)
             request_authentication();
         }
     }
+    else if (command["topic"] == "position") {
+        printf("Position: %s\n", message.c_str());
+        //for (const auto& data : command["data"].array_items()) {
+        //    printf("Wallet balance: %.5f available: %.5f\n", data["wallet_balance"].number_value(), data["available_balance"].number_value());
+        //}
+    }
+    else if (command["topic"] == "wallet") {
+        for (const auto& data : command["data"].array_items()) {
+            //printf("Wallet balance: %.5f available: %.5f\n", data["wallet_balance"].number_value(), data["available_balance"].number_value());
+        }
+    }
+    else if (command["topic"] == "order") {
+        for (const auto& data : command["data"].array_items()) {
+            auto timestamp_string = data["create_time"].string_value();
+            if (timestamp_string.size() > 26) {
+                timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
+            }
+            const auto id = Uuid{ data["order_id"].string_value() };
+            const auto symbol = find_symbol(data["symbol"].string_value());
+            const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
+            const auto price = data["price"].number_value();
+            const auto qty = data["leaves_qty"].number_value();
+            const auto status = data["order_status"].string_value();
+            const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
+            portfolio->update_order(id, symbol, side, price, qty, status, timestamp);
+        }
+    }
+    else {
+        printf("Other: %s\n", message.c_str());
+    }
+
+    /*
     else if (command["info"].string_value() == "Welcome to the BitMEX Realtime API.") {
         request_authentication();
     }
@@ -227,11 +256,12 @@ void ByBitWebSocket::parse_message(const std::string& message)
     else {
         logger.info("ByBitWebSocket::parse_message: unknown command (%s)", message.c_str());
     }
+    */
 }
 
 void ByBitWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
 {
-    logger.info("ByBitWebSocket::on_resolve");
+    //logger.info("ByBitWebSocket::on_resolve");
 
     if (ec) {
         fail(ec, "on_resolve");
@@ -244,7 +274,7 @@ void ByBitWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::tc
 
 void ByBitWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type ep)
 {
-    logger.info("ByBitWebSocket::on_connect");
+    //logger.info("ByBitWebSocket::on_connect");
 
     if (ec)
     {
@@ -275,7 +305,7 @@ void ByBitWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tc
 
 void ByBitWebSocket::on_ssl_handshake(boost::beast::error_code ec)
 {
-    logger.info("ByBitWebSocket::on_ssl_handshake");
+    //logger.info("ByBitWebSocket::on_ssl_handshake");
 
     if (ec) {
         fail(ec, "on_ssl_handshake");
@@ -308,7 +338,7 @@ void ByBitWebSocket::on_ssl_handshake(boost::beast::error_code ec)
 
 void ByBitWebSocket::on_handshake(boost::beast::error_code ec)
 {
-    logger.info("ByBitWebSocket::on_handshake");
+    //logger.info("ByBitWebSocket::on_handshake");
 
     if (ec) {
         fail(ec, "on_handshake");
@@ -330,7 +360,7 @@ void ByBitWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_tra
 {
     boost::ignore_unused(bytes_transferred);
 
-    logger.info("ByBitWebSocket::on_write");
+    //logger.info("ByBitWebSocket::on_write");
 
     if (ec) {
         return fail(ec, "write");
@@ -339,7 +369,7 @@ void ByBitWebSocket::on_write(boost::beast::error_code ec, std::size_t bytes_tra
 
 void ByBitWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_transferred)
 {
-    logger.info("ByBitWebSocket::on_read");
+    //logger.info("ByBitWebSocket::on_read");
     boost::ignore_unused(bytes_transferred);
 
     if (ec) {

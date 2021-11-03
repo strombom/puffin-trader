@@ -2,19 +2,22 @@
 #include "precompiled_headers.h"
 
 #include "ByBitAuthentication.h"
+#include "Portfolio.h"
 
 
 class ByBitWebSocket : public std::enable_shared_from_this<ByBitWebSocket>
 {
 public:
-    ByBitWebSocket(const std::string& url, bool authenticate);
+    ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio);
 
-    void start(void);
+    void start();
     void shutdown(void);
 
 private:
     std::string url;
     bool authenticate;
+    std::vector<std::string> topics;
+    sptrPortfolio portfolio;
 
     ByBitAuthentication authenticator;
     bool connected;
