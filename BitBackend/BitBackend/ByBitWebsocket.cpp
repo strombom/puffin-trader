@@ -130,7 +130,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
         }
     }
     else if (command["topic"] == "position") {
-        logger.info("Position: %s\n", message.c_str());
+        logger.info("Position: %s", message.c_str());
         for (const auto& data : command["data"].array_items()) {
             const auto symbol = find_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
@@ -143,7 +143,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
         //}
     }
     else {
-        logger.info("Other: %s\n", message.c_str());
+        logger.info("Other: %s", message.c_str());
     }
 
     /*
