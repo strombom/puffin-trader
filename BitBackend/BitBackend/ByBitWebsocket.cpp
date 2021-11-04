@@ -101,15 +101,9 @@ void ByBitWebSocket::parse_message(const std::string& message)
             request_authentication();
         }
     }
-    else if (command["topic"] == "position") {
-        printf("Position: %s\n", message.c_str());
-        //for (const auto& data : command["data"].array_items()) {
-        //    printf("Wallet balance: %.5f available: %.5f\n", data["wallet_balance"].number_value(), data["available_balance"].number_value());
-        //}
-    }
     else if (command["topic"] == "wallet") {
         for (const auto& data : command["data"].array_items()) {
-            //printf("Wallet balance: %.5f available: %.5f\n", data["wallet_balance"].number_value(), data["available_balance"].number_value());
+            portfolio->update_wallet(data["wallet_balance"].number_value(), data["available_balance"].number_value());
         }
     }
     else if (command["topic"] == "order") {
@@ -128,8 +122,21 @@ void ByBitWebSocket::parse_message(const std::string& message)
             portfolio->update_order(id, symbol, side, price, qty, status, timestamp);
         }
     }
+    else if (command["topic"] == "position") {
+        logger.info("Position: %s\n", message.c_str());
+        for (const auto& data : command["data"].array_items()) {
+            const auto symbol = find_symbol(data["symbol"].string_value());
+            const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
+            const auto qty = data["size"].number_value();
+            portfolio->update_position(symbol, side, qty);
+        }
+
+        //for (const auto& data : command["data"].array_items()) {
+        //    printf("Wallet balance: %.5f available: %.5f\n", data["wallet_balance"].number_value(), data["available_balance"].number_value());
+        //}
+    }
     else {
-        printf("Other: %s\n", message.c_str());
+        logger.info("Other: %s\n", message.c_str());
     }
 
     /*

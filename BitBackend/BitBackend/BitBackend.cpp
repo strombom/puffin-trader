@@ -5,28 +5,11 @@
 #include "Portfolio.h"
 
 #include "BitLib/DateTime.h"
-
+#include <filesystem>
 using namespace std::chrono_literals;
 
 int main()
 {
-	/*
-	
-	auto a = Uuid{ "123e4567-e89b-12d3-a456-426614174000" };
-	auto b = Uuid{ "123e4567-e89b-12d3-a456-426614174000" };
-	auto c = Uuid{ "223e4567-e89b-12d3-a456-426614174000" };
-
-	if (a == b) {
-		printf("a==b\n");
-	}
-
-	if (a == c) {
-		printf("a==c\n");
-	}
-
-	return 0;
-	*/
-
 	auto portfolio = std::make_shared<Portfolio>();
 
 	//auto public_topics = std::vector<std::string>{};

@@ -6,6 +6,7 @@ cmake_minimum_required (VERSION 3.8)
 add_executable (BitBackend "BitBackend.cpp" "ByBitAuthentication.cpp" "ByBitWebsocket.cpp" "BitLib/json11/json11.cpp" "BitLib/DateTime.cpp" "BitLib/Logger.cpp" "Portfolio.cpp" "Portfolio.h" "BitLib/Uuid.cpp" "BitLib/Uuid.h" "Symbols.cpp")
 
 target_precompile_headers(BitBackend PUBLIC precompiled_headers.h)
+#add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>")
 
 add_definitions(-DUUID_SYSTEM_GENERATOR)
 

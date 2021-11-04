@@ -2,7 +2,7 @@
     "version": 2,
     "configurePresets": [
         {
-            "name": "linux-default",
+            "name": "linux-debug",
             "displayName": "Linux Debug",
             "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
             "generator": "Ninja",

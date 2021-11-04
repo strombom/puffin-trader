@@ -7,7 +7,11 @@ class Logger
 public:
     Logger(void);
 
+#ifdef DEBUG
     void info(const char* format, ...);
+#else
+    void info(const char* format, ...) { std::ignore = format; }
+#endif
     void warn(const char* format, ...);
     void error(const char* format, ...);
 

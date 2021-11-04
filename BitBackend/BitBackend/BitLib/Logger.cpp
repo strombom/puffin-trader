@@ -9,6 +9,7 @@ Logger::Logger(void)
 
 }
 
+#ifdef DEBUG
 void Logger::info(const char* format, ...)
 {
     auto lock = std::scoped_lock{ mutex };
@@ -19,6 +20,7 @@ void Logger::info(const char* format, ...)
     va_end(args);
     printf("\n");
 }
+#endif
 
 void Logger::warn(const char* format, ...)
 {

@@ -3,9 +3,9 @@
 
 constexpr auto error_symbol = Symbol{ -1, "ERROR", 0.0, 0.0, 0.0, 0.0, 0.0, 0 };
 
-const Symbol& find_symbol(std::string name) {
+const Symbol& find_symbol(std::string name) noexcept {
     for (const auto& symbol : symbols) {
-        if (symbol.name == name) {
+        if (symbol.name[0] == name[0] && symbol.name[1] == name[1] && symbol.name[2] == name[2] && symbol.name[3] == name[3]) {
             return symbol;
         }
     }
