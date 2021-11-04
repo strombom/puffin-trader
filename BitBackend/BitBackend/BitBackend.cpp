@@ -24,7 +24,8 @@ int main()
 
 
 	while (true) {
-		std::this_thread::sleep_for(2s);
+		std::this_thread::sleep_for(30s);
+		bybit_private_websocket->send_heartbeat();
 	}
 	return 0;
 }

@@ -30,6 +30,12 @@ void ByBitWebSocket::shutdown(void)
     catch (...) {}
 }
 
+void ByBitWebSocket::send_heartbeat(void)
+{
+    auto auth_command = (json11::Json) json11::Json::object{ { "op", "ping" } };
+    send(auth_command.dump());
+}
+
 void ByBitWebSocket::fail(boost::beast::error_code ec, const std::string& reason)
 {
     logger.warn("ByBitWebSocket error: %s \"%s\"", reason.c_str(), ec.message().c_str());
@@ -58,6 +64,7 @@ void ByBitWebSocket::connect(void)
 
 void ByBitWebSocket::send(const std::string& message)
 {
+    auto lock = std::scoped_lock{ send_mutex };
     //logger.info("ByBitWebSocket::send: %s", message.c_str());
 
     websocket->async_write(boost::asio::buffer(message), boost::beast::bind_front_handler(&ByBitWebSocket::on_write, shared_from_this()));

@@ -12,6 +12,7 @@ public:
 
     void start();
     void shutdown(void);
+    void send_heartbeat(void);
 
 private:
     std::string url;
@@ -21,6 +22,7 @@ private:
 
     ByBitAuthentication authenticator;
     bool connected;
+    std::mutex send_mutex;
 
     boost::asio::io_context ioc;
     std::unique_ptr<boost::asio::ssl::context> ctx;
