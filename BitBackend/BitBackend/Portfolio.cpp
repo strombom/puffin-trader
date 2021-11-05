@@ -48,3 +48,13 @@ void Portfolio::update_wallet(double balance, double available)
     wallet_available = available;
     logger.info("Wallet balance: %.5f available: %.5f", wallet_balance, wallet_available);
 }
+
+void Portfolio::new_trade(const Symbol& symbol, Portfolio::Side side, double price)
+{
+    if (side == Portfolio::Side::buy) {
+        logger.info("Trade: %s Buy %.5f", symbol.name.data(), price);
+    }
+    else {
+        logger.info("Trade: %s Sell %.5f", symbol.name.data(), price);
+    }
+}

@@ -41,6 +41,7 @@ public:
     void update_order(Uuid id, const Symbol& symbol, Portfolio::Side side, double price, double qty, std::string status, time_point_us created);
     void update_position(const Symbol& symbol, Portfolio::Side side, double qty);
     void update_wallet(double balance, double available);
+    void new_trade(const Symbol& symbol, Portfolio::Side side, double price);
 
 private:
     std::map<Uuid, Order> orders;

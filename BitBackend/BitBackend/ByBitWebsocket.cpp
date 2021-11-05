@@ -132,7 +132,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
     else if (command["topic"] == "position") {
         logger.info("Position: %s", message.c_str());
         for (const auto& data : command["data"].array_items()) {
-            const auto symbol = find_symbol(data["symbol"].string_value());
+            const auto& symbol = find_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
             const auto qty = data["size"].number_value();
             portfolio->update_position(symbol, side, qty);
@@ -145,6 +145,19 @@ void ByBitWebSocket::parse_message(const std::string& message)
         }
         else {
             logger.info("Pong: fail");
+        }
+    }
+    else if (command["topic"].string_value().starts_with("trade.")) {
+        if (command["data"].is_array() && command["data"].array_items().size() > 0) {
+            const auto& data = command["data"].array_items().back();
+            const auto& symbol = find_symbol(command["topic"].string_value().substr(6));
+            //const auto& tick_direction = command["tick_direction"].string_value();
+            // Tick direction: PlusTick, ZeroPlusTick, MinusTick, ZeroMinusTick
+            //const auto side = tick_direction[0] == 'P' || tick_direction[0] == 'Z' ? Portfolio::Side::buy : Portfolio::Side::sell;
+            const auto price_str = data["price"].string_value();
+            const auto price = std::stod(price_str);
+            const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
+            portfolio->new_trade(symbol, side, price);
         }
     }
     else {
