@@ -54,6 +54,7 @@ void ByBitWebSocket::connect(void)
         std::this_thread::sleep_for(ByBit::websocket::reconnect_delay);
     }
 
+    ioc.reset();
     resolver = std::make_unique<boost::asio::ip::tcp::resolver>(boost::asio::make_strand(ioc));
     websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream>>>(boost::asio::make_strand(ioc), *ctx);
 
@@ -123,7 +124,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
             }
             const auto id = Uuid{ data["order_id"].string_value() };
             const auto symbol = find_symbol(data["symbol"].string_value());
-            const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
+            const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
             const auto price = data["price"].number_value();
             const auto qty = data["leaves_qty"].number_value();
             const auto status = data["order_status"].string_value();
@@ -135,7 +136,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
         logger.info("Position: %s", message.c_str());
         for (const auto& data : command["data"].array_items()) {
             const auto& symbol = find_symbol(data["symbol"].string_value());
-            const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
+            const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
             const auto qty = data["size"].number_value();
             portfolio->update_position(symbol, side, qty);
         }
@@ -156,10 +157,49 @@ void ByBitWebSocket::parse_message(const std::string& message)
             //const auto& tick_direction = command["tick_direction"].string_value();
             // Tick direction: PlusTick, ZeroPlusTick, MinusTick, ZeroMinusTick
             //const auto side = tick_direction[0] == 'P' || tick_direction[0] == 'Z' ? Portfolio::Side::buy : Portfolio::Side::sell;
-            const auto price_str = data["price"].string_value();
-            const auto price = std::stod(price_str);
-            const auto side = data["side"].string_value() == "Buy" ? Portfolio::Side::buy : Portfolio::Side::sell;
+            const auto price = std::stod(data["price"].string_value());
+            const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
             portfolio->new_trade(symbol, side, price);
+        }
+    }
+    else if (command["topic"].string_value().starts_with("orderBookL2_25.")) {
+        const auto& symbol = find_symbol(command["topic"].string_value().substr(15));
+        if (command["type"] == "snapshot") {
+            portfolio->order_book_clear(symbol);
+            for (const auto& data : command["data"]["order_book"].array_items()) {
+                portfolio->order_book_insert(
+                    symbol, 
+                    std::stod(data["price"].string_value()),
+                    data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
+                    data["size"].number_value()
+                );
+            }
+        }
+        else if (command["type"] == "delta") {
+            for (const auto& data : command["data"]["delete"].array_items()) {
+                portfolio->order_book_delete(
+                    symbol, 
+                    std::stod(data["price"].string_value()),
+                    data["side"].string_value() == "Buy" ? Side::buy : Side::sell
+                );
+            }
+            for (const auto& data : command["data"]["update"].array_items()) {
+                portfolio->order_book_update(
+                    symbol, 
+                    std::stod(data["price"].string_value()),
+                    data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
+                    data["size"].number_value()
+                );
+            }
+            for (const auto& data : command["data"]["insert"].array_items()) {
+                portfolio->order_book_insert(
+                    symbol, 
+                    std::stod(data["price"].string_value()),
+                    data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
+                    data["size"].number_value()
+                );
+            }
+            logger.info("Bid %.2f", portfolio->order_book_get_last_bid(symbol));
         }
     }
     else {

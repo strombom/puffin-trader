@@ -40,7 +40,7 @@ struct Symbol {
 
 constexpr const auto symbols = std::array{
     Symbol{ 0, "BTCUSDT", 0.5, 0.00075, -0.00025, 0.001, 0.001, 100 },
-    Symbol{ 1, "THETAUSDT", 0.001, 0.00075, -0.00025, 0.1, 0.1, 15000 },
+    //Symbol{ 1, "THETAUSDT", 0.001, 0.00075, -0.00025, 0.1, 0.1, 15000 },
 };
 
 const Symbol& find_symbol(std::string name) noexcept;
