@@ -137,10 +137,15 @@ void ByBitWebSocket::parse_message(const std::string& message)
             const auto qty = data["size"].number_value();
             portfolio->update_position(symbol, side, qty);
         }
-
-        //for (const auto& data : command["data"].array_items()) {
-        //    printf("Wallet balance: %.5f available: %.5f\n", data["wallet_balance"].number_value(), data["available_balance"].number_value());
-        //}
+    }
+    else if (command["ret_msg"] == "pong") {
+        // Example: {"success":true,"ret_msg":"pong","conn_id":"bc172b63-001d-47b2-b9e1-37ce4f0264ce","request":{"op":"ping","args":null}}
+        if (command["success"].bool_value()) {
+            logger.info("Pong: success");
+        }
+        else {
+            logger.info("Pong: fail");
+        }
     }
     else {
         logger.info("Other: %s", message.c_str());
