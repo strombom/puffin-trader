@@ -57,4 +57,6 @@ void Portfolio::new_trade(const Symbol& symbol, Portfolio::Side side, double pri
     else {
         logger.info("Trade: %s Sell %.5f", symbol.name.data(), price);
     }
+
+
 }

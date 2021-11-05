@@ -1,6 +1,7 @@
 ﻿#include "precompiled_headers.h"
 
 #include "ByBitWebsocket.h"
+#include "OrderManager.h"
 #include "ByBitConfig.h"
 #include "Portfolio.h"
 
@@ -24,10 +25,10 @@ int main()
 	auto bybit_private_websocket = std::make_shared<ByBitWebSocket>(ByBit::websocket::url_private, true, private_topics, portfolio);
 	//bybit_private_websocket->start();
 
+	auto order_manager = OrderManager{ portfolio };
+
 	while (true) {
-		std::this_thread::sleep_for(30s);
-		//bybit_private_websocket->send_heartbeat();
-		bybit_public_websocket->send_heartbeat();
+		std::this_thread::sleep_for(1s);
 	}
 	return 0;
 }

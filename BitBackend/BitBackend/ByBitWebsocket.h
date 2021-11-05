@@ -31,6 +31,8 @@ private:
 
     std::atomic_bool websocket_thread_running;
     std::unique_ptr<std::thread> websocket_thread;
+    std::atomic_bool heartbeat_thread_running;
+    std::unique_ptr<std::thread> heartbeat_thread;
 
     std::string host_address;
     boost::beast::flat_buffer websocket_buffer;
@@ -51,4 +53,5 @@ private:
     void on_close(boost::beast::error_code ec);
 
     void websocket_worker(void);
+    void heartbeat_worker(void);
 };

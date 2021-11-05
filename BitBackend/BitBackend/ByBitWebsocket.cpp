@@ -6,7 +6,7 @@
 
 
 ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio) :
-    url(url), authenticate(authenticate), topics(topics), portfolio(portfolio), connected(false), websocket_thread_running(true)
+    url(url), authenticate(authenticate), topics(topics), portfolio(portfolio), connected(false), websocket_thread_running(true), heartbeat_thread_running(true)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
@@ -14,6 +14,7 @@ ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::v
 void ByBitWebSocket::start(void)
 {
     websocket_thread = std::make_unique<std::thread>(&ByBitWebSocket::websocket_worker, this);
+    heartbeat_thread = std::make_unique<std::thread>(&ByBitWebSocket::heartbeat_worker, this);
 }
 
 void ByBitWebSocket::shutdown(void)
@@ -25,6 +26,7 @@ void ByBitWebSocket::shutdown(void)
     websocket->async_close(boost::beast::websocket::close_code::normal, boost::beast::bind_front_handler(&ByBitWebSocket::on_close, shared_from_this()));
 
     try {
+        heartbeat_thread->join();
         websocket_thread->join();
     }
     catch (...) {}
@@ -441,5 +443,13 @@ void ByBitWebSocket::websocket_worker(void)
         logger.info("ByBitWebSocket:websocket_worker: start");
         ioc.run();
         logger.info("ByBitWebSocket:websocket_worker: end");
+    }
+}
+
+void ByBitWebSocket::heartbeat_worker(void)
+{
+    while (heartbeat_thread_running) {
+        std::this_thread::sleep_for(30s);
+        send_heartbeat();
     }
 }
