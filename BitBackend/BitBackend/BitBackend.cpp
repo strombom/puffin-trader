@@ -4,6 +4,7 @@
 #include "OrderManager.h"
 #include "ByBitConfig.h"
 #include "Portfolio.h"
+#include "ByBitRest.h"
 
 #include "BitLib/DateTime.h"
 #include <filesystem>
@@ -11,11 +12,14 @@ using namespace std::chrono_literals;
 
 int main()
 {
+	auto bybit_rest = ByBitRest();
+
+	return 1;
 	auto portfolio = std::make_shared<Portfolio>();
 
 	auto public_topics = std::vector<std::string>{};
 	for (const auto& symbol : symbols) {
-		public_topics.push_back(std::string{ "trade." } + symbol.name.data());
+		//public_topics.push_back(std::string{ "trade." } + symbol.name.data());
 		public_topics.push_back(std::string{ "orderBookL2_25." } + symbol.name.data());
 	}
     auto bybit_public_websocket = std::make_shared<ByBitWebSocket>(ByBit::websocket::url_public, false, public_topics, portfolio);

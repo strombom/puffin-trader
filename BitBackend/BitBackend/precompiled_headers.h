@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <stdarg.h>
 #include <iostream>
+#include <simdjson.h>
 #include <semaphore.h>
 #include <openssl/ssl.h>
 #include <openssl/hmac.h>
