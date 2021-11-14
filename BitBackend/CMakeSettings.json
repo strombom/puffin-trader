@@ -1,0 +1,19 @@
+{
+    "environments": [],
+    "configurations": [
+        {
+            "name": "linux-debug",
+            "generator": "Ninja",
+            "configurationType": "Debug",
+            "buildRoot": "$env{HOME}/.vs/$ms{projectDirName}/out/build/${presetName}",
+            "isntallRoot": "$env{HOME}/.vs/$ms{projectDirName}/out/install/${presetName}",
+            "inheritEnvironments": [ "linux_x64" ],
+            "intelliSenseMode": "linux-gcc-x64",
+            "wslPath": "${defaultWSLPath}",
+            // "{$env.WSL_VCPKG_ROOT}"
+            "cmakeToolchain": "/home/strombom/vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "remoteCopySourcesMethod": "rsync",
+            // "remoteCopyAdditionalIncludeDirectories": "/usr/local/include"
+        }
+    ]
+}

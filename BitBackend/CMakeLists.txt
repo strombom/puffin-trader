@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 3.8)
 
 add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>")
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
