@@ -3,6 +3,7 @@
 #include <nghttp2/asio_http2_client.h>
 
 #include "BitLib/DateTime.h"
+#include "ByBitAuthentication.h"
 
 
 class ByBitRest
@@ -10,17 +11,27 @@ class ByBitRest
 public:
     ByBitRest(void);
 
+    void place_order(const std::string& symbol, double qty, double price);
+
+    void join(void);
+    bool is_connected(void);
+
 private:
+    int user_order_id;
+
+    ByBitAuthentication authenticator;
+
     const std::string host = "api.bybit.com";
     const std::string service = "https";
 
+    std::unique_ptr<boost::asio::ssl::context> tls_ctx;
+    std::unique_ptr<boost::asio::io_service> io_service;
     std::unique_ptr<nghttp2::asio_http2::client::session> session;
-    std::unique_ptr < boost::asio::ssl::context> tls_ctx;
-    boost::asio::io_service io_service;
     bool connected;
     
     void on_data(const char* data, std::size_t len);
-    void request(const std::string& method, const std::string& uri);
+    void get_request(const std::string& uri);
+    void post_request(const std::string& uri, const std::string& data);
     void heartbeat_reset(void);
 
     void http2_runner(void);

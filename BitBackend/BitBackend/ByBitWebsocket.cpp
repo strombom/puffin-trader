@@ -101,8 +101,6 @@ void ByBitWebSocket::parse_message(const std::string& message)
 {
     auto document = json_parser.iterate(message);
 
-
-
     auto error_message = std::string{ "{\"command\":\"error\"}" };
     const auto command = json11::Json::parse(message.c_str(), error_message);
 
