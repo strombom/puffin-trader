@@ -264,7 +264,7 @@ void ByBitRest::get_request(const std::string& uri)
 
         req->on_response([this](const nghttp2::asio_http2::client::response& res) {
             logger.info("response header was received");
-            print_header(res);
+            //print_header(res);
 
             res.on_data([this](const uint8_t* data, std::size_t len) {
                 this->on_data(reinterpret_cast<const char*>(data), len);
@@ -278,7 +278,7 @@ void ByBitRest::get_request(const std::string& uri)
         req->on_push([this](const nghttp2::asio_http2::client::request& push_req) {
             logger.info("request push request was received");
 
-            print_header(push_req);
+            //print_header(push_req);
 
             push_req.on_response([this](const nghttp2::asio_http2::client::response& res) {
                 logger.info("request push response header was received");

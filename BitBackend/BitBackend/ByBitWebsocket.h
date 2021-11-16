@@ -2,13 +2,14 @@
 #include "precompiled_headers.h"
 
 #include "ByBitAuthentication.h"
+#include "OrderBook.h"
 #include "Portfolio.h"
 
 
 class ByBitWebSocket : public std::enable_shared_from_this<ByBitWebSocket>
 {
 public:
-    ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio);
+    ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio, sptrOrderBooks order_books);
 
     void start();
     void shutdown(void);
@@ -19,6 +20,7 @@ private:
     bool authenticate;
     std::vector<std::string> topics;
     sptrPortfolio portfolio;
+    sptrOrderBooks order_books;
 
     ByBitAuthentication authenticator;
     bool connected;

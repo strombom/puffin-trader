@@ -5,8 +5,8 @@
 #include "Symbols.h"
 
 
-ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio) :
-    url(url), authenticate(authenticate), topics(topics), portfolio(portfolio), connected(false), websocket_thread_running(true), heartbeat_thread_running(true)
+ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio, sptrOrderBooks order_books) :
+    url(url), authenticate(authenticate), topics(topics), portfolio(portfolio), order_books(order_books), connected(false), websocket_thread_running(true), heartbeat_thread_running(true)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
@@ -167,10 +167,9 @@ void ByBitWebSocket::parse_message(const std::string& message)
     else if (command["topic"].string_value().starts_with("orderBookL2_25.")) {
         const auto& symbol = find_symbol(command["topic"].string_value().substr(15));
         if (command["type"] == "snapshot") {
-            portfolio->order_book_clear(symbol);
+            (*order_books)[symbol.idx].clear();
             for (const auto& data : command["data"]["order_book"].array_items()) {
-                portfolio->order_book_insert(
-                    symbol, 
+                (*order_books)[symbol.idx].insert(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
                     data["size"].number_value()
@@ -179,29 +178,26 @@ void ByBitWebSocket::parse_message(const std::string& message)
         }
         else if (command["type"] == "delta") {
             for (const auto& data : command["data"]["delete"].array_items()) {
-                portfolio->order_book_delete(
-                    symbol, 
+                (*order_books)[symbol.idx].del(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell
                 );
             }
             for (const auto& data : command["data"]["update"].array_items()) {
-                portfolio->order_book_update(
-                    symbol, 
+                (*order_books)[symbol.idx].update(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
                     data["size"].number_value()
                 );
             }
             for (const auto& data : command["data"]["insert"].array_items()) {
-                portfolio->order_book_insert(
-                    symbol, 
+                (*order_books)[symbol.idx].insert(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
                     data["size"].number_value()
                 );
             }
-            logger.info("Bid %.2f", portfolio->order_book_get_last_bid(symbol));
+            logger.info("Bid %.2f", (*order_books)[symbol.idx].get_last_bid());
         }
     }
     else {
