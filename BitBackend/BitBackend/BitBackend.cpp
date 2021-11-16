@@ -18,7 +18,7 @@ int main()
 		std::this_thread::sleep_for(100ms);
 	}
 
-	bybit_rest.place_order("BTCUSDT", 0.001, 50000.0);
+	bybit_rest.place_order("BTCUSDT", 0.01, 51000.0);
 
 	bybit_rest.join();
 

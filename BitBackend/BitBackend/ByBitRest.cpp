@@ -31,7 +31,7 @@ void print_header(const nghttp2::asio_http2::client::request& req) {
 }
 
 ByBitRest::ByBitRest(void) :
-    user_order_id(0), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
+    user_order_id(2), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
 {
     heartbeat_reset();
 
@@ -58,48 +58,85 @@ void ByBitRest::place_order(const std::string& symbol, double qty, double price)
 {
     // {"api_key":"{api_key}","side"="Buy","symbol"="BTCUSD","order_type":"Market","qty":10,"time_in_force":"GoodTillCancel","timestamp":{timestamp},"sign":"{sign}"}
 
-    std::string uri = "https://api-testnet.bybit.com/private/linear/order/create";
-
-
     //const auto expires = std::to_string(authenticator.generate_expiration(ByBit::websocket::auth_timeout));
     const auto timestamp = std::to_string(authenticator.generate_expiration(-1s));
-    const auto sign_message = std::string{ "GET/realtime" } + timestamp;
-    const auto signature = authenticator.authenticate(sign_message);
+    //const auto sign_message = std::string{ "GET/realtime" } + timestamp;
 
     //json11::Json auth_command = json11::Json::object{
     //    { "op", "auth" },
     //    { "args", json11::Json::array{ByBit::api_key, expires, signature} }
     //};
 
-    auto data = std::string{ "{" };
-    data += std::string{ "\"api_key\":\"" } + ByBit::api_key + "\"";
-    data += ",\"side\":\"Buy\"";
-    data += ",\"symbol\":\"" + symbol + "\"";
-    data += ",\"order_type\":\"Limit\"";
-    data += ",\"qty\":" + std::to_string(qty);
-    data += ",\"price\":" + std::to_string(price);
-    data += ",\"time_in_force\":\"GoodTillCancel\"";
-    data += ",\"close_on_trigger\":\"false\"";
-    data += ",\"reduce_only\":\"false\"";
-    data += ",\"order_link_id\":\"" + std::to_string(user_order_id) + "\"";
-    data += ",\"timestamp\":" + timestamp;
-    data += ",\"sign\":\"" + signature + "\"";
-    data += "}";    
-
     /*
-    uri += "?side=Buy";
-    uri += "&symbol=" + symbol;
-    uri += "&order_type=Limit";
-    uri += "&qty=" + std::to_string(qty);
-    uri += "&price=" + std::to_string(price);
-    uri += "&time_in_force=GoodTillCancel";
-    uri += "&close_on_trigger=false";
-    uri += "&reduce_only=false";
-    uri += "&order_link_id=" + std::to_string(user_order_id);
     */
 
-    logger.info("place_order: %s", data.c_str());
+    std::string uri = "https://api-testnet.bybit.com/v2/private/account/api-key";
 
+    auto sign_message = std::string{};
+
+    sign_message += "api_key=" + std::string{ ByBit::api_key };
+    sign_message += "&timestamp=" + timestamp;
+
+    logger.info("sign_message: \"%s\"", sign_message.c_str());
+
+    auto signature = authenticator.authenticate(sign_message);
+
+    uri += "?api_key=" + std::string{ ByBit::api_key } + "&timestamp=" + timestamp + "&sign=" + signature;
+
+    logger.info("get api_key: %s", uri.c_str());
+
+    get_request(uri);
+
+
+
+
+
+    uri = "https://api-testnet.bybit.com/private/linear/order/create";
+
+    auto price_str = std::to_string(price);
+    price_str.erase(price_str.find_last_not_of('0') + 1, std::string::npos);
+    price_str.erase(price_str.find_last_not_of('.') + 1, std::string::npos);
+
+    auto qty_str = std::to_string(qty);
+    qty_str.erase(qty_str.find_last_not_of('0') + 1, std::string::npos);
+    qty_str.erase(qty_str.find_last_not_of('.') + 1, std::string::npos);
+
+    sign_message = std::string{};
+
+    sign_message += "api_key=" + std::string{ ByBit::api_key };
+    sign_message += "&close_on_trigger=false";
+    sign_message += "&order_link_id=" + std::to_string(user_order_id);
+    sign_message += "&order_type=Limit";
+    sign_message += "&price=" + price_str;
+    sign_message += "&qty=" + qty_str;
+    sign_message += "&reduce_only=false";
+    sign_message += "&side=Buy";
+    sign_message += "&symbol=" + symbol + "";
+    sign_message += "&time_in_force=PostOnly";
+    sign_message += "&timestamp=" + timestamp;
+
+    logger.info("sign_message: \"%s\"", sign_message.c_str());
+
+    signature = authenticator.authenticate(sign_message);
+
+    //'{"api_key":"{api_key}","side"="Buy","symbol"="BTCUSD","order_type":"Market","qty":10,"time_in_force":"GoodTillCancel","timestamp":{timestamp},"sign":"{sign}"}'
+
+    auto data = std::string{ "{" };
+    data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
+    data += ",\"close_on_trigger\":false";
+    data += ",\"order_link_id\":\"" + std::to_string(user_order_id) + "\"";
+    data += ",\"order_type\":\"Limit\"";
+    data += ",\"price\":" + price_str + "";
+    data += ",\"qty\":" + qty_str + "";
+    data += ",\"reduce_only\":false";
+    data += ",\"side\":\"Buy\"";
+    data += ",\"symbol\":\"" + symbol + "\"";
+    data += ",\"time_in_force\":\"PostOnly\"";
+    data += ",\"timestamp\":" + timestamp;
+    data += ",\"sign\":\"" + signature + "\"";
+    data += "}";
+
+    logger.info("place_order: %s", data.c_str());
     post_request(uri, data);
 
     user_order_id++;
@@ -134,10 +171,26 @@ void ByBitRest::http2_runner(void)
             logger.info("http2_runner error: %s", ec.message().c_str());
         });
 
+        /*
+        const auto expires = std::to_string(authenticator.generate_expiration(ByBit::websocket::auth_timeout));
+        const auto sign_message = std::string{ "GET/realtime" } + expires;
+        const auto signature = authenticator.authenticate(sign_message);
+
+        json11::Json auth_command = json11::Json::object{
+            { "op", "auth" },
+            { "args", json11::Json::array{ByBit::api_key, expires, signature} }
+        };
+
+        std::string uri = "https://api2-testnet.bybit.com/private/linear/order/create";
+        post_request(uri, auth_command.dump());
+        */
+
         io_service->run();
         connected = false;
         session = nullptr;
         logger.info("http2_runner disconnected");
+
+
 
         //std::this_thread::sleep_for(5s);
     }
@@ -154,7 +207,7 @@ void ByBitRest::post_request(const std::string& uri, const std::string& data)
     try {
         boost::system::error_code ec;
         //auto req = session->submit(ec, method, uri, { {"cookie", {}} });
-        auto req = session->submit(ec, "POST", uri, data);
+        auto req = session->submit(ec, "POST", uri, data, { {"Content-Type", {"application/json"}} });
         if (ec) {
             logger.info("response error: %s", ec.message().data());
             return;
