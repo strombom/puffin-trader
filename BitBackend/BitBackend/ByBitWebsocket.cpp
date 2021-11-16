@@ -5,8 +5,8 @@
 #include "Symbols.h"
 
 
-ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio, sptrOrderBooks order_books) :
-    url(url), authenticate(authenticate), topics(topics), portfolio(portfolio), order_books(order_books), connected(false), websocket_thread_running(true), heartbeat_thread_running(true)
+ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrOrderManager order_manager) :
+    url(url), authenticate(authenticate), topics(topics), order_manager(order_manager), connected(false), websocket_thread_running(true), heartbeat_thread_running(true), update_callback(update_callback)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
@@ -99,7 +99,7 @@ void ByBitWebSocket::subscribe(void)
 
 void ByBitWebSocket::parse_message(const std::string& message)
 {
-    auto document = json_parser.iterate(message);
+    //auto document = json_parser.iterate(message);
 
     auto error_message = std::string{ "{\"command\":\"error\"}" };
     const auto command = json11::Json::parse(message.c_str(), error_message);
@@ -115,7 +115,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
     }
     else if (command["topic"] == "wallet") {
         for (const auto& data : command["data"].array_items()) {
-            portfolio->update_wallet(data["wallet_balance"].number_value(), data["available_balance"].number_value());
+            order_manager->portfolio->update_wallet(data["wallet_balance"].number_value(), data["available_balance"].number_value());
         }
     }
     else if (command["topic"] == "order") {
@@ -131,8 +131,9 @@ void ByBitWebSocket::parse_message(const std::string& message)
             const auto qty = data["leaves_qty"].number_value();
             const auto status = data["order_status"].string_value();
             const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
-            portfolio->update_order(id, symbol, side, price, qty, status, timestamp);
+            order_manager->portfolio->update_order(id, symbol, side, price, qty, status, timestamp);
         }
+        update_callback();
     }
     else if (command["topic"] == "position") {
         logger.info("Position: %s", message.c_str());
@@ -140,8 +141,9 @@ void ByBitWebSocket::parse_message(const std::string& message)
             const auto& symbol = find_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
             const auto qty = data["size"].number_value();
-            portfolio->update_position(symbol, side, qty);
+            order_manager->portfolio->update_position(symbol, side, qty);
         }
+        update_callback();
     }
     else if (command["ret_msg"] == "pong") {
         // Example: {"success":true,"ret_msg":"pong","conn_id":"bc172b63-001d-47b2-b9e1-37ce4f0264ce","request":{"op":"ping","args":null}}
@@ -161,15 +163,15 @@ void ByBitWebSocket::parse_message(const std::string& message)
             //const auto side = tick_direction[0] == 'P' || tick_direction[0] == 'Z' ? Portfolio::Side::buy : Portfolio::Side::sell;
             const auto price = std::stod(data["price"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
-            portfolio->new_trade(symbol, side, price);
+            order_manager->portfolio->new_trade(symbol, side, price);
         }
     }
     else if (command["topic"].string_value().starts_with("orderBookL2_25.")) {
         const auto& symbol = find_symbol(command["topic"].string_value().substr(15));
         if (command["type"] == "snapshot") {
-            (*order_books)[symbol.idx].clear();
+            (*order_manager->order_books)[symbol.idx].clear();
             for (const auto& data : command["data"]["order_book"].array_items()) {
-                (*order_books)[symbol.idx].insert(
+                (*order_manager->order_books)[symbol.idx].insert(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
                     data["size"].number_value()
@@ -178,26 +180,27 @@ void ByBitWebSocket::parse_message(const std::string& message)
         }
         else if (command["type"] == "delta") {
             for (const auto& data : command["data"]["delete"].array_items()) {
-                (*order_books)[symbol.idx].del(
+                (*order_manager->order_books)[symbol.idx].del(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell
                 );
             }
             for (const auto& data : command["data"]["update"].array_items()) {
-                (*order_books)[symbol.idx].update(
+                (*order_manager->order_books)[symbol.idx].update(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
                     data["size"].number_value()
                 );
             }
             for (const auto& data : command["data"]["insert"].array_items()) {
-                (*order_books)[symbol.idx].insert(
+                (*order_manager->order_books)[symbol.idx].insert(
                     std::stod(data["price"].string_value()),
                     data["side"].string_value() == "Buy" ? Side::buy : Side::sell,
                     data["size"].number_value()
                 );
             }
-            logger.info("Bid %.2f", (*order_books)[symbol.idx].get_last_bid());
+            update_callback();
+            //logger.info("Bid %.2f", (*order_books)[symbol.idx].get_last_bid());
         }
     }
     else {
@@ -340,7 +343,7 @@ void ByBitWebSocket::on_resolve(boost::beast::error_code ec, boost::asio::ip::tc
         return;
     }
 
-    boost::beast::get_lowest_layer(*websocket).expires_after(std::chrono::seconds(10));
+    boost::beast::get_lowest_layer(*websocket).expires_after(std::chrono::seconds{ 10 });
     boost::beast::get_lowest_layer(*websocket).async_connect(results, boost::beast::bind_front_handler(&ByBitWebSocket::on_connect, shared_from_this()));
 }
 
@@ -359,7 +362,7 @@ void ByBitWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tc
     host_address = std::string{ ByBit::websocket::host } + ":" + std::to_string(ep.port());
 
     // Set a timeout on the operation
-    boost::beast::get_lowest_layer(*websocket).expires_after(std::chrono::seconds(30));
+    boost::beast::get_lowest_layer(*websocket).expires_after(std::chrono::seconds{ 30 });
 
     // Set SNI Hostname (many hosts need this to handshake successfully)
     if (!SSL_set_tlsext_host_name(

@@ -28,6 +28,8 @@ private:
     static const int size = 25;
     std::array<Entry*, size> asks;
     std::array<Entry*, size> bids;
+
+    double old_last_bid;
 };
 
 using sptrOrderBooks = std::shared_ptr<std::array<OrderBook, symbols.size()>>;

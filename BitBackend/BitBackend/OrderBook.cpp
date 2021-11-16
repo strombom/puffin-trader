@@ -9,6 +9,7 @@ OrderBook::OrderBook(void)
         asks[idx] = new Entry();
         bids[idx] = new Entry();
     }
+    old_last_bid = 0.0;
 }
 
 void OrderBook::clear(void)
@@ -88,6 +89,11 @@ void OrderBook::del(double price, Side side)
 
 double OrderBook::get_last_bid(void)
 {
+    if (old_last_bid != bids[0]->price) {
+        old_last_bid = bids[0]->price;
+        logger.info("Bid %.2f", old_last_bid);
+    }
+
     return bids[0]->price;
 }
 

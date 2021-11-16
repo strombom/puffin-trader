@@ -2,14 +2,13 @@
 #include "precompiled_headers.h"
 
 #include "ByBitAuthentication.h"
-#include "OrderBook.h"
-#include "Portfolio.h"
+#include "OrderManager.h"
 
 
 class ByBitWebSocket : public std::enable_shared_from_this<ByBitWebSocket>
 {
 public:
-    ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrPortfolio portfolio, sptrOrderBooks order_books);
+    ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrOrderManager order_manager);
 
     void start();
     void shutdown(void);
@@ -19,8 +18,7 @@ private:
     std::string url;
     bool authenticate;
     std::vector<std::string> topics;
-    sptrPortfolio portfolio;
-    sptrOrderBooks order_books;
+    sptrOrderManager order_manager;
 
     ByBitAuthentication authenticator;
     bool connected;
@@ -39,7 +37,9 @@ private:
     std::string host_address;
     boost::beast::flat_buffer websocket_buffer;
 
-    simdjson::ondemand::parser json_parser;
+    //simdjson::ondemand::parser json_parser;
+
+    std::function<void(void)> update_callback;
 
     void connect(void);
     void request_authentication(void);
