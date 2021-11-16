@@ -11,7 +11,8 @@ class ByBitRest
 public:
     ByBitRest(void);
 
-    void place_order(const std::string& symbol, double qty, double price);
+    int place_order(const std::string& symbol, double qty, double price);
+    void cancel_order(const std::string& symbol, int _user_order_id);
 
     void join(void);
     bool is_connected(void);

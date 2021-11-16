@@ -16,6 +16,11 @@ namespace ByBit {
         constexpr auto reconnect_delay = 2s;
     }
 
+    namespace rest {
+        constexpr auto uri_create_order = "https://api-testnet.bybit.com/private/linear/order/create";
+        constexpr auto uri_cancel_order = "https://api-testnet.bybit.com/private/linear/order/cancel";
+    }
+
     constexpr auto api_key = "rvfw51waQa270JP0Rn";
     constexpr auto api_secret = "h1zoAnp7ZWobI4tkeN6d1hNOktIEfN085Hyb";
     //constexpr auto api_key = "XQH3HEpdgNNqY0NAgx";

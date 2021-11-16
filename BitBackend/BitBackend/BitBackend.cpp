@@ -18,11 +18,13 @@ int main()
 		std::this_thread::sleep_for(100ms);
 	}
 
-	bybit_rest.place_order("BTCUSDT", 0.01, 51000.0);
+	//bybit_rest.place_order("BTCUSDT", 0.01, 51000.0);
+	bybit_rest.cancel_order("BTCUSDT", 3);
 
 	bybit_rest.join();
 
 	return 1;
+
 	auto portfolio = std::make_shared<Portfolio>();
 
 	auto public_topics = std::vector<std::string>{};
@@ -42,5 +44,6 @@ int main()
 	while (true) {
 		std::this_thread::sleep_for(1s);
 	}
+
 	return 0;
 }

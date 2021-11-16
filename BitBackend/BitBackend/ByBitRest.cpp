@@ -31,7 +31,7 @@ void print_header(const nghttp2::asio_http2::client::request& req) {
 }
 
 ByBitRest::ByBitRest(void) :
-    user_order_id(2), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
+    user_order_id(3), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
 {
     heartbeat_reset();
 
@@ -54,44 +54,9 @@ bool ByBitRest::is_connected(void)
     return connected;
 }
 
-void ByBitRest::place_order(const std::string& symbol, double qty, double price)
+int ByBitRest::place_order(const std::string& symbol, double qty, double price)
 {
-    // {"api_key":"{api_key}","side"="Buy","symbol"="BTCUSD","order_type":"Market","qty":10,"time_in_force":"GoodTillCancel","timestamp":{timestamp},"sign":"{sign}"}
-
-    //const auto expires = std::to_string(authenticator.generate_expiration(ByBit::websocket::auth_timeout));
-    const auto timestamp = std::to_string(authenticator.generate_expiration(-1s));
-    //const auto sign_message = std::string{ "GET/realtime" } + timestamp;
-
-    //json11::Json auth_command = json11::Json::object{
-    //    { "op", "auth" },
-    //    { "args", json11::Json::array{ByBit::api_key, expires, signature} }
-    //};
-
-    /*
-    */
-
-    std::string uri = "https://api-testnet.bybit.com/v2/private/account/api-key";
-
-    auto sign_message = std::string{};
-
-    sign_message += "api_key=" + std::string{ ByBit::api_key };
-    sign_message += "&timestamp=" + timestamp;
-
-    logger.info("sign_message: \"%s\"", sign_message.c_str());
-
-    auto signature = authenticator.authenticate(sign_message);
-
-    uri += "?api_key=" + std::string{ ByBit::api_key } + "&timestamp=" + timestamp + "&sign=" + signature;
-
-    logger.info("get api_key: %s", uri.c_str());
-
-    get_request(uri);
-
-
-
-
-
-    uri = "https://api-testnet.bybit.com/private/linear/order/create";
+    const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
 
     auto price_str = std::to_string(price);
     price_str.erase(price_str.find_last_not_of('0') + 1, std::string::npos);
@@ -101,8 +66,7 @@ void ByBitRest::place_order(const std::string& symbol, double qty, double price)
     qty_str.erase(qty_str.find_last_not_of('0') + 1, std::string::npos);
     qty_str.erase(qty_str.find_last_not_of('.') + 1, std::string::npos);
 
-    sign_message = std::string{};
-
+    auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
     sign_message += "&close_on_trigger=false";
     sign_message += "&order_link_id=" + std::to_string(user_order_id);
@@ -114,12 +78,7 @@ void ByBitRest::place_order(const std::string& symbol, double qty, double price)
     sign_message += "&symbol=" + symbol + "";
     sign_message += "&time_in_force=PostOnly";
     sign_message += "&timestamp=" + timestamp;
-
-    logger.info("sign_message: \"%s\"", sign_message.c_str());
-
-    signature = authenticator.authenticate(sign_message);
-
-    //'{"api_key":"{api_key}","side"="Buy","symbol"="BTCUSD","order_type":"Market","qty":10,"time_in_force":"GoodTillCancel","timestamp":{timestamp},"sign":"{sign}"}'
+    auto signature = authenticator.authenticate(sign_message);
 
     auto data = std::string{ "{" };
     data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
@@ -137,9 +96,32 @@ void ByBitRest::place_order(const std::string& symbol, double qty, double price)
     data += "}";
 
     logger.info("place_order: %s", data.c_str());
-    post_request(uri, data);
+    post_request(ByBit::rest::uri_create_order, data);
 
-    user_order_id++;
+    return user_order_id++;
+}
+
+void ByBitRest::cancel_order(const std::string& symbol, int _user_order_id)
+{
+    const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
+
+    auto sign_message = std::string{};
+    sign_message += "api_key=" + std::string{ ByBit::api_key };
+    sign_message += "&order_link_id=" + std::to_string(user_order_id);
+    sign_message += "&symbol=" + symbol + "";
+    sign_message += "&timestamp=" + timestamp;
+    auto signature = authenticator.authenticate(sign_message);
+
+    auto data = std::string{ "{" };
+    data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
+    data += ",\"order_link_id\":\"" + std::to_string(user_order_id) + "\"";
+    data += ",\"symbol\":\"" + symbol + "\"";
+    data += ",\"timestamp\":" + timestamp;
+    data += ",\"sign\":\"" + signature + "\"";
+    data += "}";
+
+    logger.info("cancel_order: %s", data.c_str());
+    post_request(ByBit::rest::uri_cancel_order, data);
 }
 
 void ByBitRest::http2_runner(void)
