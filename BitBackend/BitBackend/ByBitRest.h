@@ -4,6 +4,8 @@
 
 #include "BitLib/DateTime.h"
 #include "ByBitAuthentication.h"
+#include "ByBitConfig.h"
+#include "Symbols.h"
 
 
 class ByBitRest
@@ -11,13 +13,15 @@ class ByBitRest
 public:
     ByBitRest(void);
 
-    int place_order(const std::string& symbol, double qty, double price);
-    void cancel_order(const std::string& symbol, int _user_order_id);
+    int place_order(const Symbol& symbol, double qty, double price);
+    void cancel_order(const Symbol& symbol, int _user_order_id);
+    void get_positions(void);
 
     void join(void);
     bool is_connected(void);
 
 private:
+
     int user_order_id;
 
     ByBitAuthentication authenticator;
@@ -31,8 +35,8 @@ private:
     bool connected;
     
     void on_data(const char* data, std::size_t len);
-    void get_request(const std::string& uri);
-    void post_request(const std::string& uri, const std::string& data);
+    void get_request(const std::string& query, ByBit::Rest::Endpoint endpoint);
+    void post_request(const std::string& data, ByBit::Rest::Endpoint endpoint);
     void heartbeat_reset(void);
 
     void http2_runner(void);

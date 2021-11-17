@@ -6,7 +6,7 @@
 
 
 ByBitWebSocket::ByBitWebSocket(const std::string& url, bool authenticate, std::vector<std::string> topics, sptrOrderManager order_manager) :
-    url(url), authenticate(authenticate), topics(topics), order_manager(order_manager), connected(false), websocket_thread_running(true), heartbeat_thread_running(true), update_callback(update_callback)
+    url(url), authenticate(authenticate), topics(topics), order_manager(order_manager), connected(false), websocket_thread_running(true), heartbeat_thread_running(true)
 {
     ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 }
@@ -51,7 +51,7 @@ void ByBitWebSocket::connect(void)
     }
     else {
         // Rate limit reconnects
-        std::this_thread::sleep_for(ByBit::websocket::reconnect_delay);
+        std::this_thread::sleep_for(ByBit::WebSocket::reconnect_delay);
     }
 
     ioc.reset();
@@ -59,8 +59,8 @@ void ByBitWebSocket::connect(void)
     websocket = std::make_unique<boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream>>>(boost::asio::make_strand(ioc), *ctx);
 
     resolver->async_resolve(
-        ByBit::websocket::host,
-        ByBit::websocket::port,
+        ByBit::WebSocket::host,
+        ByBit::WebSocket::port,
         boost::beast::bind_front_handler(&ByBitWebSocket::on_resolve, shared_from_this())
     );
 }
@@ -75,7 +75,7 @@ void ByBitWebSocket::send(const std::string& message)
 
 void ByBitWebSocket::request_authentication(void)
 {
-    const auto expires = std::to_string(authenticator.generate_expiration(ByBit::websocket::auth_timeout));
+    const auto expires = std::to_string(authenticator.generate_expiration(ByBit::WebSocket::auth_timeout));
     const auto sign_message = std::string{ "GET/realtime" } + expires;
     const auto signature = authenticator.authenticate(sign_message);
 
@@ -133,7 +133,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
             const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
             order_manager->portfolio->update_order(id, symbol, side, price, qty, status, timestamp);
         }
-        update_callback();
+        order_manager->portfolio_updated();
     }
     else if (command["topic"] == "position") {
         logger.info("Position: %s", message.c_str());
@@ -143,7 +143,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
             const auto qty = data["size"].number_value();
             order_manager->portfolio->update_position(symbol, side, qty);
         }
-        update_callback();
+        order_manager->portfolio_updated();
     }
     else if (command["ret_msg"] == "pong") {
         // Example: {"success":true,"ret_msg":"pong","conn_id":"bc172b63-001d-47b2-b9e1-37ce4f0264ce","request":{"op":"ping","args":null}}
@@ -199,7 +199,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
                     data["size"].number_value()
                 );
             }
-            update_callback();
+            order_manager->order_book_updated();
             //logger.info("Bid %.2f", (*order_books)[symbol.idx].get_last_bid());
         }
     }
@@ -359,7 +359,7 @@ void ByBitWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tc
 
     // Update the host_ string. This will provide the value of the host HTTP header during the WebSocket handshake.
     // See https://tools.ietf.org/html/rfc7230#section-5.4
-    host_address = std::string{ ByBit::websocket::host } + ":" + std::to_string(ep.port());
+    host_address = std::string{ ByBit::WebSocket::host } + ":" + std::to_string(ep.port());
 
     // Set a timeout on the operation
     boost::beast::get_lowest_layer(*websocket).expires_after(std::chrono::seconds{ 30 });
@@ -367,7 +367,7 @@ void ByBitWebSocket::on_connect(boost::beast::error_code ec, boost::asio::ip::tc
     // Set SNI Hostname (many hosts need this to handshake successfully)
     if (!SSL_set_tlsext_host_name(
         websocket->next_layer().native_handle(),
-        ByBit::websocket::host))
+        ByBit::WebSocket::host))
     {
         ec = boost::beast::error_code(static_cast<int>(::ERR_get_error()),
             boost::beast::net::error::get_ssl_category());

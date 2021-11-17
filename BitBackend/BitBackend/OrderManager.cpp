@@ -17,10 +17,10 @@ void OrderManager::order_manager_worker(void)
 
 void OrderManager::order_book_updated(void)
 {
-
+    logger.info("order book updated");
 }
 
 void OrderManager::portfolio_updated(void)
 {
-
+    logger.info("portfolio updated");
 }

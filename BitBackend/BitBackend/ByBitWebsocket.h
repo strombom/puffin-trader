@@ -39,8 +39,6 @@ private:
 
     //simdjson::ondemand::parser json_parser;
 
-    std::function<void(void)> update_callback;
-
     void connect(void);
     void request_authentication(void);
     void send(const std::string& message);

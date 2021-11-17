@@ -22,7 +22,6 @@ public:
     sptrOrderBooks order_books;
 
 private:
-
     State state;
 
     std::atomic_bool order_manager_thread_running;

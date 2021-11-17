@@ -1,13 +1,13 @@
 #pragma once
 
 #include <chrono>
+#include <map>
 
 using namespace std::chrono_literals;
 
 namespace ByBit {
 
-
-    namespace websocket {
+    namespace WebSocket {
         constexpr auto host = "stream-testnet.bybit.com";
         constexpr auto port = "443";
         constexpr auto auth_timeout = 60s;
@@ -16,9 +16,22 @@ namespace ByBit {
         constexpr auto reconnect_delay = 2s;
     }
 
-    namespace rest {
-        constexpr auto uri_create_order = "https://api-testnet.bybit.com/private/linear/order/create";
-        constexpr auto uri_cancel_order = "https://api-testnet.bybit.com/private/linear/order/cancel";
+    namespace Rest {
+        constexpr auto base_endpoint = "https://api-testnet.bybit.com";
+
+        enum class Endpoint : int {
+            position_list,
+            create_order,
+            cancel_order,
+            recent_trading_records
+        };
+
+        constexpr auto endpoints = std::array<const char*, 4>{
+            "/private/linear/position/list",
+            "/private/linear/order/create",
+            "/private/linear/order/cancel",
+            "/public/linear/recent-trading-records"
+        };
     }
 
     constexpr auto api_key = "rvfw51waQa270JP0Rn";

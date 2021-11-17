@@ -1,5 +1,4 @@
 #include "ByBitRest.h"
-#include "ByBitConfig.h"
 #include "BitLib/Logger.h"
 
 
@@ -54,7 +53,7 @@ bool ByBitRest::is_connected(void)
     return connected;
 }
 
-int ByBitRest::place_order(const std::string& symbol, double qty, double price)
+int ByBitRest::place_order(const Symbol& symbol, double qty, double price)
 {
     const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
 
@@ -75,7 +74,7 @@ int ByBitRest::place_order(const std::string& symbol, double qty, double price)
     sign_message += "&qty=" + qty_str;
     sign_message += "&reduce_only=false";
     sign_message += "&side=Buy";
-    sign_message += "&symbol=" + symbol + "";
+    sign_message += "&symbol=" + std::string{ symbol.name } + "";
     sign_message += "&time_in_force=PostOnly";
     sign_message += "&timestamp=" + timestamp;
     auto signature = authenticator.authenticate(sign_message);
@@ -89,39 +88,57 @@ int ByBitRest::place_order(const std::string& symbol, double qty, double price)
     data += ",\"qty\":" + qty_str + "";
     data += ",\"reduce_only\":false";
     data += ",\"side\":\"Buy\"";
-    data += ",\"symbol\":\"" + symbol + "\"";
+    data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
     data += ",\"time_in_force\":\"PostOnly\"";
     data += ",\"timestamp\":" + timestamp;
     data += ",\"sign\":\"" + signature + "\"";
     data += "}";
 
     logger.info("place_order: %s", data.c_str());
-    post_request(ByBit::rest::uri_create_order, data);
+    post_request(data, ByBit::Rest::Endpoint::create_order);
 
     return user_order_id++;
 }
 
-void ByBitRest::cancel_order(const std::string& symbol, int _user_order_id)
+void ByBitRest::cancel_order(const Symbol& symbol, int _user_order_id)
 {
     const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
 
     auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
     sign_message += "&order_link_id=" + std::to_string(user_order_id);
-    sign_message += "&symbol=" + symbol + "";
+    sign_message += "&symbol=" + std::string{ symbol.name } + "";
     sign_message += "&timestamp=" + timestamp;
     auto signature = authenticator.authenticate(sign_message);
 
     auto data = std::string{ "{" };
     data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
     data += ",\"order_link_id\":\"" + std::to_string(user_order_id) + "\"";
-    data += ",\"symbol\":\"" + symbol + "\"";
+    data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
     data += ",\"timestamp\":" + timestamp;
     data += ",\"sign\":\"" + signature + "\"";
     data += "}";
 
     logger.info("cancel_order: %s", data.c_str());
-    post_request(ByBit::rest::uri_cancel_order, data);
+    post_request(data, ByBit::Rest::Endpoint::cancel_order);
+}
+
+void ByBitRest::get_positions(void)
+{
+    const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
+
+    auto sign_message = std::string{};
+    sign_message += "api_key=" + std::string{ ByBit::api_key };
+    sign_message += "&timestamp=" + timestamp;
+    auto signature = authenticator.authenticate(sign_message);
+
+    auto query = std::string{};
+    query += "?api_key=" + std::string{ ByBit::api_key };
+    query += "&timestamp=" + timestamp;
+    query += "&sign=" + signature;
+
+    logger.info("get_positions: %s", query.c_str());
+    get_request(query, ByBit::Rest::Endpoint::position_list);
 }
 
 void ByBitRest::http2_runner(void)
@@ -178,9 +195,9 @@ void ByBitRest::http2_runner(void)
     }
 }
 
-void ByBitRest::post_request(const std::string& uri, const std::string& data)
+void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endpoint)
 {
-    logger.info("request start");
+    logger.info("post_request start");
 
     if (!connected || session == nullptr) {
         return;
@@ -188,7 +205,7 @@ void ByBitRest::post_request(const std::string& uri, const std::string& data)
 
     try {
         boost::system::error_code ec;
-        //auto req = session->submit(ec, method, uri, { {"cookie", {}} });
+        const auto uri = std::string{ ByBit::Rest::base_endpoint } + std::string{ ByBit::Rest::endpoints[(int)endpoint] };
         auto req = session->submit(ec, "POST", uri, data, { {"Content-Type", {"application/json"}} });
         if (ec) {
             logger.info("response error: %s", ec.message().data());
@@ -226,13 +243,13 @@ void ByBitRest::post_request(const std::string& uri, const std::string& data)
 
     }
     catch (std::exception& e) {
-        logger.info("request exception: %s", e.what());
+        logger.info("post_request exception: %s", e.what());
     }
 }
 
-void ByBitRest::get_request(const std::string& uri)
+void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endpoint)
 {
-    logger.info("request start");
+    logger.info("get_request start");
 
     //std::string uri = "https://api.bybit.com/public/linear/kline?symbol=BTCUSDT&interval=1&limit=2&from=1581231260";
     //std::string uri = "https://api.bybit.com/public/linear/recent-trading-records?symbol=BTCUSDT&limit=1";
@@ -255,7 +272,7 @@ void ByBitRest::get_request(const std::string& uri)
 
     try {
         boost::system::error_code ec;
-        //auto req = session->submit(ec, method, uri, { {"cookie", {}} });
+        const auto uri = std::string{ ByBit::Rest::base_endpoint } + ByBit::Rest::endpoints[(int)endpoint] + query;
         auto req = session->submit(ec, "GET", uri);
         if (ec) {
             logger.info("response error: %s", ec.message().data());
@@ -292,7 +309,7 @@ void ByBitRest::get_request(const std::string& uri)
         heartbeat_reset();
 
     } catch (std::exception& e) {
-        logger.info("request exception: %s", e.what());
+        logger.info("get_request exception: %s", e.what());
     }
 }
 
@@ -309,7 +326,7 @@ void ByBitRest::heartbeat_runner(void)
         std::this_thread::sleep_for(1s);
         if (DateTime::now() > heartbeat_timeout) {
             logger.info("heartbeat request");
-            get_request("https://api.bybit.com/public/linear/recent-trading-records?symbol=BTCUSDT&limit=1");
+            get_request("?symbol=BTCUSDT&limit=1", ByBit::Rest::Endpoint::recent_trading_records);
         }
     }
 }
