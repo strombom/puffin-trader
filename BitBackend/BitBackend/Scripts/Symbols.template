@@ -40,4 +40,5 @@ struct Symbol {
 
 <<symbols>>
 
-const Symbol& find_symbol(std::string name) noexcept;
+const Symbol& string_to_symbol(std::string name) noexcept;
+const Symbol& string_to_symbol(std::string_view name) noexcept;

@@ -125,7 +125,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
                 timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
             }
             const auto id = Uuid{ data["order_id"].string_value() };
-            const auto symbol = find_symbol(data["symbol"].string_value());
+            const auto symbol = string_to_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
             const auto price = data["price"].number_value();
             const auto qty = data["leaves_qty"].number_value();
@@ -138,7 +138,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
     else if (command["topic"] == "position") {
         logger.info("Position: %s", message.c_str());
         for (const auto& data : command["data"].array_items()) {
-            const auto& symbol = find_symbol(data["symbol"].string_value());
+            const auto& symbol = string_to_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
             const auto qty = data["size"].number_value();
             order_manager->portfolio->update_position(symbol, side, qty);
@@ -157,7 +157,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
     else if (command["topic"].string_value().starts_with("trade.")) {
         if (command["data"].is_array() && command["data"].array_items().size() > 0) {
             const auto& data = command["data"].array_items().back();
-            const auto& symbol = find_symbol(command["topic"].string_value().substr(6));
+            const auto& symbol = string_to_symbol(command["topic"].string_value().substr(6));
             //const auto& tick_direction = command["tick_direction"].string_value();
             // Tick direction: PlusTick, ZeroPlusTick, MinusTick, ZeroMinusTick
             //const auto side = tick_direction[0] == 'P' || tick_direction[0] == 'Z' ? Portfolio::Side::buy : Portfolio::Side::sell;
@@ -167,7 +167,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
         }
     }
     else if (command["topic"].string_value().starts_with("orderBookL2_25.")) {
-        const auto& symbol = find_symbol(command["topic"].string_value().substr(15));
+        const auto& symbol = string_to_symbol(command["topic"].string_value().substr(15));
         if (command["type"] == "snapshot") {
             (*order_manager->order_books)[symbol.idx].clear();
             for (const auto& data : command["data"]["order_book"].array_items()) {

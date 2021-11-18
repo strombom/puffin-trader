@@ -43,4 +43,5 @@ constexpr const auto symbols = std::array{
     //Symbol{ 1, "THETAUSDT", 0.001, 0.00075, -0.00025, 0.1, 0.1, 15000 },
 };
 
-const Symbol& find_symbol(std::string name) noexcept;
+const Symbol& string_to_symbol(std::string name) noexcept;
+const Symbol& string_to_symbol(std::string_view name) noexcept;

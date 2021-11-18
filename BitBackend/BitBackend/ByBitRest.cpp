@@ -29,23 +29,23 @@ void print_header(const nghttp2::asio_http2::client::request& req) {
     print_header(req.header());
 }
 
-ByBitRest::ByBitRest(void) :
-    user_order_id(3), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
+ByBitRest::ByBitRest(sptrOrderManager order_manager) :
+    user_order_id(3), order_manager(order_manager), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
 {
     heartbeat_reset();
 
     http2_thread = std::make_unique<std::thread>(std::bind(&ByBitRest::http2_runner, this));
     heartbeat_thread = std::make_unique<std::thread>(std::bind(&ByBitRest::heartbeat_runner, this));
 
-    //std::this_thread::sleep_for(2s);
-    //std::string method = "GET";
-    //std::string uri = "https://api.bybit.com/public/linear/recent-trading-records?symbol=BTCUSDT&limit=1";
-    //request(method, uri);
+    while (!is_connected()) {
+        std::this_thread::sleep_for(100ms);
+    }
 }
 
 void ByBitRest::join(void)
 {
     http2_thread->join();
+    heartbeat_thread->join();
 }
 
 bool ByBitRest::is_connected(void)
@@ -74,7 +74,7 @@ int ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     sign_message += "&qty=" + qty_str;
     sign_message += "&reduce_only=false";
     sign_message += "&side=Buy";
-    sign_message += "&symbol=" + std::string{ symbol.name } + "";
+    sign_message += "&symbol=" + std::string{ symbol.name };
     sign_message += "&time_in_force=PostOnly";
     sign_message += "&timestamp=" + timestamp;
     auto signature = authenticator.authenticate(sign_message);
@@ -107,7 +107,7 @@ void ByBitRest::cancel_order(const Symbol& symbol, int _user_order_id)
     auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
     sign_message += "&order_link_id=" + std::to_string(user_order_id);
-    sign_message += "&symbol=" + std::string{ symbol.name } + "";
+    sign_message += "&symbol=" + std::string{ symbol.name };
     sign_message += "&timestamp=" + timestamp;
     auto signature = authenticator.authenticate(sign_message);
 
@@ -123,17 +123,19 @@ void ByBitRest::cancel_order(const Symbol& symbol, int _user_order_id)
     post_request(data, ByBit::Rest::Endpoint::cancel_order);
 }
 
-void ByBitRest::get_positions(void)
+void ByBitRest::get_position(const Symbol& symbol)
 {
     const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
 
     auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
+    sign_message += "&symbol=" + std::string{ symbol.name };
     sign_message += "&timestamp=" + timestamp;
     auto signature = authenticator.authenticate(sign_message);
 
     auto query = std::string{};
     query += "?api_key=" + std::string{ ByBit::api_key };
+    query += "&symbol=" + std::string{ symbol.name };
     query += "&timestamp=" + timestamp;
     query += "&sign=" + signature;
 
@@ -144,9 +146,6 @@ void ByBitRest::get_positions(void)
 void ByBitRest::http2_runner(void)
 {
     while (http2_thread_running) {
-
-        //std::scoped_lock lock(connection_mutex);
-
         logger.info("http2_runner connecting");
 
         boost::system::error_code ec;
@@ -154,15 +153,15 @@ void ByBitRest::http2_runner(void)
         tls_ctx = std::make_unique<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
         //boost::asio::ssl::context tls_ctx(boost::asio::ssl::context::sslv23);
         tls_ctx->set_default_verify_paths();
-        // tls_ctx.set_verify_mode(boost::asio::ssl::verify_peer); // disabled to make development easier
+        //tls_ctx.set_verify_mode(boost::asio::ssl::verify_peer); // disabled to make development easier
         nghttp2::asio_http2::client::configure_tls_context(ec, *tls_ctx);
 
         io_service = std::make_unique<boost::asio::io_service>();
-        session = std::make_unique<nghttp2::asio_http2::client::session>(*io_service, *tls_ctx, host, service);
+        session = std::make_unique<nghttp2::asio_http2::client::session>(*io_service, *tls_ctx, ByBit::Rest::host, ByBit::Rest::service);
 
         session->on_connect([this](tcp::resolver::iterator endpoint_it) {
             connected = true;
-            logger.info("http2_runner connected: %s", (*endpoint_it).endpoint().data());
+            logger.info("http2_runner connected");
         });
 
         session->on_error([this](const boost::system::error_code& ec) {
@@ -184,12 +183,21 @@ void ByBitRest::http2_runner(void)
         post_request(uri, auth_command.dump());
         */
 
+        //if (nghttp2::asio_http2::host_service_from_uri(ec, scheme, host, service, uri)) {
+        //    std::cerr << "error: bad URI: " << ec.message() << std::endl;
+        //    return;
+        //}
+
+        //boost::asio::ssl::context tls_ctx(boost::asio::ssl::context::sslv23);
+        //tls_ctx.set_default_verify_paths();
+        // disabled to make development easier...
+        // tls_ctx.set_verify_mode(boost::asio::ssl::verify_peer);
+        //nghttp2::asio_http2::client::configure_tls_context(ec, tls_ctx);
+
         io_service->run();
         connected = false;
         session = nullptr;
         logger.info("http2_runner disconnected");
-
-
 
         //std::this_thread::sleep_for(5s);
     }
@@ -197,7 +205,7 @@ void ByBitRest::http2_runner(void)
 
 void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endpoint)
 {
-    logger.info("post_request start");
+    //logger.info("post_request start");
 
     if (!connected || session == nullptr) {
         return;
@@ -212,32 +220,25 @@ void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endp
             return;
         }
 
-        req->on_response([this](const nghttp2::asio_http2::client::response& res) {
-            logger.info("response header was received");
-            print_header(res);
+        auto buffer = std::make_shared<std::string>();
+        req->on_response([this, endpoint, buffer](const nghttp2::asio_http2::client::response& res) {
+            //logger.info("response header was received");
+            //print_header(res);
 
-            res.on_data([this](const uint8_t* data, std::size_t len) {
-                this->on_data(reinterpret_cast<const char*>(data), len);
-                });
+            res.on_data([this, endpoint, buffer](const uint8_t* data, std::size_t len) {
+                //this->on_data(reinterpret_cast<const char*>(data), len, endpoint);
+                *buffer += std::string{ (const char*)data, len };
             });
+        });
 
-        req->on_close([](uint32_t error_code) {
-            logger.info("request done with error_code: %d", error_code);
-            });
-
-        req->on_push([this](const nghttp2::asio_http2::client::request& push_req) {
-            logger.info("request push request was received");
-
-            print_header(push_req);
-
-            push_req.on_response([this](const nghttp2::asio_http2::client::response& res) {
-                logger.info("request push response header was received");
-
-                res.on_data([this](const uint8_t* data, std::size_t len) {
-                    this->on_data(reinterpret_cast<const char*>(data), len);
-                    });
-                });
-            });
+        req->on_close([this, endpoint, buffer](uint32_t error_code) {
+            if (error_code == 0) {
+                this->on_data(reinterpret_cast<const char*>(buffer->c_str()), buffer->size(), endpoint);
+            }
+            else {
+                logger.info("request done with error_code: %d", error_code);
+            }
+        });
 
         heartbeat_reset();
 
@@ -249,22 +250,7 @@ void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endp
 
 void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endpoint)
 {
-    logger.info("get_request start");
-
-    //std::string uri = "https://api.bybit.com/public/linear/kline?symbol=BTCUSDT&interval=1&limit=2&from=1581231260";
-    //std::string uri = "https://api.bybit.com/public/linear/recent-trading-records?symbol=BTCUSDT&limit=1";
-    //std::string scheme, host, service;
-
-    //if (nghttp2::asio_http2::host_service_from_uri(ec, scheme, host, service, uri)) {
-    //    std::cerr << "error: bad URI: " << ec.message() << std::endl;
-    //    return;
-    //}
-
-    //boost::asio::ssl::context tls_ctx(boost::asio::ssl::context::sslv23);
-    //tls_ctx.set_default_verify_paths();
-    // disabled to make development easier...
-    // tls_ctx.set_verify_mode(boost::asio::ssl::verify_peer);
-    //nghttp2::asio_http2::client::configure_tls_context(ec, tls_ctx);
+    //logger.info("get_request start");
 
     if (!connected || session == nullptr) {
         return;
@@ -279,31 +265,24 @@ void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endp
             return;
         }
 
-        req->on_response([this](const nghttp2::asio_http2::client::response& res) {
-            logger.info("response header was received");
+        auto buffer = std::make_shared<std::string>();
+        req->on_response([this, endpoint, buffer](const nghttp2::asio_http2::client::response& res) {
+            //logger.info("response header was received");
             //print_header(res);
 
-            res.on_data([this](const uint8_t* data, std::size_t len) {
-                this->on_data(reinterpret_cast<const char*>(data), len);
+            res.on_data([this, endpoint, buffer](const uint8_t* data, std::size_t len) {
+                //this->on_data(reinterpret_cast<const char*>(data), len, endpoint);
+                *buffer += std::string{ (const char*)data, len };
             });
         });
 
-        req->on_close([](uint32_t error_code) {
-            logger.info("request done with error_code: %d", error_code);
-        });
-
-        req->on_push([this](const nghttp2::asio_http2::client::request& push_req) {
-            logger.info("request push request was received");
-
-            //print_header(push_req);
-
-            push_req.on_response([this](const nghttp2::asio_http2::client::response& res) {
-                logger.info("request push response header was received");
-
-                res.on_data([this](const uint8_t* data, std::size_t len) {
-                    this->on_data(reinterpret_cast<const char*>(data), len);
-                });
-            });
+        req->on_close([this, endpoint, buffer](uint32_t error_code) {
+            if (error_code == 0) {
+                this->on_data(reinterpret_cast<const char*>(buffer->c_str()), buffer->size(), endpoint);
+            }
+            else {
+                logger.info("request done with error_code: %d", error_code);
+            }
         });
 
         heartbeat_reset();
@@ -313,11 +292,44 @@ void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endp
     }
 }
 
-void ByBitRest::on_data(const char* data, std::size_t len)
+void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint endpoint)
 {
-    logger.info("on_data: %s", data);
-    //std::cerr.write(reinterpret_cast<const char*>(data), len);
-    //std::cerr << std::endl;
+    auto str = std::string{ data, len };
+    str.reserve(str.size() + simdjson::SIMDJSON_PADDING);
+    auto doc = json_parser.iterate(str);
+
+    logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
+
+    long ret_code = doc["ret_code"];
+    if (ret_code != 0) {
+        logger.info("on_data, ret_code: %d", ret_code);
+        return;
+    }
+    std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
+    if (ret_msg != "OK") {
+        logger.info("on_data, ret_msg: %s", ret_msg.data());
+        return;
+    }
+    std::string_view ext_code = doc["ext_code"]; // .find_field("ext_code");
+    if (ext_code != "") {
+        logger.info("on_data, ext_code: %s", ext_code.data());
+        return;
+    }
+    std::string_view ext_info = doc["ext_info"]; // .find_field("ext_code");
+    if (ext_code != "") {
+        logger.info("on_data, ext_info: %s", ext_info.data());
+        return;
+    }
+
+    if (endpoint == ByBit::Rest::Endpoint::position_list) {
+        for (auto pos : doc["result"]) {
+            auto symbol = string_to_symbol(pos["symbol"]);
+            auto side = string_to_side(pos["side"]);
+            double qty = pos["size"];
+
+            order_manager->portfolio->update_position(symbol, side, qty);
+        }
+    }
 }
 
 void ByBitRest::heartbeat_runner(void)
@@ -325,14 +337,13 @@ void ByBitRest::heartbeat_runner(void)
     while (heartbeat_thread_running) {
         std::this_thread::sleep_for(1s);
         if (DateTime::now() > heartbeat_timeout) {
-            logger.info("heartbeat request");
-            get_request("?symbol=BTCUSDT&limit=1", ByBit::Rest::Endpoint::recent_trading_records);
+            get_request("?symbol=BTCUSDT&limit=1", ByBit::Rest::Endpoint::heartbeat_ping);
         }
     }
 }
 
 void ByBitRest::heartbeat_reset(void)
 {
-    logger.info("heartbeat reset");
+    //logger.info("heartbeat reset");
     heartbeat_timeout = DateTime::now() + 6s;
 }

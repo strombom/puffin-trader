@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 3.8)
 add_executable (BitBackend 
     "BitBackend.cpp" "ByBitAuthentication.cpp" "ByBitWebsocket.cpp" "ByBitRest.cpp"
     "BitLib/json11/json11.cpp" "BitLib/DateTime.cpp" "BitLib/Logger.cpp" "BitLib/Uuid.cpp" 
-    "Symbols.cpp" "OrderManager.cpp" "Portfolio.cpp" "OrderBook.cpp" "Common.h")
+    "Symbols.cpp" "OrderManager.cpp" "Portfolio.cpp" "OrderBook.cpp" "Common.h" "Common.cpp")
 
 target_precompile_headers(BitBackend PUBLIC precompiled_headers.h)
 #add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>")

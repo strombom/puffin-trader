@@ -23,6 +23,9 @@ void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double pr
 
 void Portfolio::update_position(const Symbol& symbol, Side side, double qty)
 {
+    auto side_str = side == Side::buy ? "Buy" : "Sell";
+    logger.info("update_position: symbol(%s) side(%s) size(%f)", symbol.name.data(), side_str, qty);
+
     if (side == Side::buy) {
         positions_buy[symbol.idx].qty = qty;
     }
@@ -30,13 +33,13 @@ void Portfolio::update_position(const Symbol& symbol, Side side, double qty)
         positions_sell[symbol.idx].qty = qty;
     }
     for (const auto& symbol : symbols) {
-        if (positions_buy[symbol.idx].qty > 0 && positions_sell[symbol.idx].qty) {
+        if (positions_buy[symbol.idx].qty > 0 && positions_sell[symbol.idx].qty > 0) {
             logger.info("Position: %s buy(%.5f) sell(%.5f)", symbol.name.data(), positions_buy[symbol.idx].qty, positions_sell[symbol.idx].qty);
         }
         else if (positions_buy[symbol.idx].qty > 0) {
             logger.info("Position: %s buy(%.5f)", symbol.name.data(), positions_buy[symbol.idx].qty);
         }
-        else if (positions_sell[symbol.idx].qty) {
+        else if (positions_sell[symbol.idx].qty > 0) {
             logger.info("Position: %s sell(%.5f)", symbol.name.data(), positions_sell[symbol.idx].qty);
         }
     }

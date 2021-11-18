@@ -18,19 +18,21 @@ namespace ByBit {
 
     namespace Rest {
         constexpr auto base_endpoint = "https://api-testnet.bybit.com";
+        constexpr auto host = "api-testnet.bybit.com";
+        constexpr auto service = "https";
 
         enum class Endpoint : int {
+            heartbeat_ping,
             position_list,
             create_order,
-            cancel_order,
-            recent_trading_records
+            cancel_order
         };
 
         constexpr auto endpoints = std::array<const char*, 4>{
+            "/public/linear/recent-trading-records",
             "/private/linear/position/list",
             "/private/linear/order/create",
-            "/private/linear/order/cancel",
-            "/public/linear/recent-trading-records"
+            "/private/linear/order/cancel"            
         };
     }
 
