@@ -136,7 +136,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
         order_manager->portfolio_updated();
     }
     else if (command["topic"] == "position") {
-        logger.info("Position: %s", message.c_str());
+        //logger.info("Position: %s", message.c_str());
         for (const auto& data : command["data"].array_items()) {
             const auto& symbol = string_to_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
@@ -148,7 +148,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
     else if (command["ret_msg"] == "pong") {
         // Example: {"success":true,"ret_msg":"pong","conn_id":"bc172b63-001d-47b2-b9e1-37ce4f0264ce","request":{"op":"ping","args":null}}
         if (command["success"].bool_value()) {
-            logger.info("Pong: success");
+            //logger.info("Pong: success");
         }
         else {
             logger.info("Pong: fail");

@@ -117,7 +117,7 @@ void ByBitRest::cancel_all_orders(const Symbol& symbol)
     data += ",\"sign\":\"" + signature + "\"";
     data += "}";
 
-    logger.info("cancel_all_orders: %s", data.c_str());
+    //logger.info("cancel_all_orders: %s", data.c_str());
     post_request(data, ByBit::Rest::Endpoint::cancel_all_orders);
 }
 

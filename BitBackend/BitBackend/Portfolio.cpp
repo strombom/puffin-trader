@@ -29,6 +29,7 @@ void Portfolio::update_position(const Symbol& symbol, Side side, double qty)
     else {
         positions_sell[symbol.idx].qty = qty;
     }
+    /*
     for (const auto& symbol : symbols) {
         if (positions_buy[symbol.idx].qty > 0 && positions_sell[symbol.idx].qty > 0) {
             logger.info("Position: %s buy(%.5f) sell(%.5f)", symbol.name.data(), positions_buy[symbol.idx].qty, positions_sell[symbol.idx].qty);
@@ -40,6 +41,7 @@ void Portfolio::update_position(const Symbol& symbol, Side side, double qty)
             logger.info("Position: %s sell(%.5f)", symbol.name.data(), positions_sell[symbol.idx].qty);
         }
     }
+    */
 }
 
 void Portfolio::update_wallet(double balance, double available)
