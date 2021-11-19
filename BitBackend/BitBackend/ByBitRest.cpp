@@ -101,7 +101,7 @@ void ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     const auto side = Side::buy;
     const auto timestamp = DateTime::now();
     const bool confirmed = false;
-    order_manager->portfolio->update_order(id.to_string(), symbol, side, price, qty, timestamp, confirmed);
+    order_manager->portfolio->update_order(id.to_string(), symbol, side, qty, price, timestamp, confirmed);
 }
 
 void ByBitRest::cancel_all_orders(const Symbol& symbol)
@@ -369,7 +369,7 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
         const auto id = Uuid{ std::string_view{doc["result"]["order_link_id"]} };
         const auto timestamp = DateTime::iso8601_us_to_time_point_us(std::string_view{ doc["result"]["updated_time"] });
         const bool confirmed = true;
-        order_manager->portfolio->update_order(id, symbol, side, price, qty, timestamp, confirmed);
+        order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
     }
     else {
         logger.info("on_data: %d %d %s", endpoint, len, str.c_str());

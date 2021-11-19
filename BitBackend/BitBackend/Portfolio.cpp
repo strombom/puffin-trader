@@ -13,40 +13,30 @@ Portfolio::Order* Portfolio::find_order(const Symbol& symbol, Uuid id)
     return nullptr;
 }
 
-void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double price, double qty, time_point_us created, bool confirmed)
+void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed)
 {
+    const std::lock_guard<std::mutex> lock(orders_mutex);
+
     logger.info("update_order id(%s) %s, %.5f, %.2f", id.to_string().c_str(), symbol.name.data(), price, qty);
-    //const auto id_internal = Uuid{ id_internal_s };
-    //const auto id_external = id_external_s.size() == 36 ? Uuid{ id_external_s } : Uuid{};
 
     auto order = find_order(symbol, id);
 
-    if (order == nullptr) {
+    logger.info("find order %d", order);
 
+    if (order == nullptr && qty > 0) {
+        orders[symbol.idx].emplace_front(id, symbol, side, qty, price, created, confirmed);
     }
-
-    if (qty == 0) {
-        
+    else if (order != nullptr && qty == 0) {
+        orders[symbol.idx].remove(*order);
     }
-
-    //logger.info("Update %s", id.to_string().c_str());
-    //if (status == "Filled" || status == "Cancelled" || status == "Rejected") {
-        //if (orders.contains(id)) {
-        //    orders.erase(id);
-        //}
-    //}
-    //else {
-        // Created, New, PartiallyFilled, PendingCancel
-        //orders.insert_or_assign(id, Order{id, symbol, qty, price, side, created});
-    //}
-
-    //for (const auto& order : orders) {
-        //logger.info("Order: %s %s %f %f", order.second.uuid.to_string().c_str(), order.second.symbol.name.data(), order.second.price, order.second.qty);
-    //}
+    else if (order != nullptr) {
+        *order = Order{ id, symbol, side, qty, price, created, confirmed };
+    }
 }
 
 void Portfolio::update_position(const Symbol& symbol, Side side, double qty)
 {
+    const std::lock_guard<std::mutex> lock(positions_mutex);
     if (side == Side::buy) {
         positions_buy[symbol.idx].qty = qty;
     }
@@ -93,6 +83,8 @@ void Portfolio::new_trade(const Symbol& symbol, Side side, double price)
 
 void Portfolio::debug_print(void)
 {
+    const std::lock_guard<std::mutex> lock(positions_mutex);
+
     auto str = std::string{"Portfolio:"};
     for (const auto& symbol : symbols) {
         str += " ";

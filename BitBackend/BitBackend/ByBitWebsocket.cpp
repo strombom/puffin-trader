@@ -120,35 +120,48 @@ void ByBitWebSocket::parse_message(const std::string& message)
     }
     else if (command["topic"] == "order") {
         for (const auto& data : command["data"].array_items()) {
-            auto timestamp_string = data["create_time"].string_value();
-            if (timestamp_string.size() > 26) {
-                timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
+
+            const auto id_str = data["order_link_id"].string_value();
+            if (id_str.size() == 36) {
+                auto timestamp_string = data["create_time"].string_value();
+                if (timestamp_string.size() > 26) {
+                    timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
+                }
+                const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
+                const auto id = Uuid{ id_str };
+                const auto symbol = string_to_symbol(data["symbol"].string_value());
+                const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
+                const auto price = data["price"].number_value();
+                const auto qty = data["leaves_qty"].number_value();
+                const auto confirmed = true;
+                order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
             }
-            const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
-            const auto id = Uuid{ data["order_link_id"].string_value() };
-            const auto symbol = string_to_symbol(data["symbol"].string_value());
-            const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
-            const auto price = data["price"].number_value();
-            const auto qty = data["leaves_qty"].number_value();
-            const auto confirmed = true;
-            order_manager->portfolio->update_order(id, symbol, side, price, qty, timestamp, confirmed);
+            else {
+                logger.info("order update invalid %s", data["order_id"].string_value().c_str());
+            }
         }
         //order_manager->portfolio_updated();
     }
     else if (command["topic"] == "execution") {
         for (const auto& data : command["data"].array_items()) {
-            auto timestamp_string = data["trade_time"].string_value();
-            if (timestamp_string.size() > 26) {
-                timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
+            const auto id_str = data["order_link_id"].string_value();
+            if (id_str.size() == 36) {
+                auto timestamp_string = data["trade_time"].string_value();
+                if (timestamp_string.size() > 26) {
+                    timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
+                }
+                const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
+                const auto id = Uuid{ id_str };
+                const auto symbol = string_to_symbol(data["symbol"].string_value());
+                const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
+                const auto price = data["price"].number_value();
+                const auto qty = data["leaves_qty"].number_value();
+                const auto confirmed = true;
+                 order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
             }
-            const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
-            const auto id = Uuid{ data["order_link_id"].string_value()};
-            const auto symbol = string_to_symbol(data["symbol"].string_value());
-            const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
-            const auto price = data["price"].number_value();
-            const auto qty = data["leaves_qty"].number_value();
-            const auto confirmed = true;
-            order_manager->portfolio->update_order(id, symbol, side, price, qty, timestamp, confirmed);
+            else {
+                logger.info("order execution invalid %s", data["order_id"].string_value().c_str());
+            }
         }
         //logger.info("Execution: %s", message.c_str());
     }

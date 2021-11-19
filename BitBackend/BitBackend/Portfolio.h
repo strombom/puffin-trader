@@ -7,6 +7,7 @@
 #include "Common.h"
 
 #include <list>
+#include <mutex>
 
 
 class Portfolio
@@ -17,16 +18,32 @@ public:
 
     struct Order
     {
-        Order(Uuid id, Symbol symbol, double qty, double price, Side side, time_point_us created, bool confirmed) :
-            id(id), symbol(symbol), qty(qty), price(price), side(side), created(created), confirmed(confirmed) {}
+        Order(Uuid id, Symbol symbol, Side side, double qty, double price, time_point_us created, bool confirmed) :
+            id(id), symbol(symbol), side(side), qty(qty), price(price), created(created), confirmed(confirmed) {}
 
         Uuid id;
         Symbol symbol;
+        Side side;
         double qty;
         double price;
-        Side side;
         time_point_us created;
         bool confirmed;
+
+        Order& operator=(const Order& order) {
+            if (this != &order) {
+                id = order.id;
+                symbol = order.symbol;
+                side = order.side;
+                qty = order.qty;
+                price = order.price;
+                created = order.created;
+                confirmed = order.confirmed;
+            }
+            return *this;
+        }
+
+    private:
+        friend bool operator==(const Order& l, const Order& r) { return l.id == r.id; }
     };
 
     struct Position
@@ -40,7 +57,7 @@ public:
         double qty;
     };
 
-    void update_order(Uuid id, const Symbol& symbol, Side side, double price, double qty, time_point_us created, bool confirmed);
+    void update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed);
     void update_position(const Symbol& symbol, Side side, double qty);
     void update_wallet(double balance, double available);
     void new_trade(const Symbol& symbol, Side side, double price);
@@ -48,6 +65,9 @@ public:
     void debug_print(void);
 
 private:
+    std::mutex orders_mutex;
+    std::mutex positions_mutex;
+
     std::array<std::list<Order>, symbols.size()> orders;
     std::array<Position, symbols.size()> positions_buy;
     std::array<Position, symbols.size()> positions_sell;
