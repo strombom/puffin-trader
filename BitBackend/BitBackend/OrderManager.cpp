@@ -17,10 +17,16 @@ void OrderManager::order_manager_worker(void)
 
 void OrderManager::order_book_updated(void)
 {
-    logger.info("order book updated");
+    auto str = std::string{ "OrderBook:" };
+    for (const auto& symbol : symbols) {
+        str += " ";
+        str += symbol.name;
+        str += " (" + std::to_string((*order_books)[symbol.idx].get_last_ask()) + " " + std::to_string((*order_books)[symbol.idx].get_last_bid()) + ")";
+    }
+    //logger.info(str.c_str());
 }
 
 void OrderManager::portfolio_updated(void)
 {
-    logger.info("portfolio updated");
+    portfolio->debug_print();
 }

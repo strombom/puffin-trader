@@ -16,6 +16,7 @@ public:
     ByBitRest(sptrOrderManager order_manager);
 
     int place_order(const Symbol& symbol, double qty, double price);
+    void cancel_all_orders(const Symbol& symbol);
     void cancel_order(const Symbol& symbol, int _user_order_id);
     void get_position(const Symbol& symbol);
 

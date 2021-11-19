@@ -25,14 +25,16 @@ namespace ByBit {
             heartbeat_ping,
             position_list,
             create_order,
-            cancel_order
+            cancel_order,
+            cancel_all_orders
         };
 
-        constexpr auto endpoints = std::array<const char*, 4>{
+        constexpr auto endpoints = std::array<const char*, 5>{
             "/public/linear/recent-trading-records",
             "/private/linear/position/list",
             "/private/linear/order/create",
-            "/private/linear/order/cancel"            
+            "/private/linear/order/cancel",
+            "/private/linear/order/cancel-all"
         };
     }
 

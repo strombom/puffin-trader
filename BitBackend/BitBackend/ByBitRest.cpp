@@ -100,6 +100,27 @@ int ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     return user_order_id++;
 }
 
+void ByBitRest::cancel_all_orders(const Symbol& symbol)
+{
+    const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
+
+    auto sign_message = std::string{};
+    sign_message += "api_key=" + std::string{ ByBit::api_key };
+    sign_message += "&symbol=" + std::string{ symbol.name };
+    sign_message += "&timestamp=" + timestamp;
+    auto signature = authenticator.authenticate(sign_message);
+
+    auto data = std::string{ "{" };
+    data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
+    data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
+    data += ",\"timestamp\":" + timestamp;
+    data += ",\"sign\":\"" + signature + "\"";
+    data += "}";
+
+    logger.info("cancel_all_orders: %s", data.c_str());
+    post_request(data, ByBit::Rest::Endpoint::cancel_all_orders);
+}
+
 void ByBitRest::cancel_order(const Symbol& symbol, int _user_order_id)
 {
     const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
@@ -139,7 +160,7 @@ void ByBitRest::get_position(const Symbol& symbol)
     query += "&timestamp=" + timestamp;
     query += "&sign=" + signature;
 
-    logger.info("get_positions: %s", query.c_str());
+    //logger.info("get_positions: %s", query.c_str());
     get_request(query, ByBit::Rest::Endpoint::position_list);
 }
 
@@ -294,30 +315,32 @@ void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endp
 
 void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint endpoint)
 {
+    if (endpoint == ByBit::Rest::Endpoint::heartbeat_ping) {
+        return;
+    }
+
     auto str = std::string{ data, len };
     str.reserve(str.size() + simdjson::SIMDJSON_PADDING);
     auto doc = json_parser.iterate(str);
 
-    logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
-
     long ret_code = doc["ret_code"];
     if (ret_code != 0) {
-        logger.info("on_data, ret_code: %d", ret_code);
+        logger.info("on_data, ret_code: %d %d", endpoint, ret_code);
         return;
     }
     std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
     if (ret_msg != "OK") {
-        logger.info("on_data, ret_msg: %s", ret_msg.data());
+        logger.info("on_data, ret_msg: %d %s", endpoint, ret_msg.data());
         return;
     }
     std::string_view ext_code = doc["ext_code"]; // .find_field("ext_code");
     if (ext_code != "") {
-        logger.info("on_data, ext_code: %s", ext_code.data());
+        logger.info("on_data, ext_code: %d %s", endpoint, ext_code.data());
         return;
     }
     std::string_view ext_info = doc["ext_info"]; // .find_field("ext_code");
     if (ext_code != "") {
-        logger.info("on_data, ext_info: %s", ext_info.data());
+        logger.info("on_data, ext_info: %d %s", endpoint, ext_info.data());
         return;
     }
 
@@ -329,6 +352,13 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
 
             order_manager->portfolio->update_position(symbol, side, qty);
         }
+        order_manager->portfolio_updated();
+    }
+    else if (endpoint == ByBit::Rest::Endpoint::cancel_all_orders) {
+        logger.info("on_data, cancel_all_orders OK");
+    }
+    else {
+        logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
     }
 }
 

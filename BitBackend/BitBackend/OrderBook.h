@@ -16,6 +16,7 @@ public:
     void update(double price, Side side, double qty);
     void del(double price, Side side);
 
+    double get_last_ask(void);
     double get_last_bid(void);
 
 private:
@@ -29,6 +30,7 @@ private:
     std::array<Entry*, size> asks;
     std::array<Entry*, size> bids;
 
+    double old_last_ask;
     double old_last_bid;
 };
 

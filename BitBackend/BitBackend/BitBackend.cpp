@@ -19,14 +19,6 @@ int main()
 	auto order_books = makeOrderBooks(); // std::make_shared<OrderBooks>();
 	auto order_manager = std::make_shared<OrderManager>(portfolio, order_books);
 
-	auto bybit_rest = ByBitRest{ order_manager };
-	//while (!bybit_rest.is_connected()) {
-	//	std::this_thread::sleep_for(100ms);
-	//}
-
-	/*
-	//auto order_book_updated_callback = order_manager.get_update_callback();
-
 	auto public_topics = std::vector<std::string>{};
 	for (const auto& symbol : symbols) {
 		public_topics.push_back(std::string{ "orderBookL2_25." } + symbol.name.data());
@@ -38,14 +30,13 @@ int main()
 	auto bybit_private_websocket = std::make_shared<ByBitWebSocket>(ByBit::WebSocket::url_private, true, private_topics, order_manager);
 	bybit_private_websocket->start();
 
+	auto bybit_rest = ByBitRest{ order_manager };
+	for (const auto &symbol : symbols) {
+		bybit_rest.cancel_all_orders(symbol);
+		bybit_rest.get_position(symbol);
+	}
 	//bybit_rest.place_order("BTCUSDT", 0.01, 51000.0);
 	//bybit_rest.cancel_order("BTCUSDT", 3);
-
-	*/
-
-	for (const auto &symbol : symbols) {
-		bybit_rest.get_position(symbol);
-	}	
 
 	bybit_rest.join();
 

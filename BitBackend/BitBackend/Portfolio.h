@@ -42,6 +42,8 @@ public:
     void update_wallet(double balance, double available);
     void new_trade(const Symbol& symbol, Side side, double price);
 
+    void debug_print(void);
+
 private:
     std::map<Uuid, Order> orders;
     std::array<Position, symbols.size()> positions_buy;
