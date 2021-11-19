@@ -26,6 +26,7 @@ public:
     static const time_point_us to_time_point_us(const std::string& string);
     static const time_point_us to_time_point_us(const std::string& string, const std::string& time_format);
     static const time_point_us iso8601_us_to_time_point_us(const std::string& string);
+    static const time_point_us iso8601_us_to_time_point_us(const std::string_view& string);
     static const std::string to_string(const time_point_us);
     static const std::string to_string_iso_8601(const time_point_us);
     static const time_point_us random_timestamp(const time_point_us timestamp_start, const time_point_us timestamp_end, const std::chrono::microseconds interval);

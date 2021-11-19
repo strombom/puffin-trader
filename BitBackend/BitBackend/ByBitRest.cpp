@@ -30,7 +30,7 @@ void print_header(const nghttp2::asio_http2::client::request& req) {
 }
 
 ByBitRest::ByBitRest(sptrOrderManager order_manager) :
-    user_order_id(3), order_manager(order_manager), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
+    order_manager(order_manager), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
 {
     heartbeat_reset();
 
@@ -53,9 +53,10 @@ bool ByBitRest::is_connected(void)
     return connected;
 }
 
-int ByBitRest::place_order(const Symbol& symbol, double qty, double price)
+void ByBitRest::place_order(const Symbol& symbol, double qty, double price)
 {
-    const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
+    const auto id = uuid_generator.generate();
+    const auto timestamp_sign = std::to_string(authenticator.generate_expiration(-2s));
 
     auto price_str = std::to_string(price);
     price_str.erase(price_str.find_last_not_of('0') + 1, std::string::npos);
@@ -68,7 +69,7 @@ int ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
     sign_message += "&close_on_trigger=false";
-    sign_message += "&order_link_id=" + std::to_string(user_order_id);
+    sign_message += "&order_link_id=" + id.to_string();
     sign_message += "&order_type=Limit";
     sign_message += "&price=" + price_str;
     sign_message += "&qty=" + qty_str;
@@ -76,13 +77,13 @@ int ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     sign_message += "&side=Buy";
     sign_message += "&symbol=" + std::string{ symbol.name };
     sign_message += "&time_in_force=PostOnly";
-    sign_message += "&timestamp=" + timestamp;
+    sign_message += "&timestamp=" + timestamp_sign;
     auto signature = authenticator.authenticate(sign_message);
 
     auto data = std::string{ "{" };
     data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
     data += ",\"close_on_trigger\":false";
-    data += ",\"order_link_id\":\"" + std::to_string(user_order_id) + "\"";
+    data += ",\"order_link_id\":\"" + id.to_string() + "\"";
     data += ",\"order_type\":\"Limit\"";
     data += ",\"price\":" + price_str + "";
     data += ",\"qty\":" + qty_str + "";
@@ -90,14 +91,17 @@ int ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     data += ",\"side\":\"Buy\"";
     data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
     data += ",\"time_in_force\":\"PostOnly\"";
-    data += ",\"timestamp\":" + timestamp;
+    data += ",\"timestamp\":" + timestamp_sign;
     data += ",\"sign\":\"" + signature + "\"";
     data += "}";
 
     logger.info("place_order: %s", data.c_str());
     post_request(data, ByBit::Rest::Endpoint::create_order);
 
-    return user_order_id++;
+    const auto side = Side::buy;
+    const auto timestamp = DateTime::now();
+    const bool confirmed = false;
+    order_manager->portfolio->update_order(id.to_string(), symbol, side, price, qty, timestamp, confirmed);
 }
 
 void ByBitRest::cancel_all_orders(const Symbol& symbol)
@@ -121,20 +125,20 @@ void ByBitRest::cancel_all_orders(const Symbol& symbol)
     post_request(data, ByBit::Rest::Endpoint::cancel_all_orders);
 }
 
-void ByBitRest::cancel_order(const Symbol& symbol, int _user_order_id)
+void ByBitRest::cancel_order(const Symbol& symbol, Uuid id_external)
 {
     const auto timestamp = std::to_string(authenticator.generate_expiration(-2s));
 
     auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
-    sign_message += "&order_link_id=" + std::to_string(user_order_id);
+    sign_message += "&order_link_id=" + id_external.to_string();
     sign_message += "&symbol=" + std::string{ symbol.name };
     sign_message += "&timestamp=" + timestamp;
     auto signature = authenticator.authenticate(sign_message);
 
     auto data = std::string{ "{" };
     data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
-    data += ",\"order_link_id\":\"" + std::to_string(user_order_id) + "\"";
+    data += ",\"order_link_id\":\"" + id_external.to_string() + "\"";
     data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
     data += ",\"timestamp\":" + timestamp;
     data += ",\"sign\":\"" + signature + "\"";
@@ -357,6 +361,16 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
     else if (endpoint == ByBit::Rest::Endpoint::cancel_all_orders) {
         logger.info("on_data, cancel_all_orders OK");
     }
+    else if (endpoint == ByBit::Rest::Endpoint::create_order) {
+        const auto symbol = string_to_symbol(doc["result"]["symbol"]);
+        const auto side = string_to_side(doc["result"]["side"]);
+        const double price = doc["result"]["price"];
+        const double qty = doc["result"]["qty"];
+        const auto id = Uuid{ std::string_view{doc["result"]["order_link_id"]} };
+        const auto timestamp = DateTime::iso8601_us_to_time_point_us(std::string_view{ doc["result"]["updated_time"] });
+        const bool confirmed = true;
+        order_manager->portfolio->update_order(id, symbol, side, price, qty, timestamp, confirmed);
+    }
     else {
         logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
     }
@@ -374,6 +388,5 @@ void ByBitRest::heartbeat_runner(void)
 
 void ByBitRest::heartbeat_reset(void)
 {
-    //logger.info("heartbeat reset");
     heartbeat_timeout = DateTime::now() + 6s;
 }

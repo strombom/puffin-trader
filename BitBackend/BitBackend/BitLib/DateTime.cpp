@@ -44,6 +44,11 @@ const time_point_us DateTime::iso8601_us_to_time_point_us(const std::string& str
     return std::chrono::time_point_cast<std::chrono::milliseconds, std::chrono::system_clock, std::chrono::microseconds>(time_point);
 }
 
+const time_point_us DateTime::iso8601_us_to_time_point_us(const std::string_view& string)
+{
+    return iso8601_us_to_time_point_us(std::string{ string });
+}
+
 const std::string DateTime::to_string(const time_point_us timestamp)
 {
     return date::format(time_format, timestamp);

@@ -99,7 +99,7 @@ void ByBitWebSocket::subscribe(void)
 
 void ByBitWebSocket::parse_message(const std::string& message)
 {
-    //auto document = json_parser.iterate(message);
+    // TODO: replace json11 with simdjson
 
     auto error_message = std::string{ "{\"command\":\"error\"}" };
     const auto command = json11::Json::parse(message.c_str(), error_message);
@@ -124,19 +124,35 @@ void ByBitWebSocket::parse_message(const std::string& message)
             if (timestamp_string.size() > 26) {
                 timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
             }
-            const auto id = Uuid{ data["order_id"].string_value() };
+            const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
+            const auto id = Uuid{ data["order_link_id"].string_value() };
             const auto symbol = string_to_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
             const auto price = data["price"].number_value();
             const auto qty = data["leaves_qty"].number_value();
-            const auto status = data["order_status"].string_value();
-            const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
-            order_manager->portfolio->update_order(id, symbol, side, price, qty, status, timestamp);
+            const auto confirmed = true;
+            order_manager->portfolio->update_order(id, symbol, side, price, qty, timestamp, confirmed);
         }
-        order_manager->portfolio_updated();
+        //order_manager->portfolio_updated();
+    }
+    else if (command["topic"] == "execution") {
+        for (const auto& data : command["data"].array_items()) {
+            auto timestamp_string = data["trade_time"].string_value();
+            if (timestamp_string.size() > 26) {
+                timestamp_string[26] = 'Z'; // Remove nanosecond part, DateTime can only parse microseconds
+            }
+            const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_string);
+            const auto id = Uuid{ data["order_link_id"].string_value()};
+            const auto symbol = string_to_symbol(data["symbol"].string_value());
+            const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;
+            const auto price = data["price"].number_value();
+            const auto qty = data["leaves_qty"].number_value();
+            const auto confirmed = true;
+            order_manager->portfolio->update_order(id, symbol, side, price, qty, timestamp, confirmed);
+        }
+        //logger.info("Execution: %s", message.c_str());
     }
     else if (command["topic"] == "position") {
-        //logger.info("Position: %s", message.c_str());
         for (const auto& data : command["data"].array_items()) {
             const auto& symbol = string_to_symbol(data["symbol"].string_value());
             const auto side = data["side"].string_value() == "Buy" ? Side::buy : Side::sell;

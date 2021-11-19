@@ -3,22 +3,46 @@
 #include "BitLib/Logger.h"
 
 
-void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double price, double qty, std::string status, time_point_us created)
+Portfolio::Order* Portfolio::find_order(const Symbol& symbol, Uuid id)
 {
-    //logger.info("Update %s", id.to_string().c_str());
-    if (status == "Filled" || status == "Cancelled" || status == "Rejected") {
-        if (orders.contains(id)) {
-            orders.erase(id);
+    for (auto& order : orders[symbol.idx]) {
+        if (order.id == id) {
+            return &order;
         }
     }
-    else {
-        // Created, New, PartiallyFilled, PendingCancel
-        orders.insert_or_assign(id, Order{id, symbol, qty, price, side, created});
+    return nullptr;
+}
+
+void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double price, double qty, time_point_us created, bool confirmed)
+{
+    logger.info("update_order id(%s) %s, %.5f, %.2f", id.to_string().c_str(), symbol.name.data(), price, qty);
+    //const auto id_internal = Uuid{ id_internal_s };
+    //const auto id_external = id_external_s.size() == 36 ? Uuid{ id_external_s } : Uuid{};
+
+    auto order = find_order(symbol, id);
+
+    if (order == nullptr) {
+
     }
 
-    for (const auto& order : orders) {
-        logger.info("Order: %s %s %f %f", order.second.uuid.to_string().c_str(), order.second.symbol.name.data(), order.second.price, order.second.qty);
+    if (qty == 0) {
+        
     }
+
+    //logger.info("Update %s", id.to_string().c_str());
+    //if (status == "Filled" || status == "Cancelled" || status == "Rejected") {
+        //if (orders.contains(id)) {
+        //    orders.erase(id);
+        //}
+    //}
+    //else {
+        // Created, New, PartiallyFilled, PendingCancel
+        //orders.insert_or_assign(id, Order{id, symbol, qty, price, side, created});
+    //}
+
+    //for (const auto& order : orders) {
+        //logger.info("Order: %s %s %f %f", order.second.uuid.to_string().c_str(), order.second.symbol.name.data(), order.second.price, order.second.qty);
+    //}
 }
 
 void Portfolio::update_position(const Symbol& symbol, Side side, double qty)

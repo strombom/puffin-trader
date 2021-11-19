@@ -32,10 +32,11 @@ int main()
 
 	auto bybit_rest = ByBitRest{ order_manager };
 	for (const auto &symbol : symbols) {
-		bybit_rest.cancel_all_orders(symbol);
+		//bybit_rest.cancel_all_orders(symbol);
 		bybit_rest.get_position(symbol);
 	}
-	//bybit_rest.place_order("BTCUSDT", 0.01, 51000.0);
+	std::this_thread::sleep_for(5s);
+	bybit_rest.place_order(string_to_symbol("BTCUSDT"), 0.01, 51000.0);
 	//bybit_rest.cancel_order("BTCUSDT", 3);
 
 	bybit_rest.join();

@@ -7,8 +7,11 @@ class Uuid
 public:
     Uuid(uuids::uuid uuid) : uuid(uuid) {}
     Uuid(std::string str) : uuid(uuids::uuid::from_string(str).value()) {}
+    Uuid(std::string_view str) : uuid(uuids::uuid::from_string(str).value()) {}
+    Uuid(void) : uuid(uuids::uuid()) {}
 
-    const std::string to_string(void) const;
+    const std::string to_string(void) const noexcept;
+    bool is_null(void) const noexcept;
 
 private:
     uuids::uuid uuid;

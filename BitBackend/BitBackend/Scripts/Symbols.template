@@ -40,5 +40,6 @@ struct Symbol {
 
 <<symbols>>
 
+const Symbol& string_to_symbol(const char* name) noexcept;
 const Symbol& string_to_symbol(std::string name) noexcept;
 const Symbol& string_to_symbol(std::string_view name) noexcept;

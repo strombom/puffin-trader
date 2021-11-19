@@ -6,6 +6,8 @@
 #include "Symbols.h"
 #include "Common.h"
 
+#include <list>
+
 
 class Portfolio
 {
@@ -15,15 +17,16 @@ public:
 
     struct Order
     {
-        Order(Uuid uuid, Symbol symbol, double qty, double price, Side side, time_point_us created) :
-            uuid(uuid), symbol(symbol), qty(qty), price(price), side(side), created(created) {}
+        Order(Uuid id, Symbol symbol, double qty, double price, Side side, time_point_us created, bool confirmed) :
+            id(id), symbol(symbol), qty(qty), price(price), side(side), created(created), confirmed(confirmed) {}
 
-        Uuid uuid;
+        Uuid id;
         Symbol symbol;
         double qty;
         double price;
         Side side;
         time_point_us created;
+        bool confirmed;
     };
 
     struct Position
@@ -37,7 +40,7 @@ public:
         double qty;
     };
 
-    void update_order(Uuid id, const Symbol& symbol, Side side, double price, double qty, std::string status, time_point_us created);
+    void update_order(Uuid id, const Symbol& symbol, Side side, double price, double qty, time_point_us created, bool confirmed);
     void update_position(const Symbol& symbol, Side side, double qty);
     void update_wallet(double balance, double available);
     void new_trade(const Symbol& symbol, Side side, double price);
@@ -45,14 +48,15 @@ public:
     void debug_print(void);
 
 private:
-    std::map<Uuid, Order> orders;
+    std::array<std::list<Order>, symbols.size()> orders;
     std::array<Position, symbols.size()> positions_buy;
     std::array<Position, symbols.size()> positions_sell;
     double wallet_balance;
     double wallet_available;
-    std::array<double, symbols.size()> last_trade_price;
     std::array<double, symbols.size()> last_ask;
     std::array<double, symbols.size()> last_bid;
+
+    Order* find_order(const Symbol& symbol, Uuid id);
 };
 
 using sptrPortfolio = std::shared_ptr<Portfolio>;
