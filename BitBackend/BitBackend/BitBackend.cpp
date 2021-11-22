@@ -26,18 +26,17 @@ int main()
     auto bybit_public_websocket = std::make_shared<ByBitWebSocket>(ByBit::WebSocket::url_public, false, public_topics, order_manager);
 	bybit_public_websocket->start();
 
-	auto private_topics = std::vector<std::string>{ "execution", "order", "position", "wallet" };
+	auto private_topics = std::vector<std::string>{ "execution", "order", "position" }; // , "wallet"
 	auto bybit_private_websocket = std::make_shared<ByBitWebSocket>(ByBit::WebSocket::url_private, true, private_topics, order_manager);
 	bybit_private_websocket->start();
 
 	auto bybit_rest = ByBitRest{ order_manager };
 	for (const auto &symbol : symbols) {
-		//bybit_rest.cancel_all_orders(symbol);
+		bybit_rest.cancel_all_orders(symbol);
 		bybit_rest.get_position(symbol);
 	}
-	std::this_thread::sleep_for(5s);
-	bybit_rest.place_order(string_to_symbol("BTCUSDT"), 0.01, 51000.0);
-	//bybit_rest.cancel_order("BTCUSDT", 3);
+	std::this_thread::sleep_for(4s);
+	//bybit_rest.place_order(string_to_symbol("BTCUSDT"), 0.01, 51000.0);
 
 	bybit_rest.join();
 

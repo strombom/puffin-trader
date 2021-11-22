@@ -15,7 +15,7 @@ class ByBitRest
 public:
     ByBitRest(sptrOrderManager order_manager);
 
-    void place_order(const Symbol& symbol, double qty, double price);
+    void place_order(const Symbol& symbol, Side side, double qty, double price);
     void cancel_all_orders(const Symbol& symbol);
     void cancel_order(const Symbol& symbol, Uuid id_external);
     void get_position(const Symbol& symbol);
@@ -33,9 +33,9 @@ private:
     std::unique_ptr<nghttp2::asio_http2::client::session> session;
     bool connected;
     
-    void get_request(const std::string& query, ByBit::Rest::Endpoint endpoint);
-    void post_request(const std::string& data, ByBit::Rest::Endpoint endpoint);
-    void on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint endpoint);
+    void get_request(const std::string& query, ByBit::Rest::Endpoint endpoint, Uuid id);
+    void post_request(const std::string& data, ByBit::Rest::Endpoint endpoint, Uuid id);
+    void on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint endpoint, const Uuid& id);
     void heartbeat_reset(void);
 
     void http2_runner(void);

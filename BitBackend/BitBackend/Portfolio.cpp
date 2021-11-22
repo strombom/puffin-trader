@@ -13,24 +13,50 @@ Portfolio::Order* Portfolio::find_order(const Symbol& symbol, Uuid id)
     return nullptr;
 }
 
+std::tuple<const Symbol*, Portfolio::Order*> Portfolio::find_order(Uuid id)
+{
+    for (const auto& symbol : symbols) {
+        for (auto& order : orders[symbol.idx]) {
+            if (order.id == id) {
+                return std::make_tuple(&symbol, &order);
+            }
+        }
+    }
+    return std::make_tuple(nullptr, nullptr);
+}
+
+
 void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed)
 {
     const std::lock_guard<std::mutex> lock(orders_mutex);
 
-    logger.info("update_order id(%s) %s, %.5f, %.2f", id.to_string().c_str(), symbol.name.data(), price, qty);
-
     auto order = find_order(symbol, id);
 
-    logger.info("find order %d", order);
-
     if (order == nullptr && qty > 0) {
+        // Create
         orders[symbol.idx].emplace_front(id, symbol, side, qty, price, created, confirmed);
+        logger.info("created order id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
     }
     else if (order != nullptr && qty == 0) {
+        // Remove
         orders[symbol.idx].remove(*order);
+        logger.info("removed order id(%s) %s, count %d", id.to_string().c_str(), symbol.name.data(), orders[symbol.idx].size());
     }
     else if (order != nullptr) {
+        // Update
         *order = Order{ id, symbol, side, qty, price, created, confirmed };
+        //logger.info("updated order id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
+    }
+    else {
+        logger.info("update_order no action! id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
+    }
+}
+
+void Portfolio::remove_order(Uuid id)
+{
+    auto [symbol, order] = find_order(id);
+    if (symbol != nullptr && order != nullptr) {
+        orders[symbol->idx].remove(*order);
     }
 }
 
@@ -67,6 +93,7 @@ void Portfolio::update_wallet(double balance, double available)
 
 void Portfolio::new_trade(const Symbol& symbol, Side side, double price)
 {
+    /*
     const auto bid_price = side == Side::buy ? price - symbol.tick_size : price;
 
     if (bid_price != last_bid[symbol.idx]) {
@@ -79,6 +106,7 @@ void Portfolio::new_trade(const Symbol& symbol, Side side, double price)
     else {
         logger.info("Trade: %s Sell %.5f", symbol.name.data(), price);
     }
+    */
 }
 
 void Portfolio::debug_print(void)

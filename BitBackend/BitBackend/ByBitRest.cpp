@@ -32,6 +32,9 @@ void print_header(const nghttp2::asio_http2::client::request& req) {
 ByBitRest::ByBitRest(sptrOrderManager order_manager) :
     order_manager(order_manager), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
 {
+    using namespace std::placeholders;
+    order_manager->set_callbacks(std::bind(&ByBitRest::place_order, this, _1, _2, _3, _4), std::bind(&ByBitRest::cancel_order, this, _1, _2));
+
     heartbeat_reset();
 
     http2_thread = std::make_unique<std::thread>(std::bind(&ByBitRest::http2_runner, this));
@@ -53,7 +56,7 @@ bool ByBitRest::is_connected(void)
     return connected;
 }
 
-void ByBitRest::place_order(const Symbol& symbol, double qty, double price)
+void ByBitRest::place_order(const Symbol& symbol, Side side, double qty, double price)
 {
     const auto id = uuid_generator.generate();
     const auto timestamp_sign = std::to_string(authenticator.generate_expiration(-2s));
@@ -62,9 +65,13 @@ void ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     price_str.erase(price_str.find_last_not_of('0') + 1, std::string::npos);
     price_str.erase(price_str.find_last_not_of('.') + 1, std::string::npos);
 
-    auto qty_str = std::to_string(qty);
+    auto qty_str = std::to_string(std::abs(qty));
     qty_str.erase(qty_str.find_last_not_of('0') + 1, std::string::npos);
     qty_str.erase(qty_str.find_last_not_of('.') + 1, std::string::npos);
+
+    const auto reduce_only_str = qty > 0 ? std::string{ "false" } : std::string{ "true" };
+
+    const auto side_str = side == Side::buy ? std::string{ "Buy" } : std::string{ "Sell" };
 
     auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
@@ -73,8 +80,8 @@ void ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     sign_message += "&order_type=Limit";
     sign_message += "&price=" + price_str;
     sign_message += "&qty=" + qty_str;
-    sign_message += "&reduce_only=false";
-    sign_message += "&side=Buy";
+    sign_message += "&reduce_only=" + reduce_only_str;
+    sign_message += "&side=" + side_str;
     sign_message += "&symbol=" + std::string{ symbol.name };
     sign_message += "&time_in_force=PostOnly";
     sign_message += "&timestamp=" + timestamp_sign;
@@ -85,23 +92,23 @@ void ByBitRest::place_order(const Symbol& symbol, double qty, double price)
     data += ",\"close_on_trigger\":false";
     data += ",\"order_link_id\":\"" + id.to_string() + "\"";
     data += ",\"order_type\":\"Limit\"";
-    data += ",\"price\":" + price_str + "";
-    data += ",\"qty\":" + qty_str + "";
-    data += ",\"reduce_only\":false";
-    data += ",\"side\":\"Buy\"";
+    data += ",\"price\":" + price_str;
+    data += ",\"qty\":" + qty_str;
+    data += ",\"reduce_only\":" + reduce_only_str;
+    data += ",\"side\":\"" + side_str + "\"";
     data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
     data += ",\"time_in_force\":\"PostOnly\"";
     data += ",\"timestamp\":" + timestamp_sign;
     data += ",\"sign\":\"" + signature + "\"";
     data += "}";
 
-    logger.info("place_order: %s", data.c_str());
-    post_request(data, ByBit::Rest::Endpoint::create_order);
+    //logger.info("place_order: %s", data.c_str());
+    post_request(data, ByBit::Rest::Endpoint::create_order, id);
 
-    const auto side = Side::buy;
+    //const auto side = qty > 0 ? Side::buy : Side::sell;
     const auto timestamp = DateTime::now();
     const bool confirmed = false;
-    order_manager->portfolio->update_order(id.to_string(), symbol, side, qty, price, timestamp, confirmed);
+    order_manager->portfolio->update_order(id.to_string(), symbol, side, std::abs(qty), price, timestamp, confirmed);
 }
 
 void ByBitRest::cancel_all_orders(const Symbol& symbol)
@@ -122,7 +129,7 @@ void ByBitRest::cancel_all_orders(const Symbol& symbol)
     data += "}";
 
     //logger.info("cancel_all_orders: %s", data.c_str());
-    post_request(data, ByBit::Rest::Endpoint::cancel_all_orders);
+    post_request(data, ByBit::Rest::Endpoint::cancel_all_orders, Uuid{});
 }
 
 void ByBitRest::cancel_order(const Symbol& symbol, Uuid id_external)
@@ -145,7 +152,7 @@ void ByBitRest::cancel_order(const Symbol& symbol, Uuid id_external)
     data += "}";
 
     logger.info("cancel_order: %s", data.c_str());
-    post_request(data, ByBit::Rest::Endpoint::cancel_order);
+    post_request(data, ByBit::Rest::Endpoint::cancel_order, id_external);
 }
 
 void ByBitRest::get_position(const Symbol& symbol)
@@ -165,7 +172,7 @@ void ByBitRest::get_position(const Symbol& symbol)
     query += "&sign=" + signature;
 
     //logger.info("get_positions: %s", query.c_str());
-    get_request(query, ByBit::Rest::Endpoint::position_list);
+    get_request(query, ByBit::Rest::Endpoint::position_list, Uuid{});
 }
 
 void ByBitRest::http2_runner(void)
@@ -228,7 +235,7 @@ void ByBitRest::http2_runner(void)
     }
 }
 
-void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endpoint)
+void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endpoint, Uuid id)
 {
     //logger.info("post_request start");
 
@@ -256,9 +263,9 @@ void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endp
             });
         });
 
-        req->on_close([this, endpoint, buffer](uint32_t error_code) {
+        req->on_close([this, endpoint, buffer, id](uint32_t error_code) {
             if (error_code == 0) {
-                this->on_data(reinterpret_cast<const char*>(buffer->c_str()), buffer->size(), endpoint);
+                this->on_data(reinterpret_cast<const char*>(buffer->c_str()), buffer->size(), endpoint, id);
             }
             else {
                 logger.info("request done with error_code: %d", error_code);
@@ -273,7 +280,7 @@ void ByBitRest::post_request(const std::string& data, ByBit::Rest::Endpoint endp
     }
 }
 
-void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endpoint)
+void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endpoint, Uuid id)
 {
     //logger.info("get_request start");
 
@@ -301,9 +308,9 @@ void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endp
             });
         });
 
-        req->on_close([this, endpoint, buffer](uint32_t error_code) {
+        req->on_close([this, endpoint, buffer, id](uint32_t error_code) {
             if (error_code == 0) {
-                this->on_data(reinterpret_cast<const char*>(buffer->c_str()), buffer->size(), endpoint);
+                this->on_data(reinterpret_cast<const char*>(buffer->c_str()), buffer->size(), endpoint, id);
             }
             else {
                 logger.info("request done with error_code: %d", error_code);
@@ -317,7 +324,7 @@ void ByBitRest::get_request(const std::string& query, ByBit::Rest::Endpoint endp
     }
 }
 
-void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint endpoint)
+void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint endpoint, const Uuid& id)
 {
     if (endpoint == ByBit::Rest::Endpoint::heartbeat_ping) {
         return;
@@ -329,22 +336,30 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
 
     long ret_code = doc["ret_code"];
     if (ret_code != 0) {
-        logger.info("on_data, ret_code: %d %d", endpoint, ret_code);
-        return;
+        if (ret_code == 20001 && !id.is_null()) {
+            // order not exists or too late to cancel
+            logger.info("on_data, order does not exist %s", id.to_string().c_str());
+            order_manager->portfolio->remove_order(id);
+        }
+        else {
+            std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
+            logger.info("on_data, ret_code: %d %d %s %s", endpoint, ret_code, ret_msg.data(), std::string{ data, len }.c_str());
+            return;
+        }
     }
     std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
     if (ret_msg != "OK") {
-        logger.info("on_data, ret_msg: %d %s", endpoint, ret_msg.data());
+        logger.info("on_data, ret_msg: %d %s %s", endpoint, ret_msg.data(), std::string{ data, len }.c_str());
         return;
     }
     std::string_view ext_code = doc["ext_code"]; // .find_field("ext_code");
     if (ext_code != "") {
-        logger.info("on_data, ext_code: %d %s", endpoint, ext_code.data());
+        logger.info("on_data, ext_code: %d %s %s", endpoint, ext_code.data(), std::string{ data, len }.c_str());
         return;
     }
     std::string_view ext_info = doc["ext_info"]; // .find_field("ext_code");
     if (ext_code != "") {
-        logger.info("on_data, ext_info: %d %s", endpoint, ext_info.data());
+        logger.info("on_data, ext_info: %d %s %s", endpoint, ext_info.data(), std::string{ data, len }.c_str());
         return;
     }
 
@@ -370,6 +385,7 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
         const auto timestamp = DateTime::iso8601_us_to_time_point_us(std::string_view{ doc["result"]["updated_time"] });
         const bool confirmed = true;
         order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
+        logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
     }
     else {
         logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
@@ -381,7 +397,7 @@ void ByBitRest::heartbeat_runner(void)
     while (heartbeat_thread_running) {
         std::this_thread::sleep_for(1s);
         if (DateTime::now() > heartbeat_timeout) {
-            get_request("?symbol=BTCUSDT&limit=1", ByBit::Rest::Endpoint::heartbeat_ping);
+            get_request("?symbol=BTCUSDT&limit=1", ByBit::Rest::Endpoint::heartbeat_ping, Uuid{});
         }
     }
 }

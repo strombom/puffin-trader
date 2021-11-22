@@ -17,12 +17,12 @@
 #include <iomanip>
 #include <stdarg.h>
 #include <iostream>
-#include <simdjson.h>
+#include <simdjson.h> // vcpkg install simdjson
 #include <semaphore.h>
-#include <openssl/ssl.h>
+#include <openssl/ssl.h> // vcpkg install openssl
 #include <openssl/hmac.h>
-#include <boost/asio/strand.hpp>
-#include <boost/beast/websocket.hpp>
+#include <boost/asio/strand.hpp> // vcpkg install boost-asio
+#include <boost/beast/websocket.hpp> // vcpkg install boost-beast
 #include <boost/beast/websocket/ssl.hpp>
 #include <boost/beast/ssl/ssl_stream.hpp>
 #include <boost/beast/core/tcp_stream.hpp>
