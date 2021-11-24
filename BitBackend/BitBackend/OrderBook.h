@@ -16,10 +16,17 @@ public:
     void update(double price, Side side, double qty);
     void del(double price, Side side);
 
+    bool updated(void);
+
     double get_last_ask(void);
     double get_last_bid(void);
 
-private:
+    enum class ChangeSource
+    {
+        trade,
+        order_book
+    };
+
     struct Entry
     {
         double price;
@@ -30,8 +37,9 @@ private:
     std::array<Entry*, size> asks;
     std::array<Entry*, size> bids;
 
-    double old_last_ask;
-    double old_last_bid;
+private:
+    double latest_ask;
+    double latest_bid;
 };
 
 using sptrOrderBooks = std::shared_ptr<std::array<OrderBook, symbols.size()>>;

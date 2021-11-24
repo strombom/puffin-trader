@@ -13,13 +13,12 @@
 class Portfolio
 {
 public:
-    Portfolio(void) :
-        wallet_balance(0.0), wallet_available(0.0) {}
+    Portfolio(void);
 
     struct Order
     {
         Order(Uuid id, Symbol symbol, Side side, double qty, double price, time_point_us created, bool confirmed) :
-            id(id), symbol(symbol), side(side), qty(qty), price(price), created(created), confirmed(confirmed) {}
+            id(id), symbol(symbol), side(side), qty(qty), price(price), created(created), confirmed(confirmed), replacing(false) {}
 
         Uuid id;
         Symbol symbol;
@@ -28,6 +27,7 @@ public:
         double price;
         time_point_us created;
         bool confirmed;
+        bool replacing;
 
         Order& operator=(const Order& order) {
             if (this != &order) {
@@ -38,6 +38,7 @@ public:
                 price = order.price;
                 created = order.created;
                 confirmed = order.confirmed;
+                replacing = order.replacing;
             }
             return *this;
         }
@@ -58,6 +59,7 @@ public:
     };
 
     void update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed);
+    void replace_order(Uuid id);
     void remove_order(Uuid id);
     void update_position(const Symbol& symbol, Side side, double qty);
     void update_wallet(double balance, double available);
@@ -75,6 +77,8 @@ private:
 
     double wallet_balance;
     double wallet_available;
+
+    std::array<double, symbols.size()> last_bid;
 
     std::tuple<const Symbol*, Order*> find_order(Uuid id);
     Order* find_order(const Symbol& symbol, Uuid id);

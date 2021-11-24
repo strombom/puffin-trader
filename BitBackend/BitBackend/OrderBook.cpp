@@ -9,7 +9,8 @@ OrderBook::OrderBook(void)
         asks[idx] = new Entry();
         bids[idx] = new Entry();
     }
-    old_last_bid = 0.0;
+    latest_ask = 0.0;
+    latest_bid = 0.0;
 }
 
 void OrderBook::clear(void)
@@ -144,8 +145,8 @@ void OrderBook::del(double price, Side side)
 
 double OrderBook::get_last_ask(void)
 {
-    if (old_last_ask != asks[0]->price) {
-        old_last_ask = asks[0]->price;
+    if (latest_ask != asks[0]->price) {
+        latest_ask = asks[0]->price;
         //logger.info("Ask %.2f", old_last_ask);
     }
 
@@ -154,12 +155,29 @@ double OrderBook::get_last_ask(void)
 
 double OrderBook::get_last_bid(void)
 {
-    if (old_last_bid != bids[0]->price) {
-        old_last_bid = bids[0]->price;
+    if (latest_bid != bids[0]->price) {
+        latest_bid = bids[0]->price;
         //logger.info("Bid %.2f", old_last_bid);
     }
 
     return bids[0]->price;
+}
+
+bool OrderBook::updated(void)
+{
+    auto changed = false;
+
+    if (latest_ask != asks[0]->price) {
+        latest_ask = asks[0]->price;
+        changed = true;
+    }
+
+    if (latest_bid != bids[0]->price) {
+        latest_bid = bids[0]->price;
+        changed = true;
+    }
+
+    return changed;
 }
 
 sptrOrderBooks makeOrderBooks(void) {

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "BitLib/date/date.h"
-#include "BitLib/stduuid/uuid.h"
+#include "BitLib/stduuid/uuid.h" // vcpkg install libuuid
 #include "BitLib/json11/json11.hpp"
+
+// vcpkg install cppzmq
 
 #include <ios>
 #include <mutex>

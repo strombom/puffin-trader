@@ -135,6 +135,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
                 const auto qty = data["leaves_qty"].number_value();
                 const auto confirmed = true;
                 order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
+                order_manager->order_updated();
             }
             else {
                 logger.info("order update invalid %s", data["order_id"].string_value().c_str());
@@ -158,6 +159,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
                 const auto qty = data["leaves_qty"].number_value();
                 const auto confirmed = true;
                  order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
+                 order_manager->order_updated();
             }
             else {
                 logger.info("order execution invalid %s", data["order_id"].string_value().c_str());
@@ -229,7 +231,9 @@ void ByBitWebSocket::parse_message(const std::string& message)
                 );
             }
             order_manager->order_book_updated();
+            //order_manager->tick();
             //logger.info("Bid %.2f", (*order_books)[symbol.idx].get_last_bid());
+            //(*order_manager->order_books)[symbol.idx].updated();
         }
     }
     else {

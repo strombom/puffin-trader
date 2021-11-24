@@ -11,32 +11,36 @@ class OrderManager
 private:
     using place_order_t = std::function<void(const Symbol& symbol, Side side, double qty, double price)>;
     using cancel_order_t = std::function<void(const Symbol& symbol, Uuid id_external)>;
+    using replace_order_t = std::function<void(const Symbol& symbol, Uuid id_external, double qty, double price)>;
 
 public:
     OrderManager(sptrPortfolio portfolio, sptrOrderBooks order_books);
 
-    void set_callbacks(place_order_t place_order_f, cancel_order_t cancel_order_f);
+    void set_callbacks(place_order_t place_order_f, cancel_order_t cancel_order_f, replace_order_t replace_order_f);
 
     void order_book_updated(void);
+    void order_updated(void);
     void portfolio_updated(void);
 
     enum class StateSide {
-        starting,
         buying,
-        selling,
-        endless_loop
+        selling
     };
 
     enum class StateOrder {
         place_order,
         wait_until_fulfilled,
-        wait_until_canceled
+        wait_until_canceled,
+        wait_until_replaced,
+        error
     };
 
     sptrPortfolio portfolio;
     sptrOrderBooks order_books;
 
 private:
+    std::mutex order_mutex;
+
     bool order_manager_running;
     StateSide state_side;
     StateOrder state_order;
@@ -47,6 +51,7 @@ private:
 
     place_order_t place_order;
     cancel_order_t cancel_order;
+    replace_order_t replace_order;
 
     void order_manager_worker(void);
 };

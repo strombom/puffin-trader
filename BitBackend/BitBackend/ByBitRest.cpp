@@ -33,7 +33,11 @@ ByBitRest::ByBitRest(sptrOrderManager order_manager) :
     order_manager(order_manager), connected(false), http2_thread_running(true), heartbeat_thread_running(true)
 {
     using namespace std::placeholders;
-    order_manager->set_callbacks(std::bind(&ByBitRest::place_order, this, _1, _2, _3, _4), std::bind(&ByBitRest::cancel_order, this, _1, _2));
+    order_manager->set_callbacks(
+        std::bind(&ByBitRest::place_order, this, _1, _2, _3, _4), 
+        std::bind(&ByBitRest::cancel_order, this, _1, _2),
+        std::bind(&ByBitRest::replace_order, this, _1, _2, _3, _4)
+    );
 
     heartbeat_reset();
 
@@ -108,7 +112,56 @@ void ByBitRest::place_order(const Symbol& symbol, Side side, double qty, double 
     //const auto side = qty > 0 ? Side::buy : Side::sell;
     const auto timestamp = DateTime::now();
     const bool confirmed = false;
-    order_manager->portfolio->update_order(id.to_string(), symbol, side, std::abs(qty), price, timestamp, confirmed);
+    order_manager->portfolio->update_order(id, symbol, side, std::abs(qty), price, timestamp, confirmed);
+}
+
+void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty, double price)
+{
+    const auto timestamp_sign = std::to_string(authenticator.generate_expiration(-2s));
+
+    auto qty_str = std::to_string(qty);
+    qty_str.erase(qty_str.find_last_not_of('0') + 1, std::string::npos);
+    qty_str.erase(qty_str.find_last_not_of('.') + 1, std::string::npos);
+
+    auto price_str = std::to_string(price);
+    price_str.erase(price_str.find_last_not_of('0') + 1, std::string::npos);
+    price_str.erase(price_str.find_last_not_of('.') + 1, std::string::npos);
+
+    auto sign_message = std::string{};
+    sign_message += "api_key=" + std::string{ ByBit::api_key };
+    sign_message += "&order_link_id=" + id_external.to_string();
+    if (qty > 0) {
+        sign_message += "&p_r_qty=" + qty_str;
+    }
+    else {
+        sign_message += "&p_r_price=" + price_str;
+    }
+    sign_message += "&symbol=" + std::string{ symbol.name };
+    sign_message += "&timestamp=" + timestamp_sign;
+    auto signature = authenticator.authenticate(sign_message);
+
+    auto data = std::string{ "{" };
+    data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
+    data += ",\"order_link_id\":\"" + id_external.to_string() + "\"";
+    if (qty > 0) {
+        data += ",\"p_r_qty\":" + qty_str;
+    }
+    else {
+        data += ",\"p_r_price\":" + price_str;
+    }
+    data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
+    data += ",\"timestamp\":" + timestamp_sign;
+    data += ",\"sign\":\"" + signature + "\"";
+    data += "}";
+
+    //logger.info("replace_order: %s", data.c_str());
+    post_request(data, ByBit::Rest::Endpoint::replace_order, id_external);
+
+    //const auto side = qty > 0 ? Side::buy : Side::sell;
+    //const auto timestamp = DateTime::now();
+    //const bool confirmed = false;
+    order_manager->portfolio->replace_order(id_external);
+    //order_manager->portfolio->update_order(id.to_string(), symbol, side, std::abs(qty), price, timestamp, confirmed);
 }
 
 void ByBitRest::cancel_all_orders(const Symbol& symbol)
@@ -151,7 +204,7 @@ void ByBitRest::cancel_order(const Symbol& symbol, Uuid id_external)
     data += ",\"sign\":\"" + signature + "\"";
     data += "}";
 
-    logger.info("cancel_order: %s", data.c_str());
+    //logger.info("cancel_order: %s", data.c_str());
     post_request(data, ByBit::Rest::Endpoint::cancel_order, id_external);
 }
 
@@ -338,8 +391,15 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
     if (ret_code != 0) {
         if (ret_code == 20001 && !id.is_null()) {
             // order not exists or too late to cancel
-            logger.info("on_data, order does not exist %s", id.to_string().c_str());
             order_manager->portfolio->remove_order(id);
+            order_manager->order_updated();
+            logger.info("on_data, order does not exist %s", id.to_string().c_str());
+        }
+        if (ret_code == 130125 && !id.is_null()) {
+            // current position is zero, cannot fix reduce-only order qty
+            order_manager->portfolio->remove_order(id);
+            order_manager->order_updated();
+            logger.info("on_data, position is zero, cannot place reduce-only order %s", id.to_string().c_str());
         }
         else {
             std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
@@ -385,7 +445,11 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
         const auto timestamp = DateTime::iso8601_us_to_time_point_us(std::string_view{ doc["result"]["updated_time"] });
         const bool confirmed = true;
         order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
-        logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
+        order_manager->order_updated();
+        //logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
+    }
+    else if (endpoint == ByBit::Rest::Endpoint::replace_order) {
+        logger.info("on_data replace_order: %d %d %s", endpoint, len, str.c_str());
     }
     else {
         logger.info("on_data: %d %d %s", endpoint, len, str.c_str());

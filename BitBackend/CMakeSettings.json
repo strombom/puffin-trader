@@ -50,6 +50,25 @@
             "rsyncCommandArgs": "-t --delete",
             "remoteCopyBuildOutput": false,
             "remoteCopySourcesMethod": "rsync"
+        },
+        {
+            "name": "Kali-GCC-Release",
+            "generator": "Ninja",
+            "configurationType": "Release",
+            "cmakeExecutable": "cmake",
+            "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+            "cmakeCommandArgs": "",
+            "buildCommandArgs": "",
+            "ctestCommandArgs": "",
+            "inheritEnvironments": [ "linux_x64" ],
+            "remoteMachineName": "1426106250;192.168.1.104 (username=strombom, port=22, authentication=Password)",
+            "remoteCMakeListsRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/src",
+            "remoteBuildRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/build/${name}",
+            "remoteInstallRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/install/${name}",
+            "remoteCopySources": true,
+            "rsyncCommandArgs": "-t --delete",
+            "remoteCopyBuildOutput": false,
+            "remoteCopySourcesMethod": "rsync"
         }
     ]
 }

@@ -13,20 +13,19 @@ target_precompile_headers(BitBackend PUBLIC precompiled_headers.h)
 
 add_definitions(-DUUID_SYSTEM_GENERATOR)
 
-
-#set(CMAKE_TOOLCHAIN_FILE "/home/strombom/vcpkg/scripts/buildsystems/vcpkg.cmake")
+set(CMAKE_TOOLCHAIN_FILE "/home/strombom/vcpkg/scripts/buildsystems/vcpkg.cmake")
 #include("/home/strombom/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 find_package(Boost 1.74.0 EXACT REQUIRED)
 find_package(unofficial-libuuid CONFIG REQUIRED)
-find_package(cppzmq CONFIG REQUIRED)
+#find_package(cppzmq CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(simdjson CONFIG REQUIRED)
 
 target_include_directories(BitBackend PRIVATE "/usr/local/include")
 target_include_directories(BitBackend PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(BitBackend PRIVATE unofficial::UUID::uuid)
-target_link_libraries(BitBackend PRIVATE cppzmq cppzmq-static)
+#target_link_libraries(BitBackend PRIVATE cppzmq cppzmq-static)
 target_link_libraries(BitBackend PRIVATE OpenSSL::SSL)
 target_link_libraries(BitBackend PRIVATE ${Boost_LIBRARIES})
 target_link_libraries(BitBackend PRIVATE simdjson::simdjson)

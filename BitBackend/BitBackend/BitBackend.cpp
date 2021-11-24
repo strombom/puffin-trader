@@ -22,6 +22,7 @@ int main()
 	auto public_topics = std::vector<std::string>{};
 	for (const auto& symbol : symbols) {
 		public_topics.push_back(std::string{ "orderBookL2_25." } + symbol.name.data());
+		//public_topics.push_back(std::string{ "trade." } + symbol.name.data());
 	}
     auto bybit_public_websocket = std::make_shared<ByBitWebSocket>(ByBit::WebSocket::url_public, false, public_topics, order_manager);
 	bybit_public_websocket->start();

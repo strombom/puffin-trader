@@ -3,6 +3,14 @@
 #include "BitLib/Logger.h"
 
 
+Portfolio::Portfolio(void) :
+    wallet_balance(0.0), wallet_available(0.0)
+{
+    for (const auto& symbol : symbols) {
+        last_bid[symbol.idx] = 0.0;
+    }
+}
+
 Portfolio::Order* Portfolio::find_order(const Symbol& symbol, Uuid id)
 {
     for (auto& order : orders[symbol.idx]) {
@@ -25,6 +33,13 @@ std::tuple<const Symbol*, Portfolio::Order*> Portfolio::find_order(Uuid id)
     return std::make_tuple(nullptr, nullptr);
 }
 
+void Portfolio::replace_order(Uuid id)
+{
+    auto [symbol, order] = find_order(id);
+    if (symbol != nullptr && order != nullptr) {
+        order->replacing = true;
+    }
+}
 
 void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed)
 {
@@ -93,7 +108,6 @@ void Portfolio::update_wallet(double balance, double available)
 
 void Portfolio::new_trade(const Symbol& symbol, Side side, double price)
 {
-    /*
     const auto bid_price = side == Side::buy ? price - symbol.tick_size : price;
 
     if (bid_price != last_bid[symbol.idx]) {
@@ -106,7 +120,6 @@ void Portfolio::new_trade(const Symbol& symbol, Side side, double price)
     else {
         logger.info("Trade: %s Sell %.5f", symbol.name.data(), price);
     }
-    */
 }
 
 void Portfolio::debug_print(void)
