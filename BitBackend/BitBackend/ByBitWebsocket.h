@@ -37,7 +37,7 @@ private:
     std::string host_address;
     boost::beast::flat_buffer websocket_buffer;
 
-    //simdjson::ondemand::parser json_parser;
+    simdjson::ondemand::parser json_parser;
 
     void connect(void);
     void request_authentication(void);

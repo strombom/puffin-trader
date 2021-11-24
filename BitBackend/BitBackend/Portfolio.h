@@ -18,7 +18,7 @@ public:
     struct Order
     {
         Order(Uuid id, Symbol symbol, Side side, double qty, double price, time_point_us created, bool confirmed) :
-            id(id), symbol(symbol), side(side), qty(qty), price(price), created(created), confirmed(confirmed), replacing(false) {}
+            id(id), symbol(symbol), side(side), qty(qty), price(price), created(created), confirmed(confirmed), replacing_qty(0.0), replacing_price(0.0) {}
 
         Uuid id;
         Symbol symbol;
@@ -27,7 +27,8 @@ public:
         double price;
         time_point_us created;
         bool confirmed;
-        bool replacing;
+        double replacing_qty;
+        double replacing_price;
 
         Order& operator=(const Order& order) {
             if (this != &order) {
@@ -38,7 +39,8 @@ public:
                 price = order.price;
                 created = order.created;
                 confirmed = order.confirmed;
-                replacing = order.replacing;
+                replacing_qty = order.replacing_qty;
+                replacing_price = order.replacing_price;
             }
             return *this;
         }
@@ -59,7 +61,8 @@ public:
     };
 
     void update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed);
-    void replace_order(Uuid id);
+    void replace_order(Uuid id, double qty, double price);
+    void replaced_order(Uuid id);
     void remove_order(Uuid id);
     void update_position(const Symbol& symbol, Side side, double qty);
     void update_wallet(double balance, double available);

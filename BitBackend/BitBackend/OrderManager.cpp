@@ -164,7 +164,8 @@ void OrderManager::order_book_updated(void)
 
     if (state_order == StateOrder::wait_until_replaced) {
         if (portfolio->orders[symbol.idx].size() == 1) {
-            if (!portfolio->orders[symbol.idx].front().replacing) {
+            const auto& order = portfolio->orders[symbol.idx].front();
+            if (order.replacing_qty == 0.0 && order.replacing_price == 0.0) {
                 state_order = StateOrder::wait_until_fulfilled;
             }
         }
@@ -184,7 +185,7 @@ void OrderManager::order_book_updated(void)
                 const auto size = state_side == StateSide::buying ? order_size : -portfolio->positions_buy[symbol.idx].qty;
                 const auto side = state_side == StateSide::buying ? Side::buy : Side::sell;
                 place_order(symbol, side, size, price);
-                logger.info("Place order %.3f @ %.2f", size, price);
+                //logger.info("Place order %.3f @ %.2f", size, price);
                 state_order = StateOrder::wait_until_fulfilled;
             }
         }
@@ -208,9 +209,14 @@ void OrderManager::order_book_updated(void)
                         if (size == order.qty) {
                             size = 0.0;
                         }
-                        replace_order(symbol, id, size, price);
-                        logger.info("Replace order %.3f %.2f", size, price);
-                        state_order = StateOrder::wait_until_replaced;
+                        if (order.replacing_price == price) {
+                            logger.info("Not replacing order, same price %.3f %.2f", size, price);
+                        }
+                        else {
+                            replace_order(symbol, id, size, price);
+                            logger.info("Replace order %.3f %.2f", size, price);
+                        }
+                        //state_order = StateOrder::wait_until_replaced;
                     }
                 }
             }

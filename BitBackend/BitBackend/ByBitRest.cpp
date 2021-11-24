@@ -160,7 +160,7 @@ void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty
     //const auto side = qty > 0 ? Side::buy : Side::sell;
     //const auto timestamp = DateTime::now();
     //const bool confirmed = false;
-    order_manager->portfolio->replace_order(id_external);
+    order_manager->portfolio->replace_order(id_external, qty, price);
     //order_manager->portfolio->update_order(id.to_string(), symbol, side, std::abs(qty), price, timestamp, confirmed);
 }
 
@@ -404,6 +404,7 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
         else if (ret_code == 30076) {
             // Order not modified
             logger.info("on_data, order not modified %s", id.to_string().c_str());
+
         }
         else if (ret_code == 10004 && !id.is_null()) {
             // error sign
@@ -411,8 +412,8 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
         else {
             std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
             logger.info("on_data, ret_code: %d %d %s %s", endpoint, ret_code, ret_msg.data(), std::string{ data, len }.c_str());
-            return;
         }
+        return;
     }
     std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
     if (ret_msg != "OK") {
@@ -456,7 +457,8 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
         //logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
     }
     else if (endpoint == ByBit::Rest::Endpoint::replace_order) {
-        logger.info("on_data replace_order: %d %d %s", endpoint, len, str.c_str());
+        //logger.info("on_data replace_order: %d %d %s", endpoint, len, str.c_str());
+        order_manager->portfolio->replace_order(id, 0.0, 0.0);
     }
     else {
         logger.info("on_data: %d %d %s", endpoint, len, str.c_str());

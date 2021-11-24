@@ -33,11 +33,12 @@ std::tuple<const Symbol*, Portfolio::Order*> Portfolio::find_order(Uuid id)
     return std::make_tuple(nullptr, nullptr);
 }
 
-void Portfolio::replace_order(Uuid id)
+void Portfolio::replace_order(Uuid id, double qty, double price)
 {
     auto [symbol, order] = find_order(id);
     if (symbol != nullptr && order != nullptr) {
-        order->replacing = true;
+        order->replacing_qty = qty;
+        order->replacing_price = price;
     }
 }
 
