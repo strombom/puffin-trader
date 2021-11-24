@@ -201,7 +201,8 @@ void OrderManager::order_book_updated(void)
                 }
                 else {
                     const auto price = state_side == StateSide::buying ? ask - 0.5 : bid + 0.5;
-                    if (price != portfolio->orders[symbol.idx].front().price) {
+                    if ((state_side == StateSide::buying && price > portfolio->orders[symbol.idx].front().price) ||
+                        (state_side == StateSide::selling && price < portfolio->orders[symbol.idx].front().price)) {
                         const auto size = state_side == StateSide::buying ? order_size : -portfolio->positions_buy[symbol.idx].qty;
                         replace_order(symbol, id, size, price);
                         logger.info("Replace order %.3f %.2f", size, price);
