@@ -200,15 +200,26 @@ void OrderManager::order_book_updated(void)
                     state_order = StateOrder::wait_until_canceled;
                 }
                 else {
+                    const auto& order = portfolio->orders[symbol.idx].front();
                     const auto price = state_side == StateSide::buying ? ask - 0.5 : bid + 0.5;
-                    if ((state_side == StateSide::buying && price > portfolio->orders[symbol.idx].front().price) ||
-                        (state_side == StateSide::selling && price < portfolio->orders[symbol.idx].front().price)) {
-                        const auto size = state_side == StateSide::buying ? order_size : -portfolio->positions_buy[symbol.idx].qty;
+                    if ((state_side == StateSide::buying && price > order.price) ||
+                        (state_side == StateSide::selling && price < order.price)) {
+                        auto size = state_side == StateSide::buying ? order_size : -portfolio->positions_buy[symbol.idx].qty;
+                        if (size == order.qty) {
+                            size = 0.0;
+                        }
                         replace_order(symbol, id, size, price);
                         logger.info("Replace order %.3f %.2f", size, price);
                         state_order = StateOrder::wait_until_replaced;
                     }
                 }
+            }
+            else if (portfolio->orders[symbol.idx].size() > 1) {
+                state_order = StateOrder::error;
+                logger.error("wait until fulfilled, too many orders");
+            }
+            else {
+                state_order = StateOrder::place_order;
             }
         }
     }

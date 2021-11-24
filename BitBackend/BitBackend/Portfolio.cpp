@@ -60,7 +60,7 @@ void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double qt
     else if (order != nullptr) {
         // Update
         *order = Order{ id, symbol, side, qty, price, created, confirmed };
-        //logger.info("updated order id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
+        logger.info("updated order id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
     }
     else {
         logger.info("update_order no action! id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());

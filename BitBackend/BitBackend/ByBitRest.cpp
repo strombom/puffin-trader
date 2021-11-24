@@ -405,6 +405,9 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
             // Order not modified
             logger.info("on_data, order not modified %s", id.to_string().c_str());
         }
+        else if (ret_code == 10004 && !id.is_null()) {
+            // error sign
+        }
         else {
             std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
             logger.info("on_data, ret_code: %d %d %s %s", endpoint, ret_code, ret_msg.data(), std::string{ data, len }.c_str());
