@@ -62,7 +62,6 @@ public:
 
     void update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed);
     void replace_order(Uuid id, double qty, double price);
-    void replaced_order(Uuid id);
     void remove_order(Uuid id);
     void update_position(const Symbol& symbol, Side side, double qty);
     void update_wallet(double balance, double available);

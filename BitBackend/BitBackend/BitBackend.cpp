@@ -19,7 +19,6 @@ int main()
 	auto order_books = makeOrderBooks(); // std::make_shared<OrderBooks>();
 	auto order_manager = std::make_shared<OrderManager>(portfolio, order_books);
 
-	/*
 	auto public_topics = std::vector<std::string>{};
 	for (const auto& symbol : symbols) {
 		public_topics.push_back(std::string{ "orderBookL2_25." } + symbol.name.data());
@@ -27,7 +26,6 @@ int main()
 	}
     auto bybit_public_websocket = std::make_shared<ByBitWebSocket>(ByBit::WebSocket::url_public, false, public_topics, order_manager);
 	bybit_public_websocket->start();
-	*/
 
 	auto private_topics = std::vector<std::string>{ "execution", "order", "position" }; // , "wallet"
 	auto bybit_private_websocket = std::make_shared<ByBitWebSocket>(ByBit::WebSocket::url_private, true, private_topics, order_manager);

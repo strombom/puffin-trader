@@ -186,6 +186,42 @@ void ByBitWebSocket::parse_message(std::string *message)
             order_manager->portfolio->update_wallet(balance["wallet_balance"], balance["available_balance"]);
         }
     }
+    else if (topic.starts_with("orderBookL2_25.")) {
+        const auto& symbol = string_to_symbol(topic.substr(15));
+        auto& order = (*order_manager->order_books)[symbol.idx];
+        const std::string_view type = doc["type"];
+        if (type == "snapshot") {
+            for (auto entry : doc["data"]["order_book"]) {
+                const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
+                const auto side = string_to_side(entry["side"]);
+                const auto qty = double{ entry["size"] };
+                order.insert(price, side, qty);
+            }
+        }
+        else {
+            for (auto entry : doc["data"]["delete"]) {
+                const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
+                const auto side = string_to_side(entry["side"]);
+                order.del(price, side);
+            }
+            for (auto entry : doc["data"]["update"]) {
+                const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
+                const auto side = string_to_side(entry["side"]);
+                const auto qty = double{ entry["size"] };
+                order.update(price, side, qty);
+            }
+            for (auto entry : doc["data"]["insert"]) {
+                const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
+                const auto side = string_to_side(entry["side"]);
+                const auto qty = double{ entry["size"] };
+                order.insert(price, side, qty);
+            }
+            order_manager->order_book_updated();
+        }
+    }
+    else if (topic.starts_with("trade.")) {
+        auto a = 1;
+    }
     else {
         auto a = 1;
     }
