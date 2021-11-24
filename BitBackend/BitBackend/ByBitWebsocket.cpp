@@ -173,7 +173,13 @@ void ByBitWebSocket::parse_message(std::string *message)
         }
     }
     else if (topic == "position") {
-
+        for (auto order : doc["data"]) {
+            const auto symbol = string_to_symbol(order["symbol"]);
+            const auto qty = double{ order["size"] };
+            const auto side = string_to_side(order["side"]);
+            order_manager->portfolio->update_position(symbol, side, qty);
+        }
+        order_manager->portfolio_updated();
     }
     else if (topic == "wallet") {
         for (auto balance : doc["data"]) {
