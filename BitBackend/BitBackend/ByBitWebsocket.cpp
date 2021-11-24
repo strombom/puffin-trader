@@ -220,7 +220,12 @@ void ByBitWebSocket::parse_message(std::string *message)
         }
     }
     else if (topic.starts_with("trade.")) {
-        auto a = 1;
+        for (auto trade : doc["data"]) {
+            const auto& symbol = string_to_symbol(trade["symbol"]);
+            const auto price = std::stod(std::string{ std::string_view{ trade["price"] } });
+            const auto side = string_to_side(trade["side"]);
+            order_manager->portfolio->new_trade(symbol, side, price);
+        }
     }
     else {
         auto a = 1;
