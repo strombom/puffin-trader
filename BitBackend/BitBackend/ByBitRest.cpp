@@ -133,7 +133,7 @@ void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty
     if (qty > 0) {
         sign_message += "&p_r_qty=" + qty_str;
     }
-    else {
+    if (price > 0) {
         sign_message += "&p_r_price=" + price_str;
     }
     sign_message += "&symbol=" + std::string{ symbol.name };
@@ -146,7 +146,7 @@ void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty
     if (qty > 0) {
         data += ",\"p_r_qty\":" + qty_str;
     }
-    else {
+    if (price > 0) {
         data += ",\"p_r_price\":" + price_str;
     }
     data += ",\"symbol\":\"" + std::string{ symbol.name } + "\"";
@@ -395,11 +395,15 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
             order_manager->order_updated();
             logger.info("on_data, order does not exist %s", id.to_string().c_str());
         }
-        if (ret_code == 130125 && !id.is_null()) {
+        else if (ret_code == 130125 && !id.is_null()) {
             // current position is zero, cannot fix reduce-only order qty
             order_manager->portfolio->remove_order(id);
             order_manager->order_updated();
             logger.info("on_data, position is zero, cannot place reduce-only order %s", id.to_string().c_str());
+        }
+        else if (ret_code == 30076) {
+            // Order not modified
+            logger.info("on_data, order not modified %s", id.to_string().c_str());
         }
         else {
             std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
