@@ -152,8 +152,31 @@ void ByBitWebSocket::parse_message(std::string *message)
             }
         }
     }
+    else if (topic == "execution") {
+        for (auto order : doc["data"]) {
+            const std::string_view id_str = order["order_link_id"];
+            if (id_str.size() == 36) {
+                const auto id = Uuid{ id_str };
+                const auto symbol = string_to_symbol(order["symbol"]);
+                const auto side = string_to_side(order["side"]);
+                const auto price = double{ order["price"] };
+                const auto qty = double{ order["leaves_qty"] };
+                std::string timestamp_str = std::string_view{ order["trade_time"] }.data();
+                if (timestamp_str.size() > 26) {
+                    timestamp_str[26] = 'Z';
+                }
+                const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_str);
+                const auto confirmed = true;
+                order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
+                order_manager->order_updated();
+            }
+        }
+    }
     else if (topic == "position") {
-        // "{\"topic\":\"position\",\"action\":\"update\",\"data\":[{\"user_id\":\"2363961\",\"symbol\":\"BTCUSDT\",\"size\":0,\"side\":\"Buy\",\"position_value\":0,\"entry_price\":0,\"liq_price\":0,\"bust_price\":0,\"leverage\":100,\"order_margin"...
+
+    }
+    else if (topic == "wallet") {
+
     }
     else {
         auto a = 1;
