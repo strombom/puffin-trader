@@ -42,7 +42,7 @@ private:
     void connect(void);
     void request_authentication(void);
     void send(const std::string& message);
-    void parse_message(const std::string& message);
+    void parse_message(std::string *message);
     void subscribe(void);
 
     void fail(boost::beast::error_code ec, const std::string& reason);

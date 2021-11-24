@@ -97,13 +97,45 @@ void ByBitWebSocket::subscribe(void)
 
 }
 
-void ByBitWebSocket::parse_message(const std::string& message)
+void ByBitWebSocket::parse_message(std::string *message)
 {
-    // TODO: replace json11 with simdjson
+    message->reserve(message->size() + simdjson::SIMDJSON_PADDING);
+    auto doc = json_parser.iterate(*message);
 
-    auto error_message = std::string{ "{\"command\":\"error\"}" };
-    const auto command = json11::Json::parse(message.c_str(), error_message);
+    if (message->compare(0, 6, "{\"succ") == 0) {
+        const bool success = doc["success"];
+        const std::string_view ret_msg = doc["ret_msg"];
+        const std::string_view op = doc["request"]["op"];
 
+        if (authenticate && op == "auth") {
+            if (success) {
+                logger.info("Authenticated");
+                subscribe();
+            }
+            else {
+                request_authentication();
+            }
+        }
+        else if (op == "subscribe") {
+            // Todo: Reset resubscribe timeout?
+        }
+        else if (op == "ping") {
+            if (ret_msg == "pong") {
+
+            }
+        }
+        else {
+            auto b = 1;
+        }
+        return;
+    }
+
+    auto a = 1;
+
+
+    //auto error_message = std::string{ "{\"command\":\"error\"}" };
+    //const auto command = json11::Json::parse(message.c_str(), error_message);
+    /*
     if (authenticate && command["request"]["op"] == "auth") {
         if (command["success"].bool_value()) {
             logger.info("Authenticated");
@@ -239,6 +271,7 @@ void ByBitWebSocket::parse_message(const std::string& message)
     else {
         logger.info("Other: %s", message.c_str());
     }
+    */
 
     /*
     else if (command["info"].string_value() == "Welcome to the BitMEX Realtime API.") {
@@ -493,13 +526,13 @@ void ByBitWebSocket::on_read(boost::beast::error_code ec, std::size_t bytes_tran
     // Get message
     auto ss = std::stringstream{};
     ss << boost::beast::make_printable(websocket_buffer.data());
-    const auto message = ss.str();
+    auto message = ss.str();
 
     // Prepare next message reception
     websocket_buffer.clear();
     websocket->async_read(websocket_buffer, boost::beast::bind_front_handler(&ByBitWebSocket::on_read, shared_from_this()));
 
-    parse_message(message);
+    parse_message(&message);
 }
 
 void ByBitWebSocket::on_close(boost::beast::error_code ec)
