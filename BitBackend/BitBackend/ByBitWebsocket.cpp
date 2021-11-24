@@ -176,7 +176,9 @@ void ByBitWebSocket::parse_message(std::string *message)
 
     }
     else if (topic == "wallet") {
-
+        for (auto balance : doc["data"]) {
+            order_manager->portfolio->update_wallet(balance["wallet_balance"], balance["available_balance"]);
+        }
     }
     else {
         auto a = 1;
