@@ -15,10 +15,17 @@ class Portfolio
 public:
     Portfolio(void);
 
+    enum class OrderState
+    {
+        unconfirmed,
+        confirmed,
+        replacing
+    };
+
     struct Order
     {
-        Order(Uuid id, Symbol symbol, Side side, double qty, double price, time_point_us created, bool confirmed) :
-            id(id), symbol(symbol), side(side), qty(qty), price(price), created(created), confirmed(confirmed), replacing_qty(0.0), replacing_price(0.0) {}
+        Order(Uuid id, Symbol symbol, Side side, double qty, double price, time_point_us created, OrderState state) :
+            id(id), symbol(symbol), side(side), qty(qty), price(price), created(created), state(state) {}
 
         Uuid id;
         Symbol symbol;
@@ -26,9 +33,10 @@ public:
         double qty;
         double price;
         time_point_us created;
-        bool confirmed;
-        double replacing_qty;
-        double replacing_price;
+        //bool confirmed;
+        //double replacing_qty;
+        //double replacing_price;
+        OrderState state;
 
         Order& operator=(const Order& order) {
             if (this != &order) {
@@ -38,9 +46,11 @@ public:
                 qty = order.qty;
                 price = order.price;
                 created = order.created;
-                confirmed = order.confirmed;
-                replacing_qty = order.replacing_qty;
-                replacing_price = order.replacing_price;
+                state = order.state;
+
+                //confirmed = order.confirmed;
+                //replacing_qty = order.replacing_qty;
+                //replacing_price = order.replacing_price;
             }
             return *this;
         }
@@ -60,9 +70,11 @@ public:
         double qty;
     };
 
-    void update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed);
+    void create_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created);
+    void update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us updated);
     void replace_order(Uuid id, double qty, double price);
     void remove_order(Uuid id);
+
     void update_position(const Symbol& symbol, Side side, double qty);
     void update_wallet(double balance, double available);
     void new_trade(const Symbol& symbol, Side side, double price);

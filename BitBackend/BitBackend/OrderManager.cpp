@@ -153,7 +153,7 @@ void OrderManager::order_book_updated(void)
 {
     const std::lock_guard<std::mutex> lock(order_mutex);
 
-    static const auto order_size = 0.001;
+    static const auto order_size = 0.01;
     static const auto symbol = string_to_symbol("BTCUSDT");
 
     const auto updated = (*order_books)[symbol.idx].updated();
@@ -165,18 +165,22 @@ void OrderManager::order_book_updated(void)
     if (state_order == StateOrder::wait_until_replaced) {
         if (portfolio->orders[symbol.idx].size() == 1) {
             const auto& order = portfolio->orders[symbol.idx].front();
-            if (order.replacing_qty == 0.0 && order.replacing_price == 0.0) {
+            if (order.state == Portfolio::OrderState::confirmed) {
                 state_order = StateOrder::wait_until_fulfilled;
             }
         }
         else {
-            logger.error("wait until replaced error");
-            state_order = StateOrder::error;
+            //logger.error("wait until replaced error");
+            logger.error("order probably canceled");
+            state_order = StateOrder::place_order;
         }
     }
 
     if (updated) {
         if (state_order == StateOrder::place_order) {
+            if (state_side == StateSide::selling && portfolio->positions_buy[symbol.idx].qty == 0) {
+                state_side = StateSide::buying;
+            }
             const auto ask = (*order_books)[symbol.idx].get_last_ask();
             const auto bid = (*order_books)[symbol.idx].get_last_bid();
 
@@ -194,29 +198,24 @@ void OrderManager::order_book_updated(void)
                 const auto ask = (*order_books)[symbol.idx].get_last_ask();
                 const auto bid = (*order_books)[symbol.idx].get_last_bid();
                 const auto id = portfolio->orders[symbol.idx].front().id;
+                const auto& order = portfolio->orders[symbol.idx].front();
 
                 if (ask - bid > 20.0) {
                     cancel_order(symbol, id);
                     logger.info("Cancel order %s", id.to_string().c_str());
                     state_order = StateOrder::wait_until_canceled;
                 }
-                else {
-                    const auto& order = portfolio->orders[symbol.idx].front();
+                else if (order.state == Portfolio::OrderState::confirmed) {
                     const auto price = state_side == StateSide::buying ? ask - 0.5 : bid + 0.5;
                     if ((state_side == StateSide::buying && price > order.price) ||
                         (state_side == StateSide::selling && price < order.price)) {
                         auto size = state_side == StateSide::buying ? order_size : -portfolio->positions_buy[symbol.idx].qty;
-                        if (size == order.qty) {
+                        if (std::abs(size) == order.qty) {
                             size = 0.0;
                         }
-                        if (order.replacing_price == price) {
-                            logger.info("Not replacing order, same price %.3f %.2f", size, price);
-                        }
-                        else {
-                            replace_order(symbol, id, size, price);
-                            logger.info("Replace order %.3f %.2f", size, price);
-                        }
-                        //state_order = StateOrder::wait_until_replaced;
+                        replace_order(symbol, id, size, price);
+                        logger.info("Replace order %.2f %.3f", price, size);
+                        state_order = StateOrder::wait_until_replaced;
                     }
                 }
             }
@@ -225,7 +224,8 @@ void OrderManager::order_book_updated(void)
                 logger.error("wait until fulfilled, too many orders");
             }
             else {
-                state_order = StateOrder::place_order;
+                //state_order = StateOrder::place_order;
+                //logger.error("order book updated, wait until fulfilled but no order found, switch to place order");
             }
         }
     }
@@ -258,9 +258,10 @@ void OrderManager::order_updated(void)
     static const auto symbol = string_to_symbol("BTCUSDT");
     if (state_order == StateOrder::wait_until_fulfilled) {
         if (portfolio->orders[symbol.idx].size() == 0) {
-            //state_order = StateOrder::place_order;
+            state_order = StateOrder::place_order;
+            state_side = state_side == StateSide::buying ? StateSide::selling : StateSide::buying;
         }
-        else if (portfolio->orders[symbol.idx].front().confirmed) {
+        else if (portfolio->orders[symbol.idx].front().state == Portfolio::OrderState::confirmed) {
 
         }
         else {
@@ -274,9 +275,19 @@ void OrderManager::order_updated(void)
     }
 }
 
-void OrderManager::portfolio_updated(void)
+void OrderManager::position_updated(void)
 {
     const std::lock_guard<std::mutex> lock(order_mutex);
+
+    static const auto symbol = string_to_symbol("BTCUSDT");
+    if (state_order == StateOrder::place_order) {
+        if (state_side == StateSide::buying && portfolio->positions_buy[symbol.idx].qty > 0) {
+            state_side = StateSide::selling;
+        }
+        else if (state_side == StateSide::selling && portfolio->positions_buy[symbol.idx].qty == 0) {
+            state_side = StateSide::buying;
+        }
+    }
 
     portfolio->debug_print();
 }

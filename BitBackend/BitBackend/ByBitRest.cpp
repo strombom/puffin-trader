@@ -111,15 +111,14 @@ void ByBitRest::place_order(const Symbol& symbol, Side side, double qty, double 
 
     //const auto side = qty > 0 ? Side::buy : Side::sell;
     const auto timestamp = DateTime::now();
-    const bool confirmed = false;
-    order_manager->portfolio->update_order(id, symbol, side, std::abs(qty), price, timestamp, confirmed);
+    order_manager->portfolio->create_order(id, symbol, side, std::abs(qty), price, timestamp);
 }
 
 void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty, double price)
 {
     const auto timestamp_sign = std::to_string(authenticator.generate_expiration(-2s));
 
-    auto qty_str = std::to_string(qty);
+    auto qty_str = std::to_string(std::abs(qty));
     qty_str.erase(qty_str.find_last_not_of('0') + 1, std::string::npos);
     qty_str.erase(qty_str.find_last_not_of('.') + 1, std::string::npos);
 
@@ -130,7 +129,7 @@ void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty
     auto sign_message = std::string{};
     sign_message += "api_key=" + std::string{ ByBit::api_key };
     sign_message += "&order_link_id=" + id_external.to_string();
-    if (qty > 0) {
+    if (qty != 0) {
         sign_message += "&p_r_qty=" + qty_str;
     }
     if (price > 0) {
@@ -143,7 +142,7 @@ void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty
     auto data = std::string{ "{" };
     data += "\"api_key\":\"" + std::string{ ByBit::api_key } + "\"";
     data += ",\"order_link_id\":\"" + id_external.to_string() + "\"";
-    if (qty > 0) {
+    if (qty != 0) {
         data += ",\"p_r_qty\":" + qty_str;
     }
     if (price > 0) {
@@ -156,11 +155,11 @@ void ByBitRest::replace_order(const Symbol& symbol, Uuid id_external, double qty
 
     //logger.info("replace_order: %s", data.c_str());
     post_request(data, ByBit::Rest::Endpoint::replace_order, id_external);
+    order_manager->portfolio->replace_order(id_external, qty, price);
 
     //const auto side = qty > 0 ? Side::buy : Side::sell;
     //const auto timestamp = DateTime::now();
     //const bool confirmed = false;
-    order_manager->portfolio->replace_order(id_external, qty, price);
     //order_manager->portfolio->update_order(id.to_string(), symbol, side, std::abs(qty), price, timestamp, confirmed);
 }
 
@@ -393,17 +392,17 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
             // order not exists or too late to cancel
             order_manager->portfolio->remove_order(id);
             order_manager->order_updated();
-            logger.info("on_data, order does not exist %s", id.to_string().c_str());
+            logger.info("REST on_data, order does not exist %s", id.to_string().c_str());
         }
         else if (ret_code == 130125 && !id.is_null()) {
             // current position is zero, cannot fix reduce-only order qty
             order_manager->portfolio->remove_order(id);
             order_manager->order_updated();
-            logger.info("on_data, position is zero, cannot place reduce-only order %s", id.to_string().c_str());
+            logger.info("REST on_data, position is zero, cannot place reduce-only order %s", id.to_string().c_str());
         }
         else if (ret_code == 30076) {
             // Order not modified
-            logger.info("on_data, order not modified %s", id.to_string().c_str());
+            logger.info("REST on_data, order not modified %s", id.to_string().c_str());
 
         }
         else if (ret_code == 10004 && !id.is_null()) {
@@ -411,23 +410,23 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
         }
         else {
             std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
-            logger.info("on_data, ret_code: %d %d %s %s", endpoint, ret_code, ret_msg.data(), std::string{ data, len }.c_str());
+            logger.info("REST on_data, ret_code: %d %d %s %s", endpoint, ret_code, ret_msg.data(), std::string{ data, len }.c_str());
         }
         return;
     }
     std::string_view ret_msg = doc["ret_msg"]; // .find_field("ret_msg");
     if (ret_msg != "OK") {
-        logger.info("on_data, ret_msg: %d %s %s", endpoint, ret_msg.data(), std::string{ data, len }.c_str());
+        logger.info("REST on_data, ret_msg: %d %s %s", endpoint, ret_msg.data(), std::string{ data, len }.c_str());
         return;
     }
     std::string_view ext_code = doc["ext_code"]; // .find_field("ext_code");
     if (ext_code != "") {
-        logger.info("on_data, ext_code: %d %s %s", endpoint, ext_code.data(), std::string{ data, len }.c_str());
+        logger.info("REST on_data, ext_code: %d %s %s", endpoint, ext_code.data(), std::string{ data, len }.c_str());
         return;
     }
     std::string_view ext_info = doc["ext_info"]; // .find_field("ext_code");
     if (ext_code != "") {
-        logger.info("on_data, ext_info: %d %s %s", endpoint, ext_info.data(), std::string{ data, len }.c_str());
+        logger.info("REST on_data, ext_info: %d %s %s", endpoint, ext_info.data(), std::string{ data, len }.c_str());
         return;
     }
 
@@ -439,29 +438,37 @@ void ByBitRest::on_data(const char* data, std::size_t len, ByBit::Rest::Endpoint
 
             order_manager->portfolio->update_position(symbol, side, qty);
         }
-        order_manager->portfolio_updated();
+        order_manager->position_updated();
     }
     else if (endpoint == ByBit::Rest::Endpoint::cancel_all_orders) {
-        logger.info("on_data, cancel_all_orders OK");
+        logger.info("REST on_data, cancel_all_orders OK");
     }
     else if (endpoint == ByBit::Rest::Endpoint::create_order) {
-        const auto symbol = string_to_symbol(doc["result"]["symbol"]);
-        const auto side = string_to_side(doc["result"]["side"]);
-        const double price = doc["result"]["price"];
-        const double qty = doc["result"]["qty"];
-        const auto id = Uuid{ std::string_view{doc["result"]["order_link_id"]} };
-        const auto timestamp = DateTime::iso8601_us_to_time_point_us(std::string_view{ doc["result"]["updated_time"] });
-        const bool confirmed = true;
-        order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
+        auto result = doc["result"];
+        const auto symbol = string_to_symbol(result["symbol"]);
+        const auto side = string_to_side(result["side"]);
+        const double price = result["price"];
+        const double qty = result["qty"];
+        const auto order_status = std::string_view{ result["order_status"] };
+        if (order_status == "Created" || order_status == "New" || order_status == "PartiallyFilled" || order_status == "PendingCancel") {
+            const auto id = Uuid{ std::string_view{result["order_link_id"]} };
+            const auto timestamp = DateTime::iso8601_us_to_time_point_us(std::string_view{ result["updated_time"] });
+            order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp);
+            //logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
+        }
+        else if (order_status == "Rejected" || order_status == "Filled" || order_status == "Cancelled") {
+            order_manager->portfolio->remove_order(id);
+        }
         order_manager->order_updated();
-        //logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
+        logger.info("REST on_data create_order: %s %d %s", order_status.data(), len, str.c_str());
+
     }
     else if (endpoint == ByBit::Rest::Endpoint::replace_order) {
         //logger.info("on_data replace_order: %d %d %s", endpoint, len, str.c_str());
         order_manager->portfolio->replace_order(id, 0.0, 0.0);
     }
     else {
-        logger.info("on_data: %d %d %s", endpoint, len, str.c_str());
+        logger.info("REST on_data: %d %d %s", endpoint, len, str.c_str());
     }
 }
 

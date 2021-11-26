@@ -35,41 +35,52 @@ std::tuple<const Symbol*, Portfolio::Order*> Portfolio::find_order(Uuid id)
 
 void Portfolio::replace_order(Uuid id, double qty, double price)
 {
+    const std::lock_guard<std::mutex> lock(orders_mutex);
+
     auto [symbol, order] = find_order(id);
     if (symbol != nullptr && order != nullptr) {
-        order->replacing_qty = qty;
-        order->replacing_price = price;
+        if (order->state == OrderState::confirmed) {
+            order->state = OrderState::replacing;
+        }
+        //order->replacing_qty = qty;
+        //order->replacing_price = price;
     }
 }
 
-void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created, bool confirmed)
+void Portfolio::create_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us created)
+{
+    const std::lock_guard<std::mutex> lock(orders_mutex);
+
+    orders[symbol.idx].emplace_front(id, symbol, side, qty, price, created, OrderState::unconfirmed);
+    logger.info("created order id(%s) %s, %.5f, %.3f, %s, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, side_to_string(side).c_str(), orders[symbol.idx].size());
+}
+
+void Portfolio::update_order(Uuid id, const Symbol& symbol, Side side, double qty, double price, time_point_us updated)
 {
     const std::lock_guard<std::mutex> lock(orders_mutex);
 
     auto order = find_order(symbol, id);
-
-    if (order == nullptr && qty > 0) {
-        // Create
-        orders[symbol.idx].emplace_front(id, symbol, side, qty, price, created, confirmed);
-        logger.info("created order id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
-    }
-    else if (order != nullptr && qty == 0) {
-        // Remove
-        orders[symbol.idx].remove(*order);
-        logger.info("removed order id(%s) %s, count %d", id.to_string().c_str(), symbol.name.data(), orders[symbol.idx].size());
-    }
-    else if (order != nullptr) {
-        // Update
-        *order = Order{ id, symbol, side, qty, price, created, confirmed };
-        logger.info("updated order id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
+    if (order != nullptr) {
+        if (qty != 0) {
+            // Update
+            *order = Order{ id, symbol, side, qty, price, updated, OrderState::confirmed };
+            logger.info("updated order id(%s) %s, %.5f, %.3f, %s, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, side_to_string(side).c_str(), orders[symbol.idx].size());
+        }
+        else {
+            // Remove
+            orders[symbol.idx].remove(*order);
+            logger.info("removed order id(%s) %s, count %d", id.to_string().c_str(), symbol.name.data(), orders[symbol.idx].size());
+        }
     }
     else {
-        logger.info("update_order no action! id(%s) %s, %.5f, %.3f, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, orders[symbol.idx].size());
+        logger.info("update_order no action! id(%s) %s, %.5f, %.3f, %s, count %d", id.to_string().c_str(), symbol.name.data(), price, qty, side_to_string(side).c_str(), orders[symbol.idx].size());
     }
 }
 
 void Portfolio::remove_order(Uuid id)
 {
+    const std::lock_guard<std::mutex> lock(orders_mutex);
+
     auto [symbol, order] = find_order(id);
     if (symbol != nullptr && order != nullptr) {
         orders[symbol->idx].remove(*order);
@@ -79,6 +90,7 @@ void Portfolio::remove_order(Uuid id)
 void Portfolio::update_position(const Symbol& symbol, Side side, double qty)
 {
     const std::lock_guard<std::mutex> lock(positions_mutex);
+
     if (side == Side::buy) {
         positions_buy[symbol.idx].qty = qty;
     }

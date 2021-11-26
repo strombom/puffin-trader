@@ -20,7 +20,7 @@ public:
 
     void order_book_updated(void);
     void order_updated(void);
-    void portfolio_updated(void);
+    void position_updated(void);
 
     enum class StateSide {
         buying,

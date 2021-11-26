@@ -140,15 +140,25 @@ void ByBitWebSocket::parse_message(std::string *message)
                 const auto symbol = string_to_symbol(order["symbol"]);
                 const auto side = string_to_side(order["side"]);
                 const auto price = double{ order["price"] };
-                const auto qty = double{ order["leaves_qty"] };
+                const auto qty = double{ order["qty"] };
+                const auto leaves_qty = double{ order["leaves_qty"] };
+                const auto order_status = std::string_view{ order["order_status"] };
                 std::string timestamp_str = std::string_view{ order["create_time"] }.data();
                 if (timestamp_str.size() > 26) {
                     timestamp_str[26] = 'Z';
                 }
                 const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_str);
-                const auto confirmed = false;
-                order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
+                if (order_status == "PartiallyFilled" || order_status == "PendingCancel") {
+                    order_manager->portfolio->positions_buy[symbol.idx].qty += side == Side::buy ? qty : -qty;
+                }
+                if (order_status == "Created" || order_status == "New" || order_status == "PartiallyFilled" || order_status == "PendingCancel") {
+                    order_manager->portfolio->update_order(id, symbol, side, leaves_qty, price, timestamp);
+                }
+                else if (order_status == "Rejected" || order_status == "Filled" || order_status == "Cancelled") {
+                    order_manager->portfolio->remove_order(id);
+                }
                 order_manager->order_updated();
+                logger.info("WS order: %s", message->c_str());
             }
         }
     }
@@ -166,9 +176,9 @@ void ByBitWebSocket::parse_message(std::string *message)
                     timestamp_str[26] = 'Z';
                 }
                 const auto timestamp = DateTime::iso8601_us_to_time_point_us(timestamp_str);
-                const auto confirmed = true;
-                order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp, confirmed);
+                order_manager->portfolio->update_order(id, symbol, side, qty, price, timestamp);
                 order_manager->order_updated();
+                logger.info("WS execution: %s", message->c_str());
             }
         }
     }
@@ -179,7 +189,7 @@ void ByBitWebSocket::parse_message(std::string *message)
             const auto side = string_to_side(order["side"]);
             order_manager->portfolio->update_position(symbol, side, qty);
         }
-        order_manager->portfolio_updated();
+        order_manager->position_updated();
     }
     else if (topic == "wallet") {
         for (auto balance : doc["data"]) {
@@ -190,8 +200,9 @@ void ByBitWebSocket::parse_message(std::string *message)
         const auto& symbol = string_to_symbol(topic.substr(15));
         auto& order = (*order_manager->order_books)[symbol.idx];
         const std::string_view type = doc["type"];
+        auto data = doc["data"];
         if (type == "snapshot") {
-            for (auto entry : doc["data"]["order_book"]) {
+            for (auto entry : data["order_book"]) {
                 const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
                 const auto side = string_to_side(entry["side"]);
                 const auto qty = double{ entry["size"] };
@@ -199,18 +210,18 @@ void ByBitWebSocket::parse_message(std::string *message)
             }
         }
         else {
-            for (auto entry : doc["data"]["delete"]) {
+            for (auto entry : data["delete"]) {
                 const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
                 const auto side = string_to_side(entry["side"]);
                 order.del(price, side);
             }
-            for (auto entry : doc["data"]["update"]) {
+            for (auto entry : data["update"]) {
                 const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
                 const auto side = string_to_side(entry["side"]);
                 const auto qty = double{ entry["size"] };
                 order.update(price, side, qty);
             }
-            for (auto entry : doc["data"]["insert"]) {
+            for (auto entry : data["insert"]) {
                 const auto price = std::stod(std::string{ std::string_view{ entry["price"] } });
                 const auto side = string_to_side(entry["side"]);
                 const auto qty = double{ entry["size"] };
