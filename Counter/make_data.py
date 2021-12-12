@@ -75,7 +75,6 @@ def make_indicators(bands):
         print("idx", idx)
         offset = step_sum - 1
         for step in steps:
-            #print(idx - offset, idx - offset + step)
             price = np.mean(bands['price'][idx - offset:idx - offset + step])
             smooth = np.mean(bands['smooth'][idx - offset:idx - offset + step])
             slope = np.mean(bands['slope'][idx - offset:idx - offset + step])
