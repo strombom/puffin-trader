@@ -5,5 +5,10 @@
 using namespace std::chrono_literals;
 
 namespace Config {
-    constexpr auto csv_path = "E:/BitCounter/csv/";
+    constexpr auto base_path = "E:/BitCounter/";
+
+    namespace IntrinsicEvents
+    {
+        constexpr auto delta = 0.0005;
+    }
 }

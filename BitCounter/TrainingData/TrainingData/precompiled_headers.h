@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdarg.h>
+#include <algorithm>
 #include <filesystem>
 #include <string_view>
 
