@@ -1,124 +1,118 @@
+import os
+from datetime import datetime
 
 import gym
-import time
+import glob
 import torch
+
+import environment
+import wandb
+import random
+import argparse
 import numpy as np
-from SAC_old.agent import SAC
-from SAC_old.logger import Logger
-from SAC_old.utils import stack_states
+from collections import deque
+from SAC.agent import SAC
+from SAC.utils import save, collect_random
+from SAC.buffer import ReplayBuffer
 
 
-class Play:
-    def __init__(self, env, agent, params, max_episode=4):
-        self.env = env
-        self.params = params
-        self.env = gym.wrappers.Monitor(env, "./vid", video_callable=lambda episode_id: True, force=True)
-        self.max_episode = max_episode
-        self.agent = agent
-        self.agent.set_to_eval_mode()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def get_config():
+    parser = argparse.ArgumentParser(description='RL')
+    parser.add_argument("--run_name", type=str, default="SAC" + " " + datetime.now().strftime("%Y-%m-%d_%H%M%S"), help="Run name, default: SAC")
+    parser.add_argument("--env", type=str, default="CartPole-v1", help="Gym environment name, default: CartPole-v0")
+    parser.add_argument("--episodes", type=int, default=100, help="Number of episodes, default: 100")
+    parser.add_argument("--buffer_size", type=int, default=100_000,
+                        help="Maximal training dataset size, default: 100_000")
+    parser.add_argument("--seed", type=int, default=1, help="Seed, default: 1")
+    parser.add_argument("--log_video", type=int, default=1,
+                        help="Log agent behaviour to wanbd when set to 1, default: 0")
+    parser.add_argument("--save_every", type=int, default=100, help="Saves the network every x epochs, default: 25")
+    parser.add_argument("--batch_size", type=int, default=256, help="Batch size, default: 256")
 
-    def evaluate(self):
-        stacked_states = np.zeros(shape=self.params["state_shape"], dtype=np.uint8)
-        total_reward = 0
-        print("--------Play mode--------")
-        for _ in range(self.max_episode):
-            done = 0
-            state = self.env.reset()
-            episode_reward = 0
-            stacked_states = stack_states(stacked_states, state, True)
+    parser.add_argument("--wandb_entity", type=str, default="johan-strombom", help="Wandb entity")
+    parser.add_argument("--wandb_api_key", type=str, default="729cdb29cd7a10b4b1cdff9be20b854779840a7b", help="Wandb api key")
 
-            while not done:
-                stacked_frames_copy = stacked_states.copy()
-                action = self.agent.choose_action(stacked_frames_copy, do_greedy=False)
-                next_state, r, done, _ = self.env.step(action)
-                stacked_states = stack_states(stacked_states, next_state, False)
-                self.env.render()
-                time.sleep(0.01)
-                episode_reward += r
-            total_reward += episode_reward
-
-        print("Total episode reward:", total_reward / self.max_episode)
-        self.env.close()
-        #cv2.destroyAllWindows()
+    args = parser.parse_args()
+    return args
 
 
-if __name__ == '__main__':
-    torch.set_default_dtype(torch.float64)
+def train(config):
+    np.random.seed(config.seed)
+    random.seed(config.seed)
+    torch.manual_seed(config.seed)
 
-    config = {
-        "lr": 3e-4,
-        "batch_size": 64,
-        "state_shape": (4, ),
-        "max_steps": int(1e+8),
-        "gamma": 0.99,
-        "initial_random_steps": 200,
-        "train_period": 4,
-        "fixed_network_update_freq": 8000,
-        "mem_size": 1000,
-        "env_name": "CartPole-v1",
-        "interval": 4,
-        "do_train": True,
-        "train_from_scratch": True
-    }
+    #env = environment.TradeEnv()
+    env = gym.make(config.env)
+    env.seed(config.seed)
+    env.action_space.seed(config.seed)
 
-    env = gym.make(config['env_name'])
-    config['n_actions'] = env.action_space.n
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    agent = SAC(**config)
-    logger = Logger(agent, **config)
+    steps = 0
+    average10 = deque(maxlen=10)
+    total_steps = 0
 
-    if config['do_train']:
-        if config['train_from_scratch']:
-            min_episode = 0
-        else:
-            episode = logger.load_weights()
-            agent.hard_update_target_network()
-            agent.alpha = agent.log_alpha.exp()
-            min_episode = episode
+    os.environ["WANDB_API_KEY"] = config.wandb_api_key
+    with wandb.init(project="SAC_Discrete", name=config.run_name, config=config):
 
-        stacked_states = np.zeros(shape=config["state_shape"], dtype=np.uint8)
-        state = env.reset()
-        stacked_states = stack_states(stacked_states, state, True)
-        episode_reward = 0
-        alpha_loss, q_loss, policy_loss = 0, 0, 0
-        episode = min_episode + 1
-        logger.on()
-        for step in range(1, config["max_steps"] + 1):
-            if step < config['initial_random_steps']:
-                stacked_states_copy = stacked_states.copy()
-                action = env.action_space.sample()
+        agent = SAC(state_size=env.observation_space.shape[0],
+                    action_size=env.action_space.n,
+                    device=device)
+
+        wandb.watch(agent, log="gradients", log_freq=10)
+
+        buffer = ReplayBuffer(buffer_size=config.buffer_size, batch_size=config.batch_size, device=device)
+
+        collect_random(env=env, dataset=buffer, num_samples=10000)
+
+        if config.log_video:
+            env = gym.wrappers.Monitor(env, './video', video_callable=lambda x: x % 10 == 0, force=True)
+
+        for i in range(1, config.episodes + 1):
+            state = env.reset()
+            episode_steps = 0
+            rewards = 0
+            while True:
+                action = agent.get_action(state)
+                steps += 1
                 next_state, reward, done, _ = env.step(action)
-                stacked_states = stack_states(stacked_states, next_state, False)
-                reward = np.sign(reward)
-                agent.store(stacked_states_copy, action, reward, stacked_states, done)
-                if done:
-                    state = env.reset()
-                    stacked_states = stack_states(stacked_states, state, True)
-            else:
-                stacked_states_copy = stacked_states.copy()
-                action = agent.choose_action(stacked_states_copy)
-                next_state, reward, done, _ = env.step(action)
-                stacked_states = stack_states(stacked_states, next_state, False)
-                reward = np.sign(reward)
-                agent.store(stacked_states_copy, action, reward, stacked_states, done)
-                episode_reward += reward
+                buffer.add(state, action, reward, next_state, done)
+                policy_loss, alpha_loss, bellmann_error1, bellmann_error2, current_alpha = agent.learn(steps,
+                                                                                                       buffer.sample(),
+                                                                                                       gamma=0.99)
                 state = next_state
-
-                if step % config["train_period"] == 0:
-                    alpha_loss, q_loss, policy_loss = agent.train()
-
+                rewards += reward
+                episode_steps += 1
                 if done:
-                    logger.off()
-                    logger.log(episode, episode_reward, alpha_loss, q_loss, policy_loss , step)
+                    break
 
-                    episode += 1
-                    obs = env.reset()
-                    state = stack_states(state, obs, True)
-                    episode_reward = 0
-                    episode_loss = 0
-                    logger.on()
+            average10.append(rewards)
+            total_steps += episode_steps
+            print("Episode: {} | Reward: {} | Polciy Loss: {} | Steps: {}".format(i, rewards, policy_loss, steps, ))
 
-    logger.load_weights()
-    player = Play(env, agent, config)
-    player.evaluate()
+            wandb.log({"Reward": rewards,
+                       "Average10": np.mean(average10),
+                       "Steps": total_steps,
+                       "Policy Loss": policy_loss,
+                       "Alpha Loss": alpha_loss,
+                       "Bellmann error 1": bellmann_error1,
+                       "Bellmann error 2": bellmann_error2,
+                       "Alpha": current_alpha,
+                       "Steps": steps,
+                       "Episode": i,
+                       "Buffer size": buffer.__len__()})
+
+            if (i % 10 == 0) and config.log_video:
+                mp4list = glob.glob('video/*.mp4')
+                if len(mp4list) > 1:
+                    mp4 = mp4list[-2]
+                    wandb.log({"gameplays": wandb.Video(mp4, caption='episode: ' + str(i - 10), fps=4, format="gif"),
+                               "Episode": i})
+
+            if i % config.save_every == 0:
+                save(config, save_name="SAC_discrete", model=agent.actor_local, wandb=wandb, ep=0)
+
+
+if __name__ == "__main__":
+    config = get_config()
+    train(config)

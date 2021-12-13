@@ -1,10 +1,11 @@
+import copy
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
-from networks import Critic, Actor
-import copy
+
+from SAC.networks import Critic, Actor
 
 
 class SAC(nn.Module):
