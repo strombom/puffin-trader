@@ -69,38 +69,46 @@ def make_indicators(bands):
 
     steps = [220, 100, 47, 10, 5, 2, 1]
     step_sum = sum(steps)
-    print("step sum", step_sum)
 
     for idx in range(step_sum - 1, bands['price'].shape[0]):
-        print("idx", idx)
         offset = step_sum - 1
+        indicator = [0] * 6  # Position (relative price, age, buy size, sell size), action (buy, sell)
         for step in steps:
-            price = np.mean(bands['price'][idx - offset:idx - offset + step])
+            price_range = bands['price'][idx - offset:idx - offset + step]
+            price_min, price_mean, price_max = np.min(price_range), np.mean(price_range), np.max(price_range)
             smooth = np.mean(bands['smooth'][idx - offset:idx - offset + step])
             slope = np.mean(bands['slope'][idx - offset:idx - offset + step])
             midcomp = np.mean(bands['midcomp'][idx - offset:idx - offset + step])
             sigma = np.mean(bands['sigma'][idx - offset:idx - offset + step])
-
-            band_pos = (price - midcomp) / sigma
-            smooth_price = (price - smooth) / price
-            sigma = sigma / 20
-
-            print(band_pos, smooth_price, slope, sigma)
             offset -= step
 
-        if idx == 385:
+            band_pos_min = (price_min - midcomp) / sigma
+            band_pos_mean = (price_mean - midcomp) / sigma
+            band_pos_max = (price_max - midcomp) / sigma
+            smooth_price_min = (price_min - smooth) / price_min
+            smooth_price_mean = (price_mean - smooth) / price_mean
+            smooth_price_max = (price_max - smooth) / price_max
+            sigma = sigma / 20
+
+            indicator.extend([band_pos_min, band_pos_mean, band_pos_max, smooth_price_min, smooth_price_mean, smooth_price_max, slope, sigma])
+
+        indicators.append(indicator)
+        if idx == step_sum + 100:
             break
 
-    return bands
+    return np.array(indicators)
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("E:/BitCounter/test.csv")
-    timestamps = df['timestamp'].to_numpy()
-    prices = df['price'].to_numpy()
+    tick_data = pd.read_csv("E:/BitCounter/tick_data.csv")
+    intrinsic_events = pd.read_csv("E:/BitCounter/intrinsic_events.csv")
+    timestamps = intrinsic_events['timestamp'].to_numpy()
+    prices = intrinsic_events['price'].to_numpy()
 
     bands = superbands(prices, timesteps=499)
-
     indicators = make_indicators(bands)
 
-
+    training_data = {
+        'indicators': indicators,
+        'tick_data': tick_data
+    }
