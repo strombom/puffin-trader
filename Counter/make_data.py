@@ -1,3 +1,4 @@
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -72,7 +73,7 @@ def make_indicators(bands):
 
     for idx in range(step_sum - 1, bands['price'].shape[0]):
         offset = step_sum - 1
-        indicator = [0] * 6  # Position (relative price, age, buy size, sell size), action (buy, sell)
+        indicator = [0] * 4  # Position (relative price, age, buy size, sell size)
         for step in steps:
             price_range = bands['price'][idx - offset:idx - offset + step]
             price_min, price_mean, price_max = np.min(price_range), np.mean(price_range), np.max(price_range)
@@ -93,8 +94,8 @@ def make_indicators(bands):
             indicator.extend([band_pos_min, band_pos_mean, band_pos_max, smooth_price_min, smooth_price_mean, smooth_price_max, slope, sigma])
 
         indicators.append(indicator)
-        if idx == step_sum + 100:
-            break
+        #if idx == step_sum + 100:
+        #    break
 
     return np.array(indicators)
 
@@ -108,7 +109,9 @@ if __name__ == "__main__":
     bands = superbands(prices, timesteps=499)
     indicators = make_indicators(bands)
 
-    training_data = {
-        'indicators': indicators,
-        'tick_data': tick_data
-    }
+    with open("indicators.pickle", 'wb') as f:
+        pickle.dump({
+            'indicators': indicators,
+            'tick_data': tick_data,
+            'intrinsic_events': intrinsic_events
+        }, f, pickle.HIGHEST_PROTOCOL)

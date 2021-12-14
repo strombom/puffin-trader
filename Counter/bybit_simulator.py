@@ -1,3 +1,25 @@
+import numpy as np
+
+
+class Position:
+    def __init__(self):
+        self.entry_timestamp = 0
+        self.entry_price = 0.0
+        self.size = 0.0
+
+    def set_position(self, size, price, timestamp):
+        self.size = size
+        self.entry_price = price
+        self.entry_timestamp = timestamp
+
+    def get_upnl(self, mark_price):
+        if self.size == 0:
+            return 0
+        return mark_price * self.size * (1 - 0.00075) - self.entry_price * self.size
+
+    def get_age(self, timestamp):
+        diff = (timestamp - self.entry_timestamp) / 32
+        return np.tanh(diff)
 
 
 class ByBitSimulator:
@@ -7,12 +29,12 @@ class ByBitSimulator:
         self.positions_buy = {}
         self.positions_sell = {}
         self.wallet_usdt = initial_usdt
-        self.wallet = {}
+        #self.wallet = {}
         self.mark_price = {}
         for symbol in self.symbols:
-            self.wallet[symbol] = 0.0
-            self.positions_buy[symbol] = 0.0
-            self.positions_sell[symbol] = 0.0
+            #self.wallet[symbol] = 0.0
+            self.positions_buy[symbol] = Position()
+            self.positions_sell[symbol] = Position()
             self.mark_price[symbol] = 0.0
 
     #def get_positions_symbols(self):
@@ -23,8 +45,8 @@ class ByBitSimulator:
     #    return symbols
 
     def is_liquidated(self):
-        if self.wallet['BTCUSDT'] < 0.001 and self.wallet_usdt < 10:
-            return True
+        #if self.wallet['BTCUSDT'] < 0.001 and self.wallet_usdt < 10:
+        #    return True
         return False
 
     #def is_liquidated(self):
@@ -57,58 +79,90 @@ class ByBitSimulator:
 
     def get_equity_usdt(self):
         value = self.wallet_usdt
-        for pair in self.wallet:
-            value += self.wallet[pair] * self.mark_price[pair]
+        for symbol in self.symbols:
+            value += self.positions_buy[symbol].get_upnl(self.mark_price[symbol])
+            value += self.positions_sell[symbol].get_upnl(self.mark_price[symbol])
             #value += (self.wallet[pair] - self.debt[pair]) * self.mark_price[pair]
         return value
 
     def get_cash_usdt(self):
         return self.wallet_usdt  # - self.debt['usdt']
 
-    def calculate_margin(self):
-        total_asset_value = self.wallet['usdt']
-        total_debt = self.debt['usdt']
-        for pair in self.symbols:
-            total_asset_value += self.wallet[pair] * self.mark_price[pair]
-            total_debt += self.debt[pair] * self.mark_price[pair]
-
-        margin = 999
-        if total_debt != 0:
-            margin = total_asset_value / total_debt
-        return min(margin, 999)
+    #def calculate_margin(self):
+    #    total_asset_value = self.wallet['usdt']
+    #    total_debt = self.debt['usdt']
+    #    for pair in self.symbols:
+    #        total_asset_value += self.wallet[pair] * self.mark_price[pair]
+    #        total_debt += self.debt[pair] * self.mark_price[pair]
+    #    margin = 999
+    #    if total_debt != 0:
+    #        margin = total_asset_value / total_debt
+    #    return min(margin, 999)
 
     def calculate_order_size(self, leverage, symbol):
         if self.is_liquidated():
             return 0
 
         order_size = 0
-
+        equity = self.wallet_usdt
         if leverage > 0:
-            if self.debt[symbol] > 0:
-                order_size += self.debt[symbol]
-
+            if self.positions_buy[symbol].size > 0:
+                print("error")
+            elif self.positions_sell[symbol].size < 0:
+                equity += self.positions_sell[symbol].get_upnl(self.mark_price[symbol])
+            else:
+                pass
         elif leverage < 0:
-            if self.wallet[symbol] > 0:
-                order_size -= self.wallet[symbol]
+            if self.positions_buy[symbol].size > 0:
+                equity += self.positions_sell[symbol].get_upnl(self.mark_price[symbol])
+            elif self.positions_sell[symbol].size < 0:
+                print("error")
+            else:
+                pass
 
-        equity = 0.0
-        for wallet_symbol in self.wallet:
-            equity += (self.wallet[wallet_symbol] - self.debt[wallet_symbol]) * self.mark_price[wallet_symbol]
-        order_size += leverage * equity / self.mark_price[symbol]
-
+        order_size = equity / self.mark_price[symbol]
         return order_size
 
-    def order(self, order_size, symbol, fee):
+        #if leverage > 0:
+        #    if self.debt[symbol] > 0:
+        #        order_size += self.debt[symbol]
+        #elif leverage < 0:
+        #    if self.wallet[symbol] > 0:
+        #        order_size -= self.wallet[symbol]
+
+        #equity = 0.0
+        #for wallet_symbol in self.wallet:
+        #    equity += (self.wallet[wallet_symbol] - self.debt[wallet_symbol]) * self.mark_price[wallet_symbol]
+        #order_size += leverage * equity / self.mark_price[symbol]
+        #return order_size
+
+    def order(self, timestamp, order_size, symbol, fee):
         # print('market_order', wallet, pos_price, pos_contracts, order_contracts, mark_price)
         if self.is_liquidated():
             return 0
 
-        if order_size < 0 and self.wallet[symbol] < -order_size:
-            print("err", order_size, symbol, fee)
+        if order_size > 0 and self.positions_sell[symbol].size < 0:
+            self.wallet_usdt += self.positions_sell[symbol].get_upnl(self.mark_price[symbol])
+            self.positions_sell[symbol].size = 0
 
-        self.wallet[symbol] += order_size
-        self.wallet_usdt -= order_size * self.mark_price[symbol]
+        elif order_size < 0 and self.positions_buy[symbol].size > 0:
+            self.wallet_usdt += self.positions_buy[symbol].get_upnl(self.mark_price[symbol])
+            self.positions_buy[symbol].size = 0
+
+        if order_size > 0:
+            self.positions_buy[symbol].set_position(size=order_size, price=self.mark_price[symbol], timestamp=timestamp)
+
+        elif order_size < 0:
+            self.positions_sell[symbol].set_position(size=order_size, price=self.mark_price[symbol], timestamp=timestamp)
+
         self.wallet_usdt -= abs(order_size) * self.mark_price[symbol] * fee
+
+        #if order_size < 0 and self.wallet[symbol] < -order_size:
+        #    print("err", order_size, symbol, fee)
+
+        #self.wallet[symbol] += order_size
+        #self.wallet_usdt -= order_size * self.mark_price[symbol]
+        #self.wallet_usdt -= abs(order_size) * self.mark_price[symbol] * fee
 
         # Repay debt
         """
@@ -145,22 +199,36 @@ class ByBitSimulator:
                 self.debt[wallet_symbol] = 0.0
         """
 
-    def limit_order(self, order_size, symbol):
-        self.order(order_size, symbol, -0.00025)
+    def limit_order(self, timestamp, order_size, symbol):
+        self.order(timestamp, order_size, symbol, -0.00025)
 
-    def market_order(self, order_size, symbol):
-        self.order(order_size, symbol, 0.0)  # 0.00075)
+    def market_order(self, timestamp, order_size, symbol):
+        self.order(timestamp, order_size, symbol, 0.00075)
         return True
 
-    def sell_pair(self, symbol):
-        if self.wallet[symbol] > 0:
-            self.market_order(-self.wallet[symbol], symbol)
-
-        elif self.debt[symbol] > 0:
-            self.market_order(self.debt[symbol], symbol)
+    #def sell_pair(self, symbol):
+    #    if self.wallet[symbol] > 0:
+    #        self.market_order(-self.wallet[symbol], symbol)
+    #    elif self.debt[symbol] > 0:
+    #        self.market_order(self.debt[symbol], symbol)
 
 
 if __name__ == '__main__':
+
+    p = Position()
+    p.entry_price = 100
+    p.size = 10
+
+    print(90, p.get_upnl(90))
+    print(110, p.get_upnl(110))
+
+    p.size = -10
+
+    print(90, p.get_upnl(90))
+    print(110, p.get_upnl(110))
+
+    quit()
+
 
     def atest_order(symbol, order_size, mark_price):
         print("----")

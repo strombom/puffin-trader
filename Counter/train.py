@@ -31,6 +31,7 @@ def get_config():
 
     parser.add_argument("--wandb_entity", type=str, default="johan-strombom", help="Wandb entity")
     parser.add_argument("--wandb_api_key", type=str, default="729cdb29cd7a10b4b1cdff9be20b854779840a7b", help="Wandb api key")
+    parser.add_argument("--wandb_mode", type=str, default="offline", help="Wandb mode")
 
     args = parser.parse_args()
     return args
@@ -41,10 +42,10 @@ def train(config):
     random.seed(config.seed)
     torch.manual_seed(config.seed)
 
-    #env = environment.TradeEnv()
-    env = gym.make(config.env)
-    env.seed(config.seed)
-    env.action_space.seed(config.seed)
+    env = environment.TradeEnv()
+    #env = gym.make(config.env)
+    #env.seed(config.seed)
+    #env.action_space.seed(config.seed)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -53,7 +54,7 @@ def train(config):
     total_steps = 0
 
     os.environ["WANDB_API_KEY"] = config.wandb_api_key
-    with wandb.init(project="SAC_Discrete", name=config.run_name, config=config):
+    with wandb.init(project="SAC_Discrete", name=config.run_name, config=config, mode=config.wandb_mode):
 
         agent = SAC(state_size=env.observation_space.shape[0],
                     action_size=env.action_space.n,

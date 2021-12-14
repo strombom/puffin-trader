@@ -13,4 +13,5 @@ Data
 wandb
 video
 *.pth
+*.pickle
 
