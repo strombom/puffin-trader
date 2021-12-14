@@ -32,7 +32,7 @@ class SAC(nn.Module):
 
         self.gamma = 0.99
         self.tau = 1e-2
-        hidden_size = 256
+        hidden_size = 512
         learning_rate = 5e-4
         self.clip_grad_param = 1
 

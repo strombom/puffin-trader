@@ -19,7 +19,7 @@ from SAC.buffer import ReplayBuffer
 def get_config():
     parser = argparse.ArgumentParser(description='RL')
     parser.add_argument("--run_name", type=str, default="SAC" + " " + datetime.now().strftime("%Y-%m-%d_%H%M%S"), help="Run name, default: SAC")
-    parser.add_argument("--env", type=str, default="CartPole-v1", help="Gym environment name, default: CartPole-v0")
+    parser.add_argument("--env", type=str, default="T1", help="Gym environment name, default: CartPole-v0")
     parser.add_argument("--episodes", type=int, default=100, help="Number of episodes, default: 100")
     parser.add_argument("--buffer_size", type=int, default=100_000,
                         help="Maximal training dataset size, default: 100_000")
@@ -61,13 +61,11 @@ def train(config):
                     device=device)
 
         wandb.watch(agent, log="gradients", log_freq=10)
-
         buffer = ReplayBuffer(buffer_size=config.buffer_size, batch_size=config.batch_size, device=device)
-
         collect_random(env=env, dataset=buffer, num_samples=10000)
 
         if config.log_video:
-            env = gym.wrappers.Monitor(env, './video', video_callable=lambda x: x % 10 == 0, force=True)
+            env = gym.wrappers.Monitor(env, './video', video_callable=lambda x: x % 1 == 0, force=True)
 
         for i in range(1, config.episodes + 1):
             state = env.reset()
