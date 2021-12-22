@@ -35,13 +35,13 @@ void TickData::save_csv(std::string file_path)
     csv_file << "\"timestamp\",\"price\",\"size\"\n";
     csv_file << std::fixed;
     for (const auto& row : rows) {
-        const auto timestamp = std::get<0>(row).time_since_epoch().count() / 1000000.0;
+        const auto timestamp = row.timestamp.time_since_epoch().count() / 1000000.0;
         csv_file.precision(6);
         csv_file << timestamp << ",";
         csv_file.precision(2);
-        csv_file << std::get<1>(row) << ",";
+        csv_file << row.price << ",";
         csv_file.precision(3);
-        csv_file << std::get<2>(row) << "\n";
+        csv_file << row.size << "\n";
     }
     csv_file.close();
 }

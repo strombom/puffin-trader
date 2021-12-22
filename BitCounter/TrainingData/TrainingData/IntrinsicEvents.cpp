@@ -58,7 +58,7 @@ void IntrinsicEvents::save_csv(std::string file_path)
      */
 
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
-    csv_file << "\"timestamp\",\"price\",\"size\",\"tick_id\"\n";
+    csv_file << "\"timestamp\",\"price\",\"low\",\"high\",\"size\",\"tick_id\"\n";
     csv_file << std::fixed;
     for (const auto& ie : events) {
         const auto timestamp = ie.timestamp.time_since_epoch().count() / 1000000.0;
@@ -67,7 +67,7 @@ void IntrinsicEvents::save_csv(std::string file_path)
         csv_file.precision(2);
         csv_file << ie.price << ",";
         csv_file.precision(3);
-        csv_file << ie.price << ",";
+        csv_file << ie.size << ",";
         csv_file << ie.tick_id << "\n";
     }
     csv_file.close();
@@ -177,13 +177,40 @@ void calculate_thread(const Symbol& symbol, const TickData& tick_data)
     auto runner = IntrinsicEventRunner{ Config::IntrinsicEvents::delta };
     auto accum_size = 0.0f;
     auto tick_id = uint32_t{ 0 };
+    auto price_low = std::numeric_limits<float>::max();
+    auto price_high = std::numeric_limits<float>::min();
+    auto reset_high_low = false;
     for (const auto& [timestamp, price, size] : tick_data.rows) {
         accum_size += size;
-        for (const auto price : runner.step(price)) {
-            events.push_back(IntrinsicEvent{ timestamp, (float)price, accum_size, tick_id});
+        price_low = std::min(price_low, price);
+        price_high = std::max(price_high, price);
+        for (const auto intrinsic_price : runner.step(price)) {
+            events.push_back({ timestamp, (float)intrinsic_price, price_low, price_high, accum_size, tick_id});
             accum_size = 0;
+            reset_high_low = true;
         }
         tick_id++;
+        if (reset_high_low) {
+            price_low = price;
+            price_high = price;
+            reset_high_low = false;
+        }
+    }
+
+    // Move size to last position in sequences with the same timestamp
+    auto idx = 0;
+    while (idx + 1 < events.size()) {
+        const auto timestamp = events[idx].timestamp;
+        auto end_idx = idx;
+        while (end_idx + 1 < events.size() && events[end_idx + 1].timestamp == timestamp) {
+            end_idx++;
+        }
+        if (idx != end_idx) {
+            auto a = 1;
+            events[end_idx].size = events[idx].size;
+            events[idx].size = 0;
+        }
+        idx = end_idx + 1;
     }
 
     auto file_path = std::string{ Config::base_path } + "\\intrinsic_events";

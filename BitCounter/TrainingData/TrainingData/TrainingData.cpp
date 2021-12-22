@@ -2,6 +2,7 @@
 //
 
 #include "IntrinsicEvents.h"
+#include "DelayedKlines.h"
 #include "TrainingData.h"
 #include "TickData.h"
 #include "Symbols.h"
@@ -15,12 +16,13 @@ int main()
 
 	const auto symbol = string_to_symbol("BTCUSDT");
 	auto tick_data = TickData{symbol};
-	tick_data.save_csv("E:/BitCounter/tick_data.csv");
+	//tick_data.save_csv("E:/BitCounter/tick_data.csv");
 	auto intrinsic_events = IntrinsicEvents{};
 	intrinsic_events.calculate_and_save(symbol, tick_data);
 	intrinsic_events.load(symbol);
-	intrinsic_events.save_csv("E:/BitCounter/intrinsic_events.csv");
+	//intrinsic_events.save_csv("E:/BitCounter/intrinsic_events.csv");
 	//auto intrinsic_events = IntrinsicEvents{ symbol };
+	auto delayed_klines = DelayedKlines{ intrinsic_events, tick_data };
 
 	return 0;
 }

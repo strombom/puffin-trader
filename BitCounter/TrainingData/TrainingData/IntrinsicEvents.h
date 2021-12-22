@@ -2,6 +2,7 @@
 #include "precompiled_headers.h"
 
 #include "TickData.h"
+#include "BitLib/DateTime.h"
 
 
 
@@ -9,7 +10,7 @@ class IntrinsicEvent
 {
 public:
     IntrinsicEvent(void) : timestamp(), price(0), size(0), tick_id(0) {}
-    IntrinsicEvent(time_point_us timestamp, float price, float size, uint32_t tick_id) : timestamp(timestamp), price(price), size(size), tick_id(tick_id) {}
+    IntrinsicEvent(time_point_us timestamp, float price, float prev_low, float prev_high, float size, uint32_t tick_id) : timestamp(timestamp), price(price), size(size), tick_id(tick_id) {}
 
     //friend std::ostream& operator<<(std::ostream& stream, const IntrinsicEvent& row);
     friend std::istream& operator>>(std::istream& stream, IntrinsicEvent& row);
