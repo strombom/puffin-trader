@@ -9,76 +9,43 @@ DelayedKlines::DelayedKlines(const IntrinsicEvents& intrinsic_events, const Tick
 
     auto pending_klines = std::list<DelayedKline>{};
 
-    auto start_tick_idx = size_t{ 0 };
+    auto first_ie_idx = size_t{ 0 };
+    auto second_ie_idx = size_t{ 0 };
 
-    auto previous_timestamp = tick_data.rows[0].timestamp;
+    // Find first and second idx
+    while (intrinsic_events.events[first_ie_idx].timestamp <= intrinsic_events.events[0].timestamp) {
+        first_ie_idx++;
+    }
+    while (intrinsic_events.events[second_ie_idx].timestamp <= intrinsic_events.events[first_ie_idx].timestamp) {
+        second_ie_idx++;
+    }
 
-    for (auto ie_idx = 0; ie_idx < intrinsic_events.events.size() - 1; ie_idx++) {
-
-        const auto& event = intrinsic_events.events[ie_idx];
-        
-        // timestamp_open, timestamp_close, open, close, high, low, volume
+    while (second_ie_idx + 1 < intrinsic_events.events.size()) {
         pending_klines.push_back({
-            previous_timestamp + delay,
-            event.timestamp + delay
+            intrinsic_events.events[first_ie_idx].timestamp + delay,
+            intrinsic_events.events[second_ie_idx].timestamp + delay
         });
 
-        std::cout << "Kline  " << DateTime::to_string(previous_timestamp) << " - " << DateTime::to_string(event.timestamp) << "  " << event.price << std::endl;
+        const auto tmp_idx = second_ie_idx;
+        while (second_ie_idx + 1 < intrinsic_events.events.size() && intrinsic_events.events[second_ie_idx].timestamp == intrinsic_events.events[tmp_idx].timestamp) {
+            second_ie_idx++;
+        }
+        first_ie_idx = tmp_idx;
+    }
+    
+    auto tick_idx = size_t{ 0 };
+    for (auto &pending_kline : pending_klines) {
+        pending_kline.open = tick_data.rows[tick_idx].price;
+        pending_kline.low = std::numeric_limits<float>::max();
 
-        previous_timestamp = event.timestamp;
+        while (tick_idx + 1 < tick_data.rows.size() && tick_data.rows[tick_idx].timestamp <= pending_kline.timestamp_close) {
+            const auto& tick = tick_data.rows[tick_idx];
+            pending_kline.high = std::max(pending_kline.high, tick.price);
+            pending_kline.low = std::min(pending_kline.low, tick.price);
+            pending_kline.close = tick.price;
+            pending_kline.volume += tick.size;
 
-
-        /*
-        
-        auto tick_idx = start_tick_idx;
-        const auto start_timestamp = tick_data.rows[start_tick_idx].timestamp + delay;
-        while (tick_idx < tick_data.rows.size() && tick_data.rows[tick_idx].timestamp < start_timestamp + delay) {
             tick_idx++;
         }
-
-        const auto open = tick_data.rows[tick_idx].price;
-        auto low = open;
-        auto high = open;
-        auto volume = tick_data.rows[tick_idx].size;
-
-
-        const auto end_timestamp = intrinsic_events.events[ie_idx].timestamp + delay;
-        while (tick_idx + 1 < tick_data.rows.size() && tick_data.rows[tick_idx + 1].timestamp < end_timestamp) {
-            tick_idx++;
-            const auto price = tick_data.rows[tick_idx].price;
-            low = std::min(low, price);
-            high = std::max(high, price);
-            volume += tick_data.rows[tick_idx].size;
-        }
-
-        const auto close = tick_data.rows[tick_idx].price;
-
-        //timestamp, open, close, high, low, volume
-        klines.push_back({ end_timestamp, open, close, high, low, volume }) ;
-        std::cout << "Kline  " << DateTime::to_string(start_timestamp) << " - " << DateTime::to_string(end_timestamp);
-        std::cout << "  " << open << ", " << close << ", " << high << ", " << low << ", " << volume << std::endl << std::endl;
-
-        if (volume != 0) {
-            start_tick_idx = tick_idx;
-        }
-        */
-
-        //while (tick_idx < tick_data.rows.size() && tick_data.rows[tick_idx].timestamp < 1) {
-
-        //auto tick_idx = intrinsic_events.events[ie_idx].tick_id;
-        //while (tick_idx < tick_data.rows.size() && tick_data.rows[tick_idx].timestamp > 1) {
-        //    tick_idx++;
-        //}
-
     }
-
-    /*
-    auto ie_idx = 0;
-    for (const auto& tick : tick_data.rows) {
-        while (intrinsic_events.events[ie_idx].timestamp < std::get<0>(tick)) {
-            ie_idx++;
-        }
-        auto a = 1;
-    }
-    */
 }
