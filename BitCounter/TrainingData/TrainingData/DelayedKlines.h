@@ -27,16 +27,11 @@ public:
 };
 
 
-class PendingKline
-{
-
-
-
-};
-
 class DelayedKlines {
 public:
     DelayedKlines(const IntrinsicEvents& intrinsic_events, const TickData& tick_data);
+
+    void save_csv(std::string file_path);
 
 private:
     std::vector<DelayedKline> klines;

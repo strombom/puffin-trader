@@ -23,6 +23,7 @@ int main()
 	//intrinsic_events.save_csv("E:/BitCounter/intrinsic_events.csv");
 	//auto intrinsic_events = IntrinsicEvents{ symbol };
 	auto delayed_klines = DelayedKlines{ intrinsic_events, tick_data };
+	delayed_klines.save_csv("E:/BitCounter/delayed_klines.csv");
 
 	return 0;
 }

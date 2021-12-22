@@ -47,16 +47,6 @@ void IntrinsicEvents::load(const Symbol& symbol)
 
 void IntrinsicEvents::save_csv(std::string file_path)
 {
-    /*
-    auto file = std::ofstream{};
-    file.open(file_path);
-    file << "price\n";
-    for (auto row : events) {
-        file << row.price << "\n";
-    }
-    file.close();
-     */
-
     auto csv_file = std::ofstream{ file_path, std::ios::binary };
     csv_file << "\"timestamp\",\"price\",\"low\",\"high\",\"size\",\"tick_id\"\n";
     csv_file << std::fixed;
